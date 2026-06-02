@@ -53,10 +53,7 @@ export class AccountingOutboxService {
 
     // Find entries that are PENDING, or FAILED but have remaining attempts
     const entries = await em.find(AccountingOutboxEntity, {
-      where: [
-        { status: 'PENDING' },
-        { status: 'FAILED', attempts: LessThan(3) },
-      ],
+      where: [{ status: 'PENDING' }, { status: 'FAILED', attempts: LessThan(3) }],
       order: { createdAt: 'ASC' },
       take: limit,
     })
@@ -116,7 +113,9 @@ export class AccountingOutboxService {
                   outbox.tenantId,
                 )
               } catch (notifErr: any) {
-                this.logger.error(`Failed to trigger outbox error notification: ${notifErr.message}`)
+                this.logger.error(
+                  `Failed to trigger outbox error notification: ${notifErr.message}`,
+                )
               }
             }
           }

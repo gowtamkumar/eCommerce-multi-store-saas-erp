@@ -73,7 +73,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       status: UserStatus.ACTIVE,
       tenantId: tenant.id,
       membershipTier: 'SILVER',
-      creditLimit: 5000.00,
+      creditLimit: 5000.0,
       creditHold: false,
       loyaltyPointsBalance: 0,
       companyName: 'Wholesale Corp',
@@ -123,7 +123,8 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         daysOverdue: 30,
         action: 'EMAIL_AND_HOLD',
         emailSubject: 'URGENT: Overdue Account Balance',
-        emailBody: 'Dear {{customerName}}, your account is {{daysOverdue}} days overdue with {{amountOverdue}} outstanding.',
+        emailBody:
+          'Dear {{customerName}}, your account is {{daysOverdue}} days overdue with {{amountOverdue}} outstanding.',
       })
       await dunningRuleRepo.save(dunningRule)
     })
@@ -141,8 +142,8 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         tenantId: tenant.id,
         customerId: customer.id,
         type: ArTransactionType.INVOICE,
-        amount: 800.00,
-        balanceAfter: 800.00,
+        amount: 800.0,
+        balanceAfter: 800.0,
         currency: 'USD',
         dueDate: invoiceDate,
         createdAt: invoiceDate,
@@ -169,7 +170,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       })
       expect(logs.length).toBe(1)
       expect(logs[0].actionTaken).toBe('EMAIL_AND_HOLD')
-      expect(Number(logs[0].triggeredAmountOverdue)).toBe(800.00)
+      expect(Number(logs[0].triggeredAmountOverdue)).toBe(800.0)
       expect(logs[0].emailSubject).toBe('URGENT: Overdue Account Balance')
       expect(logs[0].emailBody).toContain('Dear B2B Wholesale Customer, your account is')
       expect(logs[0].emailBody).toContain('outstanding.')
@@ -213,7 +214,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         name: 'Loyalty Promo Product',
         slug: `promo-prod-${Date.now()}`,
         description: 'Promo product',
-        price: 100.00,
+        price: 100.0,
         images: [],
         status: ProductStatus.ACTIVE,
         taxRate: 0,
@@ -226,7 +227,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         name: 'Normal Product',
         slug: `norm-prod-${Date.now()}`,
         description: 'Normal product',
-        price: 150.00,
+        price: 150.0,
         images: [],
         status: ProductStatus.ACTIVE,
         taxRate: 0,
@@ -238,8 +239,8 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       // Update Loyalty Config
       const config = await loyaltyService.getOrCreateConfig(tenant.id)
       config.isEnabled = true
-      config.pointsPerCurrencySpent = 1.00
-      config.silverMultiplier = 1.50
+      config.pointsPerCurrencySpent = 1.0
+      config.silverMultiplier = 1.5
       await dataSource.manager.save(config)
 
       // Create dynamic loyalty rules
@@ -250,7 +251,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         tenantId: tenant.id,
         name: 'Category Promo',
         type: 'CATEGORY_MULTIPLIER',
-        value: 2.00,
+        value: 2.0,
         conditions: { categoryIds: [categoryId] },
         isActive: true,
       })
@@ -261,7 +262,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         tenantId: tenant.id,
         name: 'Weekend Triple Points',
         type: 'WEEKEND_MULTIPLIER',
-        value: 3.00,
+        value: 3.0,
         isActive: true,
       })
       await ruleRepo.save(weekendRule)
@@ -271,7 +272,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         tenantId: tenant.id,
         name: 'Big Spend Bonus',
         type: 'MIN_SPEND_BONUS',
-        value: 100.00,
+        value: 100.0,
         conditions: { minSpend: 200 },
         isActive: true,
       })
@@ -299,7 +300,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         customerEmail: customer.email,
         customerPhone: '1234567890',
         address: 'Test Address',
-        totalAmount: 250.00,
+        totalAmount: 250.0,
         createdAt: orderDate,
       })
       await orderRepo.save(order)
@@ -310,8 +311,8 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         productId: matchedProduct.id,
         product: matchedProduct,
         quantity: 1,
-        unitPrice: 100.00,
-        totalAmount: 100.00,
+        unitPrice: 100.0,
+        totalAmount: 100.0,
       })
 
       const item2 = orderItemRepo.create({
@@ -320,8 +321,8 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         productId: unmatchedProduct.id,
         product: unmatchedProduct,
         quantity: 1,
-        unitPrice: 150.00,
-        totalAmount: 150.00,
+        unitPrice: 150.0,
+        totalAmount: 150.0,
       })
 
       await orderItemRepo.save([item1, item2])

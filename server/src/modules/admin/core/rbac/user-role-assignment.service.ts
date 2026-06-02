@@ -64,7 +64,10 @@ export class UserRoleAssignmentService {
     const role = await this.roleRepo.findOne({ where: { id: dto.roleId, tenantId: tenantId } })
     // If tenantId on role is null, it might be a system default role (if we supported cross-tenant defaults, but we seed per tenant, so it should match or be system default)
     // For now, let's assume all roles (even system) are seeded per tenant.
-    if (!role && !(await this.roleRepo.findOne({ where: { id: dto.roleId, isSystemDefault: true } }))) {
+    if (
+      !role &&
+      !(await this.roleRepo.findOne({ where: { id: dto.roleId, isSystemDefault: true } }))
+    ) {
       throw new NotFoundException('Role not found')
     }
 

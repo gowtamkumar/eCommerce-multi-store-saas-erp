@@ -15,7 +15,7 @@ import { PricingService } from './pricing.service'
 @RequireFeature('catalog')
 @Controller('pricing')
 export class PricingController {
-  constructor(private readonly service: PricingService) { }
+  constructor(private readonly service: PricingService) {}
 
   @Post('price-books')
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)

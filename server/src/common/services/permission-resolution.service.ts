@@ -247,9 +247,7 @@ export class PermissionResolutionService {
     })
 
     // Filter out expired assignments
-    const activeAssignments = assignments.filter(
-      (a) => !a.expiresAt || new Date(a.expiresAt) > now,
-    )
+    const activeAssignments = assignments.filter((a) => !a.expiresAt || new Date(a.expiresAt) > now)
 
     if (activeAssignments.length === 0) return new Set()
 

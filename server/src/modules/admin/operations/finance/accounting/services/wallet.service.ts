@@ -62,9 +62,13 @@ export class WalletService {
     }
 
     // Verify customer exists and acquire a pessimistic write lock to prevent concurrent modifications
-    const customer = await em.createQueryBuilder(UserEntity, 'u')
+    const customer = await em
+      .createQueryBuilder(UserEntity, 'u')
       .setLock('pessimistic_write')
-      .where('u.id = :customerId AND u.tenantId = :tenantId', { customerId: data.customerId, tenantId })
+      .where('u.id = :customerId AND u.tenantId = :tenantId', {
+        customerId: data.customerId,
+        tenantId,
+      })
       .getOne()
 
     if (!customer) {
@@ -96,7 +100,7 @@ export class WalletService {
         referenceType: 'WALLET_LEDGER',
         referenceId: saved.id,
         lines: [
-          { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount },  // Refund Expense
+          { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount }, // Refund Expense
           { accountCode: '2300', side: LedgerEntrySide.CREDIT, amount }, // Wallet Liabilities
         ],
       },
@@ -136,9 +140,13 @@ export class WalletService {
     }
 
     // Verify customer exists and acquire a pessimistic write lock to serialize wallet transactions
-    const customer = await em.createQueryBuilder(UserEntity, 'u')
+    const customer = await em
+      .createQueryBuilder(UserEntity, 'u')
       .setLock('pessimistic_write')
-      .where('u.id = :customerId AND u.tenantId = :tenantId', { customerId: data.customerId, tenantId })
+      .where('u.id = :customerId AND u.tenantId = :tenantId', {
+        customerId: data.customerId,
+        tenantId,
+      })
       .getOne()
 
     if (!customer) {
@@ -177,7 +185,7 @@ export class WalletService {
           referenceType: 'WALLET_LEDGER',
           referenceId: saved.id,
           lines: [
-            { accountCode: '2300', side: LedgerEntrySide.DEBIT, amount },  // Wallet Liabilities
+            { accountCode: '2300', side: LedgerEntrySide.DEBIT, amount }, // Wallet Liabilities
             { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount }, // Sales Revenue
           ],
         },

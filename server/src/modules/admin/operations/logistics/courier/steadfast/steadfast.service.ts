@@ -118,16 +118,19 @@ export class SteadfastService {
       return response.data
     } catch (error: any) {
       this.logger.error('Failed to create Steadfast order', error.response?.data || error.message)
-      const errorMsg = error.response?.data?.message || 
-                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                       error.response?.data?.error || 
-                       error.message;
+      const errorMsg =
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : null) ||
+        error.response?.data?.error ||
+        error.message
       throw new BadRequestException(`Steadfast: ${errorMsg}`)
     }
   }
 
   async getSteadfastStatus(trackingCode: string, ctx: RequestContextDto): Promise<any> {
-    this.logger.log(`${this.getSteadfastStatus.name} Service Called for trackingCode: ${trackingCode}`)
+    this.logger.log(
+      `${this.getSteadfastStatus.name} Service Called for trackingCode: ${trackingCode}`,
+    )
     const creds = await this.getCredentials(ctx)
     const url = `${creds.baseUrl}/status_by_trackingcode/${trackingCode}`
 
@@ -147,16 +150,22 @@ export class SteadfastService {
         `Failed to fetch Steadfast status for trackingCode ${trackingCode}`,
         error.response?.data || error.message,
       )
-      const errorMsg = error.response?.data?.message || 
-                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                       error.response?.data?.error || 
-                       error.message;
+      const errorMsg =
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : null) ||
+        error.response?.data?.error ||
+        error.message
       throw new BadRequestException(`Steadfast: ${errorMsg}`)
     }
   }
 
-  async getSteadfastLabel(trackingCode: string, ctx: RequestContextDto): Promise<{ printUrl: string }> {
-    this.logger.log(`${this.getSteadfastLabel.name} Service Called for trackingCode: ${trackingCode}`)
+  async getSteadfastLabel(
+    trackingCode: string,
+    ctx: RequestContextDto,
+  ): Promise<{ printUrl: string }> {
+    this.logger.log(
+      `${this.getSteadfastLabel.name} Service Called for trackingCode: ${trackingCode}`,
+    )
     const portalUrl = 'https://portal.steadfastcourier.com.bd/print_label'
     return { printUrl: `${portalUrl}/${trackingCode}` }
   }

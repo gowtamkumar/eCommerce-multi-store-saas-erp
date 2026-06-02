@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useSettings } from "@/hooks/SettingsContext";
 
 interface CartContextType {
   cart: Cart | null;
@@ -34,6 +35,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const { settings } = useSettings();
 
   // Helper for recalculating local guest carts
   const recalcLocalSummary = (items: CartItem[], couponDiscount = 0) => {
@@ -67,6 +69,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const refreshCart = async () => {
     if (status === "loading") return;
+    if (settings?.isSaaS) {
+      setLoading(false);
+      return;
+    }
 
     if (!session?.user?.accessToken) {
       // If we are guest, we just rely on state updating via local storage logic
@@ -93,6 +99,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Sync local cart to server when session becomes active
   useEffect(() => {
     const syncLocalCart = async () => {
+      if (settings?.isSaaS) {
+        setLoading(false);
+        return;
+      }
       if (status === "authenticated" && session?.user?.accessToken) {
         const localData = localStorage.getItem("temp_cart");
         if (localData) {
@@ -127,7 +137,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
 
     syncLocalCart();
-  }, [status, session?.user?.accessToken]);
+  }, [status, session?.user?.accessToken, settings?.isSaaS]);
 
 
   const addToCart = useCallback(async (productId: string, quantity: number, variantId?: string) => {

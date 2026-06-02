@@ -134,8 +134,7 @@ export function classifyPayrollDays(params: {
     const currentStr = toDateString(currentDate)
     const dayOfWeek = currentDate.getDay()
 
-    const isActive =
-      currentStr >= joiningDateStr && (!exitDateStr || currentStr <= exitDateStr)
+    const isActive = currentStr >= joiningDateStr && (!exitDateStr || currentStr <= exitDateStr)
     const isHoliday = holidayDateSet.has(currentStr)
     const isWeeklyOff = !workingDays.includes(dayOfWeek)
     const isWorkingDay = isActive && !isHoliday && !isWeeklyOff
@@ -170,10 +169,7 @@ export function classifyPayrollDays(params: {
  * Progressive income tax from tenant-configured brackets.
  * Falls back to a sensible default two-bracket schedule when none configured.
  */
-export function computeIncomeTax(
-  grossSalary: number,
-  brackets: TaxBracketEntity[],
-): number {
+export function computeIncomeTax(grossSalary: number, brackets: TaxBracketEntity[]): number {
   if (grossSalary <= 0) return 0
 
   const sorted =
@@ -216,16 +212,17 @@ export function buildCheckInDateSet(sessions: AttendanceSessionEntity[]): Set<st
 }
 
 /** Resolve working days from shift assignment, falling back to Mon-Fri. */
-export function resolveWorkingDays(
-  assignment: EmployeeShiftAssignmentEntity | null,
-): number[] {
+export function resolveWorkingDays(assignment: EmployeeShiftAssignmentEntity | null): number[] {
   const days = assignment?.shift?.workingDays
   return days && days.length > 0 ? days : DEFAULT_WORKING_DAYS
 }
 
 /** Validate that an IP is in the branch whitelist (exact match or CIDR prefix). */
 export function isIpAllowed(ip: string, whitelist: string): boolean {
-  const allowed = whitelist.split(',').map((s) => s.trim()).filter(Boolean)
+  const allowed = whitelist
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
   if (allowed.length === 0) return true
 
   for (const entry of allowed) {

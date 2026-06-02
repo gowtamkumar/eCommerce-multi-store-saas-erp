@@ -54,7 +54,9 @@ export class ReturnService {
 
     // ── Return window policy ──────────────────────────────────────────────────
     const MS_PER_DAY = 86_400_000
-    const daysSinceOrder = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / MS_PER_DAY)
+    const daysSinceOrder = Math.floor(
+      (Date.now() - new Date(order.createdAt).getTime()) / MS_PER_DAY,
+    )
     if (daysSinceOrder > RETURN_WINDOW_DAYS) {
       throw new BadRequestException(
         `Returns are only accepted within ${RETURN_WINDOW_DAYS} days of the original purchase. This order was placed ${daysSinceOrder} days ago.`,
@@ -195,11 +197,15 @@ export class ReturnService {
     if (!returnRequest) throw new NotFoundException('Return request not found')
 
     const terminalStatuses = [
-      ReturnStatus.REFUNDED, ReturnStatus.EXCHANGED,
-      ReturnStatus.REJECTED, ReturnStatus.CANCELLED,
+      ReturnStatus.REFUNDED,
+      ReturnStatus.EXCHANGED,
+      ReturnStatus.REJECTED,
+      ReturnStatus.CANCELLED,
     ]
     if (terminalStatuses.includes(returnRequest.status)) {
-      throw new BadRequestException(`Cannot mark items received on a ${returnRequest.status} return`)
+      throw new BadRequestException(
+        `Cannot mark items received on a ${returnRequest.status} return`,
+      )
     }
     if (returnRequest.receivedAt) {
       throw new BadRequestException('Items have already been marked as received')
@@ -232,8 +238,13 @@ export class ReturnService {
     const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
     if (!returnRequest) throw new NotFoundException('Return request not found')
 
-    if (returnRequest.status !== ReturnStatus.APPROVED && returnRequest.status !== ReturnStatus.REFUNDED) {
-      throw new BadRequestException('Can only link an exchange order to an APPROVED or REFUNDED return')
+    if (
+      returnRequest.status !== ReturnStatus.APPROVED &&
+      returnRequest.status !== ReturnStatus.REFUNDED
+    ) {
+      throw new BadRequestException(
+        'Can only link an exchange order to an APPROVED or REFUNDED return',
+      )
     }
 
     const updated = await this.returnRepository.linkExchange(returnRequest, newOrderId)
@@ -249,16 +260,20 @@ export class ReturnService {
             referenceType: 'ORDER_EXCHANGE',
             referenceId: returnRequest.id,
             lines: [
-              { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns Expense
+              { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns Expense
               { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Revenue (Exchange new sale offsets)
             ],
           },
           ctx,
         )
-        this.logger.log(`Exchange GL memo posted for return ${returnRequest.id} → new order ${newOrderId}`)
+        this.logger.log(
+          `Exchange GL memo posted for return ${returnRequest.id} → new order ${newOrderId}`,
+        )
       }
     } catch (e) {
-      this.logger.error(`Failed to post Exchange GL memo for return ${returnRequest.id}: ${e.message}`)
+      this.logger.error(
+        `Failed to post Exchange GL memo for return ${returnRequest.id}: ${e.message}`,
+      )
     }
 
     await Promise.all([
@@ -295,8 +310,10 @@ export class ReturnService {
 
     // ── Terminal state guard ──────────────────────────────────────────────────
     const terminalStatuses = [
-      ReturnStatus.REFUNDED, ReturnStatus.EXCHANGED,
-      ReturnStatus.REJECTED, ReturnStatus.CANCELLED,
+      ReturnStatus.REFUNDED,
+      ReturnStatus.EXCHANGED,
+      ReturnStatus.REJECTED,
+      ReturnStatus.CANCELLED,
     ]
     if (terminalStatuses.includes(currentStatus)) {
       throw new BadRequestException(
@@ -326,7 +343,11 @@ export class ReturnService {
       returnRequest.refundMethod = refundMethod
     }
 
-    const updated = await this.returnRepository.updateStatus(returnRequest, targetStatus, adminComment)
+    const updated = await this.returnRepository.updateStatus(
+      returnRequest,
+      targetStatus,
+      adminComment,
+    )
 
     // ── REFUNDED: issue refund via selected method ────────────────────────────
     if (targetStatus === ReturnStatus.REFUNDED) {
@@ -396,7 +417,7 @@ export class ReturnService {
               referenceType: 'ORDER_RETURN',
               referenceId: returnRequest.id,
               lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
                 { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash Asset
               ],
             },
@@ -406,7 +427,9 @@ export class ReturnService {
             `Cash refund of ${refundAmount} authorized for return ${returnRequest.id}. Posted GL journal entry.`,
           )
         } catch (e) {
-          this.logger.error(`Failed to post Cash refund GL entry for return ${returnRequest.id}: ${e.message}`)
+          this.logger.error(
+            `Failed to post Cash refund GL entry for return ${returnRequest.id}: ${e.message}`,
+          )
         }
         break
 
@@ -419,7 +442,7 @@ export class ReturnService {
               referenceType: 'ORDER_RETURN',
               referenceId: returnRequest.id,
               lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
                 { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
               ],
             },
@@ -429,7 +452,9 @@ export class ReturnService {
             `Card refund of ${refundAmount} required for return ${returnRequest.id}. Gateway reversal simulated & GL journal entry posted.`,
           )
         } catch (e) {
-          this.logger.error(`Failed to post Card refund GL entry for return ${returnRequest.id}: ${e.message}`)
+          this.logger.error(
+            `Failed to post Card refund GL entry for return ${returnRequest.id}: ${e.message}`,
+          )
         }
         break
 
@@ -442,7 +467,7 @@ export class ReturnService {
               referenceType: 'ORDER_RETURN',
               referenceId: returnRequest.id,
               lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
                 { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
               ],
             },
@@ -452,7 +477,9 @@ export class ReturnService {
             `Mobile payment refund of ${refundAmount} required for return ${returnRequest.id}. Mobile wallet reversal simulated & GL journal entry posted.`,
           )
         } catch (e) {
-          this.logger.error(`Failed to post Mobile refund GL entry for return ${returnRequest.id}: ${e.message}`)
+          this.logger.error(
+            `Failed to post Mobile refund GL entry for return ${returnRequest.id}: ${e.message}`,
+          )
         }
         break
 
@@ -465,7 +492,7 @@ export class ReturnService {
               referenceType: 'ORDER_RETURN',
               referenceId: returnRequest.id,
               lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
                 { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
               ],
             },
@@ -475,7 +502,9 @@ export class ReturnService {
             `Bank transfer refund of ${refundAmount} required for return ${returnRequest.id}. Manual bank transfer simulated & GL journal entry posted.`,
           )
         } catch (e) {
-          this.logger.error(`Failed to post Bank Transfer refund GL entry for return ${returnRequest.id}: ${e.message}`)
+          this.logger.error(
+            `Failed to post Bank Transfer refund GL entry for return ${returnRequest.id}: ${e.message}`,
+          )
         }
         break
 

@@ -74,7 +74,8 @@ export class PlatformSettingsRepository {
         },
       },
       isMaintenanceMode: false,
-      maintenanceMessage: 'Platform is currently undergoing scheduled upgrades. Please try again shortly.',
+      maintenanceMessage:
+        'Platform is currently undergoing scheduled upgrades. Please try again shortly.',
     })
     return await this.repo.save(settings)
   }

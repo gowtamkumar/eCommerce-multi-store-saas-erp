@@ -23,13 +23,16 @@ export class LeadService {
 
     // Trigger New Lead Notification
     try {
-      await this.notificationService.createNotification({
-        title: 'New Lead Generated',
-        message: `New lead "${lead.name || lead.email}" generated from Website.`,
-        type: 'SUCCESS',
-        link: `/admin/marketing/leads`,
-        userId: null as any, // Send to all admins
-      }, tenantId);
+      await this.notificationService.createNotification(
+        {
+          title: 'New Lead Generated',
+          message: `New lead "${lead.name || lead.email}" generated from Website.`,
+          type: 'SUCCESS',
+          link: `/admin/marketing/leads`,
+          userId: null as any, // Send to all admins
+        },
+        tenantId,
+      )
     } catch (e) {
       this.logger.error(`Failed to trigger new lead notification: ${e.message}`)
     }

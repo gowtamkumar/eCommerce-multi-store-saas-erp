@@ -61,7 +61,9 @@ export class PathaoController {
     @RequestContext() ctx: RequestContextDto,
     @Param('trackingCode') trackingCode: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getPathaoStatus for code ${trackingCode}.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called getPathaoStatus for code ${trackingCode}.`,
+    )
     const result = await this.pathaoService.getPathaoStatus(trackingCode, ctx)
     return {
       success: true,

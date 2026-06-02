@@ -82,7 +82,10 @@ export class SupplierInvoiceRepository {
     })
   }
 
-  async saveInvoice(invoice: SupplierInvoiceEntity, manager?: EntityManager): Promise<SupplierInvoiceEntity> {
+  async saveInvoice(
+    invoice: SupplierInvoiceEntity,
+    manager?: EntityManager,
+  ): Promise<SupplierInvoiceEntity> {
     const repo = this.getRepo(manager)
     return await repo.save(invoice)
   }

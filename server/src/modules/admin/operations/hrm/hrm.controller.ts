@@ -88,7 +88,12 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findAllDepartments(ctx)
-    return { success: true, statusCode: 200, message: 'Departments retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Departments retrieved successfully',
+      data: res,
+    }
   }
 
   @Patch('departments/:id')
@@ -120,7 +125,12 @@ export class HrmController {
     @Body() data: CreateDesignationDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.createDesignation(data, ctx)
-    return { success: true, statusCode: 201, message: 'Designation created successfully', data: res }
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Designation created successfully',
+      data: res,
+    }
   }
 
   @Get('designations')
@@ -129,7 +139,12 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findAllDesignations(ctx)
-    return { success: true, statusCode: 200, message: 'Designations retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Designations retrieved successfully',
+      data: res,
+    }
   }
 
   @Patch('designations/:id')
@@ -140,7 +155,12 @@ export class HrmController {
     @Body() data: UpdateDesignationDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.updateDesignation(id, data, ctx)
-    return { success: true, statusCode: 200, message: 'Designation updated successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Designation updated successfully',
+      data: res,
+    }
   }
 
   @Delete('designations/:id')
@@ -150,7 +170,12 @@ export class HrmController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.deleteDesignation(id, ctx)
-    return { success: true, statusCode: 200, message: 'Designation deleted successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Designation deleted successfully',
+      data: res,
+    }
   }
 
   // --- Employees ---
@@ -171,7 +196,12 @@ export class HrmController {
     @Query() query: EmployeeQueryDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findAllEmployees(ctx, query)
-    return { success: true, statusCode: 200, message: 'Employees retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Employees retrieved successfully',
+      data: res,
+    }
   }
 
   @Get('employees/attendance')
@@ -277,7 +307,12 @@ export class HrmController {
     @Body() data: ApprovePayrollBatchDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.approvePayrollBatch(id, data.approvedById, ctx)
-    return { success: true, statusCode: 200, message: 'Payroll batch approved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payroll batch approved successfully',
+      data: res,
+    }
   }
 
   @Get('payroll/batches')
@@ -286,7 +321,12 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findAllPayrollBatches(ctx)
-    return { success: true, statusCode: 200, message: 'Payroll batches retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payroll batches retrieved successfully',
+      data: res,
+    }
   }
 
   @Get('payroll/batches/:id/slips')
@@ -296,7 +336,12 @@ export class HrmController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findPayrollSlipsByBatch(id, ctx)
-    return { success: true, statusCode: 200, message: 'Payroll slips retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payroll slips retrieved successfully',
+      data: res,
+    }
   }
 
   @Post('payroll/batches/:id/pay')
@@ -368,7 +413,12 @@ export class HrmController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findEmployeeShiftAssignments(id, ctx)
-    return { success: true, statusCode: 200, message: 'Employee shifts retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Employee shifts retrieved successfully',
+      data: res,
+    }
   }
 
   // --- Leave Management ---
@@ -390,7 +440,12 @@ export class HrmController {
     @Query() query: LeaveQueryDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findAllLeaveRequests(ctx, query)
-    return { success: true, statusCode: 200, message: 'Leave requests retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Leave requests retrieved successfully',
+      data: res,
+    }
   }
 
   @Post('leaves/:id/approve')
@@ -400,7 +455,12 @@ export class HrmController {
     @Param('id') id: string,
     @Body() data: ApproveLeaveDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const res = await this.hrmService.approveLeave(id, data.approvedById, data.managerNote ?? '', ctx)
+    const res = await this.hrmService.approveLeave(
+      id,
+      data.approvedById,
+      data.managerNote ?? '',
+      ctx,
+    )
     return { success: true, statusCode: 200, message: 'Leave request approved', data: res }
   }
 
@@ -411,7 +471,12 @@ export class HrmController {
     @Param('id') id: string,
     @Body() data: RejectLeaveDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const res = await this.hrmService.rejectLeave(id, data.rejectedById, data.managerNote ?? '', ctx)
+    const res = await this.hrmService.rejectLeave(
+      id,
+      data.rejectedById,
+      data.managerNote ?? '',
+      ctx,
+    )
     return { success: true, statusCode: 200, message: 'Leave request rejected', data: res }
   }
 
@@ -465,7 +530,12 @@ export class HrmController {
     @Body() data: CreateTaxBracketDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.createTaxBracket(data, ctx)
-    return { success: true, statusCode: 201, message: 'Tax bracket created successfully', data: res }
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Tax bracket created successfully',
+      data: res,
+    }
   }
 
   @Get('tax-brackets')
@@ -478,7 +548,12 @@ export class HrmController {
       ctx,
       fiscalYear ? parseInt(fiscalYear, 10) : undefined,
     )
-    return { success: true, statusCode: 200, message: 'Tax brackets retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Tax brackets retrieved successfully',
+      data: res,
+    }
   }
 
   @Delete('tax-brackets/:id')
@@ -488,7 +563,12 @@ export class HrmController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.deleteTaxBracket(id, ctx)
-    return { success: true, statusCode: 200, message: 'Tax bracket deleted successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Tax bracket deleted successfully',
+      data: res,
+    }
   }
 
   // --- Recruitment (ATS) ---
@@ -508,7 +588,12 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findAllJobPostings(ctx)
-    return { success: true, statusCode: 200, message: 'Job postings retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Job postings retrieved successfully',
+      data: res,
+    }
   }
 
   @Post('applicants')
@@ -527,7 +612,12 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findAllApplicants(ctx)
-    return { success: true, statusCode: 200, message: 'Applicants retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Applicants retrieved successfully',
+      data: res,
+    }
   }
 
   @Post('interviews')
@@ -547,7 +637,12 @@ export class HrmController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.findInterviewsByApplicant(id, ctx)
-    return { success: true, statusCode: 200, message: 'Interviews retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Interviews retrieved successfully',
+      data: res,
+    }
   }
 
   @Patch('applicants/:id/status')
@@ -568,7 +663,12 @@ export class HrmController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.onboardApplicant(id, ctx)
-    return { success: true, statusCode: 201, message: 'Applicant successfully onboarded as Employee', data: res }
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Applicant successfully onboarded as Employee',
+      data: res,
+    }
   }
 
   // --- Performance ---
@@ -599,7 +699,12 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {
     const res = await this.hrmService.getAllPerformanceReviews(ctx)
-    return { success: true, statusCode: 200, message: 'Performance reviews retrieved successfully', data: res }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Performance reviews retrieved successfully',
+      data: res,
+    }
   }
 
   @Get('employees/:id/performance/reviews')
@@ -645,7 +750,12 @@ export class HrmController {
     @Body() body: AddEmployeeDocumentDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     const res = await this.hrmService.addEmployeeDocument(id, body, ctx)
-    return { success: true, statusCode: 201, message: 'Employee document attached successfully', data: res }
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Employee document attached successfully',
+      data: res,
+    }
   }
 
   @Delete('employees/:id/documents/:docId')

@@ -44,7 +44,9 @@ export class SteadfastController {
     @RequestContext() ctx: RequestContextDto,
     @Param('trackingCode') trackingCode: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSteadfastStatus for code ${trackingCode}.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called getSteadfastStatus for code ${trackingCode}.`,
+    )
     const result = await this.steadfastService.getSteadfastStatus(trackingCode, ctx)
     return {
       success: true,
@@ -61,7 +63,9 @@ export class SteadfastController {
     @RequestContext() ctx: RequestContextDto,
     @Param('trackingCode') trackingCode: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSteadfastLabel for code ${trackingCode}.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called getSteadfastLabel for code ${trackingCode}.`,
+    )
     const result = await this.steadfastService.getSteadfastLabel(trackingCode, ctx)
     return {
       success: true,

@@ -5,6 +5,7 @@ import { WishlistItem } from "@/services/wishlist";
 import { useSession } from "next-auth/react";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useSettings } from "@/hooks/SettingsContext";
 
 interface WishlistContextType {
   wishlist: WishlistItem[];
@@ -23,8 +24,14 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { settings } = useSettings();
 
   const refreshWishlist = async () => {
+    if (settings?.isSaaS) {
+      setWishlist([]);
+      setLoading(false);
+      return;
+    }
     if (status !== "authenticated" || !session?.user?.accessToken) {
       setWishlist([]);
       setLoading(false);
@@ -44,7 +51,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshWishlist();
-  }, [status, session?.user?.accessToken]);
+  }, [status, session?.user?.accessToken, settings?.isSaaS]);
 
   const toggleWishlist = async (productId: string) => {
     if (!session?.user) {

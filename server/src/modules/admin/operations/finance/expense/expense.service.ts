@@ -54,13 +54,16 @@ export class ExpenseService {
     try {
       const threshold = await this.getHighExpenseThreshold(ctx)
       if (Number(createExpenseDto.amount) > threshold) {
-        await this.notificationService.createNotification({
-          title: 'High Expense Recorded',
-          message: `A new expense "${createExpenseDto.title}" for ${createExpenseDto.amount} (threshold ${threshold}) requires review.`,
-          type: 'WARNING',
-          link: '/admin/finance/expenses',
-          userId: null as any, // Tenant-wide admin notification
-        }, tenantId);
+        await this.notificationService.createNotification(
+          {
+            title: 'High Expense Recorded',
+            message: `A new expense "${createExpenseDto.title}" for ${createExpenseDto.amount} (threshold ${threshold}) requires review.`,
+            type: 'WARNING',
+            link: '/admin/finance/expenses',
+            userId: null as any, // Tenant-wide admin notification
+          },
+          tenantId,
+        )
       }
     } catch (e: any) {
       this.logger.error(`Failed to trigger high expense notification: ${e.message}`)
@@ -101,7 +104,10 @@ export class ExpenseService {
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.expenseRepository.findAllPaginated(tenantId, { ...options, branchId })
+        const [items, total] = await this.expenseRepository.findAllPaginated(tenantId, {
+          ...options,
+          branchId,
+        })
         return {
           items,
           total,

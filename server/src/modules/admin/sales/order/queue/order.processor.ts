@@ -155,16 +155,22 @@ export class OrderProcessor extends WorkerHost {
 
       // 4. Send In-App System Notification for Admins
       try {
-        await this.notificationService.createNotification({
-          userId: null as any, // Null means tenant-wide notification for all admins
-          title: `New Order #${orderWithRelations.id}`,
-          message: `A new order has been placed for ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}.`,
-          type: 'ORDER',
-          link: `/admin/orders/${orderWithRelations.id}`,
-        }, tenantId);
-        this.logger.log(`In-app system notification created for order ${orderId}`);
+        await this.notificationService.createNotification(
+          {
+            userId: null as any, // Null means tenant-wide notification for all admins
+            title: `New Order #${orderWithRelations.id}`,
+            message: `A new order has been placed for ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}.`,
+            type: 'ORDER',
+            link: `/admin/orders/${orderWithRelations.id}`,
+          },
+          tenantId,
+        )
+        this.logger.log(`In-app system notification created for order ${orderId}`)
       } catch (sysNotifError) {
-        this.logger.error(`Failed to create system notification for order ${orderId}`, sysNotifError.stack);
+        this.logger.error(
+          `Failed to create system notification for order ${orderId}`,
+          sysNotifError.stack,
+        )
       }
     } else {
       this.logger.warn(`Order ${orderId} not found for notification`)

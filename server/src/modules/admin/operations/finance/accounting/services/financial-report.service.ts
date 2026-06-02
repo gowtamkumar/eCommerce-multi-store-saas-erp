@@ -210,15 +210,30 @@ export class FinancialReportService {
 
     const assets = accounts
       .filter((a) => a.type === AccountType.ASSET)
-      .map((a) => ({ code: a.code, name: a.name, category: a.category, balance: historicalBalances[a.id] }))
+      .map((a) => ({
+        code: a.code,
+        name: a.name,
+        category: a.category,
+        balance: historicalBalances[a.id],
+      }))
 
     const liabilities = accounts
       .filter((a) => a.type === AccountType.LIABILITY)
-      .map((a) => ({ code: a.code, name: a.name, category: a.category, balance: historicalBalances[a.id] }))
+      .map((a) => ({
+        code: a.code,
+        name: a.name,
+        category: a.category,
+        balance: historicalBalances[a.id],
+      }))
 
     const equity = accounts
       .filter((a) => a.type === AccountType.EQUITY)
-      .map((a) => ({ code: a.code, name: a.name, category: a.category, balance: historicalBalances[a.id] }))
+      .map((a) => ({
+        code: a.code,
+        name: a.name,
+        category: a.category,
+        balance: historicalBalances[a.id],
+      }))
 
     return {
       assets,
@@ -233,7 +248,10 @@ export class FinancialReportService {
   /**
    * Generates Cash Flow based on ledger transactions scoped inside date ranges.
    */
-  async getCashFlowStatement(ctx: RequestContextDto, query?: { startDate?: string; endDate?: string }) {
+  async getCashFlowStatement(
+    ctx: RequestContextDto,
+    query?: { startDate?: string; endDate?: string },
+  ) {
     const tenantId = ctx.tenantId
     const repo = this.dataSource.getRepository(AccountEntity)
 
@@ -275,9 +293,7 @@ export class FinancialReportService {
       qb.andWhere('je.date <= :endDate', { endDate: end })
     }
 
-    qb.groupBy('le.side')
-      .addGroupBy('je.type')
-      .addGroupBy('je.referenceType')
+    qb.groupBy('le.side').addGroupBy('je.type').addGroupBy('je.referenceType')
 
     const sums = await qb.getRawMany()
 
@@ -303,10 +319,7 @@ export class FinancialReportService {
           referenceType === 'CUSTOMER_PAYMENT'
         ) {
           operatingIn += total
-        } else if (
-          referenceType === 'EQUITY_INJECTION' ||
-          referenceType === 'LOAN_RECEIPT'
-        ) {
+        } else if (referenceType === 'EQUITY_INJECTION' || referenceType === 'LOAN_RECEIPT') {
           financingIn += total
         } else {
           operatingIn += total
@@ -322,10 +335,7 @@ export class FinancialReportService {
           operatingOut += total
         } else if (referenceType === 'ASSET_PURCHASE') {
           investingOut += total
-        } else if (
-          referenceType === 'LOAN_REPAYMENT' ||
-          referenceType === 'DIVIDEND_PAYMENT'
-        ) {
+        } else if (referenceType === 'LOAN_REPAYMENT' || referenceType === 'DIVIDEND_PAYMENT') {
           financingOut += total
         } else {
           operatingOut += total

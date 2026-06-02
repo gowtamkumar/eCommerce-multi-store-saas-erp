@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ConversationEntity } from './entities/conversation.entity';
-import { ChatMessageEntity } from './entities/chat-message.entity';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { ConversationEntity } from './entities/conversation.entity'
+import { ChatMessageEntity } from './entities/chat-message.entity'
 
 @Injectable()
 export class ChatService {
@@ -24,7 +24,7 @@ export class ChatService {
     let conversation = await this.conversationRepo.findOne({
       where: { tenantId, visitorId },
       relations: ['customer'],
-    });
+    })
 
     if (!conversation) {
       conversation = this.conversationRepo.create({
@@ -34,15 +34,15 @@ export class ChatService {
         status: 'ACTIVE',
         unreadCountAdmin: 0,
         unreadCountVisitor: 0,
-      });
-      conversation = await this.conversationRepo.save(conversation);
+      })
+      conversation = await this.conversationRepo.save(conversation)
     } else if (customerId && !conversation.customerId) {
       // Upgrade anonymous session to customer
-      conversation.customerId = customerId;
-      conversation = await this.conversationRepo.save(conversation);
+      conversation.customerId = customerId
+      conversation = await this.conversationRepo.save(conversation)
     }
 
-    return conversation;
+    return conversation
   }
 
   /**
@@ -57,10 +57,10 @@ export class ChatService {
   ): Promise<ChatMessageEntity> {
     const conversation = await this.conversationRepo.findOne({
       where: { id: conversationId },
-    });
+    })
 
     if (!conversation) {
-      throw new NotFoundException('Conversation not found');
+      throw new NotFoundException('Conversation not found')
     }
 
     const chatMessage = this.messageRepo.create({
@@ -70,20 +70,20 @@ export class ChatService {
       senderName,
       message,
       isRead: false,
-    });
+    })
 
-    const savedMessage = await this.messageRepo.save(chatMessage);
+    const savedMessage = await this.messageRepo.save(chatMessage)
 
     // Update conversation metadata
-    conversation.lastMessageAt = new Date();
+    conversation.lastMessageAt = new Date()
     if (senderType === 'VISITOR') {
-      conversation.unreadCountAdmin += 1;
+      conversation.unreadCountAdmin += 1
     } else {
-      conversation.unreadCountVisitor += 1;
+      conversation.unreadCountVisitor += 1
     }
-    await this.conversationRepo.save(conversation);
+    await this.conversationRepo.save(conversation)
 
-    return savedMessage;
+    return savedMessage
   }
 
   /**
@@ -99,7 +99,7 @@ export class ChatService {
       order: { createdAt: 'ASC' },
       take: limit,
       skip: offset,
-    });
+    })
   }
 
   /**
@@ -111,9 +111,9 @@ export class ChatService {
     limit: number = 20,
     offset: number = 0,
   ): Promise<[ConversationEntity[], number]> {
-    const where: any = { tenantId };
+    const where: any = { tenantId }
     if (status) {
-      where.status = status;
+      where.status = status
     }
 
     return await this.conversationRepo.findAndCount({
@@ -122,7 +122,7 @@ export class ChatService {
       order: { lastMessageAt: 'DESC' },
       take: limit,
       skip: offset,
-    });
+    })
   }
 
   /**
@@ -131,24 +131,24 @@ export class ChatService {
   async markAsRead(conversationId: string, readerType: 'VISITOR' | 'AGENT'): Promise<void> {
     const conversation = await this.conversationRepo.findOne({
       where: { id: conversationId },
-    });
+    })
 
-    if (!conversation) return;
+    if (!conversation) return
 
     if (readerType === 'AGENT') {
-      conversation.unreadCountAdmin = 0;
-      await this.conversationRepo.save(conversation);
+      conversation.unreadCountAdmin = 0
+      await this.conversationRepo.save(conversation)
       await this.messageRepo.update(
         { conversationId, senderType: 'VISITOR', isRead: false },
         { isRead: true },
-      );
+      )
     } else {
-      conversation.unreadCountVisitor = 0;
-      await this.conversationRepo.save(conversation);
+      conversation.unreadCountVisitor = 0
+      await this.conversationRepo.save(conversation)
       await this.messageRepo.update(
         { conversationId, senderType: 'AGENT', isRead: false },
         { isRead: true },
-      );
+      )
     }
   }
 }

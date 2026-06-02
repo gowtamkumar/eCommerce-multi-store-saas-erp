@@ -32,7 +32,10 @@ export class UserPermissionOverrideService {
     private readonly permissionResolutionService: PermissionResolutionService,
   ) {}
 
-  async getActiveOverrides(userId: string, tenantId: string): Promise<UserPermissionOverrideEntity[]> {
+  async getActiveOverrides(
+    userId: string,
+    tenantId: string,
+  ): Promise<UserPermissionOverrideEntity[]> {
     const now = new Date()
     const overrides = await this.overrideRepo.find({
       where: { userId, tenantId },

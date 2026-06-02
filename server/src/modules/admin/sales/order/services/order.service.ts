@@ -73,7 +73,7 @@ export class OrderService {
     private readonly walletService: WalletService,
     private readonly loyaltyService: LoyaltyService,
     private readonly referralService: ReferralService,
-  ) { }
+  ) {}
 
   async createOrder(
     createOrderDto: CreateOrderDto,
@@ -138,12 +138,13 @@ export class OrderService {
       const pendingReservationIds: string[] = []
       const resolvedPriceBookCode = createOrderDto.priceBookCode || user?.priceBookCode || null
       for (const item of rawItems) {
-        const { orderItem, ledgerEntryId, reservationId } = await this.orderProcessHelper.processItem(
-          item,
-          ctx,
-          manager,
-          resolvedPriceBookCode, // forward resolved book
-        )
+        const { orderItem, ledgerEntryId, reservationId } =
+          await this.orderProcessHelper.processItem(
+            item,
+            ctx,
+            manager,
+            resolvedPriceBookCode, // forward resolved book
+          )
         processedItems.push(orderItem)
         if (ledgerEntryId) pendingLedgerIds.push(ledgerEntryId)
         if (reservationId) pendingReservationIds.push(reservationId)
@@ -204,14 +205,20 @@ export class OrderService {
           throw new BadRequestException('B2B credit checkouts require a valid User account')
         }
         if (user.creditHold) {
-          throw new BadRequestException('Checkout blocked: This account is currently on credit hold')
+          throw new BadRequestException(
+            'Checkout blocked: This account is currently on credit hold',
+          )
         }
-        const currentOutstanding = await this.arService.getCustomerOutstandingBalance(user.id, tenantId, manager)
+        const currentOutstanding = await this.arService.getCustomerOutstandingBalance(
+          user.id,
+          tenantId,
+          manager,
+        )
         const orderTotal = Number(order.totalAmount)
         const limit = Number(user.creditLimit || 0)
         if (currentOutstanding + orderTotal > limit) {
           throw new BadRequestException(
-            `Checkout blocked: Order total ($${orderTotal}) exceeds credit limit ($${limit}) with current outstanding debt ($${currentOutstanding})`
+            `Checkout blocked: Order total ($${orderTotal}) exceeds credit limit ($${limit}) with current outstanding debt ($${currentOutstanding})`,
           )
         }
       }
@@ -229,7 +236,11 @@ export class OrderService {
         )
         if (availableBalance > 0) {
           const deductAmount = createOrderDto.walletAmountToUse
-            ? Math.min(Number(createOrderDto.walletAmountToUse), availableBalance, Number(savedOrder.totalAmount))
+            ? Math.min(
+                Number(createOrderDto.walletAmountToUse),
+                availableBalance,
+                Number(savedOrder.totalAmount),
+              )
             : Math.min(availableBalance, Number(savedOrder.totalAmount))
 
           if (deductAmount > 0) {
@@ -574,10 +585,18 @@ export class OrderService {
 
           const lines = []
           if (walletDeduction > 0) {
-            lines.push({ accountCode: '2300', side: LedgerEntrySide.DEBIT, amount: walletDeduction })
+            lines.push({
+              accountCode: '2300',
+              side: LedgerEntrySide.DEBIT,
+              amount: walletDeduction,
+            })
           }
           if (remainingAmount > 0) {
-            lines.push({ accountCode: '1000', side: LedgerEntrySide.DEBIT, amount: remainingAmount })
+            lines.push({
+              accountCode: '1000',
+              side: LedgerEntrySide.DEBIT,
+              amount: remainingAmount,
+            })
           }
           if (netRevenue > 0) {
             lines.push({ accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netRevenue })
@@ -618,38 +637,51 @@ export class OrderService {
       try {
         // Payment Failures / Refund Request
         if (
-          (updateOrderDto.paymentStatus === PaymentStatus.FAILED && oldPaymentStatus !== PaymentStatus.FAILED)
+          updateOrderDto.paymentStatus === PaymentStatus.FAILED &&
+          oldPaymentStatus !== PaymentStatus.FAILED
         ) {
-          const action = 'failed';
-          await this.notificationService.createNotification({
-            title: 'Payment Failed',
-            message: `Payment for Order #${savedOrder.id.substring(0, 8)} ${action}.`,
-            type: 'DANGER',
-            link: `/admin/sales/orders/${savedOrder.id}`,
-            userId: null as any,
-          }, tenantId);
+          const action = 'failed'
+          await this.notificationService.createNotification(
+            {
+              title: 'Payment Failed',
+              message: `Payment for Order #${savedOrder.id.substring(0, 8)} ${action}.`,
+              type: 'DANGER',
+              link: `/admin/sales/orders/${savedOrder.id}`,
+              userId: null as any,
+            },
+            tenantId,
+          )
         }
 
         // Shipped / Completed
         if (updateOrderDto.status === OrderStatus.SHIPPED && oldStatus !== OrderStatus.SHIPPED) {
-          await this.notificationService.createNotification({
-            title: 'Order Shipped',
-            message: `Order #${savedOrder.id.substring(0, 8)} has been shipped.`,
-            type: 'INFO',
-            link: `/admin/sales/orders/${savedOrder.id}`,
-            userId: null as any,
-          }, tenantId);
-        } else if (updateOrderDto.status === OrderStatus.COMPLETED && oldStatus !== OrderStatus.COMPLETED) {
-          await this.notificationService.createNotification({
-            title: 'Order Delivered',
-            message: `Order #${savedOrder.id.substring(0, 8)} has been delivered successfully.`,
-            type: 'SUCCESS',
-            link: `/admin/sales/orders/${savedOrder.id}`,
-            userId: null as any,
-          }, tenantId);
+          await this.notificationService.createNotification(
+            {
+              title: 'Order Shipped',
+              message: `Order #${savedOrder.id.substring(0, 8)} has been shipped.`,
+              type: 'INFO',
+              link: `/admin/sales/orders/${savedOrder.id}`,
+              userId: null as any,
+            },
+            tenantId,
+          )
+        } else if (
+          updateOrderDto.status === OrderStatus.COMPLETED &&
+          oldStatus !== OrderStatus.COMPLETED
+        ) {
+          await this.notificationService.createNotification(
+            {
+              title: 'Order Delivered',
+              message: `Order #${savedOrder.id.substring(0, 8)} has been delivered successfully.`,
+              type: 'SUCCESS',
+              link: `/admin/sales/orders/${savedOrder.id}`,
+              userId: null as any,
+            },
+            tenantId,
+          )
         }
       } catch (e) {
-        this.logger.error(`Failed to trigger order notifications: ${e.message}`);
+        this.logger.error(`Failed to trigger order notifications: ${e.message}`)
       }
 
       await Promise.all([

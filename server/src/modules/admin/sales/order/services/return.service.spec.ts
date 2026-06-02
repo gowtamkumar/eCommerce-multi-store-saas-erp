@@ -106,7 +106,10 @@ describe('ReturnService', () => {
         RefundMethod.CASH,
       )
 
-      expect(mockReturnRepository.findByIdWithRelations).toHaveBeenCalledWith('return-123', 'test-tenant')
+      expect(mockReturnRepository.findByIdWithRelations).toHaveBeenCalledWith(
+        'return-123',
+        'test-tenant',
+      )
       expect(mockReturnRepository.updateStatus).toHaveBeenCalledWith(
         expect.objectContaining({ refundMethod: RefundMethod.CASH }),
         ReturnStatus.REFUNDED,

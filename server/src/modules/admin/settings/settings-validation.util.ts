@@ -37,13 +37,21 @@ export function normalizeAndValidateSettingsUpdate(
   const effectiveSupportedCurrencies =
     normalized.supportedCurrencies ?? normalizeSupportedCurrencies(existing?.supportedCurrencies)
 
-  if (effectiveCurrency && Array.isArray(effectiveSupportedCurrencies) && effectiveSupportedCurrencies.length > 0) {
-    const matches = effectiveSupportedCurrencies.filter((currency) => currency.code === effectiveCurrency)
+  if (
+    effectiveCurrency &&
+    Array.isArray(effectiveSupportedCurrencies) &&
+    effectiveSupportedCurrencies.length > 0
+  ) {
+    const matches = effectiveSupportedCurrencies.filter(
+      (currency) => currency.code === effectiveCurrency,
+    )
     if (matches.length === 0) {
       throw new BadRequestException('Base currency must be included in supportedCurrencies')
     }
     if (matches.length > 1) {
-      throw new BadRequestException('supportedCurrencies cannot contain duplicate base currency entries')
+      throw new BadRequestException(
+        'supportedCurrencies cannot contain duplicate base currency entries',
+      )
     }
   }
 

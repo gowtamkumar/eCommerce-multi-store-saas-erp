@@ -32,4 +32,4 @@ import { UserService } from './services/user.service'
   providers: [UserService, StaffInvitationService, UserRepository, StaffInvitationRepository],
   exports: [UserService, StaffInvitationService],
 })
-export class UserModule { }
+export class UserModule {}

@@ -196,9 +196,11 @@ export class ArService {
       const paymentsTotal = Math.abs(
         entries
           .filter((e) =>
-            [ArTransactionType.PAYMENT, ArTransactionType.WRITE_OFF, ArTransactionType.CREDIT_NOTE].includes(
-              e.type,
-            ),
+            [
+              ArTransactionType.PAYMENT,
+              ArTransactionType.WRITE_OFF,
+              ArTransactionType.CREDIT_NOTE,
+            ].includes(e.type),
           )
           .reduce((sum, e) => sum + Number(e.amount), 0),
       )

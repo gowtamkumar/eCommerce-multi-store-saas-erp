@@ -72,7 +72,8 @@ export class AccountingService {
 
       // 0. Validate Fiscal Period is OPEN
       const dateToCheck = data.date ? new Date(data.date) : new Date()
-      const closedPeriod = await em.createQueryBuilder(FiscalPeriodEntity, 'fp')
+      const closedPeriod = await em
+        .createQueryBuilder(FiscalPeriodEntity, 'fp')
         .where('fp.tenantId = :tenantId', { tenantId })
         .andWhere('fp.status = :status', { status: FiscalPeriodStatus.CLOSED })
         .andWhere(':dateToCheck BETWEEN fp.startDate AND fp.endDate', { dateToCheck })
@@ -129,8 +130,7 @@ export class AccountingService {
           // Debit INCREASES: Assets and Expenses
           // Debit DECREASES: Liabilities, Equity, Revenue
           const isDebitIncrease =
-            account.type === AccountType.ASSET ||
-            account.type === AccountType.EXPENSE
+            account.type === AccountType.ASSET || account.type === AccountType.EXPENSE
 
           account.balance = isDebitIncrease
             ? Number(account.balance) + amount
@@ -185,7 +185,13 @@ export class AccountingService {
   }
 
   async createAccount(
-    data: { code: string; name: string; type: AccountType; category: AccountCategory; isSystem?: boolean },
+    data: {
+      code: string
+      name: string
+      type: AccountType
+      category: AccountCategory
+      isSystem?: boolean
+    },
     ctx: RequestContextDto,
   ): Promise<AccountEntity> {
     const repo = this.dataSource.getRepository(AccountEntity)

@@ -142,7 +142,9 @@ export class LoyaltyController {
    * Storefront: Get currently authenticated customer's own points balance, tier, referral code, and history.
    */
   @Get('store/loyalty/me')
-  async getMyLoyaltySummary(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
+  async getMyLoyaltySummary(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
     const customerId = ctx.userId
     if (!customerId) {
       return {
@@ -163,7 +165,9 @@ export class LoyaltyController {
 
     // Calculate progression details (how much spent / needed to reach next tier)
     // E.g., Bronze: silverTierThreshold, Silver: goldTierThreshold, etc.
-    const currencyValue = user ? (user.loyaltyPointsBalance || 0) / (config.pointsRequiredPerCurrencyDiscount || 100) : 0
+    const currencyValue = user
+      ? (user.loyaltyPointsBalance || 0) / (config.pointsRequiredPerCurrencyDiscount || 100)
+      : 0
 
     return {
       success: true,
@@ -188,7 +192,9 @@ export class LoyaltyController {
   @Get('marketing/loyalty/rules')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
-  async getLoyaltyRules(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
+  async getLoyaltyRules(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.loyaltyService.findAllRules(ctx.tenantId)
     return {
       success: true,
@@ -269,4 +275,3 @@ export class LoyaltyController {
     }
   }
 }
-

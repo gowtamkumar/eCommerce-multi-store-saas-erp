@@ -45,9 +45,7 @@ describe('SslCommerzPaymentStrategy', () => {
 
     function mockValidator(payload: any, ok = true) {
       const json = jest.fn().mockResolvedValue(payload)
-      const fetchSpy = jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue({ ok, json } as any)
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({ ok, json } as any)
       return fetchSpy
     }
 

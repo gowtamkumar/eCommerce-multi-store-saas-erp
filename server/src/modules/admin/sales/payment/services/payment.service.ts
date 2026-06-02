@@ -88,8 +88,7 @@ export class PaymentService {
         tenantId: order.tenantId,
       } as RequestContextDto)
       const verification = await strategy.verifyTransaction({
-        valId:
-          gatewayResponse?.val_id ?? gatewayResponse?.value_id ?? gatewayResponse?.['VAL_ID'],
+        valId: gatewayResponse?.val_id ?? gatewayResponse?.value_id ?? gatewayResponse?.['VAL_ID'],
         transactionId: tran_id,
         storeId: (settings as any)?.payment?.sslCommerzStoreId,
         storePassword: (settings as any)?.payment?.sslCommerzStorePassword,

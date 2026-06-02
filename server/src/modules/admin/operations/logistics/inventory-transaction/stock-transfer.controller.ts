@@ -28,7 +28,9 @@ export class StockTransferController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateStockTransferDocDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called create stock transfer doc.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called create stock transfer doc.`,
+    )
     const data = await this.service.create(dto, ctx)
     return {
       success: true,
@@ -46,7 +48,9 @@ export class StockTransferController {
     @Query('status') status?: StockTransferStatus,
     @Query('q') q?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAll stock transfer docs.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called findAll stock transfer docs.`,
+    )
     const data = await this.service.findAll(ctx, { ...pagination, status, q })
     return {
       success: true,
@@ -62,7 +66,9 @@ export class StockTransferController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOne stock transfer doc.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called findOne stock transfer doc.`,
+    )
     const data = await this.service.findOne(id, ctx)
     return {
       success: true,
@@ -79,7 +85,9 @@ export class StockTransferController {
     @Param('id') id: string,
     @Body() dto: UpdateStockTransferDocDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called update stock transfer doc.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called update stock transfer doc.`,
+    )
     const data = await this.service.update(id, dto, ctx)
     return {
       success: true,
@@ -95,7 +103,9 @@ export class StockTransferController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called approve stock transfer doc.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called approve stock transfer doc.`,
+    )
     const data = await this.service.approve(id, ctx)
     return {
       success: true,
@@ -128,7 +138,9 @@ export class StockTransferController {
     @Param('id') id: string,
     @Body() dto: ReceiveStockTransferDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called receive stock transfer doc.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called receive stock transfer doc.`,
+    )
     const data = await this.service.receive(id, dto, ctx)
     return {
       success: true,
@@ -144,7 +156,9 @@ export class StockTransferController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called cancel stock transfer doc.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called cancel stock transfer doc.`,
+    )
     const data = await this.service.cancel(id, ctx)
     return {
       success: true,

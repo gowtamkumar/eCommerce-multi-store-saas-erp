@@ -6,18 +6,18 @@ export class AccountingEnhancements1779365234567 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 1. Alter journal_entries table to add reversal columns
     await queryRunner.query(
-      `ALTER TABLE "journal_entries" ADD COLUMN IF NOT EXISTS "is_reversal" BOOLEAN NOT NULL DEFAULT FALSE`
+      `ALTER TABLE "journal_entries" ADD COLUMN IF NOT EXISTS "is_reversal" BOOLEAN NOT NULL DEFAULT FALSE`,
     )
     await queryRunner.query(
-      `ALTER TABLE "journal_entries" ADD COLUMN IF NOT EXISTS "reversed_journal_entry_id" UUID NULL`
+      `ALTER TABLE "journal_entries" ADD COLUMN IF NOT EXISTS "reversed_journal_entry_id" UUID NULL`,
     )
     await queryRunner.query(
-      `ALTER TABLE "journal_entries" DROP CONSTRAINT IF EXISTS "FK_journal_entries_reversed"`
+      `ALTER TABLE "journal_entries" DROP CONSTRAINT IF EXISTS "FK_journal_entries_reversed"`,
     )
     await queryRunner.query(
       `ALTER TABLE "journal_entries" 
        ADD CONSTRAINT "FK_journal_entries_reversed" 
-       FOREIGN KEY ("reversed_journal_entry_id") REFERENCES "journal_entries"("id") ON DELETE SET NULL`
+       FOREIGN KEY ("reversed_journal_entry_id") REFERENCES "journal_entries"("id") ON DELETE SET NULL`,
     )
 
     // 2. Create accounting_outbox table
@@ -39,10 +39,10 @@ export class AccountingEnhancements1779365234567 implements MigrationInterface {
 
     // 3. Create Indexes for outbox
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_accounting_outbox_status_created" ON "accounting_outbox"("status", "created_at")`
+      `CREATE INDEX IF NOT EXISTS "IDX_accounting_outbox_status_created" ON "accounting_outbox"("status", "created_at")`,
     )
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_accounting_outbox_tenant_status" ON "accounting_outbox"("tenant_id", "status")`
+      `CREATE INDEX IF NOT EXISTS "IDX_accounting_outbox_tenant_status" ON "accounting_outbox"("tenant_id", "status")`,
     )
   }
 
@@ -50,8 +50,12 @@ export class AccountingEnhancements1779365234567 implements MigrationInterface {
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_accounting_outbox_tenant_status"`)
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_accounting_outbox_status_created"`)
     await queryRunner.query(`DROP TABLE IF EXISTS "accounting_outbox"`)
-    await queryRunner.query(`ALTER TABLE "journal_entries" DROP CONSTRAINT IF EXISTS "FK_journal_entries_reversed"`)
-    await queryRunner.query(`ALTER TABLE "journal_entries" DROP COLUMN IF EXISTS "reversed_journal_entry_id"`)
+    await queryRunner.query(
+      `ALTER TABLE "journal_entries" DROP CONSTRAINT IF EXISTS "FK_journal_entries_reversed"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "journal_entries" DROP COLUMN IF EXISTS "reversed_journal_entry_id"`,
+    )
     await queryRunner.query(`ALTER TABLE "journal_entries" DROP COLUMN IF EXISTS "is_reversal"`)
   }
 }

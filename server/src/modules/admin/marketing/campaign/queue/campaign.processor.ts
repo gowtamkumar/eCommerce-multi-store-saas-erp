@@ -77,13 +77,16 @@ export class CampaignProcessor extends WorkerHost {
 
     // Trigger Budget Alert (Simulated since budget is not directly tracked)
     try {
-      await this.notificationService.createNotification({
-        title: 'Campaign Budget Alert',
-        message: `Campaign '${campaign.name}' has reached 90% of its budget.`,
-        type: 'WARNING',
-        link: `/admin/marketing/campaigns/${campaign.id}`,
-        userId: null as any, // Send to all admins
-      }, tenantId);
+      await this.notificationService.createNotification(
+        {
+          title: 'Campaign Budget Alert',
+          message: `Campaign '${campaign.name}' has reached 90% of its budget.`,
+          type: 'WARNING',
+          link: `/admin/marketing/campaigns/${campaign.id}`,
+          userId: null as any, // Send to all admins
+        },
+        tenantId,
+      )
     } catch (e) {
       this.logger.error(`Failed to trigger campaign budget notification: ${e.message}`)
     }

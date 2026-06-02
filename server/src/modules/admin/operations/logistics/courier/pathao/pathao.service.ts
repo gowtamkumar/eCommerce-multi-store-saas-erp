@@ -87,10 +87,11 @@ export class PathaoService {
           return response.data.access_token
         } catch (error: any) {
           this.logger.error('Pathao token exchange failed', error.response?.data || error.message)
-          const errorMsg = error.response?.data?.message || 
-                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                           error.response?.data?.error || 
-                           error.message;
+          const errorMsg =
+            error.response?.data?.message ||
+            (typeof error.response?.data === 'string' ? error.response.data : null) ||
+            error.response?.data?.error ||
+            error.message
           throw new BadRequestException(`Pathao Authentication failed: ${errorMsg}`)
         }
       },
@@ -164,10 +165,11 @@ export class PathaoService {
       return response.data
     } catch (error: any) {
       this.logger.error('Failed to create Pathao order', error.response?.data || error.message)
-      const errorMsg = error.response?.data?.message || 
-                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                       error.response?.data?.error || 
-                       error.message;
+      const errorMsg =
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : null) ||
+        error.response?.data?.error ||
+        error.message
       throw new BadRequestException(`Pathao: ${errorMsg}`)
     }
   }
@@ -193,10 +195,11 @@ export class PathaoService {
           return response.data
         } catch (error: any) {
           this.logger.error('Failed to fetch Pathao cities', error.response?.data || error.message)
-          const errorMsg = error.response?.data?.message || 
-                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                           error.response?.data?.error || 
-                           error.message;
+          const errorMsg =
+            error.response?.data?.message ||
+            (typeof error.response?.data === 'string' ? error.response.data : null) ||
+            error.response?.data?.error ||
+            error.message
           throw new BadRequestException(`Pathao: ${errorMsg}`)
         }
       },
@@ -229,10 +232,11 @@ export class PathaoService {
             `Failed to fetch Pathao zones for city ${cityId}`,
             error.response?.data || error.message,
           )
-          const errorMsg = error.response?.data?.message || 
-                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                           error.response?.data?.error || 
-                           error.message;
+          const errorMsg =
+            error.response?.data?.message ||
+            (typeof error.response?.data === 'string' ? error.response.data : null) ||
+            error.response?.data?.error ||
+            error.message
           throw new BadRequestException(`Pathao: ${errorMsg}`)
         }
       },
@@ -265,10 +269,11 @@ export class PathaoService {
             `Failed to fetch Pathao areas for zone ${zoneId}`,
             error.response?.data || error.message,
           )
-          const errorMsg = error.response?.data?.message || 
-                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                           error.response?.data?.error || 
-                           error.message;
+          const errorMsg =
+            error.response?.data?.message ||
+            (typeof error.response?.data === 'string' ? error.response.data : null) ||
+            error.response?.data?.error ||
+            error.message
           throw new BadRequestException(`Pathao: ${errorMsg}`)
         }
       },
@@ -306,10 +311,11 @@ export class PathaoService {
       return response.data
     } catch (error: any) {
       this.logger.error('Failed to calculate Pathao price', error.response?.data || error.message)
-      const errorMsg = error.response?.data?.message || 
-                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                       error.response?.data?.error || 
-                       error.message;
+      const errorMsg =
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : null) ||
+        error.response?.data?.error ||
+        error.message
       throw new BadRequestException(`Pathao: ${errorMsg}`)
     }
   }
@@ -334,10 +340,11 @@ export class PathaoService {
         `Failed to fetch Pathao status for trackingCode ${trackingCode}`,
         error.response?.data || error.message,
       )
-      const errorMsg = error.response?.data?.message || 
-                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
-                       error.response?.data?.error || 
-                       error.message;
+      const errorMsg =
+        error.response?.data?.message ||
+        (typeof error.response?.data === 'string' ? error.response.data : null) ||
+        error.response?.data?.error ||
+        error.message
       throw new BadRequestException(`Pathao: ${errorMsg}`)
     }
   }

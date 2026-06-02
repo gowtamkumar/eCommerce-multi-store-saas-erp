@@ -70,4 +70,3 @@ import { TaxController } from './controllers/tax.controller'
   ],
 })
 export class AccountingModule {}
-

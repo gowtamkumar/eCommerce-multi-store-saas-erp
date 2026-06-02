@@ -84,11 +84,7 @@ export class RfqRepository {
     })
   }
 
-  async findById(
-    id: string,
-    tenantId: string,
-    manager?: EntityManager,
-  ): Promise<RfqEntity | null> {
+  async findById(id: string, tenantId: string, manager?: EntityManager): Promise<RfqEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
       where: { id, tenantId },

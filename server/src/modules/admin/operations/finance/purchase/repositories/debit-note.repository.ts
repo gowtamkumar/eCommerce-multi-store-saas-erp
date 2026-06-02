@@ -90,7 +90,10 @@ export class DebitNoteRepository {
     })
   }
 
-  async saveDebitNote(debitNote: DebitNoteEntity, manager?: EntityManager): Promise<DebitNoteEntity> {
+  async saveDebitNote(
+    debitNote: DebitNoteEntity,
+    manager?: EntityManager,
+  ): Promise<DebitNoteEntity> {
     const repo = this.getRepo(manager)
     return await repo.save(debitNote)
   }

@@ -601,7 +601,7 @@ export class CreateTaxBracketDto {
   sortOrder?: number
 }
 
-export class TaxBracketDto extends CreateTaxBracketDto { }
+export class TaxBracketDto extends CreateTaxBracketDto {}
 
 export class AddEmployeeDocumentDto {
   @IsString()

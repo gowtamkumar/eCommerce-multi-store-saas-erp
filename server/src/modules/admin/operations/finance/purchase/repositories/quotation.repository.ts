@@ -48,7 +48,10 @@ export class QuotationRepository {
     })
   }
 
-  async saveQuotation(quotation: QuotationEntity, manager?: EntityManager): Promise<QuotationEntity> {
+  async saveQuotation(
+    quotation: QuotationEntity,
+    manager?: EntityManager,
+  ): Promise<QuotationEntity> {
     const repo = this.getRepo(manager)
     return await repo.save(quotation)
   }

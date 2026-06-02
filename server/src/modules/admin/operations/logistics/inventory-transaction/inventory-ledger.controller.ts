@@ -96,7 +96,8 @@ export class InventoryLedgerController {
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
   async createStockTransfer(
     @RequestContext() ctx: RequestContextDto,
-    @Body() dto: {
+    @Body()
+    dto: {
       productId: string
       variantId?: string
       sourceWarehouseId: string
@@ -119,7 +120,8 @@ export class InventoryLedgerController {
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
   async createCycleCount(
     @RequestContext() ctx: RequestContextDto,
-    @Body() dto: {
+    @Body()
+    dto: {
       countRef: string
       warehouseId: string
       lines: Array<{

@@ -17,9 +17,14 @@ export class SupplierPortalController {
   ) {}
 
   private async getLinkedSupplier(ctx: RequestContextDto) {
-    const supplier = await (this.supplierService as any).repository.findByUserIdAndTenant(ctx.userId, ctx.tenantId)
+    const supplier = await (this.supplierService as any).repository.findByUserIdAndTenant(
+      ctx.userId,
+      ctx.tenantId,
+    )
     if (!supplier) {
-      throw new ForbiddenException('Logged-in user is not associated with a registered supplier profile')
+      throw new ForbiddenException(
+        'Logged-in user is not associated with a registered supplier profile',
+      )
     }
     return supplier
   }
@@ -83,7 +88,11 @@ export class SupplierPortalController {
       throw new ForbiddenException('Access denied to this purchase order')
     }
 
-    const updated = await this.poService.updatePurchaseOrderStatus(id, { status, warehouseId, branchId }, ctx)
+    const updated = await this.poService.updatePurchaseOrderStatus(
+      id,
+      { status, warehouseId, branchId },
+      ctx,
+    )
     return {
       success: true,
       statusCode: 200,

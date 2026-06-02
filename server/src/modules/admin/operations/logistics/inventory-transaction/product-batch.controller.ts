@@ -40,7 +40,13 @@ export class ProductBatchController {
   @RequirePermissions(SystemPermissions.INVENTORY_READ)
   async findAll(
     @RequestContext() ctx: RequestContextDto,
-    @Query() query: PaginationDto & { productId?: string; variantId?: string; status?: string; expiringSoon?: boolean },
+    @Query()
+    query: PaginationDto & {
+      productId?: string
+      variantId?: string
+      status?: string
+      expiringSoon?: boolean
+    },
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAll product batches.`)
     const data = await this.service.findAll(ctx, query)
@@ -87,8 +93,12 @@ export class ProductBatchController {
 
   @Post('sweep-expired')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
-  async sweepExpired(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called sweepExpired product batches.`)
+  async sweepExpired(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called sweepExpired product batches.`,
+    )
     const affected = await this.service.markExpiredBatches(ctx.tenantId)
     return {
       success: true,

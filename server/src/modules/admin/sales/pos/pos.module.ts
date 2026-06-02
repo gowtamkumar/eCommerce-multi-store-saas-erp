@@ -24,11 +24,6 @@ import { AccountingModule } from '@/modules/admin/operations/finance/accounting/
     PosShiftRepository,
     PosDrawerTransactionRepository,
   ],
-  exports: [
-    PosService,
-    PosRegisterRepository,
-    PosShiftRepository,
-    PosDrawerTransactionRepository,
-  ],
+  exports: [PosService, PosRegisterRepository, PosShiftRepository, PosDrawerTransactionRepository],
 })
 export class PosModule {}

@@ -1,8 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { SupplierInvoiceRepository } from '../repositories/supplier-invoice.repository'
-import { SupplierInvoiceEntity, SupplierInvoiceStatus, ThreeWayMatchStatus } from '../entities/supplier-invoice.entity'
-import { CreateSupplierInvoiceDto, UpdateSupplierInvoiceStatusDto } from '../dto/supplier-invoice.dto'
+import {
+  SupplierInvoiceEntity,
+  SupplierInvoiceStatus,
+  ThreeWayMatchStatus,
+} from '../entities/supplier-invoice.entity'
+import {
+  CreateSupplierInvoiceDto,
+  UpdateSupplierInvoiceStatusDto,
+} from '../dto/supplier-invoice.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
@@ -30,11 +37,17 @@ export class SupplierInvoiceService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async createInvoice(dto: CreateSupplierInvoiceDto, ctx: RequestContextDto): Promise<SupplierInvoiceEntity> {
+  async createInvoice(
+    dto: CreateSupplierInvoiceDto,
+    ctx: RequestContextDto,
+  ): Promise<SupplierInvoiceEntity> {
     this.logger.log('Creating Supplier Invoice and performing 3-way matching')
     const tenantId = ctx.tenantId
 
-    const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * Number(item.unitPrice), 0)
+    const totalAmount = dto.items.reduce(
+      (sum, item) => sum + item.quantity * Number(item.unitPrice),
+      0,
+    )
 
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
@@ -65,7 +78,11 @@ export class SupplierInvoiceService {
       const savedInvoice = await queryRunner.manager.save(SupplierInvoiceEntity, invoice)
 
       // 2. Perform 3-Way Matching Engine
-      const po = await this.poRepository.findByIdWithRelations(dto.purchaseOrderId, tenantId, queryRunner.manager)
+      const po = await this.poRepository.findByIdWithRelations(
+        dto.purchaseOrderId,
+        tenantId,
+        queryRunner.manager,
+      )
       if (!po) {
         throw new NotFoundException('Associated Purchase Order not found')
       }
@@ -90,7 +107,9 @@ export class SupplierInvoiceService {
         const receivedQty = receivedQtyMap.get(item.productId) || 0
 
         if (!poItem) {
-          discrepancies.push(`Product ID ${item.productId} is not part of Purchase Order ${po.referenceNumber}`)
+          discrepancies.push(
+            `Product ID ${item.productId} is not part of Purchase Order ${po.referenceNumber}`,
+          )
           continue
         }
 

@@ -172,7 +172,11 @@ export class InventoryLedgerService {
 
     // Trigger Low Stock / Out of Stock Warnings
     try {
-      const newGlobalStock = await this.repository.getLiveStock(dto.productId, dto.variantId || null, tenantId)
+      const newGlobalStock = await this.repository.getLiveStock(
+        dto.productId,
+        dto.variantId || null,
+        tenantId,
+      )
       const currentGlobalStock = newGlobalStock - signedQty
 
       let threshold = product.lowStockThreshold ?? 5
@@ -187,23 +191,33 @@ export class InventoryLedgerService {
 
       // Out of Stock Transition
       if (currentGlobalStock > 0 && newGlobalStock <= 0) {
-        await this.notificationService.createNotification({
-          title: 'Product Out of Stock',
-          message: `Product "${product.name}"${skuText} is completely out of stock!`,
-          type: 'DANGER',
-          link: `/admin/products/${product.id}`,
-          userId: null as any,
-        }, tenantId)
+        await this.notificationService.createNotification(
+          {
+            title: 'Product Out of Stock',
+            message: `Product "${product.name}"${skuText} is completely out of stock!`,
+            type: 'DANGER',
+            link: `/admin/products/${product.id}`,
+            userId: null as any,
+          },
+          tenantId,
+        )
       }
       // Low Stock Transition
-      else if (currentGlobalStock > threshold && newGlobalStock <= threshold && newGlobalStock > 0) {
-        await this.notificationService.createNotification({
-          title: 'Low Stock Alert',
-          message: `Product "${product.name}"${skuText} is low on stock. Current quantity: ${newGlobalStock} (Threshold: ${threshold}).`,
-          type: 'WARNING',
-          link: `/admin/products/${product.id}`,
-          userId: null as any,
-        }, tenantId)
+      else if (
+        currentGlobalStock > threshold &&
+        newGlobalStock <= threshold &&
+        newGlobalStock > 0
+      ) {
+        await this.notificationService.createNotification(
+          {
+            title: 'Low Stock Alert',
+            message: `Product "${product.name}"${skuText} is low on stock. Current quantity: ${newGlobalStock} (Threshold: ${threshold}).`,
+            type: 'WARNING',
+            link: `/admin/products/${product.id}`,
+            userId: null as any,
+          },
+          tenantId,
+        )
       }
     } catch (notifError) {
       this.logger.error(`Failed to trigger inventory notification: ${notifError.message}`)

@@ -69,7 +69,7 @@ export class TierSchedulerProcessor extends WorkerHost {
    */
   private async runTiersAssessment() {
     const em = this.dataSource.manager
-    
+
     // 1. Get all loyalty configs in the database
     const configs = await em.find(LoyaltyConfigEntity)
     this.logger.log(`Found ${configs.length} loyalty configurations to process`)
@@ -100,7 +100,9 @@ export class TierSchedulerProcessor extends WorkerHost {
       where: { tenantId, role: 'USER' as any }, // Only assess customer accounts
     })
 
-    this.logger.log(`Assessing membership tiers for ${customers.length} customers in tenant ${tenantId}`)
+    this.logger.log(
+      `Assessing membership tiers for ${customers.length} customers in tenant ${tenantId}`,
+    )
 
     const oneYearAgo = new Date()
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)

@@ -6,24 +6,22 @@ export class PosEnhancements1779365234568 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 1. Alter orders table to add offline_sale_id and payments columns
     await queryRunner.query(
-      `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "offline_sale_id" UUID NULL`
+      `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "offline_sale_id" UUID NULL`,
+    )
+    await queryRunner.query(`ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "payments" JSONB NULL`)
+    await queryRunner.query(
+      `ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "UQ_orders_offline_sale_id"`,
     )
     await queryRunner.query(
-      `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "payments" JSONB NULL`
-    )
-    await queryRunner.query(
-      `ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "UQ_orders_offline_sale_id"`
-    )
-    await queryRunner.query(
-      `ALTER TABLE "orders" ADD CONSTRAINT "UQ_orders_offline_sale_id" UNIQUE ("offline_sale_id")`
+      `ALTER TABLE "orders" ADD CONSTRAINT "UQ_orders_offline_sale_id" UNIQUE ("offline_sale_id")`,
     )
 
     // 2. Alter pos_shifts table to add cash_in and cash_out columns
     await queryRunner.query(
-      `ALTER TABLE "pos_shifts" ADD COLUMN IF NOT EXISTS "cash_in" DECIMAL(12,2) NOT NULL DEFAULT 0`
+      `ALTER TABLE "pos_shifts" ADD COLUMN IF NOT EXISTS "cash_in" DECIMAL(12,2) NOT NULL DEFAULT 0`,
     )
     await queryRunner.query(
-      `ALTER TABLE "pos_shifts" ADD COLUMN IF NOT EXISTS "cash_out" DECIMAL(12,2) NOT NULL DEFAULT 0`
+      `ALTER TABLE "pos_shifts" ADD COLUMN IF NOT EXISTS "cash_out" DECIMAL(12,2) NOT NULL DEFAULT 0`,
     )
 
     // 3. Create pos_drawer_transactions table
@@ -48,7 +46,7 @@ export class PosEnhancements1779365234568 implements MigrationInterface {
 
     // 4. Create index on tenant_id + shift_id for speed
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_pos_drawer_transactions_tenant_shift" ON "pos_drawer_transactions"("tenant_id", "shift_id")`
+      `CREATE INDEX IF NOT EXISTS "IDX_pos_drawer_transactions_tenant_shift" ON "pos_drawer_transactions"("tenant_id", "shift_id")`,
     )
   }
 
@@ -57,7 +55,9 @@ export class PosEnhancements1779365234568 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS "pos_drawer_transactions"`)
     await queryRunner.query(`ALTER TABLE "pos_shifts" DROP COLUMN IF EXISTS "cash_out"`)
     await queryRunner.query(`ALTER TABLE "pos_shifts" DROP COLUMN IF EXISTS "cash_in"`)
-    await queryRunner.query(`ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "UQ_orders_offline_sale_id"`)
+    await queryRunner.query(
+      `ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "UQ_orders_offline_sale_id"`,
+    )
     await queryRunner.query(`ALTER TABLE "orders" DROP COLUMN IF EXISTS "payments"`)
     await queryRunner.query(`ALTER TABLE "orders" DROP COLUMN IF EXISTS "offline_sale_id"`)
   }

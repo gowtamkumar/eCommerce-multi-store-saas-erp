@@ -25,15 +25,19 @@ export class ReviewService {
       const review = await this.reviewRepository.findByIdWithRelations(result.id, ctx.tenantId)
       const productName = review?.product?.name || 'Product'
       const reviewerName = review?.user?.name || review?.user?.username || 'A customer'
-      const shortComment = dto.comment.length > 50 ? `${dto.comment.substring(0, 50)}...` : dto.comment
+      const shortComment =
+        dto.comment.length > 50 ? `${dto.comment.substring(0, 50)}...` : dto.comment
 
-      await this.notificationService.createNotification({
-        title: 'New Product Review Pending Moderation',
-        message: `${reviewerName} rated "${productName}" ${dto.rating} stars: "${shortComment}"`,
-        type: 'INFO',
-        link: '/admin/reviews',
-        userId: null as any, // Send to all admins
-      }, ctx.tenantId)
+      await this.notificationService.createNotification(
+        {
+          title: 'New Product Review Pending Moderation',
+          message: `${reviewerName} rated "${productName}" ${dto.rating} stars: "${shortComment}"`,
+          type: 'INFO',
+          link: '/admin/reviews',
+          userId: null as any, // Send to all admins
+        },
+        ctx.tenantId,
+      )
     } catch (e) {
       this.logger.error(`Failed to trigger product review notification: ${e.message}`)
     }

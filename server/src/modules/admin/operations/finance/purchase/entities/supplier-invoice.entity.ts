@@ -56,7 +56,12 @@ export class SupplierInvoiceEntity extends BaseEntity {
   @Column({ type: 'enum', enum: SupplierInvoiceStatus, default: SupplierInvoiceStatus.DRAFT })
   status: SupplierInvoiceStatus
 
-  @Column({ type: 'enum', enum: ThreeWayMatchStatus, default: ThreeWayMatchStatus.PENDING, name: 'match_status' })
+  @Column({
+    type: 'enum',
+    enum: ThreeWayMatchStatus,
+    default: ThreeWayMatchStatus.PENDING,
+    name: 'match_status',
+  })
   matchStatus: ThreeWayMatchStatus
 
   @Column({ type: 'text', nullable: true })

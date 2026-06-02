@@ -1,7 +1,14 @@
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { DunningRuleEntity } from './dunning-rule.entity'
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm'
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm'
 
 @Entity('dunning_logs')
 export class DunningLogEntity {

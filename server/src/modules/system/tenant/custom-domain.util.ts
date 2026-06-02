@@ -10,12 +10,7 @@ import * as crypto from 'crypto'
 const HOSTNAME_RE =
   /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/i
 
-const RESERVED_HOSTS = new Set([
-  'localhost',
-  '127.0.0.1',
-  '::1',
-  '0.0.0.0',
-])
+const RESERVED_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0'])
 
 export class InvalidCustomDomainError extends Error {}
 
@@ -25,7 +20,10 @@ export function normalizeCustomDomain(input: string): string {
   }
   let host = input.trim().toLowerCase()
   // Strip protocol/path/trailing slash if the operator pastes a URL.
-  host = host.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '')
+  host = host
+    .replace(/^https?:\/\//, '')
+    .replace(/\/.*$/, '')
+    .replace(/:\d+$/, '')
   if (!host) {
     throw new InvalidCustomDomainError('Custom domain is required')
   }

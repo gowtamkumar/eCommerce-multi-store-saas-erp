@@ -26,8 +26,12 @@ export class HrmEnhancements1780100000000 implements MigrationInterface {
           CONSTRAINT "PK_holidays_id" PRIMARY KEY ("id")
         )
       `)
-      await queryRunner.query(`CREATE INDEX "IDX_holidays_tenant_year" ON "holidays" ("tenant_id", "year")`)
-      await queryRunner.query(`CREATE INDEX "IDX_holidays_tenant_date" ON "holidays" ("tenant_id", "date")`)
+      await queryRunner.query(
+        `CREATE INDEX "IDX_holidays_tenant_year" ON "holidays" ("tenant_id", "year")`,
+      )
+      await queryRunner.query(
+        `CREATE INDEX "IDX_holidays_tenant_date" ON "holidays" ("tenant_id", "date")`,
+      )
     } else {
       const hasBranchId = await queryRunner.hasColumn('holidays', 'branch_id')
       if (!hasBranchId) {
@@ -128,8 +132,14 @@ export class HrmEnhancements1780100000000 implements MigrationInterface {
 
     // 6. Applicant enum values (safe idempotent adds)
     const applicantStatuses = [
-      'APPLIED', 'SCREENING', 'INTERVIEW', 'TECHNICAL',
-      'HR_ROUND', 'OFFER', 'JOINED', 'REJECTED',
+      'APPLIED',
+      'SCREENING',
+      'INTERVIEW',
+      'TECHNICAL',
+      'HR_ROUND',
+      'OFFER',
+      'JOINED',
+      'REJECTED',
     ]
     for (const status of applicantStatuses) {
       try {
@@ -151,9 +161,7 @@ export class HrmEnhancements1780100000000 implements MigrationInterface {
 
     const hasDesignation = await queryRunner.hasColumn('employees', 'designation_id')
     if (hasDesignation) {
-      await queryRunner.query(
-        `ALTER TABLE "employees" ALTER COLUMN "designation_id" DROP NOT NULL`,
-      )
+      await queryRunner.query(`ALTER TABLE "employees" ALTER COLUMN "designation_id" DROP NOT NULL`)
     }
   }
 

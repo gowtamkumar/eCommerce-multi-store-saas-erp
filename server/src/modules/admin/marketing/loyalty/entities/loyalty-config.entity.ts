@@ -8,7 +8,13 @@ export class LoyaltyConfigEntity extends BaseEntity {
   isEnabled: boolean
 
   // Earning rules: spent unit to point. E.g. $1 spent = 1 point
-  @Column({ type: 'decimal', name: 'points_per_currency_spent', precision: 10, scale: 2, default: 1.0 })
+  @Column({
+    type: 'decimal',
+    name: 'points_per_currency_spent',
+    precision: 10,
+    scale: 2,
+    default: 1.0,
+  })
   pointsPerCurrencySpent: number
 
   // Redemption rules: e.g. 100 points = $1 discount
@@ -16,30 +22,54 @@ export class LoyaltyConfigEntity extends BaseEntity {
   pointsRequiredPerCurrencyDiscount: number
 
   // Tier Thresholds (Accumulated spending in 12 months)
-  @Column({ type: 'decimal', name: 'silver_tier_threshold', precision: 10, scale: 2, default: 500.0 })
+  @Column({
+    type: 'decimal',
+    name: 'silver_tier_threshold',
+    precision: 10,
+    scale: 2,
+    default: 500.0,
+  })
   silverTierThreshold: number
 
-  @Column({ type: 'decimal', name: 'gold_tier_threshold', precision: 10, scale: 2, default: 1500.0 })
+  @Column({
+    type: 'decimal',
+    name: 'gold_tier_threshold',
+    precision: 10,
+    scale: 2,
+    default: 1500.0,
+  })
   goldTierThreshold: number
 
-  @Column({ type: 'decimal', name: 'platinum_tier_threshold', precision: 10, scale: 2, default: 5000.0 })
+  @Column({
+    type: 'decimal',
+    name: 'platinum_tier_threshold',
+    precision: 10,
+    scale: 2,
+    default: 5000.0,
+  })
   platinumTierThreshold: number
 
   // Tier Point Multipliers
-  @Column({ type: 'decimal', name: 'silver_multiplier', precision: 5, scale: 2, default: 1.10 })
+  @Column({ type: 'decimal', name: 'silver_multiplier', precision: 5, scale: 2, default: 1.1 })
   silverMultiplier: number
 
   @Column({ type: 'decimal', name: 'gold_multiplier', precision: 5, scale: 2, default: 1.25 })
   goldMultiplier: number
 
-  @Column({ type: 'decimal', name: 'platinum_multiplier', precision: 5, scale: 2, default: 1.50 })
+  @Column({ type: 'decimal', name: 'platinum_multiplier', precision: 5, scale: 2, default: 1.5 })
   platinumMultiplier: number
 
   // Referral Rewards
   @Column({ type: 'varchar', name: 'referral_reward_type', default: 'WALLET' }) // 'WALLET' or 'POINTS'
   referralRewardType: 'WALLET' | 'POINTS'
 
-  @Column({ type: 'decimal', name: 'referral_reward_amount', precision: 10, scale: 2, default: 10.0 })
+  @Column({
+    type: 'decimal',
+    name: 'referral_reward_amount',
+    precision: 10,
+    scale: 2,
+    default: 10.0,
+  })
   referralRewardAmount: number // $10 wallet credit or 1000 points
 
   @Column({ type: 'decimal', name: 'referee_min_purchase', precision: 10, scale: 2, default: 20.0 })

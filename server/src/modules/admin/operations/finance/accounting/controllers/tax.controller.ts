@@ -32,7 +32,9 @@ export class TaxController {
 
   @Get('rules')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
-  async getTaxRules(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
+  async getTaxRules(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.taxService.getTaxRules(ctx)
     return {
       success: true,
@@ -46,7 +48,8 @@ export class TaxController {
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async createTaxRule(
     @RequestContext() ctx: RequestContextDto,
-    @Body() body: { name: string; rate: number; country: string; state?: string; category: TaxCategory },
+    @Body()
+    body: { name: string; rate: number; country: string; state?: string; category: TaxCategory },
   ): Promise<BaseApiSuccessResponse<any>> {
     const data = await this.taxService.createTaxRule(body, ctx)
     return {

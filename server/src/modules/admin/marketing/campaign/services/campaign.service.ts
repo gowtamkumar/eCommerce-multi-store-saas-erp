@@ -229,7 +229,8 @@ export class CampaignService {
     const sent = campaign.sentCount ?? 0
     const failed = campaign.failedCount ?? 0
     const audience = campaign.totalAudience ?? 0
-    const rate = (num: number, den: number) => (den > 0 ? Number(((num / den) * 100).toFixed(2)) : 0)
+    const rate = (num: number, den: number) =>
+      den > 0 ? Number(((num / den) * 100).toFixed(2)) : 0
     return {
       campaignId: id,
       totalAudience: audience,

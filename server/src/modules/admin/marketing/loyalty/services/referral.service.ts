@@ -21,12 +21,19 @@ export class ReferralService {
   /**
    * Generates a unique, readable referral code for a new user registration.
    */
-  async generateUniqueReferralCode(name: string, tenantId: string, manager?: EntityManager): Promise<string> {
+  async generateUniqueReferralCode(
+    name: string,
+    tenantId: string,
+    manager?: EntityManager,
+  ): Promise<string> {
     const em = manager || this.dataSource.manager
     const prefix = name
-      ? name.replace(/[^a-zA-Z]/g, '').substring(0, 6).toUpperCase()
+      ? name
+          .replace(/[^a-zA-Z]/g, '')
+          .substring(0, 6)
+          .toUpperCase()
       : 'REF'
-    
+
     let isUnique = false
     let referralCode = ''
     let attempts = 0
@@ -104,7 +111,9 @@ export class ReferralService {
       return { attributed: false, alreadyAttributed: true }
     }
 
-    this.logger.log(`Linked referee ${refereeId} to referrer ${referrer.id} (source=${source ?? 'n/a'})`)
+    this.logger.log(
+      `Linked referee ${refereeId} to referrer ${referrer.id} (source=${source ?? 'n/a'})`,
+    )
     return { attributed: true }
   }
 
@@ -138,7 +147,9 @@ export class ReferralService {
 
     // If there's already more than 1 paid order (including the current one if already updated to paid), it's not the first.
     if (priorOrdersCount > 1) {
-      this.logger.log(`Referee ${refereeId} already has prior completed orders. Referral reward skipped.`)
+      this.logger.log(
+        `Referee ${refereeId} already has prior completed orders. Referral reward skipped.`,
+      )
       return
     }
 

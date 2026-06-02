@@ -28,7 +28,7 @@ export class StaffInvitationService {
     private readonly notificationService: NotificationService,
     @InjectRepository(UserRoleAssignmentEntity)
     private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
-  ) { }
+  ) {}
 
   async inviteStaff(
     dto: InviteStaffDto,
@@ -139,8 +139,8 @@ export class StaffInvitationService {
       const scopeType = invitation.branchId
         ? RoleScopeType.BRANCH
         : invitation.warehouseId
-        ? RoleScopeType.WAREHOUSE
-        : RoleScopeType.GLOBAL
+          ? RoleScopeType.WAREHOUSE
+          : RoleScopeType.GLOBAL
 
       const assignment = this.assignmentRepo.create({
         userId: user.id,
@@ -158,13 +158,16 @@ export class StaffInvitationService {
 
     // Trigger Notification for Admin
     try {
-      await this.notificationService.createNotification({
-        title: 'Staff Invitation Accepted',
-        message: `${name || username} (${invitation.email}) has accepted the invitation and joined the team as ${invitation.role}.`,
-        type: 'SUCCESS',
-        link: '/admin/settings/team',
-        userId: null as any, // Send to all admins
-      }, invitation.tenantId)
+      await this.notificationService.createNotification(
+        {
+          title: 'Staff Invitation Accepted',
+          message: `${name || username} (${invitation.email}) has accepted the invitation and joined the team as ${invitation.role}.`,
+          type: 'SUCCESS',
+          link: '/admin/settings/team',
+          userId: null as any, // Send to all admins
+        },
+        invitation.tenantId,
+      )
     } catch (e) {
       this.logger.error(`Failed to trigger invitation acceptance notification: ${e.message}`)
     }

@@ -30,9 +30,7 @@ export function generateEAN13(): string {
   // Standard EAN-13 checksum: alternating weights 1 and 3
   const checkDigit =
     (10 -
-      (digits12
-        .split('')
-        .reduce((sum, d, i) => sum + parseInt(d, 10) * (i % 2 === 0 ? 1 : 3), 0) %
+      (digits12.split('').reduce((sum, d, i) => sum + parseInt(d, 10) * (i % 2 === 0 ? 1 : 3), 0) %
         10)) %
     10
 
@@ -49,11 +47,7 @@ export function generateEAN13(): string {
  * @param prefixLength - Max characters to use from the name (default: 8)
  * @param suffixLength - Length of the random suffix (default: 6)
  */
-export function generateProductSku(
-  nameOrSlug: string,
-  prefixLength = 8,
-  suffixLength = 6,
-): string {
+export function generateProductSku(nameOrSlug: string, prefixLength = 8, suffixLength = 6): string {
   const prefix = nameOrSlug
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '') // strip non-alphanumeric
@@ -80,7 +74,11 @@ export function generateVariantSku(
   suffixLength = 6,
 ): string {
   const variantPart = Object.values(combination)
-    .map((v) => String(v).toUpperCase().replace(/[^A-Z0-9]/g, ''))
+    .map((v) =>
+      String(v)
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, ''),
+    )
     .filter(Boolean)
     .join('-')
 

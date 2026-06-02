@@ -146,7 +146,9 @@ export class MarketingMarketingHardening1780600000000 implements MigrationInterf
        WHERE "is_active" = true AND "status" = 'pending'`,
     )
     // Lowercase existing emails for the case-insensitive unique guarantee.
-    await queryRunner.query(`UPDATE "subscribers" SET "email" = LOWER("email") WHERE "email" <> LOWER("email")`)
+    await queryRunner.query(
+      `UPDATE "subscribers" SET "email" = LOWER("email") WHERE "email" <> LOWER("email")`,
+    )
     // Ensure unsubscribe tokens exist on already-active rows so the
     // unsubscribe link can be generated for legacy subscribers without
     // a re-confirmation step.

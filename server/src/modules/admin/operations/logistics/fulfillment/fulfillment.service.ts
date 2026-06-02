@@ -198,15 +198,11 @@ export class FulfillmentService {
     // Single transaction — all or nothing.
     await this.dataSource.transaction(async (manager) => {
       for (const u of intent) {
-        await manager.update(
-          'fulfillment_items',
-          { id: u.itemId },
-          {
-            picked_quantity: u.pickedQuantity,
-            bin_id: u.binId ?? null,
-            status: u.status,
-          } as any,
-        )
+        await manager.update('fulfillment_items', { id: u.itemId }, {
+          picked_quantity: u.pickedQuantity,
+          bin_id: u.binId ?? null,
+          status: u.status,
+        } as any)
       }
     })
 
@@ -289,7 +285,9 @@ export class FulfillmentService {
             manager,
           )
         } catch (batchErr) {
-          this.logger.warn(`FEFO Batch allocation failed for item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`)
+          this.logger.warn(
+            `FEFO Batch allocation failed for item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`,
+          )
         }
 
         if (allocations.length > 0) {

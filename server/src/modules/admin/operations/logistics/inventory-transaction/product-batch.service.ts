@@ -60,7 +60,12 @@ export class ProductBatchService {
 
   async findAll(
     ctx: RequestContextDto,
-    pagination: PaginationDto & { productId?: string; variantId?: string; status?: string; expiringSoon?: boolean },
+    pagination: PaginationDto & {
+      productId?: string
+      variantId?: string
+      status?: string
+      expiringSoon?: boolean
+    },
   ): Promise<{
     items: ProductBatchEntity[]
     total: number
@@ -68,7 +73,15 @@ export class ProductBatchService {
     limit: number
     totalPages: number
   }> {
-    const { page = 1, limit = 20, q: search, productId, variantId, status, expiringSoon } = pagination
+    const {
+      page = 1,
+      limit = 20,
+      q: search,
+      productId,
+      variantId,
+      status,
+      expiringSoon,
+    } = pagination
     const tenantId = ctx.tenantId
 
     const qb = this.repo
@@ -95,11 +108,14 @@ export class ProductBatchService {
     if (expiringSoon) {
       const thirtyDaysFromNow = new Date()
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
-      qb.andWhere('b.expiryDate <= :thirtyDaysFromNow AND b.expiryDate > :now AND b.status = :activeStatus', {
-        thirtyDaysFromNow,
-        now: new Date(),
-        activeStatus: BatchStatus.ACTIVE,
-      })
+      qb.andWhere(
+        'b.expiryDate <= :thirtyDaysFromNow AND b.expiryDate > :now AND b.status = :activeStatus',
+        {
+          thirtyDaysFromNow,
+          now: new Date(),
+          activeStatus: BatchStatus.ACTIVE,
+        },
+      )
     }
 
     if (search) {
@@ -132,11 +148,16 @@ export class ProductBatchService {
     return batch
   }
 
-  async update(id: string, dto: UpdateProductBatchDto, ctx: RequestContextDto): Promise<ProductBatchEntity> {
+  async update(
+    id: string,
+    dto: UpdateProductBatchDto,
+    ctx: RequestContextDto,
+  ): Promise<ProductBatchEntity> {
     const batch = await this.findOne(id, ctx)
 
     if (dto.batchNumber !== undefined) batch.batchNumber = dto.batchNumber
-    if (dto.manufactureDate !== undefined) batch.manufactureDate = dto.manufactureDate ? new Date(dto.manufactureDate) : null
+    if (dto.manufactureDate !== undefined)
+      batch.manufactureDate = dto.manufactureDate ? new Date(dto.manufactureDate) : null
     if (dto.expiryDate !== undefined) batch.expiryDate = new Date(dto.expiryDate)
     if (dto.status !== undefined) batch.status = dto.status
 
@@ -205,7 +226,9 @@ export class ProductBatchService {
     }
 
     if (remainingToAllocate > 0) {
-      throw new BadRequestException(`Insufficient unexpired batch stock for product ID ${productId}`)
+      throw new BadRequestException(
+        `Insufficient unexpired batch stock for product ID ${productId}`,
+      )
     }
 
     return allocations

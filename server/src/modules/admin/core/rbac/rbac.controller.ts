@@ -7,8 +7,14 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, Req } from '@nestjs/common'
 import { RoleManagementService, CreateRoleDto, UpdateRoleDto } from './role-management.service'
 import { UserRoleAssignmentService, AssignRoleDto } from './user-role-assignment.service'
-import { UserPermissionOverrideService, CreateOverrideDto } from './user-permission-override.service'
-import { PermissionResolutionService, PermissionManifest } from '@/common/services/permission-resolution.service'
+import {
+  UserPermissionOverrideService,
+  CreateOverrideDto,
+} from './user-permission-override.service'
+import {
+  PermissionResolutionService,
+  PermissionManifest,
+} from '@/common/services/permission-resolution.service'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
@@ -30,7 +36,9 @@ export class RbacController {
 
   @Get('roles')
   @RequirePermissions(SystemPermissions.USERS_READ)
-  async getRoles(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<RoleEntity[]>> {
+  async getRoles(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<RoleEntity[]>> {
     const roles = await this.roleService.getAllRoles(ctx.tenantId)
     return { success: true, statusCode: 200, message: 'Roles retrieved successfully', data: roles }
   }
@@ -85,9 +93,16 @@ export class RbacController {
 
   @Get('permissions/grouped')
   @RequirePermissions(SystemPermissions.USERS_READ)
-  async getPermissionsGrouped(): Promise<BaseApiSuccessResponse<Record<string, PermissionEntity[]>>> {
+  async getPermissionsGrouped(): Promise<
+    BaseApiSuccessResponse<Record<string, PermissionEntity[]>>
+  > {
     const grouped = await this.roleService.getPermissionsByFeature()
-    return { success: true, statusCode: 200, message: 'Permissions grouped by feature', data: grouped }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Permissions grouped by feature',
+      data: grouped,
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -114,9 +129,18 @@ export class RbacController {
   ): Promise<BaseApiSuccessResponse<UserRoleAssignmentEntity>> {
     const actorName = req.user?.name || 'Unknown'
     const assignment = await this.assignmentService.assignRoleToUser(
-      userId, ctx.tenantId, ctx.userId, actorName, body,
+      userId,
+      ctx.tenantId,
+      ctx.userId,
+      actorName,
+      body,
     )
-    return { success: true, statusCode: 201, message: 'Role assigned successfully', data: assignment }
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Role assigned successfully',
+      data: assignment,
+    }
   }
 
   @Delete('users/:userId/roles/:assignmentId')
@@ -127,7 +151,12 @@ export class RbacController {
     @Param('assignmentId') assignmentId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     const actorName = req.user?.name || 'Unknown'
-    await this.assignmentService.revokeRoleFromUser(assignmentId, ctx.tenantId, ctx.userId, actorName)
+    await this.assignmentService.revokeRoleFromUser(
+      assignmentId,
+      ctx.tenantId,
+      ctx.userId,
+      actorName,
+    )
     return { success: true, statusCode: 200, message: 'Role revoked successfully', data: null }
   }
 
@@ -159,9 +188,18 @@ export class RbacController {
     const actorName = req.user?.name || 'Unknown'
     const dto = { ...body, expiresAt: body.expiresAt ? new Date(body.expiresAt) : null }
     const override = await this.overrideService.addOverride(
-      userId, ctx.tenantId, ctx.userId, actorName, dto as any,
+      userId,
+      ctx.tenantId,
+      ctx.userId,
+      actorName,
+      dto as any,
     )
-    return { success: true, statusCode: 201, message: 'Override added successfully', data: override }
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Override added successfully',
+      data: override,
+    }
   }
 
   @Delete('users/:userId/overrides/:overrideId')
@@ -187,6 +225,11 @@ export class RbacController {
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<PermissionManifest>> {
     const manifest = await this.resolutionService.resolvePermissionsManifest(userId, ctx.tenantId)
-    return { success: true, statusCode: 200, message: 'Permission manifest retrieved', data: manifest }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Permission manifest retrieved',
+      data: manifest,
+    }
   }
 }

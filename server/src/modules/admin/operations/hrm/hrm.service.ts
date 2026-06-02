@@ -73,14 +73,17 @@ export class HrmService {
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
-  ) { }
+  ) {}
 
   async getDashboardStats(ctx: RequestContextDto) {
     return this.hrmRepo.getStats(ctx.tenantId, ctx.branchId)
   }
 
   /** Ensure an employee record belongs to the current tenant. */
-  private async validateEmployeeInTenant(employeeId: string, tenantId: string): Promise<EmployeeEntity> {
+  private async validateEmployeeInTenant(
+    employeeId: string,
+    tenantId: string,
+  ): Promise<EmployeeEntity> {
     const employee = await this.hrmRepo.findEmployeeById(employeeId, tenantId)
     if (!employee) throw new NotFoundException(`Employee ${employeeId} not found in this tenant`)
     return employee
@@ -439,7 +442,11 @@ export class HrmService {
     }
 
     const checkOut = new Date()
-    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, latest.checkIn, ctx.tenantId)
+    const assignment = await this.hrmRepo.findEmployeeShift(
+      employeeId,
+      latest.checkIn,
+      ctx.tenantId,
+    )
     const diffMs = checkOut.getTime() - new Date(latest.checkIn).getTime()
     const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
     const overtimeHours = computeOvertimeHours(new Date(latest.checkIn), checkOut, assignment)
@@ -692,9 +699,13 @@ export class HrmService {
         leaveRequestRepo.find({ where: { tenantId: ctx.tenantId, status: LeaveStatus.APPROVED } }),
         employeeIds.length > 0
           ? attendanceSessionRepo.find({
-            where: { employeeId: In(employeeIds), tenantId: ctx.tenantId, checkIn: Between(startDate, endDate) },
-            order: { checkIn: 'ASC' },
-          })
+              where: {
+                employeeId: In(employeeIds),
+                tenantId: ctx.tenantId,
+                checkIn: Between(startDate, endDate),
+              },
+              order: { checkIn: 'ASC' },
+            })
           : Promise.resolve([]),
       ])
 
@@ -741,7 +752,11 @@ export class HrmService {
           (Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2),
         )
 
-        const assignment = await this.hrmRepo.findEmployeeShift(employee.id, startDate, ctx.tenantId)
+        const assignment = await this.hrmRepo.findEmployeeShift(
+          employee.id,
+          startDate,
+          ctx.tenantId,
+        )
         const workingDays = resolveWorkingDays(assignment)
         const employeeLeaves = approvedLeaves.filter((l) => l.employeeId === employee.id)
         const checkInDateSet = buildCheckInDateSet(sessions)
@@ -777,7 +792,10 @@ export class HrmService {
         const grossSalary = salary + allowances + overtimePay
         const incomeTax = computeIncomeTax(grossSalary, taxBrackets)
         const netSalary = parseFloat(
-          (grossSalary - (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions)).toFixed(2),
+          (
+            grossSalary -
+            (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions)
+          ).toFixed(2),
         )
 
         const slip = em.create(PayrollSlipEntity, {
@@ -848,7 +866,9 @@ export class HrmService {
 
     return await this.hrmRepo.payrollBatchRepo.manager.transaction(async (em) => {
       const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
-      const batch = await payrollBatchRepo.findOne({ where: { id: batchId, tenantId: ctx.tenantId } })
+      const batch = await payrollBatchRepo.findOne({
+        where: { id: batchId, tenantId: ctx.tenantId },
+      })
       if (!batch) throw new NotFoundException('Payroll batch not found')
 
       if (
@@ -872,8 +892,7 @@ export class HrmService {
         totalGrossSalaries +=
           Number(slip.basicSalary) + Number(slip.totalAllowances) + Number(d.overtimePay ?? 0)
         totalTaxesWithheld += Number(d.incomeTax ?? 0)
-        totalBaseDeductions +=
-          (d.deductions ?? []).reduce((s, x) => s + Number(x.amount), 0)
+        totalBaseDeductions += (d.deductions ?? []).reduce((s, x) => s + Number(x.amount), 0)
         totalLateDeductions += Number(d.lateDeductions ?? 0)
         totalUnpaidLeaveDeductions += Number(d.unpaidLeaveDeductions ?? 0)
         totalUnpaidAbsenceDeductions += Number(d.unpaidAbsenceDeductions ?? 0)
@@ -1450,7 +1469,9 @@ export class HrmService {
   }
 
   async updateHoliday(id: string, data: UpdateHolidayDto, ctx: RequestContextDto) {
-    const holiday = await this.hrmRepo.holidayRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const holiday = await this.hrmRepo.holidayRepo.findOne({
+      where: { id, tenantId: ctx.tenantId },
+    })
     if (!holiday) throw new NotFoundException('Holiday not found')
     const update: Record<string, unknown> = {}
     if (data.name !== undefined) update.name = data.name
@@ -1463,7 +1484,9 @@ export class HrmService {
   }
 
   async deleteHoliday(id: string, ctx: RequestContextDto) {
-    const holiday = await this.hrmRepo.holidayRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const holiday = await this.hrmRepo.holidayRepo.findOne({
+      where: { id, tenantId: ctx.tenantId },
+    })
     if (!holiday) throw new NotFoundException('Holiday not found')
     await this.hrmRepo.holidayRepo.delete(id)
     await this.auditLogService.log(ctx, {
@@ -1501,7 +1524,9 @@ export class HrmService {
   }
 
   async deleteTaxBracket(id: string, ctx: RequestContextDto) {
-    const bracket = await this.hrmRepo.taxBracketRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const bracket = await this.hrmRepo.taxBracketRepo.findOne({
+      where: { id, tenantId: ctx.tenantId },
+    })
     if (!bracket) throw new NotFoundException('Tax bracket not found')
     await this.hrmRepo.taxBracketRepo.delete(id)
     return { id }

@@ -35,7 +35,11 @@ export class SettingsService {
             settings = await this.settingsRepository.createAndSave({}, ctx)
           } catch (err: any) {
             // Handle race condition if another thread created it concurrently
-            if (err.code === '23505' || err.message?.includes('unique') || err.message?.includes('duplicate')) {
+            if (
+              err.code === '23505' ||
+              err.message?.includes('unique') ||
+              err.message?.includes('duplicate')
+            ) {
               settings = await this.settingsRepository.findByTenantId(tenantId)
             } else {
               throw err
@@ -105,9 +109,16 @@ export class SettingsService {
     }
 
     try {
-      return await this.settingsRepository.createAndSave(normalizeAndValidateSettingsUpdate(dto), ctx)
+      return await this.settingsRepository.createAndSave(
+        normalizeAndValidateSettingsUpdate(dto),
+        ctx,
+      )
     } catch (err: any) {
-      if (err.code === '23505' || err.message?.includes('unique') || err.message?.includes('duplicate')) {
+      if (
+        err.code === '23505' ||
+        err.message?.includes('unique') ||
+        err.message?.includes('duplicate')
+      ) {
         const latest = await this.settingsRepository.findByTenantId(tenantId)
         if (latest) {
           return await this.settingsRepository.updateAndSave(

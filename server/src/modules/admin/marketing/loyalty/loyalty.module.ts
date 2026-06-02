@@ -34,4 +34,3 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
   exports: [LoyaltyService, ReferralService, BullModule],
 })
 export class LoyaltyModule {}
-

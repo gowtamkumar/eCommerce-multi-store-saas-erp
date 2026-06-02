@@ -43,27 +43,34 @@ export class SubscriptionBillingService {
       async () => {
         const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
         if (!tenant) throw new NotFoundException('Tenant not found')
-        
+
         // Subscription Expiration Alert Logic
         if (tenant.subscriptionEndsAt && !tenant.isExpired) {
-          const daysUntilExpiry = Math.ceil((tenant.subscriptionEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          const daysUntilExpiry = Math.ceil(
+            (tenant.subscriptionEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+          )
           if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
             // Use cache to prevent spamming the notification every time they load the page
             const alertKey = `subscription_alert:${tenantId}`
             const alertSent = await this.cacheService.getCache(alertKey, tenantId)
             if (!alertSent) {
               try {
-                await this.notificationService.createNotification({
-                  title: 'Subscription Expiring Soon',
-                  message: `Your billing plan is nearing expiry (in ${daysUntilExpiry} days). Please renew to avoid interruption.`,
-                  type: 'WARNING',
-                  link: `/admin/settings/billing`,
-                  userId: null as any,
-                }, tenantId);
+                await this.notificationService.createNotification(
+                  {
+                    title: 'Subscription Expiring Soon',
+                    message: `Your billing plan is nearing expiry (in ${daysUntilExpiry} days). Please renew to avoid interruption.`,
+                    type: 'WARNING',
+                    link: `/admin/settings/billing`,
+                    userId: null as any,
+                  },
+                  tenantId,
+                )
                 // Set cache to prevent re-alerting for 24 hours
                 await this.cacheService.setCache(alertKey, true, 86400, tenantId)
               } catch (e) {
-                this.logger.error(`Failed to trigger subscription expiry notification: ${e.message}`)
+                this.logger.error(
+                  `Failed to trigger subscription expiry notification: ${e.message}`,
+                )
               }
             }
           }
@@ -314,15 +321,18 @@ export class SubscriptionBillingService {
 
       // Trigger global notification for new purchase/upgrade
       try {
-        await this.notificationService.createNotification({
-          title: 'Subscription Purchase',
-          message: `Tenant '${tenant.storeName}' purchased/renewed the ${plan.name} plan for ${record.currency} ${record.amount}.`,
-          type: 'SUCCESS',
-          link: `/admin/system/tenants/${tenant.id}`,
-          userId: null as any,
-        }, null);
+        await this.notificationService.createNotification(
+          {
+            title: 'Subscription Purchase',
+            message: `Tenant '${tenant.storeName}' purchased/renewed the ${plan.name} plan for ${record.currency} ${record.amount}.`,
+            type: 'SUCCESS',
+            link: `/admin/system/tenants/${tenant.id}`,
+            userId: null as any,
+          },
+          null,
+        )
       } catch (e) {
-        this.logger.error(`Failed to trigger global billing notification: ${e.message}`);
+        this.logger.error(`Failed to trigger global billing notification: ${e.message}`)
       }
     }
 
@@ -343,18 +353,21 @@ export class SubscriptionBillingService {
 
       // Trigger global notification for payment failure
       try {
-        await this.notificationService.createNotification({
-          title: 'Billing Payment Failed',
-          message: `Subscription payment of ${record.currency} ${record.amount} failed for Tenant ID: ${record.tenantId}.`,
-          type: 'DANGER',
-          link: `/admin/system/billing/invoices/${record.id}`,
-          userId: null as any,
-        }, null);
+        await this.notificationService.createNotification(
+          {
+            title: 'Billing Payment Failed',
+            message: `Subscription payment of ${record.currency} ${record.amount} failed for Tenant ID: ${record.tenantId}.`,
+            type: 'DANGER',
+            link: `/admin/system/billing/invoices/${record.id}`,
+            userId: null as any,
+          },
+          null,
+        )
       } catch (e) {
-        this.logger.error(`Failed to trigger global billing failure notification: ${e.message}`);
+        this.logger.error(`Failed to trigger global billing failure notification: ${e.message}`)
       }
 
-      return updated;
+      return updated
     }
     return { success: false }
   }

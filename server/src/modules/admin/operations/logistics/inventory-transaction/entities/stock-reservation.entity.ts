@@ -5,14 +5,7 @@ import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  Unique,
-} from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm'
 
 /**
  * Tracks the full lifecycle of a stock reservation:

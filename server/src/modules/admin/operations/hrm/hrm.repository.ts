@@ -1,7 +1,15 @@
 import { ApplicantStatus, PayrollBatchStatus } from '@/common/enums/hrm/hrm-enums'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Between, FindOptionsWhere, In, LessThanOrEqual, MoreThanOrEqual, Not, Repository } from 'typeorm'
+import {
+  Between,
+  FindOptionsWhere,
+  In,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm'
 import { AttendanceEventEntity } from './entities/attendance-event.entity'
 import { AttendanceSessionEntity } from './entities/attendance.entity'
 import { DepartmentEntity } from './entities/department.entity'
@@ -148,7 +156,8 @@ export class HrmRepository {
       .where('e.tenantId = :tenantId', { tenantId })
 
     if (branchId) qb.andWhere('e.branchId = :branchId', { branchId })
-    if (options?.departmentId) qb.andWhere('e.departmentId = :departmentId', { departmentId: options.departmentId })
+    if (options?.departmentId)
+      qb.andWhere('e.departmentId = :departmentId', { departmentId: options.departmentId })
     if (options?.status) qb.andWhere('e.status = :status', { status: options.status })
     if (options?.q) {
       qb.andWhere('(user.name ILIKE :q OR user.username ILIKE :q OR e.employeeId ILIKE :q)', {
@@ -295,7 +304,8 @@ export class HrmRepository {
       .where('s.tenantId = :tenantId', { tenantId })
 
     if (branchId) qb.andWhere('s.branchId = :branchId', { branchId })
-    if (options?.employeeId) qb.andWhere('s.employeeId = :employeeId', { employeeId: options.employeeId })
+    if (options?.employeeId)
+      qb.andWhere('s.employeeId = :employeeId', { employeeId: options.employeeId })
     if (options?.from) qb.andWhere('s.checkIn >= :from', { from: options.from })
     if (options?.to) qb.andWhere('s.checkIn <= :to', { to: options.to })
 
@@ -376,7 +386,8 @@ export class HrmRepository {
       .leftJoinAndSelect('approvedBy.user', 'au')
       .where('lr.tenantId = :tenantId', { tenantId })
 
-    if (options?.employeeId) qb.andWhere('lr.employeeId = :employeeId', { employeeId: options.employeeId })
+    if (options?.employeeId)
+      qb.andWhere('lr.employeeId = :employeeId', { employeeId: options.employeeId })
     if (options?.status) qb.andWhere('lr.status = :status', { status: options.status })
     if (options?.from) qb.andWhere('lr.endDate >= :from', { from: options.from })
     if (options?.to) qb.andWhere('lr.startDate <= :to', { to: options.to })
@@ -543,9 +554,7 @@ export class HrmRepository {
     return qb.getMany()
   }
 
-  async findHolidaysExpiringSoon(
-    referenceDate: Date,
-  ): Promise<EmployeeDocumentEntity[]> {
+  async findHolidaysExpiringSoon(referenceDate: Date): Promise<EmployeeDocumentEntity[]> {
     return this.documentRepo.find({
       where: {
         expiryDate: LessThanOrEqual(referenceDate),

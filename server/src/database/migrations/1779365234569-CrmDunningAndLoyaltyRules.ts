@@ -65,13 +65,13 @@ export class CrmDunningAndLoyaltyRules1779365234569 implements MigrationInterfac
 
     // Indexes for dunning and loyalty rules
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_dunning_rules_tenant" ON "dunning_rules"("tenant_id")`
+      `CREATE INDEX IF NOT EXISTS "IDX_dunning_rules_tenant" ON "dunning_rules"("tenant_id")`,
     )
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_dunning_logs_tenant_customer" ON "dunning_logs"("tenant_id", "customer_id")`
+      `CREATE INDEX IF NOT EXISTS "IDX_dunning_logs_tenant_customer" ON "dunning_logs"("tenant_id", "customer_id")`,
     )
     await queryRunner.query(
-      `CREATE INDEX IF NOT EXISTS "IDX_loyalty_rules_tenant" ON "loyalty_rules"("tenant_id")`
+      `CREATE INDEX IF NOT EXISTS "IDX_loyalty_rules_tenant" ON "loyalty_rules"("tenant_id")`,
     )
   }
 

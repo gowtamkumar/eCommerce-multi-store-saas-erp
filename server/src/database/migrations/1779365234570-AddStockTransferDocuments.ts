@@ -38,9 +38,15 @@ export class AddStockTransferDocuments1779365234570 implements MigrationInterfac
       `)
 
       // Add indexes for stock_transfers
-      await queryRunner.query(`CREATE INDEX "IDX_stock_transfers_tenant_created" ON "stock_transfers" ("tenant_id", "created_at")`)
-      await queryRunner.query(`CREATE INDEX "IDX_stock_transfers_tenant_status" ON "stock_transfers" ("tenant_id", "status")`)
-      await queryRunner.query(`CREATE INDEX "IDX_stock_transfers_number" ON "stock_transfers" ("transfer_number")`)
+      await queryRunner.query(
+        `CREATE INDEX "IDX_stock_transfers_tenant_created" ON "stock_transfers" ("tenant_id", "created_at")`,
+      )
+      await queryRunner.query(
+        `CREATE INDEX "IDX_stock_transfers_tenant_status" ON "stock_transfers" ("tenant_id", "status")`,
+      )
+      await queryRunner.query(
+        `CREATE INDEX "IDX_stock_transfers_number" ON "stock_transfers" ("transfer_number")`,
+      )
 
       // Add foreign keys for stock_transfers
       await queryRunner.query(`
@@ -87,9 +93,15 @@ export class AddStockTransferDocuments1779365234570 implements MigrationInterfac
       `)
 
       // Add indexes for stock_transfer_items
-      await queryRunner.query(`CREATE INDEX "IDX_stock_transfer_items_transfer" ON "stock_transfer_items" ("transfer_id")`)
-      await queryRunner.query(`CREATE INDEX "IDX_stock_transfer_items_product" ON "stock_transfer_items" ("product_id")`)
-      await queryRunner.query(`CREATE INDEX "IDX_stock_transfer_items_variant" ON "stock_transfer_items" ("variant_id")`)
+      await queryRunner.query(
+        `CREATE INDEX "IDX_stock_transfer_items_transfer" ON "stock_transfer_items" ("transfer_id")`,
+      )
+      await queryRunner.query(
+        `CREATE INDEX "IDX_stock_transfer_items_product" ON "stock_transfer_items" ("product_id")`,
+      )
+      await queryRunner.query(
+        `CREATE INDEX "IDX_stock_transfer_items_variant" ON "stock_transfer_items" ("variant_id")`,
+      )
 
       // Add foreign keys for stock_transfer_items
       await queryRunner.query(`
@@ -112,15 +124,29 @@ export class AddStockTransferDocuments1779365234570 implements MigrationInterfac
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop constraints and tables
-    await queryRunner.query(`ALTER TABLE "stock_transfer_items" DROP CONSTRAINT IF EXISTS "FK_stock_transfer_items_variant"`)
-    await queryRunner.query(`ALTER TABLE "stock_transfer_items" DROP CONSTRAINT IF EXISTS "FK_stock_transfer_items_product"`)
-    await queryRunner.query(`ALTER TABLE "stock_transfer_items" DROP CONSTRAINT IF EXISTS "FK_stock_transfer_items_transfer"`)
+    await queryRunner.query(
+      `ALTER TABLE "stock_transfer_items" DROP CONSTRAINT IF EXISTS "FK_stock_transfer_items_variant"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "stock_transfer_items" DROP CONSTRAINT IF EXISTS "FK_stock_transfer_items_product"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "stock_transfer_items" DROP CONSTRAINT IF EXISTS "FK_stock_transfer_items_transfer"`,
+    )
     await queryRunner.query(`DROP TABLE IF EXISTS "stock_transfer_items"`)
 
-    await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_user"`)
-    await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_tenant"`)
-    await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_destination_warehouse"`)
-    await queryRunner.query(`ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_source_warehouse"`)
+    await queryRunner.query(
+      `ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_user"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_tenant"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_destination_warehouse"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "stock_transfers" DROP CONSTRAINT IF EXISTS "FK_stock_transfers_source_warehouse"`,
+    )
     await queryRunner.query(`DROP TABLE IF EXISTS "stock_transfers"`)
 
     await queryRunner.query(`DROP TYPE IF EXISTS "public"."stock_transfers_status_enum"`)

@@ -1,5 +1,14 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index, BeforeUpdate, BeforeRemove } from 'typeorm'
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  Index,
+  BeforeUpdate,
+  BeforeRemove,
+} from 'typeorm'
 import { JournalType } from '@/common/enums/journal-type.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { LedgerEntryEntity } from './ledger-entry.entity'
@@ -54,4 +63,3 @@ export class JournalEntryEntity extends BaseEntity {
     throw new Error('Journal entries are immutable and cannot be updated or deleted.')
   }
 }
-

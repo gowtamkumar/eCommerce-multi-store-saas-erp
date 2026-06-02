@@ -20,7 +20,7 @@ export class AccountingController {
   constructor(
     private readonly accountingService: AccountingService,
     private readonly reportService: FinancialReportService,
-  ) { }
+  ) {}
 
   @Post('init')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
@@ -39,7 +39,9 @@ export class AccountingController {
   // Account Endpoints
   @Get('accounts')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
-  async getAccounts(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
+  async getAccounts(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.accountingService.getAccounts(ctx)
     return {
       success: true,
@@ -98,7 +100,9 @@ export class AccountingController {
   // Fiscal Period Endpoints
   @Get('fiscal-periods')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
-  async getFiscalPeriods(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
+  async getFiscalPeriods(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.accountingService.getFiscalPeriods(ctx)
     return {
       success: true,
@@ -202,7 +206,9 @@ export class AccountingController {
 
   @Get('journal-entries')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
-  async getJournalEntries(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
+  async getJournalEntries(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.accountingService.getJournalEntries(ctx)
     return {
       success: true,
@@ -216,7 +222,8 @@ export class AccountingController {
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async createJournalEntry(
     @RequestContext() ctx: RequestContextDto,
-    @Body() body: {
+    @Body()
+    body: {
       date?: Date
       type: JournalType
       description: string

@@ -13,8 +13,8 @@ describe('StockReservationService', () => {
 
   beforeEach(async () => {
     repoMock = {
-      create: jest.fn().mockImplementation(dto => dto),
-      save: jest.fn().mockImplementation(entity => Promise.resolve({ id: 'res-id', ...entity })),
+      create: jest.fn().mockImplementation((dto) => dto),
+      save: jest.fn().mockImplementation((entity) => Promise.resolve({ id: 'res-id', ...entity })),
       findOne: jest.fn(),
       createQueryBuilder: jest.fn(),
       manager: {

@@ -75,7 +75,10 @@ describe('TenantService', () => {
         { provide: SettingsService, useValue: {} },
         { provide: RoleManagementService, useValue: {} },
         { provide: DataSource, useValue: dataSource },
-        { provide: NotificationService, useValue: { createNotification: jest.fn().mockResolvedValue({}) } },
+        {
+          provide: NotificationService,
+          useValue: { createNotification: jest.fn().mockResolvedValue({}) },
+        },
       ],
     }).compile()
 
@@ -88,7 +91,11 @@ describe('TenantService', () => {
 
   describe('updateTenantPlan', () => {
     it('should throw NotFoundException if new plan is not found', async () => {
-      const mockTenant = { id: 'tenant-1', subdomain: 'sub', customDomain: 'custom' } as TenantEntity
+      const mockTenant = {
+        id: 'tenant-1',
+        subdomain: 'sub',
+        customDomain: 'custom',
+      } as TenantEntity
       jest.spyOn(service, 'findOneTenants').mockResolvedValue(mockTenant)
       subscriptionPlanService.findOneSubscriptionPlan.mockResolvedValue(null)
 

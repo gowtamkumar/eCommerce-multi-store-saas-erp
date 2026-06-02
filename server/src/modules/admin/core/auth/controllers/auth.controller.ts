@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Post, Delete, Param, Res, Req, UseGuards, Logger } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Res,
+  Req,
+  UseGuards,
+  Logger,
+} from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -26,7 +37,7 @@ export class AuthController {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called register.`)
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
     const userAgent = req.headers['user-agent'] || ''
-    const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+    const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : ''
 
     const authPayload = await this.authService.register(
       registerCredentialDto,
@@ -54,7 +65,7 @@ export class AuthController {
   ): Promise<BaseApiSuccessResponse<any>> {
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
     const userAgent = req.headers['user-agent'] || ''
-    const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+    const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : ''
 
     const tokens = await this.authService.refreshTokens(
       body.userId,

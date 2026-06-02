@@ -521,4 +521,3 @@ export class SuperAdminController {
     }
   }
 }
-

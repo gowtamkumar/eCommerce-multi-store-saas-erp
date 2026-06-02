@@ -25,7 +25,9 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     })
   }
 
-  async validate(payload: AccessTokenPayload & { sessionId?: string }): Promise<UserDto & { sessionId?: string }> {
+  async validate(
+    payload: AccessTokenPayload & { sessionId?: string },
+  ): Promise<UserDto & { sessionId?: string }> {
     const { sub: userId, sessionId } = payload
     try {
       if (!sessionId) {

@@ -67,7 +67,9 @@ describe('custom-domain.util', () => {
 
     it('returns error info when resolution fails', async () => {
       const resolver = {
-        resolveTxt: jest.fn().mockRejectedValue(Object.assign(new Error('not found'), { code: 'ENOTFOUND' })),
+        resolveTxt: jest
+          .fn()
+          .mockRejectedValue(Object.assign(new Error('not found'), { code: 'ENOTFOUND' })),
       }
       const result = await verifyDomainOwnership('example.com', 'expected-token', resolver)
       expect(result.verified).toBe(false)

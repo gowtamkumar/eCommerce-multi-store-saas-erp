@@ -112,7 +112,10 @@ export class DebitNoteService {
     }
   }
 
-  private async approveDebitNote(dn: DebitNoteEntity, ctx: RequestContextDto): Promise<DebitNoteEntity> {
+  private async approveDebitNote(
+    dn: DebitNoteEntity,
+    ctx: RequestContextDto,
+  ): Promise<DebitNoteEntity> {
     const tenantId = ctx.tenantId
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()

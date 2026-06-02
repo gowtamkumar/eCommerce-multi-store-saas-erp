@@ -143,8 +143,18 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     )
 
     // Verify initial stock levels
-    let srcStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
-    let dstStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, destinationWarehouse.id)
+    let srcStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
+    let dstStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      destinationWarehouse.id,
+    )
     expect(srcStock).toBe(25)
     expect(dstStock).toBe(0)
 
@@ -171,7 +181,12 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     expect(Number(transfer.items[0].quantityReceived)).toBe(0)
 
     // Check stock hasn't moved yet
-    srcStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
+    srcStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
     expect(srcStock).toBe(25)
 
     // 2. Approve the transfer document
@@ -179,7 +194,12 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     expect(approvedTransfer.status).toBe(StockTransferStatus.APPROVED)
 
     // Check stock hasn't moved yet
-    srcStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
+    srcStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
     expect(srcStock).toBe(25)
 
     // 3. Ship the transfer document
@@ -187,8 +207,18 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     expect(shippedTransfer.status).toBe(StockTransferStatus.IN_TRANSIT)
 
     // Verify stock is deducted from source warehouse but not yet added to destination warehouse
-    srcStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
-    dstStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, destinationWarehouse.id)
+    srcStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
+    dstStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      destinationWarehouse.id,
+    )
     expect(srcStock).toBe(15) // 25 - 10
     expect(dstStock).toBe(0)
 
@@ -210,8 +240,18 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     expect(Number(receivedTransfer.items[0].quantityReceived)).toBe(8)
 
     // Verify destination warehouse stock has incremented by actual received quantity
-    srcStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
-    dstStock = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, destinationWarehouse.id)
+    srcStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
+    dstStock = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      destinationWarehouse.id,
+    )
     expect(srcStock).toBe(15) // Stays at 15
     expect(dstStock).toBe(8) // Increments by 8
   })
@@ -220,7 +260,12 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     const qtyRequested = 5
 
     // Current source stock is 15 (from previous test)
-    let srcStockBefore = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
+    let srcStockBefore = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
     expect(srcStockBefore).toBe(15)
 
     // 1. Create draft transfer
@@ -241,7 +286,12 @@ describe('Stock Transfer Document Flow (e2e)', () => {
 
     // 2. Ship to move to IN_TRANSIT (stock will be deducted)
     await stockTransferService.ship(transfer.id, ctx)
-    let srcStockInTransit = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
+    let srcStockInTransit = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
     expect(srcStockInTransit).toBe(10) // 15 - 5
 
     // 3. Cancel the transfer in transit
@@ -249,8 +299,18 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     expect(cancelledTransfer.status).toBe(StockTransferStatus.CANCELLED)
 
     // 4. Verify stock is restored back to the source warehouse
-    let srcStockAfter = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, sourceWarehouse.id)
-    let dstStockAfter = await inventoryLedgerService.getLiveStock(product.id, null, tenant.id, destinationWarehouse.id)
+    let srcStockAfter = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      sourceWarehouse.id,
+    )
+    let dstStockAfter = await inventoryLedgerService.getLiveStock(
+      product.id,
+      null,
+      tenant.id,
+      destinationWarehouse.id,
+    )
     expect(srcStockAfter).toBe(15) // Restored back to 15!
     expect(dstStockAfter).toBe(8) // Stays at 8 (from previous test)
   })
@@ -273,8 +333,6 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     )
 
     // 2. Shipping should fail due to insufficient stock
-    await expect(stockTransferService.ship(transfer.id, ctx)).rejects.toThrow(
-      /Insufficient stock/
-    )
+    await expect(stockTransferService.ship(transfer.id, ctx)).rejects.toThrow(/Insufficient stock/)
   })
 })

@@ -39,7 +39,10 @@ export class StockTransferService {
     return `ST-${today}-${rand}`
   }
 
-  async create(dto: CreateStockTransferDocDto, ctx: RequestContextDto): Promise<StockTransferEntity> {
+  async create(
+    dto: CreateStockTransferDocDto,
+    ctx: RequestContextDto,
+  ): Promise<StockTransferEntity> {
     this.logger.log(`Creating Stock Transfer document for tenant: ${ctx.tenantId}`)
 
     if (dto.sourceWarehouseId === dto.destinationWarehouseId) {
@@ -138,11 +141,17 @@ export class StockTransferService {
     return transfer
   }
 
-  async update(id: string, dto: UpdateStockTransferDocDto, ctx: RequestContextDto): Promise<StockTransferEntity> {
+  async update(
+    id: string,
+    dto: UpdateStockTransferDocDto,
+    ctx: RequestContextDto,
+  ): Promise<StockTransferEntity> {
     const transfer = await this.findOne(id, ctx)
 
     if (transfer.status !== StockTransferStatus.DRAFT) {
-      throw new BadRequestException(`Cannot update stock transfer document in status: ${transfer.status}`)
+      throw new BadRequestException(
+        `Cannot update stock transfer document in status: ${transfer.status}`,
+      )
     }
 
     if (dto.sourceWarehouseId) {
@@ -220,7 +229,10 @@ export class StockTransferService {
   async ship(id: string, ctx: RequestContextDto): Promise<StockTransferEntity> {
     const transfer = await this.findOne(id, ctx)
 
-    if (transfer.status !== StockTransferStatus.APPROVED && transfer.status !== StockTransferStatus.DRAFT) {
+    if (
+      transfer.status !== StockTransferStatus.APPROVED &&
+      transfer.status !== StockTransferStatus.DRAFT
+    ) {
       throw new BadRequestException(`Cannot ship transfer in status: ${transfer.status}`)
     }
 
@@ -271,7 +283,11 @@ export class StockTransferService {
     return this.findOne(id, ctx)
   }
 
-  async receive(id: string, dto: ReceiveStockTransferDto, ctx: RequestContextDto): Promise<StockTransferEntity> {
+  async receive(
+    id: string,
+    dto: ReceiveStockTransferDto,
+    ctx: RequestContextDto,
+  ): Promise<StockTransferEntity> {
     const transfer = await this.findOne(id, ctx)
 
     if (transfer.status !== StockTransferStatus.IN_TRANSIT) {
@@ -318,7 +334,10 @@ export class StockTransferService {
   async cancel(id: string, ctx: RequestContextDto): Promise<StockTransferEntity> {
     const transfer = await this.findOne(id, ctx)
 
-    if (transfer.status === StockTransferStatus.RECEIVED || transfer.status === StockTransferStatus.CANCELLED) {
+    if (
+      transfer.status === StockTransferStatus.RECEIVED ||
+      transfer.status === StockTransferStatus.CANCELLED
+    ) {
       throw new BadRequestException(`Cannot cancel transfer in status: ${transfer.status}`)
     }
 

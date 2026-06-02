@@ -107,7 +107,13 @@ export class ReturnController {
     @Body('refundMethod') refundMethod?: RefundMethod,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateStatus.`)
-    const result = await this.returnService.updateReturnRequestStatus(id, ctx, status, comment, refundMethod)
+    const result = await this.returnService.updateReturnRequestStatus(
+      id,
+      ctx,
+      status,
+      comment,
+      refundMethod,
+    )
     return {
       success: true,
       statusCode: 200,

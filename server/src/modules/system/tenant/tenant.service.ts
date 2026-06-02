@@ -184,7 +184,10 @@ export class TenantService {
       await tenantRepo.save(savedTenant)
 
       // Seed default roles and assign Super Admin to the new user
-      const superAdminRole = await this.roleManagementService.seedSuperAdminRole(savedTenant.id, manager)
+      const superAdminRole = await this.roleManagementService.seedSuperAdminRole(
+        savedTenant.id,
+        manager,
+      )
       await this.roleManagementService.seedDefaultRoles(savedTenant.id, manager)
 
       const assignmentRepo = manager.getRepository(UserRoleAssignmentEntity)
@@ -195,7 +198,7 @@ export class TenantService {
           tenantId: savedTenant.id,
           scopeType: RoleScopeType.GLOBAL,
           assignedBy: savedUser.id,
-        })
+        }),
       )
 
       // Tenant features are resolved dynamically from the Subscription Plan.
@@ -234,19 +237,22 @@ export class TenantService {
       // Send verification email (fire and forget or handle errors gracefully)
       this.mailService
         .sendVerificationEmail(email, result.verificationToken, result.tenant.id)
-        .catch((err) =>
-          this.logger.error(`Failed to send verification email for ${email}:`, err),
-        ),
+        .catch((err) => this.logger.error(`Failed to send verification email for ${email}:`, err)),
       // Trigger Global Super Admin Notification
       this.notificationService
-        .createNotification({
-          title: 'New Tenant Signup',
-          message: `A new store '${storeName}' (${subdomain}) has registered on the platform.`,
-          type: 'INFO',
-          link: `/admin/system/tenants/${result.tenant.id}`,
-          userId: null as any,
-        }, null)
-        .catch((err) => this.logger.error(`Failed to trigger super admin tenant notification:`, err)),
+        .createNotification(
+          {
+            title: 'New Tenant Signup',
+            message: `A new store '${storeName}' (${subdomain}) has registered on the platform.`,
+            type: 'INFO',
+            link: `/admin/system/tenants/${result.tenant.id}`,
+            userId: null as any,
+          },
+          null,
+        )
+        .catch((err) =>
+          this.logger.error(`Failed to trigger super admin tenant notification:`, err),
+        ),
     ])
 
     return {

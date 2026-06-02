@@ -81,15 +81,14 @@ export class SubscriberController {
 
   @Public()
   @Get('confirm')
-  async confirm(
-    @Query('token') token: string,
-    @Res() res: Response,
-  ): Promise<void> {
+  async confirm(@Query('token') token: string, @Res() res: Response): Promise<void> {
     try {
       await this.subscriberService.confirm(token)
-      res.type('text/html').send(
-        `<html><body style="font-family:sans-serif;max-width:480px;margin:48px auto;text-align:center;"><h2>You're confirmed!</h2><p>Thanks for subscribing. You're all set to receive updates.</p></body></html>`,
-      )
+      res
+        .type('text/html')
+        .send(
+          `<html><body style="font-family:sans-serif;max-width:480px;margin:48px auto;text-align:center;"><h2>You're confirmed!</h2><p>Thanks for subscribing. You're all set to receive updates.</p></body></html>`,
+        )
     } catch (e: any) {
       res
         .status(400)
@@ -104,15 +103,14 @@ export class SubscriberController {
 
   @Public()
   @Get('unsubscribe')
-  async unsubscribe(
-    @Query('token') token: string,
-    @Res() res: Response,
-  ): Promise<void> {
+  async unsubscribe(@Query('token') token: string, @Res() res: Response): Promise<void> {
     try {
       await this.subscriberService.unsubscribe(token)
-      res.type('text/html').send(
-        `<html><body style="font-family:sans-serif;max-width:480px;margin:48px auto;text-align:center;"><h2>You've been unsubscribed</h2><p>We're sorry to see you go. You won't receive future emails from this list.</p></body></html>`,
-      )
+      res
+        .type('text/html')
+        .send(
+          `<html><body style="font-family:sans-serif;max-width:480px;margin:48px auto;text-align:center;"><h2>You've been unsubscribed</h2><p>We're sorry to see you go. You won't receive future emails from this list.</p></body></html>`,
+        )
     } catch (e: any) {
       res
         .status(400)

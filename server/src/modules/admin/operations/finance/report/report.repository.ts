@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm'
 
 @Injectable()
 export class ReportRepository {
-  constructor(private readonly dataSource: DataSource) { }
+  constructor(private readonly dataSource: DataSource) {}
 
   async getDashboardStats(tenantId: string, startDate: Date) {
     const query = `

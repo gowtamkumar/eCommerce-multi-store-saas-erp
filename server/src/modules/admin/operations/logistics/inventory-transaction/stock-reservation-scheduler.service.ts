@@ -22,7 +22,9 @@ export class StockReservationSchedulerService implements OnModuleInit {
           jobId: 'sweep-expired-reservations-repeatable',
         },
       )
-      this.logger.log('Successfully registered repeatable job "sweep-expired-reservations" (* * * * *)')
+      this.logger.log(
+        'Successfully registered repeatable job "sweep-expired-reservations" (* * * * *)',
+      )
 
       // Setup repeatable cron job to process accounting outbox every minute
       await this.orderQueue.add(
@@ -35,7 +37,9 @@ export class StockReservationSchedulerService implements OnModuleInit {
           jobId: 'process-accounting-outbox-repeatable',
         },
       )
-      this.logger.log('Successfully registered repeatable job "process-accounting-outbox" (* * * * *)')
+      this.logger.log(
+        'Successfully registered repeatable job "process-accounting-outbox" (* * * * *)',
+      )
 
       // Sweep expired product batches and write off residual stock once a day.
       // Runs at 02:00 server time — outside business hours.

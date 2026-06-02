@@ -89,7 +89,6 @@ import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-fea
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
 
-
 @Global()
 @Module({
   imports: [
@@ -226,4 +225,4 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
     TypeOrmModule,
   ],
 })
-export class PersistenceModule { }
+export class PersistenceModule {}

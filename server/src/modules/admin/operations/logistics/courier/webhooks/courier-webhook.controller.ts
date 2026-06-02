@@ -71,7 +71,10 @@ export class CourierWebhookController {
     }
 
     // Strip any "sha256=" prefix some providers prepend.
-    const provided = headerSignature.replace(/^sha256=/i, '').trim().toLowerCase()
+    const provided = headerSignature
+      .replace(/^sha256=/i, '')
+      .trim()
+      .toLowerCase()
     const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
 
     // Length must match before timingSafeEqual; otherwise it throws.

@@ -30,7 +30,7 @@ import { CampaignService } from '../services/campaign.service'
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
 @RequireFeature('marketing')
 export class CampaignController {
-  constructor(private readonly campaignService: CampaignService) { }
+  constructor(private readonly campaignService: CampaignService) {}
 
   @Post()
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)

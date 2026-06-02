@@ -9,13 +9,24 @@ import { AccountingService } from '@/modules/admin/operations/finance/accounting
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { EmployeeEntity } from '@/modules/admin/operations/hrm/entities/employee.entity'
 import { DepartmentEntity } from '@/modules/admin/operations/hrm/entities/department.entity'
-import { JobPostingEntity, ApplicantEntity } from '@/modules/admin/operations/hrm/entities/recruitment.entity'
+import {
+  JobPostingEntity,
+  ApplicantEntity,
+} from '@/modules/admin/operations/hrm/entities/recruitment.entity'
 import { LeaveRequestEntity } from '@/modules/admin/operations/hrm/entities/leave.entity'
 import { AttendanceSessionEntity } from '@/modules/admin/operations/hrm/entities/attendance.entity'
-import { PayrollBatchEntity, PayrollSlipEntity } from '@/modules/admin/operations/hrm/entities/payroll.entity'
+import {
+  PayrollBatchEntity,
+  PayrollSlipEntity,
+} from '@/modules/admin/operations/hrm/entities/payroll.entity'
 import { JournalEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/journal-entry.entity'
 import { UserRole } from '@/common/enums/user/user-role.enum'
-import { LeaveType, LeaveStatus, ApplicantStatus, EmployeeStatus } from '@/common/enums/hrm/hrm-enums'
+import {
+  LeaveType,
+  LeaveStatus,
+  ApplicantStatus,
+  EmployeeStatus,
+} from '@/common/enums/hrm/hrm-enums'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { v4 as uuidv4 } from 'uuid'
@@ -123,7 +134,7 @@ describe('HRM Module (e2e)', () => {
         deptRepo.create({
           name: 'Engineering',
           tenantId: tenant.id,
-        })
+        }),
       )
 
       const job: any = await jobRepo.save(
@@ -134,7 +145,7 @@ describe('HRM Module (e2e)', () => {
           status: 'PUBLISHED' as any,
           requirements: ['TypeScript', 'NestJS'],
           description: 'Build backend',
-        } as any)
+        } as any),
       )
 
       const applicant = await appRepo.save(
@@ -146,7 +157,7 @@ describe('HRM Module (e2e)', () => {
           jobPostingId: job.id,
           status: ApplicantStatus.HR_ROUND,
           tenantId: tenant.id,
-        })
+        }),
       )
 
       // Spy on userService.createUser to capture the generated password
@@ -184,7 +195,9 @@ describe('HRM Module (e2e)', () => {
       const deptRepo = dataSource.getRepository(DepartmentEntity)
 
       // Clear any employees/users/applicants from previous tests to ensure a clean slate
-      await dataSource.query('DELETE FROM employee_personal_details WHERE tenant_id = $1', [tenant.id])
+      await dataSource.query('DELETE FROM employee_personal_details WHERE tenant_id = $1', [
+        tenant.id,
+      ])
       await dataSource.query('DELETE FROM employees WHERE tenant_id = $1', [tenant.id])
       await dataSource.query('DELETE FROM users WHERE tenant_id = $1', [tenant.id])
 
@@ -192,7 +205,7 @@ describe('HRM Module (e2e)', () => {
         deptRepo.create({
           name: 'IT',
           tenantId: tenant.id,
-        })
+        }),
       )
 
       const user = await userRepo.save(
@@ -204,7 +217,7 @@ describe('HRM Module (e2e)', () => {
           email: `jane.smith-${Date.now()}@example.com`,
           role: UserRole.EMPLOYEE,
           tenantId: tenant.id,
-        })
+        }),
       )
 
       // Jane joins mid-month on May 5th, 2026.
@@ -223,7 +236,7 @@ describe('HRM Module (e2e)', () => {
             allowances: [{ type: 'HRA', amount: 200 }],
             deductions: [{ type: 'PF', amount: 100 }],
           },
-        })
+        }),
       )
 
       // Case A: 1 approved Unpaid leave day on May 12th, 2026
@@ -237,16 +250,14 @@ describe('HRM Module (e2e)', () => {
           totalDays: 1,
           reason: 'Personal',
           status: LeaveStatus.APPROVED,
-        })
+        }),
       )
 
       // Case B: Weekday Attendance Sessions from May 5th to May 31st (excluding May 15th and May 18th)
       // This will result in exactly 2 unexcused absences: May 15th (Friday) and May 18th (Monday).
       // Note: May 9th, 10th, 16th, 17th, 23rd, 24th, 30th, 31st are weekends, so they don't count as absences.
       // May 12th is approved unpaid leave, so it is not an unexcused absence.
-      const weekdays = [
-        5, 6, 7, 8, 11, 13, 14, 19, 20, 21, 22, 25, 26, 27, 28, 29,
-      ]
+      const weekdays = [5, 6, 7, 8, 11, 13, 14, 19, 20, 21, 22, 25, 26, 27, 28, 29]
 
       for (const day of weekdays) {
         await attendanceRepo.save(
@@ -258,7 +269,7 @@ describe('HRM Module (e2e)', () => {
             workHours: 8,
             overtimeHours: 0,
             lateMinutes: 0,
-          })
+          }),
         )
       }
 
@@ -270,7 +281,7 @@ describe('HRM Module (e2e)', () => {
 
       const slipRepo = dataSource.getRepository(PayrollSlipEntity)
       const slip = await slipRepo.findOne({
-        where: { batchId: result.batch.id, employeeId: employee.id }
+        where: { batchId: result.batch.id, employeeId: employee.id },
       })
 
       expect(slip).toBeDefined()

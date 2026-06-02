@@ -38,7 +38,6 @@ export class PermissionEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   feature: string
 
-
   /**
    * The specific action this permission authorizes.
    * Example: 'view', 'create', 'edit', 'delete', 'approve', 'export'

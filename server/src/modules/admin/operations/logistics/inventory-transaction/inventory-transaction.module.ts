@@ -49,7 +49,12 @@ import { ProductBatchController } from './product-batch.controller'
       name: 'order',
     }),
   ],
-  controllers: [InventoryLedgerController, StockReservationController, StockTransferController, ProductBatchController],
+  controllers: [
+    InventoryLedgerController,
+    StockReservationController,
+    StockTransferController,
+    ProductBatchController,
+  ],
   providers: [
     InventoryLedgerService,
     InventoryLedgerRepository,
@@ -60,6 +65,12 @@ import { ProductBatchController } from './product-batch.controller'
     StockTransferService,
     ProductBatchService,
   ],
-  exports: [InventoryLedgerService, InventoryLedgerRepository, StockReservationService, StockTransferService, ProductBatchService],
+  exports: [
+    InventoryLedgerService,
+    InventoryLedgerRepository,
+    StockReservationService,
+    StockTransferService,
+    ProductBatchService,
+  ],
 })
 export class InventoryLedgerModule {}

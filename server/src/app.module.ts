@@ -115,6 +115,8 @@ export class AppModule implements NestModule {
     consumer
       .apply(TenantContextMiddleware) //.exclude(...) → Skip Middleware for These Routes
       .exclude(
+        '/',
+        '',
         // 'tenant/lookup',
         'tenants',
         'tenants/*path',

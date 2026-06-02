@@ -30,7 +30,11 @@ export class LoyaltyService {
   /**
    * Retrieves the current points balance of a customer.
    */
-  async getAvailablePoints(customerId: string, tenantId: string, manager?: EntityManager): Promise<number> {
+  async getAvailablePoints(
+    customerId: string,
+    tenantId: string,
+    manager?: EntityManager,
+  ): Promise<number> {
     const em = manager || this.dataSource.manager
     const user = await em.findOne(UserEntity, { where: { id: customerId, tenantId } })
     return user ? user.loyaltyPointsBalance : 0
@@ -306,9 +310,7 @@ export class LoyaltyService {
    * unexpired remaining_points. Used by the finance/marketing dashboards
    * to surface deferred-revenue exposure.
    */
-  async getLiability(
-    tenantId: string,
-  ): Promise<{ outstandingPoints: number; customers: number }> {
+  async getLiability(tenantId: string): Promise<{ outstandingPoints: number; customers: number }> {
     const row = await this.dataSource
       .createQueryBuilder(LoyaltyLedgerEntity, 'l')
       .select('COALESCE(SUM(l.remaining_points), 0)', 'pts')
@@ -364,10 +366,11 @@ export class LoyaltyService {
     }
 
     // Load full order details with items and product categories
-    const resolvedOrder = await em.findOne(OrderEntity, {
-      where: { id: order.id, tenantId: ctx.tenantId },
-      relations: ['items', 'items.product'],
-    }) || order
+    const resolvedOrder =
+      (await em.findOne(OrderEntity, {
+        where: { id: order.id, tenantId: ctx.tenantId },
+        relations: ['items', 'items.product'],
+      })) || order
 
     const now = new Date()
 
@@ -393,7 +396,8 @@ export class LoyaltyService {
       // Find matching category rules
       const catRules = validRules.filter((r) => {
         if (r.type !== 'CATEGORY_MULTIPLIER') return false
-        const catIds = r.conditions?.categoryIds || (r.conditions?.categoryId ? [r.conditions.categoryId] : [])
+        const catIds =
+          r.conditions?.categoryIds || (r.conditions?.categoryId ? [r.conditions.categoryId] : [])
         return categoryId && catIds.includes(categoryId)
       })
 
@@ -495,7 +499,11 @@ export class LoyaltyService {
     return em.save(LoyaltyRuleEntity, rule)
   }
 
-  async updateRule(id: string, data: Partial<LoyaltyRuleEntity>, tenantId: string): Promise<LoyaltyRuleEntity> {
+  async updateRule(
+    id: string,
+    data: Partial<LoyaltyRuleEntity>,
+    tenantId: string,
+  ): Promise<LoyaltyRuleEntity> {
     const em = this.dataSource.manager
     const rule = await this.findRuleById(id, tenantId)
     Object.assign(rule, data)

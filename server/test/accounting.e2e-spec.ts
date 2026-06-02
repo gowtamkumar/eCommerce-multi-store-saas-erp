@@ -5,7 +5,10 @@ import { AppModule } from './../src/app.module'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { JournalEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/journal-entry.entity'
 import { LedgerEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/ledger-entry.entity'
-import { FiscalPeriodEntity, FiscalPeriodStatus } from '@/modules/admin/operations/finance/accounting/entities/fiscal-period.entity'
+import {
+  FiscalPeriodEntity,
+  FiscalPeriodStatus,
+} from '@/modules/admin/operations/finance/accounting/entities/fiscal-period.entity'
 import { AccountingOutboxEntity } from '@/modules/admin/operations/finance/accounting/entities/accounting-outbox.entity'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { AccountingOutboxService } from '@/modules/admin/operations/finance/accounting/services/accounting-outbox.service'

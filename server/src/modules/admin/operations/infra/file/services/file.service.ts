@@ -87,7 +87,6 @@ export class FilesService {
     return this.fileRepository.createAndSave(createFile, ctx)
   }
 
-
   async updateFile(id: string, updateFile: UpdateFileDto): Promise<FileEntity> {
     this.logger.log(`${this.updateFile.name} Service Called`)
 

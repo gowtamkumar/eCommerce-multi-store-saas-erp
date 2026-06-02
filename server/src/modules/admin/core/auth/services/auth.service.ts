@@ -23,7 +23,6 @@ import { UserEntity } from '../../user/entities/user.entity'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 import { SessionEntity } from '../entities/session.entity'
 
-
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'

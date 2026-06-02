@@ -18,17 +18,17 @@ export class CacheService {
       'tender',
       'z-report',
       'zreport',
-      
+
       // Customer Carts
       'cart',
       'checkout',
-      
+
       // Real-time Stock Checks
       'atp',
       'stock-check',
       'stockcheck',
       'stock-level',
-      
+
       // Auth Routes
       'otp',
       'verification',

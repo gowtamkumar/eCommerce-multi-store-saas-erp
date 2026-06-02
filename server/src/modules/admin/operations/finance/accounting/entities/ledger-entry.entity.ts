@@ -47,4 +47,3 @@ export class LedgerEntryEntity extends BaseEntity {
     throw new Error('Ledger entries are immutable and cannot be updated or deleted.')
   }
 }
-

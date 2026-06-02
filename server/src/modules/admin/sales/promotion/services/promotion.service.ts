@@ -132,10 +132,7 @@ export class PromotionService {
     // otherwise the composite tenant-scoped unique index throws a raw
     // 23505 instead of a friendly 409.
     if (updatePromotionDto.slug && updatePromotionDto.slug !== promotion.slug) {
-      const slugTaken = await this.promotionRepository.findBySlug(
-        updatePromotionDto.slug,
-        tenantId,
-      )
+      const slugTaken = await this.promotionRepository.findBySlug(updatePromotionDto.slug, tenantId)
       if (slugTaken && slugTaken.id !== id) {
         throw new ConflictException('Promotion with this slug already exists')
       }

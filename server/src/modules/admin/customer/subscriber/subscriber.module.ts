@@ -10,12 +10,7 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([SubscriberEntity]),
-    CacheModule,
-    TenantModule,
-    MailModule,
-  ],
+  imports: [TypeOrmModule.forFeature([SubscriberEntity]), CacheModule, TenantModule, MailModule],
   controllers: [SubscriberController],
   providers: [SubscriberService, SubscriberRepository],
   exports: [SubscriberService],

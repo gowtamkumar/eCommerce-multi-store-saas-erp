@@ -45,7 +45,11 @@ export class DunningService {
     return em.save(DunningRuleEntity, rule)
   }
 
-  async updateRule(id: string, data: Partial<DunningRuleEntity>, tenantId: string): Promise<DunningRuleEntity> {
+  async updateRule(
+    id: string,
+    data: Partial<DunningRuleEntity>,
+    tenantId: string,
+  ): Promise<DunningRuleEntity> {
     const em = this.dataSource.manager
     const rule = await this.findRuleById(id, tenantId)
     Object.assign(rule, data)
@@ -70,7 +74,9 @@ export class DunningService {
 
   // --- Dunning Audit Runner ---
 
-  async runDunningAudit(ctx: RequestContextDto): Promise<{ processed: number; logsCreated: number }> {
+  async runDunningAudit(
+    ctx: RequestContextDto,
+  ): Promise<{ processed: number; logsCreated: number }> {
     const tenantId = ctx.tenantId
     const em = this.dataSource.manager
     const now = new Date()
@@ -122,9 +128,11 @@ export class DunningService {
       const paymentsTotal = Math.abs(
         entries
           .filter((e) =>
-            [ArTransactionType.PAYMENT, ArTransactionType.WRITE_OFF, ArTransactionType.CREDIT_NOTE].includes(
-              e.type,
-            ),
+            [
+              ArTransactionType.PAYMENT,
+              ArTransactionType.WRITE_OFF,
+              ArTransactionType.CREDIT_NOTE,
+            ].includes(e.type),
           )
           .reduce((sum, e) => sum + Number(e.amount), 0),
       )
@@ -209,14 +217,19 @@ export class DunningService {
             tenantId,
           })
         } catch (err) {
-          this.logger.error(`Failed to send dunning email to ${customer.email} for customer ${customer.id}`, err)
+          this.logger.error(
+            `Failed to send dunning email to ${customer.email} for customer ${customer.id}`,
+            err,
+          )
         }
       }
 
       if (shouldHold && !customer.creditHold) {
         customer.creditHold = true
         await em.save(UserEntity, customer)
-        this.logger.log(`Customer ${customer.id} placed on credit hold via dunning rule level ${matchedRule.dunningLevel}`)
+        this.logger.log(
+          `Customer ${customer.id} placed on credit hold via dunning rule level ${matchedRule.dunningLevel}`,
+        )
       }
 
       // 7. Write Log

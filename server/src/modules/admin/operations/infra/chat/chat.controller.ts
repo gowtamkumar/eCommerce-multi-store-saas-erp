@@ -8,14 +8,14 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
   Body,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { ChatService } from './chat.service';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { RequestContext } from '@/common/decorators/request-context.decorator';
-import { RequestContextDto } from '@/common/dto/request-context.dto';
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto';
-import { Public } from '@/common/decorators/public.decorator';
+} from '@nestjs/common'
+import { ApiTags, ApiOperation } from '@nestjs/swagger'
+import { ChatService } from './chat.service'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { Public } from '@/common/decorators/public.decorator'
 
 @ApiTags('Chat Support')
 @Controller('chat')
@@ -33,9 +33,13 @@ export class ChatController {
     @Query('visitorId') visitorId: string,
     @Query('customerId') customerId?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const tenantId = ctx.tenantId || null;
-    const conversation = await this.chatService.getOrCreateConversation(tenantId, visitorId, customerId);
-    const [messages] = await this.chatService.getMessages(conversation.id);
+    const tenantId = ctx.tenantId || null
+    const conversation = await this.chatService.getOrCreateConversation(
+      tenantId,
+      visitorId,
+      customerId,
+    )
+    const [messages] = await this.chatService.getMessages(conversation.id)
 
     return {
       success: true,
@@ -45,7 +49,7 @@ export class ChatController {
         conversation,
         messages,
       },
-    };
+    }
   }
 
   /**
@@ -57,14 +61,14 @@ export class ChatController {
   async markAsReadByVisitor(
     @Param('id') conversationId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
-    await this.chatService.markAsRead(conversationId, 'VISITOR');
+    await this.chatService.markAsRead(conversationId, 'VISITOR')
 
     return {
       success: true,
       statusCode: 200,
       message: 'Conversation marked as read by visitor',
       data: null,
-    };
+    }
   }
 
   /**
@@ -79,13 +83,13 @@ export class ChatController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset?: number,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const tenantId = ctx.tenantId || null;
+    const tenantId = ctx.tenantId || null
     const [conversations, total] = await this.chatService.getConversations(
       tenantId,
       status,
       limit,
       offset,
-    );
+    )
 
     return {
       success: true,
@@ -95,7 +99,7 @@ export class ChatController {
         conversations,
         total,
       },
-    };
+    }
   }
 
   /**
@@ -109,7 +113,7 @@ export class ChatController {
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset?: number,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const [messages, total] = await this.chatService.getMessages(conversationId, limit, offset);
+    const [messages, total] = await this.chatService.getMessages(conversationId, limit, offset)
 
     return {
       success: true,
@@ -119,7 +123,7 @@ export class ChatController {
         messages,
         total,
       },
-    };
+    }
   }
 
   /**
@@ -131,13 +135,13 @@ export class ChatController {
   async markAsReadByAgent(
     @Param('id') conversationId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
-    await this.chatService.markAsRead(conversationId, 'AGENT');
+    await this.chatService.markAsRead(conversationId, 'AGENT')
 
     return {
       success: true,
       statusCode: 200,
       message: 'Conversation marked as read by agent',
       data: null,
-    };
+    }
   }
 }

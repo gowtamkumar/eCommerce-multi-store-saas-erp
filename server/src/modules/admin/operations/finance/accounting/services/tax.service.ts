@@ -29,13 +29,62 @@ export class TaxService {
     this.logger.log(`Seeding multi-jurisdiction system tax rules for tenant ${tenantId}`)
 
     const defaults = [
-      { name: 'VAT Standard BD', rate: 15.00, country: 'BD', state: 'Dhaka', category: TaxCategory.STANDARD, isSystem: true },
-      { name: 'VAT Reduced BD', rate: 5.00, country: 'BD', state: 'Dhaka', category: TaxCategory.REDUCED, isSystem: true },
-      { name: 'Sales Tax US CA', rate: 8.25, country: 'US', state: 'CA', category: TaxCategory.STANDARD, isSystem: true },
-      { name: 'Sales Tax US NY', rate: 8.875, country: 'US', state: 'NY', category: TaxCategory.STANDARD, isSystem: true },
-      { name: 'GST Standard AU', rate: 10.00, country: 'AU', state: '', category: TaxCategory.STANDARD, isSystem: true },
-      { name: 'VAT Standard UK', rate: 20.00, country: 'GB', state: '', category: TaxCategory.STANDARD, isSystem: true },
-      { name: 'VAT Zero UK', rate: 0.00, country: 'GB', state: '', category: TaxCategory.ZERO_RATED, isSystem: true },
+      {
+        name: 'VAT Standard BD',
+        rate: 15.0,
+        country: 'BD',
+        state: 'Dhaka',
+        category: TaxCategory.STANDARD,
+        isSystem: true,
+      },
+      {
+        name: 'VAT Reduced BD',
+        rate: 5.0,
+        country: 'BD',
+        state: 'Dhaka',
+        category: TaxCategory.REDUCED,
+        isSystem: true,
+      },
+      {
+        name: 'Sales Tax US CA',
+        rate: 8.25,
+        country: 'US',
+        state: 'CA',
+        category: TaxCategory.STANDARD,
+        isSystem: true,
+      },
+      {
+        name: 'Sales Tax US NY',
+        rate: 8.875,
+        country: 'US',
+        state: 'NY',
+        category: TaxCategory.STANDARD,
+        isSystem: true,
+      },
+      {
+        name: 'GST Standard AU',
+        rate: 10.0,
+        country: 'AU',
+        state: '',
+        category: TaxCategory.STANDARD,
+        isSystem: true,
+      },
+      {
+        name: 'VAT Standard UK',
+        rate: 20.0,
+        country: 'GB',
+        state: '',
+        category: TaxCategory.STANDARD,
+        isSystem: true,
+      },
+      {
+        name: 'VAT Zero UK',
+        rate: 0.0,
+        country: 'GB',
+        state: '',
+        category: TaxCategory.ZERO_RATED,
+        isSystem: true,
+      },
     ]
 
     const entities = defaults.map((d) =>
@@ -184,7 +233,7 @@ export class TaxService {
           inputCode: '1300',
           inputVatLike: '%input vat%',
           taxCreditLike: '%tax credit%',
-        }
+        },
       )
 
     if (query?.startDate) {
@@ -212,9 +261,17 @@ export class TaxService {
       if (!je) continue
 
       // Identify transaction class: Output (Sales Tax) vs Input (Purchase Tax Credit)
-      if (je.type === JournalType.SALES || je.referenceType === 'ORDER' || je.referenceType === 'CUSTOMER_INVOICE') {
+      if (
+        je.type === JournalType.SALES ||
+        je.referenceType === 'ORDER' ||
+        je.referenceType === 'CUSTOMER_INVOICE'
+      ) {
         // Renders Output VAT (posted under Sales liability accounts or parsed from journal)
-        if (acc.code === '2200' || acc.name.toLowerCase().includes('output vat') || acc.name.toLowerCase().includes('sales tax')) {
+        if (
+          acc.code === '2200' ||
+          acc.name.toLowerCase().includes('output vat') ||
+          acc.name.toLowerCase().includes('sales tax')
+        ) {
           outputTaxTotal += amount
           // Back-calculate taxable base based on standard 15% / 10% averages if base not stored
           const estBase = je.totalAmount - amount
@@ -225,13 +282,21 @@ export class TaxService {
             description: je.description,
             type: 'OUTPUT (Sales)',
             taxableBase: estBase,
-            taxRate: 15.00, // standard parsed rate
+            taxRate: 15.0, // standard parsed rate
             taxAmount: amount,
           })
         }
-      } else if (je.type === JournalType.PURCHASE || je.referenceType === 'SUPPLIER_INVOICE' || je.referenceType === 'GRN') {
+      } else if (
+        je.type === JournalType.PURCHASE ||
+        je.referenceType === 'SUPPLIER_INVOICE' ||
+        je.referenceType === 'GRN'
+      ) {
         // Renders Input VAT credit (posted under purchase asset accounts or parsed from journal)
-        if (acc.code === '1300' || acc.name.toLowerCase().includes('input vat') || acc.name.toLowerCase().includes('tax credit')) {
+        if (
+          acc.code === '1300' ||
+          acc.name.toLowerCase().includes('input vat') ||
+          acc.name.toLowerCase().includes('tax credit')
+        ) {
           inputTaxTotal += amount
           const estBase = je.totalAmount - amount
           taxablePurchasesTotal += estBase
@@ -241,7 +306,7 @@ export class TaxService {
             description: je.description,
             type: 'INPUT (Purchases)',
             taxableBase: estBase,
-            taxRate: 15.00,
+            taxRate: 15.0,
             taxAmount: amount,
           })
         }

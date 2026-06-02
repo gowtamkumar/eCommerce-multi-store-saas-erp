@@ -100,9 +100,7 @@ export class CampaignLogRepository {
    * Aggregate opened/clicked counts for a campaign in a single round-trip.
    * Used by the KPI endpoint and admin UI.
    */
-  async getEngagementCounts(
-    campaignId: string,
-  ): Promise<{ opened: number; clicked: number }> {
+  async getEngagementCounts(campaignId: string): Promise<{ opened: number; clicked: number }> {
     const row = await this.repo
       .createQueryBuilder('log')
       .select('COUNT(*) FILTER (WHERE log.opened_at IS NOT NULL)', 'opened')
