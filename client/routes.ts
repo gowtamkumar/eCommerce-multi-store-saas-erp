@@ -67,28 +67,16 @@ export const storeSettings = [
     feature: "currencies",
   },
   {
-    icon: Share2,
-    label: "Social Links",
-    href: "/admin/settings/social",
-    feature: "social_links",
-  },
-  {
     icon: ShieldCheck,
-    label: "Trust & Safety",
+    label: "Trust & Labels",
     href: "/admin/settings/trust",
     feature: "trust_safety",
   },
   {
     icon: TrendingUp,
-    label: "SEO Settings",
+    label: "SEO & Marketing",
     href: "/admin/settings/marketing",
     feature: "seo",
-  },
-  {
-    icon: Tag,
-    label: "Label Configuration",
-    href: "/admin/settings/label",
-    feature: "label_config",
   },
   {
     icon: Building2,
@@ -450,12 +438,6 @@ export const navGroups = [
       UserRole.SUPER_ADMIN,
     ],
     items: [
-      {
-        icon: Warehouse,
-        label: "Warehouses",
-        href: "/admin/warehouses",
-        feature: "inventory",
-      },
       {
         icon: Package,
         label: "Inventory",

@@ -10,8 +10,9 @@ import { Suspense } from "react";
 export const revalidate = 600;
 
 async function getPageData(slug: string) {
+    if (slug.length < 2) return null;
     try {
-        const data = await fetchAPI(`/pages/slug/${slug}`);
+        const data = await fetchAPI(`/pages/slug/${slug}`, { silent404: true } as any);
         return data.success ? data.data : null;
     } catch (error) {
         console.error(`Error fetching page [${slug}]:`, error);
@@ -21,6 +22,7 @@ async function getPageData(slug: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
+    if (slug.length < 2) return {};
     const page = await getPageData(slug);
 
     if (!page) return {};
@@ -49,7 +51,7 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
 
     // Reserved slugs check
     const reservedSlugs = ["api", "admin", "login", "products", "checkout", "orders"];
-    if (reservedSlugs.includes(slug)) {
+    if (reservedSlugs.includes(slug) || slug.length < 2) {
         return notFound();
     }
 

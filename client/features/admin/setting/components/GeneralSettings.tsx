@@ -1,7 +1,5 @@
-"use client";
-
 import { motion } from "framer-motion";
-import { BrandIdentitySection, ContactSection, SEOSection } from "./SettingsSections";
+import { BrandIdentitySection, ContactSection } from "./SettingsSections";
 
 export default function GeneralSettings({ formData, setFormData }: { formData: any, setFormData: any }) {
   return (
@@ -15,8 +13,6 @@ export default function GeneralSettings({ formData, setFormData }: { formData: a
       <BrandIdentitySection formData={formData} setFormData={setFormData} />
 
       <ContactSection formData={formData} setFormData={setFormData} />
-
-      <SEOSection formData={formData} setFormData={setFormData} />
     </motion.div>
   )
 }

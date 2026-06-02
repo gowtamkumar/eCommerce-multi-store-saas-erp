@@ -5,7 +5,6 @@ export type TabType =
     | "email"
     | "payment"
     | "currencies"
-    | "social"
     | "marketing"
     | "navbar"
     | "footer"
@@ -14,7 +13,6 @@ export type TabType =
     | "productsPage"
     | "singleProductPage"
     | "offersPage"
-    | "label"
     | "sms"
     | "billing"
     | "system"
@@ -27,7 +25,6 @@ export enum TabTypeEnum {
     EMAIL = "email",
     PAYMENT = "payment",
     CURRENCIES = "currencies",
-    SOCIAL = "social",
     MARKETING = "marketing",
     NAVBAR = "navbar",
     FOOTER = "footer",
@@ -36,7 +33,6 @@ export enum TabTypeEnum {
     PRODUCTS_PAGE = "productsPage",
     SINGLE_PRODUCT_PAGE = "singleProductPage",
     OFFERS_PAGE = "offersPage",
-    LABEL = "label",
     SMS = "sms",
     BILLING = "billing",
     SYSTEM = "system",
