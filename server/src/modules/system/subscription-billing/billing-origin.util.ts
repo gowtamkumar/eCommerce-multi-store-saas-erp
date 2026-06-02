@@ -42,9 +42,13 @@ export function buildAllowedBillingOrigins(
     add(`http://${tenant.subdomain}.${env.platformHost}`)
   }
 
-  if (tenant?.customDomain && tenant.customDomainStatus === CustomDomainStatus.ACTIVE) {
-    add(`https://${tenant.customDomain}`)
-    add(`http://${tenant.customDomain}`)
+  if (tenant?.domains) {
+    for (const d of tenant.domains) {
+      if (d.status === CustomDomainStatus.ACTIVE) {
+        add(`https://${d.hostname}`)
+        add(`http://${d.hostname}`)
+      }
+    }
   }
 
   if ((env.nodeEnv ?? 'development') !== 'production') {

@@ -4,6 +4,8 @@ import { TenantEntity } from './entities/tenant.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
+import { TenantDomainEntity } from './entities/tenant-domain.entity'
+
 @Injectable()
 export class TenantRepository {
   constructor(
@@ -21,7 +23,7 @@ export class TenantRepository {
   async findByIdWithRelations(id: string): Promise<TenantEntity | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ['subscriptionPlan'],
+      relations: ['subscriptionPlan', 'domains'],
     })
   }
 
@@ -33,11 +35,15 @@ export class TenantRepository {
   }
 
   async findBySubdomain(subdomain: string): Promise<TenantEntity | null> {
-    return await this.repo.findOne({ where: { subdomain } })
+    return await this.repo.findOne({ where: { subdomain }, relations: ['domains'] })
   }
 
   async findByCustomDomain(customDomain: string): Promise<TenantEntity | null> {
-    return await this.repo.findOne({ where: { customDomain } })
+    const domainRecord = await this.repo.manager.getRepository(TenantDomainEntity).findOne({
+      where: { hostname: customDomain },
+      relations: ['tenant', 'tenant.subscriptionPlan'],
+    })
+    return domainRecord ? domainRecord.tenant : null
   }
 
   async findAllSorted(): Promise<TenantEntity[]> {

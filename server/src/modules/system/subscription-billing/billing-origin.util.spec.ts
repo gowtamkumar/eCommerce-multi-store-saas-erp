@@ -5,8 +5,7 @@ import { buildAllowedBillingOrigins, resolveSafeBillingUrl } from './billing-ori
 function tenantFixture(overrides: Partial<TenantEntity> = {}): TenantEntity {
   return {
     subdomain: 'acme',
-    customDomain: null as unknown as string,
-    customDomainStatus: CustomDomainStatus.PENDING,
+    domains: [],
     ...overrides,
   } as TenantEntity
 }
@@ -32,8 +31,12 @@ describe('buildAllowedBillingOrigins', () => {
 
   it('only includes custom domain when ACTIVE', () => {
     const tenant = tenantFixture({
-      customDomain: 'shop.example.com',
-      customDomainStatus: CustomDomainStatus.PENDING,
+      domains: [
+        {
+          hostname: 'shop.example.com',
+          status: CustomDomainStatus.PENDING,
+        } as any,
+      ],
     })
     const origins = buildAllowedBillingOrigins(tenant, {
       frontendUrl: 'https://app.omnicart.com',
@@ -42,8 +45,12 @@ describe('buildAllowedBillingOrigins', () => {
     expect(origins.has('https://shop.example.com')).toBe(false)
 
     const activeTenant = tenantFixture({
-      customDomain: 'shop.example.com',
-      customDomainStatus: CustomDomainStatus.ACTIVE,
+      domains: [
+        {
+          hostname: 'shop.example.com',
+          status: CustomDomainStatus.ACTIVE,
+        } as any,
+      ],
     })
     const origins2 = buildAllowedBillingOrigins(activeTenant, {
       frontendUrl: 'https://app.omnicart.com',

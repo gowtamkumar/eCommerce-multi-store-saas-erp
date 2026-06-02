@@ -94,7 +94,7 @@ describe('TenantService', () => {
       const mockTenant = {
         id: 'tenant-1',
         subdomain: 'sub',
-        customDomain: 'custom',
+        domains: [],
       } as TenantEntity
       jest.spyOn(service, 'findOneTenants').mockResolvedValue(mockTenant)
       subscriptionPlanService.findOneSubscriptionPlan.mockResolvedValue(null)
@@ -108,7 +108,7 @@ describe('TenantService', () => {
       const mockTenant = {
         id: 'tenant-1',
         subdomain: 'sub',
-        customDomain: 'custom',
+        domains: [],
         subscriptionPlanId: 'plan-1',
       } as TenantEntity
       const mockPlan = {

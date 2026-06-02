@@ -34,6 +34,7 @@ describe('ReturnService', () => {
     }
     mockCacheService = {
       delCache: jest.fn(),
+      delCacheByPattern: jest.fn(),
     }
 
     const mockOrderRepository = {}
@@ -128,7 +129,7 @@ describe('ReturnService', () => {
         },
         mockCtx,
       )
-      expect(mockCacheService.delCache).toHaveBeenCalledWith('returns:all', 'test-tenant')
+      expect(mockCacheService.delCacheByPattern).toHaveBeenCalledWith('returns:all*', 'test-tenant')
       expect(result.status).toBe(ReturnStatus.REFUNDED)
     })
   })

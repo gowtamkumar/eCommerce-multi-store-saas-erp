@@ -13,6 +13,7 @@ import {
   Get,
   Logger,
   NotFoundException,
+  Param,
   Patch,
   Post,
   Query,
@@ -75,7 +76,7 @@ export class TenantController {
       throw new BadRequestException('Domain query parameter is required')
     }
     const tenant = await this.tenantService.findByCustomDomain(domain)
-    if (tenant && tenant.customDomainStatus === CustomDomainStatus.ACTIVE) {
+    if (tenant) {
       return // 200 OK
     }
     throw new NotFoundException('Domain is not active or registered')
@@ -122,13 +123,14 @@ export class TenantController {
 
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
-  @Post('custom-domain/verify')
+  @Post('custom-domain/verify/:domainId')
   @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_VERIFY' })
   async verifyCustomDomain(
     @RequestContext() ctx: RequestContextDto,
+    @Param('domainId') domainId: string,
   ): Promise<BaseApiSuccessResponse<TenantResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called verifyCustomDomain.`)
-    const tenant = await this.tenantService.verifyCustomDomain(ctx.tenantId)
+    const tenant = await this.tenantService.verifyCustomDomain(ctx.tenantId, domainId)
     return {
       success: true,
       statusCode: 200,
@@ -139,17 +141,36 @@ export class TenantController {
 
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
-  @Delete('custom-domain')
+  @Delete('custom-domain/:domainId')
   @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_DETACH' })
   async detachCustomDomain(
     @RequestContext() ctx: RequestContextDto,
+    @Param('domainId') domainId: string,
   ): Promise<BaseApiSuccessResponse<TenantResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called detachCustomDomain.`)
-    const tenant = await this.tenantService.detachCustomDomain(ctx.tenantId)
+    const tenant = await this.tenantService.detachCustomDomain(ctx.tenantId, domainId)
     return {
       success: true,
       statusCode: 200,
       message: 'Custom domain removed',
+      data: tenant as any,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  @Patch('custom-domain/primary/:domainId')
+  @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_PRIMARY' })
+  async setPrimaryCustomDomain(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('domainId') domainId: string,
+  ): Promise<BaseApiSuccessResponse<TenantResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called setPrimaryCustomDomain.`)
+    const tenant = await this.tenantService.setPrimaryCustomDomain(ctx.tenantId, domainId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Primary custom domain set successfully',
       data: tenant as any,
     }
   }

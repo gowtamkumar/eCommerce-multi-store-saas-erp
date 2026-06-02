@@ -160,12 +160,13 @@ export class MailService {
     return this.cacheService.rememberCache(
       `tenant:${tenantId}:baseurl`,
       async () => {
-        const tenant = await this.tenantRepo.findById(tenantId)
+        const tenant = await this.tenantRepo.findByIdWithRelations(tenantId)
         if (!tenant) return appUrl
 
-        if (tenant.customDomain) {
+        const customDomain = tenant.primaryCustomDomain
+        if (customDomain) {
           const protocol = appUrl.startsWith('https') ? 'https' : 'http'
-          return `${protocol}://${tenant.customDomain}`
+          return `${protocol}://${customDomain}`
         }
 
         try {

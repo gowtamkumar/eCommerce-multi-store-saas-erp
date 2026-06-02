@@ -1,8 +1,17 @@
+export interface TenantDomain {
+  id: string;
+  hostname: string;
+  isPrimary: boolean;
+  status: "pending" | "verified" | "active";
+  verificationToken?: string | null;
+  verifiedAt?: string | null;
+}
+
 export interface Tenant {
   id: string;
   storeName: string;
   subdomain: string;
-  customDomain?: string;
+  domains: TenantDomain[];
   status: string;
   subscriptionPlan?: { name: string };
   subscriptionBillingCycle?: string;
@@ -10,7 +19,6 @@ export interface Tenant {
   subscriptionStartsAt?: string;
   subscriptionEndsAt?: string;
   createdAt: string;
-  customDomainStatus?: string;
   sslEnabled?: boolean;
 }
 

@@ -3,9 +3,10 @@ import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cy
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
 import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { TenantDomainEntity } from './tenant-domain.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 
 @Entity('tenants')
 export class TenantEntity extends BaseEntity {
@@ -15,22 +16,8 @@ export class TenantEntity extends BaseEntity {
   @Column({ name: 'subdomain', unique: true })
   subdomain: string
 
-  @Column({ name: 'custom_domain', nullable: true, unique: true })
-  customDomain: string
-
-  @Column({
-    name: 'custom_domain_status',
-    type: 'enum',
-    enum: CustomDomainStatus,
-    default: CustomDomainStatus.PENDING,
-  })
-  customDomainStatus: CustomDomainStatus
-
-  @Column({ name: 'custom_domain_verified_at', type: 'timestamptz', nullable: true })
-  customDomainVerifiedAt: Date
-
-  @Column({ name: 'custom_domain_verification_token', type: 'varchar', length: 64, nullable: true })
-  customDomainVerificationToken: string | null
+  @OneToMany(() => TenantDomainEntity, (domain) => domain.tenant)
+  domains: TenantDomainEntity[]
 
   @Column({
     type: 'enum',
@@ -74,6 +61,14 @@ export class TenantEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+  get primaryCustomDomain(): string | null {
+    if (!this.domains) return null
+    const primary = this.domains.find((d) => d.isPrimary && d.status === CustomDomainStatus.ACTIVE)
+    if (primary) return primary.hostname
+    const firstActive = this.domains.find((d) => d.status === CustomDomainStatus.ACTIVE)
+    return firstActive ? firstActive.hostname : null
+  }
 
   get isExpired(): boolean {
     if (!this.subscriptionEndsAt) return false

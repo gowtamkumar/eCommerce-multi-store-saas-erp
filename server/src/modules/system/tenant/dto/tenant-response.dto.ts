@@ -1,6 +1,6 @@
 import { Expose } from 'class-transformer'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
-import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
+import { TenantDomainResponseDto } from './tenant-domain-response.dto'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 
@@ -15,13 +15,7 @@ export class TenantResponseDto {
   subdomain: string
 
   @Expose()
-  customDomain: string | null
-
-  @Expose()
-  customDomainStatus: CustomDomainStatus
-
-  @Expose()
-  customDomainVerifiedAt: Date | null
+  domains: TenantDomainResponseDto[]
 
   @Expose()
   status: TenantStatus

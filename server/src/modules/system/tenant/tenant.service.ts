@@ -30,6 +30,7 @@ import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantEntity } from './entities/tenant.entity'
+import { TenantDomainEntity } from './entities/tenant-domain.entity'
 import { TenantFeatureEntity } from './entities/tenant-feature.entity'
 import { TenantRepository } from './tenant.repository'
 import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
@@ -302,14 +303,17 @@ export class TenantService {
     const cached = await this.cacheService.getCache<TenantEntity>(cacheKey)
     if (cached) return cached
 
-    const tenant = await this.tenantRepository.findByCustomDomain(customDomain)
-    // Only cache ACTIVE attachments — otherwise a tenant could DOS another
-    // tenant's hostname by claiming it and poisoning the cache before
-    // verification completes.
-    if (tenant && tenant.customDomainStatus === CustomDomainStatus.ACTIVE) {
+    const domainRecord = await this.dataSource.getRepository(TenantDomainEntity).findOne({
+      where: { hostname: customDomain },
+      relations: ['tenant', 'tenant.subscriptionPlan'],
+    })
+
+    if (domainRecord && domainRecord.status === CustomDomainStatus.ACTIVE) {
+      const tenant = domainRecord.tenant
       await this.cacheService.setCache(cacheKey, tenant, 3600)
+      return tenant
     }
-    return tenant
+    return null
   }
 
   async lookupTenant(subdomain?: string, customDomain?: string): Promise<TenantEntity> {
@@ -317,13 +321,6 @@ export class TenantService {
 
     if (customDomain) {
       tenant = await this.findByCustomDomain(customDomain)
-      // Defense-in-depth: never serve a tenant by a not-yet-verified custom
-      // domain. Without this, an attacker who reserved a domain on someone
-      // else's account could be served their storefront once their DNS
-      // accidentally pointed here.
-      if (tenant && tenant.customDomainStatus !== CustomDomainStatus.ACTIVE) {
-        tenant = null
-      }
     }
 
     // Fallback to subdomain check if custom domain is not found or not provided
@@ -364,23 +361,35 @@ export class TenantService {
     const tenant = await this.findOneTenants(id)
 
     // Block claims of a domain owned by someone else.
-    const existing = await this.tenantRepository.findByCustomDomain(normalized)
-    if (existing && existing.id !== id) {
+    const existing = await this.dataSource.getRepository(TenantDomainEntity).findOne({
+      where: { hostname: normalized },
+    })
+    if (existing && existing.tenantId !== id) {
       throw new ConflictException('Custom domain is already attached to another store')
     }
 
     const verificationToken = generateVerificationToken()
-
-    const updated = await this.tenantRepository.updateAndSave(tenant, {
-      customDomain: normalized,
-      customDomainStatus: CustomDomainStatus.PENDING,
-      customDomainVerifiedAt: null,
-      customDomainVerificationToken: verificationToken,
+    const domainRepo = this.dataSource.getRepository(TenantDomainEntity)
+    let domainRecord = await domainRepo.findOne({
+      where: { tenantId: id, hostname: normalized },
     })
-    await this.invalidateTenantCache(id, tenant.subdomain, normalized)
-    if (tenant.customDomain && tenant.customDomain !== normalized) {
-      await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
+
+    if (!domainRecord) {
+      domainRecord = domainRepo.create({
+        tenantId: id,
+        hostname: normalized,
+        status: CustomDomainStatus.PENDING,
+        verificationToken,
+        isPrimary: false,
+      })
+    } else {
+      domainRecord.status = CustomDomainStatus.PENDING
+      domainRecord.verificationToken = verificationToken
+      domainRecord.verifiedAt = null
     }
+    await domainRepo.save(domainRecord)
+
+    await this.invalidateTenantCache(id, tenant.subdomain, normalized)
 
     const instructions: VerificationInstructions = {
       recordType: 'TXT',
@@ -389,7 +398,8 @@ export class TenantService {
       ttlHint: 300,
     }
 
-    return Object.assign(updated, { verificationInstructions: instructions })
+    const updatedTenant = await this.findOneTenants(id)
+    return Object.assign(updatedTenant, { verificationInstructions: instructions })
   }
 
   /**
@@ -399,25 +409,30 @@ export class TenantService {
    * (NXDOMAIN, mismatch, missing token) returns an actionable error and
    * leaves the row PENDING so the user can retry.
    */
-  async verifyCustomDomain(id: string): Promise<TenantEntity> {
-    const tenant = await this.findOneTenants(id)
-    if (!tenant.customDomain) {
-      throw new BadRequestException('No custom domain configured to verify')
+  async verifyCustomDomain(tenantId: string, domainId: string): Promise<TenantEntity> {
+    const domainRepo = this.dataSource.getRepository(TenantDomainEntity)
+    const domainRecord = await domainRepo.findOne({
+      where: { id: domainId, tenantId },
+    })
+
+    if (!domainRecord) {
+      throw new NotFoundException('Domain record not found')
     }
-    if (!tenant.customDomainVerificationToken) {
-      throw new BadRequestException(
-        'Verification token missing — request a new custom domain assignment first',
-      )
+    if (domainRecord.status === CustomDomainStatus.ACTIVE) {
+      return this.findOneTenants(tenantId)
+    }
+    if (!domainRecord.verificationToken) {
+      throw new BadRequestException('Verification token missing')
     }
 
     const result = await verifyDomainOwnership(
-      tenant.customDomain,
-      tenant.customDomainVerificationToken,
+      domainRecord.hostname,
+      domainRecord.verificationToken,
     )
 
     if (!result.verified) {
       this.logger.warn(
-        `Custom domain TXT verification failed tenant=${id} domain=${tenant.customDomain} reason=${result.error ?? 'mismatch'}`,
+        `Custom domain TXT verification failed tenant=${tenantId} domain=${domainRecord.hostname} reason=${result.error ?? 'mismatch'}`,
       )
       throw new BadRequestException(
         result.error
@@ -426,27 +441,56 @@ export class TenantService {
       )
     }
 
-    const updated = await this.tenantRepository.updateAndSave(tenant, {
-      customDomainStatus: CustomDomainStatus.ACTIVE,
-      customDomainVerifiedAt: new Date(),
-      // Burn the token so it can't be reused after a domain detach/attach cycle.
-      customDomainVerificationToken: null,
-    })
-    await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
-    return updated
+    domainRecord.status = CustomDomainStatus.ACTIVE
+    domainRecord.verifiedAt = new Date()
+    domainRecord.verificationToken = null // Burn the token
+    await domainRepo.save(domainRecord)
+
+    const tenant = await this.findOneTenants(tenantId)
+    await this.invalidateTenantCache(tenantId, tenant.subdomain, domainRecord.hostname)
+    return tenant
   }
 
-  async detachCustomDomain(id: string): Promise<TenantEntity> {
-    const tenant = await this.findOneTenants(id)
-    const oldDomain = tenant.customDomain
-    const updated = await this.tenantRepository.updateAndSave(tenant, {
-      customDomain: null,
-      customDomainStatus: CustomDomainStatus.PENDING,
-      customDomainVerifiedAt: null,
-      customDomainVerificationToken: null,
-    } as any)
-    await this.invalidateTenantCache(id, tenant.subdomain, oldDomain)
-    return updated
+  async detachCustomDomain(tenantId: string, domainId: string): Promise<TenantEntity> {
+    const domainRepo = this.dataSource.getRepository(TenantDomainEntity)
+    const domainRecord = await domainRepo.findOne({
+      where: { id: domainId, tenantId },
+    })
+
+    if (!domainRecord) {
+      throw new NotFoundException('Domain record not found')
+    }
+
+    const hostname = domainRecord.hostname
+    await domainRepo.remove(domainRecord)
+
+    const tenant = await this.findOneTenants(tenantId)
+    await this.invalidateTenantCache(tenantId, tenant.subdomain, hostname)
+    return tenant
+  }
+
+  async setPrimaryCustomDomain(tenantId: string, domainId: string): Promise<TenantEntity> {
+    const domainRepo = this.dataSource.getRepository(TenantDomainEntity)
+    const domainRecord = await domainRepo.findOne({
+      where: { id: domainId, tenantId },
+    })
+
+    if (!domainRecord) {
+      throw new NotFoundException('Domain record not found')
+    }
+    if (domainRecord.status !== CustomDomainStatus.ACTIVE) {
+      throw new BadRequestException('Only active domains can be set as primary')
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const txDomainRepo = manager.getRepository(TenantDomainEntity)
+      await txDomainRepo.update({ tenantId }, { isPrimary: false })
+      await txDomainRepo.update({ id: domainId }, { isPrimary: true })
+    })
+
+    const tenant = await this.findOneTenants(tenantId)
+    await this.invalidateTenantCache(tenantId, tenant.subdomain, domainRecord.hostname)
+    return tenant
   }
 
   async updateTenantStatus(id: string, status: string): Promise<TenantEntity> {
@@ -454,7 +498,7 @@ export class TenantService {
     const updated = await this.tenantRepository.updateAndSave(tenant, {
       status: status as TenantStatus,
     })
-    await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
+    await this.invalidateTenantCache(id, tenant.subdomain, tenant.domains?.map((d) => d.hostname))
     return updated
   }
 
@@ -555,7 +599,7 @@ export class TenantService {
       const updatedTenant = await tenantRepo.save(tenant)
 
       // 2. Clear tenant cache
-      await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
+      await this.invalidateTenantCache(id, tenant.subdomain, tenant.domains?.map((d) => d.hostname))
 
       // 3. Invalidate permission manifest caches for all tenant users
       try {
@@ -660,7 +704,7 @@ export class TenantService {
     }
 
     // Clear tenant cache
-    await this.invalidateTenantCache(tenantId, tenant.subdomain, tenant.customDomain)
+    await this.invalidateTenantCache(tenantId, tenant.subdomain, tenant.domains?.map((d) => d.hostname))
 
     // Invalidate permission manifest caches for all tenant users
     try {
@@ -676,10 +720,15 @@ export class TenantService {
     return { success: true }
   }
 
-  private async invalidateTenantCache(id: string, subdomain?: string, customDomain?: string) {
+  private async invalidateTenantCache(id: string, subdomain?: string, customDomains?: string | string[]) {
     const keys = [`${this.CACHE_PREFIX}all`, `${this.CACHE_PREFIX}id:${id}`]
     if (subdomain) keys.push(`${this.CACHE_PREFIX}subdomain:${subdomain}`)
-    if (customDomain) keys.push(`${this.CACHE_PREFIX}customdomain:${customDomain}`)
+    if (customDomains) {
+      const domains = Array.isArray(customDomains) ? customDomains : [customDomains]
+      for (const d of domains) {
+        keys.push(`${this.CACHE_PREFIX}customdomain:${d}`)
+      }
+    }
 
     await Promise.all(keys.map((key) => this.cacheService.delCache(key)))
   }
