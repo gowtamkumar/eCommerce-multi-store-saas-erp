@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoyaltyLedgerEntity } from './entities/loyalty-ledger.entity'
 import { LoyaltyConfigEntity } from './entities/loyalty-config.entity'
@@ -33,4 +33,4 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
   controllers: [LoyaltyController],
   exports: [LoyaltyService, ReferralService, BullModule],
 })
-export class LoyaltyModule {}
+export class LoyaltyModule { }

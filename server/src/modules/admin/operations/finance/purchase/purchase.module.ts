@@ -1,5 +1,5 @@
 import { BullModule } from '@nestjs/bullmq'
-import { Module, forwardRef } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { InventoryLedgerModule } from '../../logistics/inventory-transaction/inventory-transaction.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { GrnModule } from '@/modules/admin/operations/logistics/grn/grn.module'
@@ -34,7 +34,7 @@ import { SupplierInvoiceRepository } from './repositories/supplier-invoice.repos
     BullModule.registerQueue({ name: 'product' }),
     InventoryLedgerModule,
     TenantModule,
-    forwardRef(() => GrnModule),
+    GrnModule,
     NotificationModule,
     AccountingModule,
   ],

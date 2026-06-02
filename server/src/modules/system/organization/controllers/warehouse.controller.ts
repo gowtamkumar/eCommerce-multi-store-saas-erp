@@ -24,7 +24,6 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('inventory')
 @Controller('system/warehouses')
 export class WarehouseController {
   private readonly logger = new Logger(WarehouseController.name)
@@ -32,6 +31,7 @@ export class WarehouseController {
   constructor(private readonly warehouseService: WarehouseService) {}
 
   @Post()
+  @RequireFeature('inventory')
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createWarehouseDto: CreateWarehouseDto,
@@ -71,6 +71,7 @@ export class WarehouseController {
   }
 
   @Patch(':id')
+  @RequireFeature('inventory')
   async update(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -86,6 +87,7 @@ export class WarehouseController {
   }
 
   @Delete(':id')
+  @RequireFeature('inventory')
   async remove(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -101,6 +103,7 @@ export class WarehouseController {
 
   // Bin Management
   @Post(':id/bins')
+  @RequireFeature('inventory')
   async addBin(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') warehouseId: string,
@@ -116,6 +119,7 @@ export class WarehouseController {
   }
 
   @Patch('bins/:binId')
+  @RequireFeature('inventory')
   async updateBin(
     @RequestContext() ctx: RequestContextDto,
     @Param('binId') binId: string,
@@ -131,6 +135,7 @@ export class WarehouseController {
   }
 
   @Delete('bins/:binId')
+  @RequireFeature('inventory')
   async removeBin(
     @RequestContext() ctx: RequestContextDto,
     @Param('binId') binId: string,

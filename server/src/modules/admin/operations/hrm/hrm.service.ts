@@ -18,11 +18,9 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
-  forwardRef,
 } from '@nestjs/common'
 import * as crypto from 'crypto'
 import { Between, In } from 'typeorm'
@@ -70,10 +68,9 @@ export class HrmService {
     private readonly hrmRepo: HrmRepository,
     private readonly accountingService: AccountingService,
     private readonly auditLogService: AuditLogService,
-    @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
   async getDashboardStats(ctx: RequestContextDto) {
     return this.hrmRepo.getStats(ctx.tenantId, ctx.branchId)
@@ -699,13 +696,13 @@ export class HrmService {
         leaveRequestRepo.find({ where: { tenantId: ctx.tenantId, status: LeaveStatus.APPROVED } }),
         employeeIds.length > 0
           ? attendanceSessionRepo.find({
-              where: {
-                employeeId: In(employeeIds),
-                tenantId: ctx.tenantId,
-                checkIn: Between(startDate, endDate),
-              },
-              order: { checkIn: 'ASC' },
-            })
+            where: {
+              employeeId: In(employeeIds),
+              tenantId: ctx.tenantId,
+              checkIn: Between(startDate, endDate),
+            },
+            order: { checkIn: 'ASC' },
+          })
           : Promise.resolve([]),
       ])
 

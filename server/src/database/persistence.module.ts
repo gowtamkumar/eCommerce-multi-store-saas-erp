@@ -41,6 +41,8 @@ import { SupplierInvoiceEntity } from '@/modules/admin/operations/finance/purcha
 import { SupplierInvoiceItemEntity } from '@/modules/admin/operations/finance/purchase/entities/supplier-invoice-item.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { SupplierRepository } from '@/modules/admin/operations/finance/supplier/supplier.repository'
+import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
+import { SupplierAPLedgerRepository } from '@/modules/admin/operations/finance/supplier/supplier-ap-ledger.repository'
 import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
 import { FileRepository } from '@/modules/admin/operations/infra/file/file.repository'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
@@ -126,6 +128,7 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
       PurchaseOrderItemEntity,
       SupplierEntity,
       SupplierPaymentEntity,
+      SupplierAPLedgerEntity,
       SubscriberEntity,
       StaffInvitationEntity,
       WishlistEntity,
@@ -162,6 +165,7 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
     PurchaseOrderRepository,
     SupplierRepository,
     SupplierPaymentRepository,
+    SupplierAPLedgerRepository,
     SubscriberRepository,
     StaffInvitationRepository,
     OrderRepository,
@@ -200,6 +204,7 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
     PurchaseOrderRepository,
     SupplierRepository,
     SupplierPaymentRepository,
+    SupplierAPLedgerRepository,
     SubscriberRepository,
     StaffInvitationRepository,
     OrderRepository,

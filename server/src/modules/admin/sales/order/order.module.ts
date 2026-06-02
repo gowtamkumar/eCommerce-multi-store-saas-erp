@@ -20,7 +20,6 @@ import { OrderProcessHelper } from './services/order-process.helper'
 
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { FulfillmentModule } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.module'
-import { forwardRef } from '@nestjs/common'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
 
@@ -42,7 +41,7 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     NotificationModule,
     PricingModule,
     AccountingModule,
-    forwardRef(() => FulfillmentModule),
+    FulfillmentModule,
     LoyaltyModule,
   ],
   controllers: [OrderController, ReturnController], // Registered

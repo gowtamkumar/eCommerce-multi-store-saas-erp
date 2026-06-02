@@ -28,7 +28,6 @@ import {
   Logger,
   NotFoundException,
   Inject,
-  forwardRef,
 } from '@nestjs/common'
 import { FulfillmentService } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.service'
 import { Queue } from 'bullmq'
@@ -65,7 +64,6 @@ export class OrderService {
     private readonly cacheService: CacheService,
     private readonly orderProcessHelper: OrderProcessHelper,
     @InjectQueue('order') private readonly orderQueue: Queue,
-    @Inject(forwardRef(() => FulfillmentService))
     private readonly fulfillmentService: FulfillmentService,
     private readonly notificationService: NotificationService,
     private readonly arService: ArService,

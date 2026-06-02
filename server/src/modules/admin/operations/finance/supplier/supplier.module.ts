@@ -1,8 +1,6 @@
-import { Module, forwardRef } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { SupplierAPLedgerEntity } from './entities/supplier-ap-ledger.entity'
 import { SupplierEntity } from './entities/supplier.entity'
-import { SupplierAPLedgerRepository } from './supplier-ap-ledger.repository'
 import { SupplierPortalController } from './supplier-portal.controller'
 import { SupplierController } from './supplier.controller'
 import { SupplierRepository } from './supplier.repository'
@@ -14,12 +12,12 @@ import { SupplierDocumentEntity } from './entities/supplier-document.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SupplierEntity, SupplierAPLedgerEntity, SupplierDocumentEntity]),
+    TypeOrmModule.forFeature([SupplierEntity, SupplierDocumentEntity]),
     TenantModule,
-    forwardRef(() => PurchaseModule),
+    PurchaseModule,
   ],
   controllers: [SupplierController, SupplierPortalController],
-  providers: [SupplierService, SupplierRepository, SupplierAPLedgerRepository],
-  exports: [SupplierService, SupplierRepository, SupplierAPLedgerRepository],
+  providers: [SupplierService, SupplierRepository],
+  exports: [SupplierService, SupplierRepository],
 })
 export class SupplierModule {}

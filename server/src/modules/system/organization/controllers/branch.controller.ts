@@ -19,7 +19,6 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('inventory')
 @Controller('system/branches')
 export class BranchController {
   private readonly logger = new Logger(BranchController.name)
@@ -27,6 +26,7 @@ export class BranchController {
   constructor(private readonly branchService: BranchService) {}
 
   @Post()
+  @RequireFeature('inventory')
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createBranchDto: CreateBranchDto,
@@ -67,6 +67,7 @@ export class BranchController {
   }
 
   @Patch(':id')
+  @RequireFeature('inventory')
   async update(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -82,6 +83,7 @@ export class BranchController {
   }
 
   @Delete(':id')
+  @RequireFeature('inventory')
   async remove(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

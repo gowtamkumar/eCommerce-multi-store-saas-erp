@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, BadRequestException, forwardRef } from '@nestjs/common'
+import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { GrnRepository } from './grn.repository'
 import { CreateGrnDto, VerifyGrnDto } from './dto/grn.dto'
@@ -20,9 +20,8 @@ export class GrnService {
     private readonly repository: GrnRepository,
     private readonly dataSource: DataSource,
     private readonly apLedgerRepository: SupplierAPLedgerRepository,
-    @Inject(forwardRef(() => InventoryLedgerService))
     private readonly inventoryLedgerService: InventoryLedgerService,
-  ) {}
+  ) { }
 
   async createGrn(dto: CreateGrnDto, ctx: RequestContextDto): Promise<GoodsReceivedNoteEntity> {
     this.logger.log(`${this.createGrn.name} Service Called`)
