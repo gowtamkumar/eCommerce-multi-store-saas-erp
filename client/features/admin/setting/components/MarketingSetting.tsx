@@ -23,6 +23,29 @@ export default function MarketingSetting({
             </h2>
         </div>
 
+        <div className="p-5 rounded-3xl border border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-900/40 flex items-start gap-4">
+            <input
+                type="checkbox"
+                checked={formData.marketing.requireConsent !== false}
+                onChange={(e) =>
+                    setFormData({
+                        ...formData,
+                        marketing: {
+                            ...formData.marketing,
+                            requireConsent: e.target.checked,
+                        },
+                    })
+                }
+                className="mt-1 w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            />
+            <div>
+                <p className="font-bold text-slate-800 dark:text-slate-100">Require visitor consent before analytics</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                    When enabled, Google Analytics and Meta Pixel load only after the visitor accepts marketing cookies.
+                </p>
+            </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Google Analytics Section */}
             <div className="space-y-6 p-6 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-100 dark:border-slate-700/50">

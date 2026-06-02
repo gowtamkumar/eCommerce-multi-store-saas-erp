@@ -137,6 +137,10 @@ export class ProductRepository {
     return this.repo.save(product)
   }
 
+  async countByTenant(tenantId: string): Promise<number> {
+    return this.repo.count({ where: { tenantId } })
+  }
+
   async updateAndSave(product: ProductEntity, data: any, manager?: any): Promise<ProductEntity> {
     const repo = manager ? manager.getRepository(ProductEntity) : this.repo
 

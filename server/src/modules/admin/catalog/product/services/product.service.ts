@@ -7,8 +7,15 @@ import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/services/promotion.service'
+import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { InjectQueue } from '@nestjs/bullmq'
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common'
 import { Queue } from 'bullmq'
 import { DataSource, Not } from 'typeorm'
 import { PromotionTargetType } from '../../../sales/promotion/enums/promotion-target-type.enum'
@@ -38,9 +45,29 @@ export class ProductService {
     private cache: CacheService,
     private readonly inventoryService: InventoryLedgerService,
     private readonly promotionService: PromotionService,
+    private readonly tenantService: TenantService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
   ) {}
+
+  private async assertProductQuotaAvailable(tenantId: string): Promise<void> {
+    const tenant = await this.tenantService.findOneTenants(tenantId)
+    const maxProducts = Number(tenant.subscriptionPlan?.maxProducts ?? 0)
+    if (!Number.isFinite(maxProducts) || maxProducts <= 0) return
+
+    const currentProducts = await this.productRepository.countByTenant(tenantId)
+    if (currentProducts >= maxProducts) {
+      throw new ForbiddenException({
+        success: false,
+        message: `Your current plan allows up to ${maxProducts} products. Upgrade your plan to add more products.`,
+        quota: {
+          resource: 'products',
+          limit: maxProducts,
+          current: currentProducts,
+        },
+      })
+    }
+  }
 
   private async attachPromotions(product: any, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
@@ -359,6 +386,7 @@ export class ProductService {
     const savedProduct = await this.dataSource.transaction(async (manager) => {
       const existing = await this.productRepository.findBySlug(createProductDto.slug, tenantId)
       if (existing) throw new ConflictException('Product with this slug already exists')
+      await this.assertProductQuotaAvailable(tenantId)
 
       const { faqs, attributes, variants, ...productData } = createProductDto
 

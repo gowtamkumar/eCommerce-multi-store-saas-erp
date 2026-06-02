@@ -1,6 +1,7 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import {
+  BrandingSettingsDto,
   CurrenciesDto,
   FinanceConfigDto,
   FooterSettingsDto,
@@ -15,6 +16,7 @@ import {
   SmtpDto,
   SocialLinkDto,
   SteadfastCourierDto,
+  ThemeSettingsDto,
   TrustBadgeDto,
   ShippingConfigDto,
   SmsDto,
@@ -26,6 +28,9 @@ import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 export class SiteSettingsEntity extends BaseEntity {
   @Column({ nullable: true })
   logo: string
+
+  @Column({ nullable: true })
+  favicon: string
 
   @Column({ name: 'brand_name', nullable: true })
   brandName: string
@@ -107,6 +112,21 @@ export class SiteSettingsEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', name: 'label_settings', nullable: true })
   labelSettings?: LabelSettingsDto
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  timezone?: string
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  locale?: string
+
+  @Column({ type: 'jsonb', nullable: true })
+  theme?: ThemeSettingsDto
+
+  @Column({ type: 'uuid', name: 'default_branch_id', nullable: true })
+  defaultBranchId?: string
+
+  @Column({ type: 'jsonb', nullable: true })
+  branding?: BrandingSettingsDto
 
   @Column({ type: 'uuid', name: 'tenant_id', unique: true })
   tenantId: string

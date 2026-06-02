@@ -8,9 +8,12 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUUID,
+  MaxLength,
   Matches,
   ValidateNested,
 } from 'class-validator'
+import { BrandingSettingsDto } from './branding-settings.dto'
 import { CurrenciesDto } from './currencies.dto'
 import { FooterSettingsDto } from './footerSection.dto'
 import { LabelSettingsDto } from './label-settings.dto'
@@ -27,8 +30,11 @@ import { ProductsPageSettingsDto } from './products-page.dto'
 import { SingleProductPageSettingsDto } from './single-product-page.dto'
 import { OffersPageSettingsDto } from './offers-page.dto'
 import { SmsDto } from './sms.dto'
+import { ThemeSettingsDto } from './theme-settings.dto'
 
 const ISO_4217_RE = /^[A-Z]{3}$/
+const IETF_LOCALE_RE = /^[a-z]{2,3}(-[A-Z]{2})?$/
+const IANA_TIMEZONE_RE = /^[A-Za-z]+(?:[_-][A-Za-z]+)*(?:\/[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)*)+$/
 
 export class UpdateSiteSettingsDto {
   @IsString()
@@ -39,6 +45,12 @@ export class UpdateSiteSettingsDto {
   @IsString()
   @IsOptional()
   logo?: string
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
+  favicon?: string
 
   @ApiProperty({ required: false })
   @IsString()
@@ -191,4 +203,37 @@ export class UpdateSiteSettingsDto {
   @ValidateNested()
   @Type(() => LabelSettingsDto)
   labelSettings?: LabelSettingsDto
+
+  @ApiProperty({ required: false, example: 'Asia/Dhaka' })
+  @IsString()
+  @Matches(IANA_TIMEZONE_RE, { message: 'timezone must be an IANA timezone like Asia/Dhaka' })
+  @MaxLength(64)
+  @IsOptional()
+  timezone?: string
+
+  @ApiProperty({ required: false, example: 'en-US' })
+  @IsString()
+  @Matches(IETF_LOCALE_RE, { message: 'locale must be an IETF locale like en-US' })
+  @MaxLength(20)
+  @IsOptional()
+  locale?: string
+
+  @ApiProperty({ required: false, type: ThemeSettingsDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => ThemeSettingsDto)
+  theme?: ThemeSettingsDto
+
+  @ApiProperty({ required: false })
+  @IsUUID()
+  @IsOptional()
+  defaultBranchId?: string
+
+  @ApiProperty({ required: false, type: BrandingSettingsDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => BrandingSettingsDto)
+  branding?: BrandingSettingsDto
 }

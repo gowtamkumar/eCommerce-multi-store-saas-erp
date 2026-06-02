@@ -1,4 +1,4 @@
-import { IsOptional, Matches, MaxLength } from 'class-validator'
+import { IsBoolean, IsOptional, Matches, MaxLength } from 'class-validator'
 
 // Strict format guards so we never inject something weird into <script> tags
 // generated downstream from these settings.
@@ -23,6 +23,10 @@ export class MarketingDto {
   @Matches(FB_PIXEL_RE, { message: 'facebookPixelId must be a numeric pixel id' })
   @IsOptional()
   facebookPixelId?: string
+
+  @IsBoolean()
+  @IsOptional()
+  requireConsent?: boolean
 
   @Matches(VERIFICATION_TAG_RE, {
     message: 'facebookDomainVerification must be a single alphanumeric token',

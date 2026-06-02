@@ -14,6 +14,9 @@ export class SiteSettingsResponseDto {
   logo: string
 
   @Expose()
+  favicon: string
+
+  @Expose()
   brandName: string
 
   @Expose()
@@ -80,6 +83,21 @@ export class SiteSettingsResponseDto {
 
   @Expose()
   labelSettings: any
+
+  @Expose()
+  timezone: string
+
+  @Expose()
+  locale: string
+
+  @Expose()
+  theme: any
+
+  @Expose()
+  defaultBranchId: string
+
+  @Expose()
+  branding: any
 
   @Expose()
   tenantId: string

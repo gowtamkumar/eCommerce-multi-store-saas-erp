@@ -6,6 +6,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsEntity } from './entities/site-settings.entity'
 import { SiteSettingsRepository } from './site-settings.repository'
+import { normalizeAndValidateSettingsUpdate } from './settings-validation.util'
 
 @Injectable()
 export class SettingsService {
@@ -68,16 +69,18 @@ export class SettingsService {
     const settings = await this.settingsRepository.findByTenantId(tenantId)
     if (!settings) throw new NotFoundException('Settings not found')
 
-    if (dto.removeBranding === true) {
+    const normalizedDto = normalizeAndValidateSettingsUpdate(dto, settings)
+
+    if (normalizedDto.removeBranding === true) {
       const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
       const features = tenant?.subscriptionPlan?.features || []
       const hasRemoveBranding = features.includes('remove_branding')
       if (!hasRemoveBranding) {
-        dto.removeBranding = false // Force off if plan doesn't support it
+        normalizedDto.removeBranding = false // Force off if plan doesn't support it
       }
     }
 
-    const updated = await this.settingsRepository.updateAndSave(settings, dto)
+    const updated = await this.settingsRepository.updateAndSave(settings, normalizedDto)
 
     // Invalidate cache
     await this.cacheService.delCache(`settings:${tenantId}:site`, tenantId)
@@ -95,16 +98,22 @@ export class SettingsService {
     const existing = await this.settingsRepository.findByTenantId(tenantId)
     if (existing) {
       this.logger.log(`Site settings already exist for tenant ${tenantId}, updating instead.`)
-      return await this.settingsRepository.updateAndSave(existing, dto)
+      return await this.settingsRepository.updateAndSave(
+        existing,
+        normalizeAndValidateSettingsUpdate(dto, existing),
+      )
     }
 
     try {
-      return await this.settingsRepository.createAndSave(dto, ctx)
+      return await this.settingsRepository.createAndSave(normalizeAndValidateSettingsUpdate(dto), ctx)
     } catch (err: any) {
       if (err.code === '23505' || err.message?.includes('unique') || err.message?.includes('duplicate')) {
         const latest = await this.settingsRepository.findByTenantId(tenantId)
         if (latest) {
-          return await this.settingsRepository.updateAndSave(latest, dto)
+          return await this.settingsRepository.updateAndSave(
+            latest,
+            normalizeAndValidateSettingsUpdate(dto, latest),
+          )
         }
       }
       throw err

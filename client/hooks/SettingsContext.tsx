@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 
 interface SiteSettings {
   logo: string;
+  favicon?: string;
   brandName: string;
   siteDescription: string;
   contactEmail: string;
@@ -31,6 +32,7 @@ interface SiteSettings {
     facebookPixelId?: string;
     googleSiteVerification?: string;
     facebookDomainVerification?: string;
+    requireConsent?: boolean;
   };
   navbar?: {
     layout?: 'default' | 'centered' | 'minimal' | 'sidebar';
@@ -144,6 +146,24 @@ interface SiteSettings {
     bannerTextColor?: string;
   };
   robotsTxt?: string;
+  labelSettings?: {
+    newArrivalText?: string;
+    bestSellerText?: string;
+  };
+  timezone?: string;
+  locale?: string;
+  theme?: {
+    mode?: 'system' | 'light' | 'dark';
+    primaryColor?: string;
+    accentColor?: string;
+    fontFamily?: string;
+  };
+  defaultBranchId?: string;
+  branding?: {
+    footerText?: string;
+    brandMarkUrl?: string;
+    showPoweredBy?: boolean;
+  };
   status?: string;
   isSaaS?: boolean;
   tenantId?: string;
@@ -196,6 +216,9 @@ export function SettingsProvider({
           productsPage: { ...DEFAULT_SETTINGS.productsPage, ...settings?.productsPage },
           singleProductPage: { ...DEFAULT_SETTINGS.singleProductPage, ...settings?.singleProductPage },
           offersPage: { ...DEFAULT_SETTINGS.offersPage, ...settings?.offersPage },
+          labelSettings: { ...DEFAULT_SETTINGS.labelSettings, ...settings?.labelSettings },
+          theme: { ...DEFAULT_SETTINGS.theme, ...settings?.theme },
+          branding: { ...DEFAULT_SETTINGS.branding, ...settings?.branding },
           shippingConfig: { 
             insideCityFee: 60, 
             outsideCityFee: 120, 

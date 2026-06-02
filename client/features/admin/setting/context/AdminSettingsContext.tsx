@@ -24,6 +24,7 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
     const [collapsedFooterSections, setCollapsedFooterSections] = useState<Set<number>>(new Set());
     const [formData, setFormData] = useState({
         logo: "",
+        favicon: "",
         brandName: "",
         siteDescription: "",
         contactEmail: "",
@@ -49,6 +50,7 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
             googleSiteVerification: "",
             facebookPixelId: "",
             facebookDomainVerification: "",
+            requireConsent: true,
         },
         smtp: {
             host: "",
@@ -158,6 +160,20 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
             newArrivalText: "New",
             bestSellerText: "Best Seller",
         },
+        timezone: "Asia/Dhaka",
+        locale: "en-US",
+        theme: {
+            mode: "system" as "system" | "light" | "dark",
+            primaryColor: "#2563eb",
+            accentColor: "#0f172a",
+            fontFamily: "Inter",
+        },
+        defaultBranchId: "",
+        branding: {
+            footerText: "",
+            brandMarkUrl: "",
+            showPoweredBy: true,
+        },
     });
 
     const loadSettings = useCallback(async () => {
@@ -168,6 +184,7 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
                 const data = res.data;
                 setFormData({
                     logo: data.logo || "",
+                    favicon: data.favicon || "",
                     brandName: data.brandName || "",
                     siteDescription: data.siteDescription || "",
                     contactEmail: data.contactEmail || "",
@@ -188,6 +205,7 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
                         googleSiteVerification: data.marketing?.googleSiteVerification || "",
                         facebookPixelId: data.marketing?.facebookPixelId || "",
                         facebookDomainVerification: data.marketing?.facebookDomainVerification || "",
+                        requireConsent: data.marketing?.requireConsent !== false,
                     },
                     smtp: {
                         host: data.smtp?.host || "",
@@ -296,6 +314,20 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
                     labelSettings: data.labelSettings || {
                         newArrivalText: "New",
                         bestSellerText: "Best Seller",
+                    },
+                    timezone: data.timezone || "Asia/Dhaka",
+                    locale: data.locale || "en-US",
+                    theme: data.theme || {
+                        mode: "system",
+                        primaryColor: "#2563eb",
+                        accentColor: "#0f172a",
+                        fontFamily: "Inter",
+                    },
+                    defaultBranchId: data.defaultBranchId || "",
+                    branding: data.branding || {
+                        footerText: "",
+                        brandMarkUrl: "",
+                        showPoweredBy: true,
                     },
                 });
             }

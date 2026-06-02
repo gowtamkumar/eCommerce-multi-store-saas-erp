@@ -1,4 +1,5 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Reflector } from '@nestjs/core'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { TenantStatus } from '../enums/tenant/tenant-status.enum'
@@ -11,13 +12,13 @@ export class TenantStatusGuard implements CanActivate {
   constructor(
     private readonly tenantService: TenantService,
     private readonly reflector: Reflector,
+    private readonly configService: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const tenantId = request.tenantId
     const user = request.user
-    console.log(' Tenant user', user)
 
     // 1. Allow Super Admin to bypass all tenant status checks
     if (user?.role === UserRole.SUPER_ADMIN) {
@@ -50,6 +51,15 @@ export class TenantStatusGuard implements CanActivate {
       if (tenant.status === TenantStatus.EXPIRED || tenant.isExpired) {
         if (isPublicDuringExpiration) {
           return true
+        }
+
+        const graceDays = Number(this.configService.get('SUBSCRIPTION_GRACE_DAYS') ?? 0)
+        if (Number.isFinite(graceDays) && graceDays > 0 && tenant.subscriptionEndsAt) {
+          const graceEndsAt = new Date(tenant.subscriptionEndsAt)
+          graceEndsAt.setDate(graceEndsAt.getDate() + graceDays)
+          if (new Date() <= graceEndsAt) {
+            return true
+          }
         }
 
         const isTrial = tenant.subscriptionStatus === SubscriptionStatus.TRIAL

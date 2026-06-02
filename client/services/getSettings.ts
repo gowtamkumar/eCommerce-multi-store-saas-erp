@@ -3,6 +3,7 @@ import { getTenantId } from "./tenant";
 
 export const DEFAULT_SETTINGS = {
   logo: "",
+  favicon: "",
   brandName: "LuxeAudio",
   siteDescription:
     "Elevating your audio experience with premium sound and design.",
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS = {
     googleSiteVerification: "",
     facebookPixelId: "",
     facebookDomainVerification: "",
+    requireConsent: true,
   },
   navbar: {
     layout: "default",
@@ -101,6 +103,24 @@ export const DEFAULT_SETTINGS = {
     bannerTextColor: "#ffffff",
   },
   robotsTxt: "",
+  labelSettings: {
+    newArrivalText: "New",
+    bestSellerText: "Best Seller",
+  },
+  timezone: "Asia/Dhaka",
+  locale: "en-US",
+  theme: {
+    mode: "system",
+    primaryColor: "#2563eb",
+    accentColor: "#0f172a",
+    fontFamily: "Inter",
+  },
+  defaultBranchId: "",
+  branding: {
+    footerText: "",
+    brandMarkUrl: "",
+    showPoweredBy: true,
+  },
 };
 
 export async function getSiteSettings() {
@@ -143,6 +163,9 @@ export async function getSiteSettings() {
         productsPage: { ...DEFAULT_SETTINGS.productsPage, ...settings?.productsPage },
         singleProductPage: { ...DEFAULT_SETTINGS.singleProductPage, ...settings?.singleProductPage },
         offersPage: { ...DEFAULT_SETTINGS.offersPage, ...settings?.offersPage },
+        labelSettings: { ...DEFAULT_SETTINGS.labelSettings, ...settings?.labelSettings },
+        theme: { ...DEFAULT_SETTINGS.theme, ...settings?.theme },
+        branding: { ...DEFAULT_SETTINGS.branding, ...settings?.branding },
       };
     }
 

@@ -25,6 +25,17 @@ export const BrandIdentitySection: React.FC<SectionProps> = React.memo(({ formDa
                 />
             </div>
             <div className="space-y-1.5 md:col-span-2">
+                <ImageUploadField
+                    label="Favicon"
+                    value={formData.favicon || ''}
+                    onChange={(val) => setFormData({ ...formData, favicon: val })}
+                    uploadApi={fetchAPI}
+                    aspectRatio="square"
+                    showUrlInput={true}
+                    description="Upload browser tab icon or paste URL"
+                />
+            </div>
+            <div className="space-y-1.5 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Brand Name</label>
                 <input
                     type="text"
@@ -32,6 +43,44 @@ export const BrandIdentitySection: React.FC<SectionProps> = React.memo(({ formDa
                     onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
                     className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200 font-display"
                     placeholder="e.g., LuxeAudio"
+                />
+            </div>
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Timezone</label>
+                <input
+                    type="text"
+                    value={formData.timezone || 'Asia/Dhaka'}
+                    onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                    placeholder="Asia/Dhaka"
+                />
+            </div>
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Locale</label>
+                <input
+                    type="text"
+                    value={formData.locale || 'en-US'}
+                    onChange={(e) => setFormData({ ...formData, locale: e.target.value })}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                    placeholder="en-US"
+                />
+            </div>
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Primary Color</label>
+                <input
+                    type="color"
+                    value={formData.theme?.primaryColor || '#2563eb'}
+                    onChange={(e) => setFormData({ ...formData, theme: { ...formData.theme, primaryColor: e.target.value } })}
+                    className="w-full h-12 px-2 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50"
+                />
+            </div>
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Accent Color</label>
+                <input
+                    type="color"
+                    value={formData.theme?.accentColor || '#0f172a'}
+                    onChange={(e) => setFormData({ ...formData, theme: { ...formData.theme, accentColor: e.target.value } })}
+                    className="w-full h-12 px-2 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50"
                 />
             </div>
         </div>
