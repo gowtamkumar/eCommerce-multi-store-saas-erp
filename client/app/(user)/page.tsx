@@ -3,6 +3,8 @@ import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/shared/PaymentStatus";
 import RecentlyViewedProducts from "@/components/shared/RecentlyViewedProducts";
 import SectionRenderer from "@/features/admin/pages/components/customizer/SectionRenderer";
+import { collectResponsiveStylesheet } from "@/features/admin/pages/components/customizer/responsive-styles";
+import { buildPageJsonLd } from "@/features/admin/pages/lib/seo-score";
 import SaaSLanding from "@/features/system/components/SaaSLanding";
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from "@/services/getSettings";
@@ -63,7 +65,7 @@ export default async function Home() {
   let dynamicPage: any = null;
   try {
     const [pageData] = await Promise.all([
-      fetchAPI('/pages/home'),
+      fetchAPI('/store/pages/home'),
       // getSiteSettings is already resolved via generateMetadata cache in the same render pass,
       // but we keep the pattern here for any future per-request settings usage.
     ]);
@@ -80,9 +82,25 @@ export default async function Home() {
 
   const sections = dynamicPage?.sections || [];
   const typographyStyle = buildTypographyStyle(dynamicPage?.typography || {});
+  const responsiveCss = collectResponsiveStylesheet(sections);
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  const jsonLd = dynamicPage
+    ? buildPageJsonLd(
+        {
+          ...dynamicPage,
+          isHomePage: true,
+          content: { sections },
+        } as any,
+        baseUrl,
+      )
+    : null;
 
   return (
     <main className="min-h-screen">
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      )}
+      {responsiveCss && <style dangerouslySetInnerHTML={{ __html: responsiveCss }} />}
       <Suspense fallback={null}>
         <PaymentStatus />
       </Suspense>

@@ -13,7 +13,11 @@ import { ReviewRepository } from '@/modules/admin/catalog/review/repositoris/rev
 import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
 import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { PageEntity } from '@/modules/admin/content/page/entities/page.entity'
+import { PageRevisionEntity } from '@/modules/admin/content/page/entities/page-revision.entity'
+import { PageReusableBlockEntity } from '@/modules/admin/content/page/entities/page-reusable-block.entity'
 import { PageRepository } from '@/modules/admin/content/page/page.repository'
+import { PageRevisionRepository } from '@/modules/admin/content/page/page-revision.repository'
+import { PageReusableBlockRepository } from '@/modules/admin/content/page/page-reusable-block.repository'
 import { StaffInvitationEntity } from '@/modules/admin/core/user/entities/staff-invitation.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { StaffInvitationRepository } from '@/modules/admin/core/user/repositories/staff-invitation.repository'
@@ -122,6 +126,8 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
       ReviewEntity,
       FaqEntity,
       PageEntity,
+      PageRevisionEntity,
+      PageReusableBlockEntity,
       ExpenseEntity,
       InvoiceEntity,
       PurchaseOrderEntity,
@@ -160,6 +166,8 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
     ReviewRepository,
     FaqRepository,
     PageRepository,
+    PageRevisionRepository,
+    PageReusableBlockRepository,
     ExpenseRepository,
     InvoiceRepository,
     PurchaseOrderRepository,
@@ -199,6 +207,8 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
     ReviewRepository,
     FaqRepository,
     PageRepository,
+    PageRevisionRepository,
+    PageReusableBlockRepository,
     ExpenseRepository,
     InvoiceRepository,
     PurchaseOrderRepository,

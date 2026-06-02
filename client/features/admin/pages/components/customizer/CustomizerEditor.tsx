@@ -1,221 +1,371 @@
 "use client";
 
+import { useEditorShortcuts } from '@/features/admin/pages/components/customizer/hooks/useEditorShortcuts';
+import { useEditorTreeActions } from '@/features/admin/pages/components/customizer/hooks/useEditorTreeActions';
+import { usePageEditorState } from '@/features/admin/pages/components/customizer/hooks/usePageEditorState';
+import { useRecentBlocks } from '@/features/admin/pages/components/customizer/hooks/useRecentBlocks';
+import {
+  findBlockInTree,
+  updateBlockInTree,
+} from '@/features/admin/pages/lib/page-builder-tree';
+import { getPagePublicPath, normalizePageSlugForSave } from '@/lib/page-url';
+import { themeTokensToCss } from '@/features/admin/pages/lib/theme-tokens-css';
 import { fetchAPI } from '@/services/api';
-import { CustomizerSection, PageData } from '@/types/customizer';
-import { ArrowLeft, Eye, Layout, Monitor, Save, Settings, Smartphone } from 'lucide-react';
-import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { CustomizerSection, PageData, ThemeTokens } from '@/types/customizer';
+import { Layout, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import PageSettings from './PageSettings';
-import Preview from './Preview';
-import SettingsPanel from './SettingsPanel';
-import Sidebar from './Sidebar';
+import { EditorActions, EditorActionsContext } from './EditorActionsContext';
+import BlockInserter from './panels/BlockInserter';
+import CanvasContextMenu, { ContextMenuPosition } from './panels/CanvasContextMenu';
+import EditorHeader, { ViewMode } from './panels/EditorHeader';
+import PagePreviewFrame from './panels/PagePreviewFrame';
+import PageSettings from './panels/PageSettings';
+import SettingsPanel from './panels/SettingsPanel';
+import Sidebar from './panels/Sidebar';
 
 interface CustomizerEditorProps {
   pageId: string;
   initialData: PageData;
+  themeTokens?: ThemeTokens | null;
 }
 
-// Recursively find a node by id inside the nested sections tree
-function findSectionDeep(sections: CustomizerSection[], id: string): CustomizerSection | undefined {
-  for (const section of sections) {
-    if (section.id === id) return section;
-    if (section.children?.length) {
-      const found = findSectionDeep(section.children, id);
-      if (found) return found;
-    }
-  }
-  return undefined;
-}
+export default function CustomizerEditor({ pageId, initialData, themeTokens }: CustomizerEditorProps) {
+  const router = useRouter();
+  const {
+    data,
+    setData,
+    saveStatus,
+    isDirty,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    markSaving,
+    markSaved,
+    markSaveFailed,
+  } = usePageEditorState(initialData);
 
-// Recursively replace a node by id anywhere in the nested tree
-function replaceSectionDeep(sections: CustomizerSection[], updated: CustomizerSection): CustomizerSection[] {
-  return sections.map(s => {
-    if (s.id === updated.id) return updated;
-    if (s.children?.length) return { ...s, children: replaceSectionDeep(s.children, updated) };
-    return s;
-  });
-}
-
-export default function CustomizerEditor({ pageId, initialData }: CustomizerEditorProps) {
-  const [data, setData] = useState<PageData>(initialData);
   const [activeTab, setActiveTab] = useState<'sections' | 'settings'>('sections');
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [isSaving, setIsSaving] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('desktop');
+  const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
+  const [showInserter, setShowInserter] = useState(false);
+  const [inserterQuery, setInserterQuery] = useState('');
+  const { recent, push: pushRecent } = useRecentBlocks();
 
-  // Sync internal state if initialData changes (loaded from API)
+  const sections = data.content.sections;
+
+  const updateSections = useCallback(
+    (next: CustomizerSection[]) => {
+      setData((prev) => ({ ...prev, content: { ...prev.content, sections: next } }), {
+        commit: true,
+      });
+    },
+    [setData],
+  );
+
+  const tree = useEditorTreeActions({
+    sections,
+    selectedId: selectedSectionId,
+    setSelected: setSelectedSectionId,
+    updateSections,
+  });
+
+  // Wrap insertNewBlock so the recent-blocks history captures every insert,
+  // including those from the slash command palette and the layers sidebar.
+  const insertNewBlockWithRecent = useCallback<typeof tree.insertNewBlock>(
+    (type, parentId) => {
+      tree.insertNewBlock(type, parentId);
+      pushRecent(type);
+    },
+    [tree, pushRecent],
+  );
+
+  const editorActions: EditorActions = useMemo(
+    () => ({
+      duplicate: tree.duplicateById,
+      remove: tree.removeById,
+      moveUp: (id) => tree.moveByDelta(id, -1),
+      moveDown: (id) => tree.moveByDelta(id, 1),
+      toggleHidden: (id) => tree.toggleFlag(id, 'hidden'),
+      toggleLocked: (id) => tree.toggleFlag(id, 'locked'),
+      copy: tree.copyById,
+      paste: tree.pasteAfter,
+      canPaste: tree.hasClipboard,
+      canMoveUp: tree.canMoveUp,
+      canMoveDown: tree.canMoveDown,
+      openContextMenu: (id, e) => setContextMenu({ x: e.clientX, y: e.clientY, sectionId: id }),
+    }),
+    [tree],
+  );
+
+  // Warn on tab close when there are unsaved edits.
   useEffect(() => {
-    setData(initialData);
-  }, [initialData]);
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
+  const handleSave = useCallback(async () => {
+    markSaving();
     try {
       const isNewPage = pageId === 'new';
+      const slug = normalizePageSlugForSave(data.slug, data.isHomePage);
       const payload = {
         title: data.title,
-        slug: data.slug,
+        slug,
         isHomePage: data.isHomePage,
         sections: data.content.sections,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
+        ogImage: data.ogImage,
+        publishAt: data.publishAt ?? null,
         status: data.status,
         typography: data.typography,
       };
 
-
       if (isNewPage) {
-        // Create new page with POST /pages
-        const response = await fetchAPI('/pages', {
-          method: 'POST',
-          body: JSON.stringify(payload),
-        });
-        toast.success('Page created successfully');
-
-        // Navigate to the newly created page to enable further editing
-        if (response?.data?.id) {
-          window.location.href = `/admin/pages/${response.data.id}`;
-        }
+        const response = await fetchAPI('/pages', { method: 'POST', body: JSON.stringify(payload) });
+        if (!response?.success) throw new Error(response?.message || 'Failed to create page');
+        toast.success('Page created');
+        markSaved({ ...data, id: response.data?.id, slug });
+        if (response?.data?.id) router.replace(`/admin/pages/${response.data.id}`);
       } else {
-        // Update existing page with PUT /pages/:id
-        await fetchAPI(`/pages/${pageId}`, {
+        const response = await fetchAPI(`/pages/${pageId}`, {
           method: 'PATCH',
           body: JSON.stringify(payload),
         });
-        toast.success('Page saved successfully');
+        if (!response?.success) throw new Error(response?.message || 'Failed to save page');
+        toast.success('Saved');
+        markSaved({ ...data, slug });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Save error:', error);
-      toast.error(error.message || 'Failed to save page');
-    } finally {
-      setIsSaving(false);
+      const message = error instanceof Error ? error.message : 'Failed to save page';
+      toast.error(message);
+      markSaveFailed();
     }
-  };
+  }, [data, markSaveFailed, markSaved, markSaving, pageId, router]);
+
+  const openInserter = useCallback(() => {
+    setInserterQuery('');
+    setShowInserter(true);
+  }, []);
+  const closeInserter = useCallback(() => setShowInserter(false), []);
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+  const clearSelection = useCallback(() => setSelectedSectionId(null), []);
+
+  useEditorShortcuts({
+    selectedId: selectedSectionId,
+    showInserter,
+    hasContextMenu: !!contextMenu,
+    onSave: handleSave,
+    onUndo: undo,
+    onRedo: redo,
+    onOpenInserter: openInserter,
+    onCloseInserter: closeInserter,
+    onCloseContextMenu: closeContextMenu,
+    onClearSelection: clearSelection,
+    onRemove: tree.removeById,
+    onDuplicate: tree.duplicateById,
+    onCopy: tree.copyById,
+    onPaste: tree.pasteAfter,
+    onMove: tree.moveByDelta,
+  });
 
   const selectedSection = selectedSectionId
-    ? findSectionDeep(data.content.sections, selectedSectionId)
+    ? findBlockInTree(data.content.sections, selectedSectionId) ?? undefined
     : undefined;
 
   const handleClosePanel = useCallback(() => setSelectedSectionId(null), []);
-  const handleUpdateSection = useCallback((updated: CustomizerSection) => {
-    setData(prev => {
-      const newSections = replaceSectionDeep(prev.content.sections, updated);
-      return { ...prev, content: { ...prev.content, sections: newSections } };
-    });
-  }, []);
-
-  const handleUpdateSections = useCallback(
-    (sections: CustomizerSection[]) =>
-      setData(prev => ({ ...prev, content: { ...prev.content, sections } })),
-    [],
+  const handleUpdateSection = useCallback(
+    (updated: CustomizerSection) => {
+      setData((prev) => ({
+        ...prev,
+        content: {
+          ...prev.content,
+          sections: updateBlockInTree(prev.content.sections, updated.id, () => updated),
+        },
+      }));
+    },
+    [setData],
   );
 
+  const previewPath = getPagePublicPath(data);
+  const themeCss = useMemo(() => themeTokensToCss(themeTokens), [themeTokens]);
+  const contextMenuSection = contextMenu ? findBlockInTree(sections, contextMenu.sectionId) : null;
+
   return (
-    <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100">
-      {/* Header */}
-      <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 shrink-0 z-50">
-        <div className="flex items-center gap-4">
-          <Link href="/admin/pages" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="font-bold text-sm leading-none">{data.title}</h1>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1 font-bold">Store Customizer</p>
-          </div>
-        </div>
+    <EditorActionsContext.Provider value={editorActions}>
+      {themeCss && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
+      <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100">
+        <EditorHeader
+          title={data.title}
+          isDirty={isDirty}
+          saveStatus={saveStatus}
+          hasSchedule={!!data.publishAt}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          viewMode={viewMode}
+          previewPath={previewPath}
+          onUndo={undo}
+          onRedo={redo}
+          onViewModeChange={setViewMode}
+          onSave={handleSave}
+        />
 
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-          <button
-            onClick={() => setViewMode('desktop')}
-            className={`p-1.5 rounded-md transition-all ${viewMode === 'desktop' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500'}`}
+        <div className="flex-1 flex overflow-hidden">
+          <aside className="w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
+            <div className="flex border-b border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setActiveTab('sections')}
+                className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${
+                  activeTab === 'sections'
+                    ? 'text-brand-600 border-b-2 border-brand-600'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Layout className="w-4 h-4" />
+                Layers
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('settings')}
+                className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${
+                  activeTab === 'settings'
+                    ? 'text-brand-600 border-b-2 border-brand-600'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                Page Settings
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {activeTab === 'sections' ? (
+                <Sidebar
+                  sections={data.content.sections}
+                  selectedId={selectedSectionId}
+                  onSelect={setSelectedSectionId}
+                  onUpdate={updateSections}
+                  pushRecent={pushRecent}
+                  recentTypes={recent}
+                />
+              ) : (
+                <PageSettings data={data} onUpdate={setData} pageId={pageId} />
+              )}
+            </div>
+          </aside>
+
+          <main className="flex-1 bg-slate-100 dark:bg-slate-950 p-6 flex items-center justify-center overflow-hidden">
+            <PagePreviewFrame
+              sections={data.content.sections}
+              viewMode={viewMode}
+              selectedId={selectedSectionId}
+              onSelect={setSelectedSectionId}
+              typography={data.typography}
+            />
+          </main>
+
+          <aside
+            className={`w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 overflow-y-auto transition-transform ${
+              selectedSectionId ? 'translate-x-0' : 'translate-x-full absolute right-0'
+            }`}
           >
-            <Monitor className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setViewMode('mobile')}
-            className={`p-1.5 rounded-md transition-all ${viewMode === 'mobile' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500'}`}
-          >
-            <Smartphone className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link href={`/${data.slug}`} target='_blank' className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-            <Eye className="w-4 h-4" />
-            Preview
-          </Link>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-1.5 text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-all shadow-lg shadow-brand-600/20 disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            {isSaving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-      </header>
-
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Hierarchical View */}
-        <aside className="w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
-          <div className="flex border-b border-slate-200 dark:border-slate-800">
-            <button
-              onClick={() => setActiveTab('sections')}
-              className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${activeTab === 'sections' ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              <Layout className="w-4 h-4" />
-              Sections
-            </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${activeTab === 'settings' ? 'text-brand-600 border-b-2 border-brand-600' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              <Settings className="w-4 h-4" />
-              Theme Settings
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {activeTab === 'sections' ? (
-              <Sidebar
-                sections={data.content.sections}
-                selectedId={selectedSectionId}
-                onSelect={setSelectedSectionId}
-                onUpdate={handleUpdateSections}
-              />
-            ) : (
-              <PageSettings
-                data={data}
-                onUpdate={(updatedData) => setData(updatedData)}
+            {selectedSection && (
+              <SettingsPanel
+                section={selectedSection}
+                allSections={data.content.sections}
+                viewMode={viewMode}
+                onClose={handleClosePanel}
+                onUpdate={handleUpdateSection}
               />
             )}
-          </div>
-        </aside>
-
-        {/* Center - Preview Canvas */}
-        <main className="flex-1 bg-slate-100 dark:bg-slate-950 p-6 flex items-center justify-center overflow-hidden">
-          <Preview
-            sections={data.content.sections}
-            viewMode={viewMode}
-            selectedId={selectedSectionId}
-            onSelect={setSelectedSectionId}
-            typography={data.typography}
-          />
-        </main>
-
-        {/* Right Sidebar - Contextual Settings */}
-        <aside className={`w-80 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 overflow-y-auto transition-transform ${selectedSectionId ? 'translate-x-0' : 'translate-x-full absolute right-0'}`}>
-          {selectedSection && (
-            <SettingsPanel
-              section={selectedSection}
-              viewMode={viewMode}
-              onClose={handleClosePanel}
-              onUpdate={handleUpdateSection}
-            />
-          )}
-        </aside>
+          </aside>
+        </div>
       </div>
-    </div>
+
+      {/* Slash command palette */}
+      {showInserter && (
+        <div
+          className="fixed inset-0 z-200 flex items-start justify-center pt-32 bg-slate-900/40"
+          onClick={() => setShowInserter(false)}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <BlockInserter
+              query={inserterQuery}
+              recent={recent}
+              onSelect={(type) => {
+                insertNewBlockWithRecent(type);
+                setShowInserter(false);
+              }}
+              onSelectSaved={(block) => {
+                tree.insertSavedBlock(block);
+                setShowInserter(false);
+              }}
+              onClose={() => setShowInserter(false)}
+              layout="menu"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Right-click context menu */}
+      {contextMenu && contextMenuSection && (
+        <CanvasContextMenu
+          position={contextMenu}
+          section={contextMenuSection}
+          canPaste={tree.hasClipboard}
+          onClose={() => setContextMenu(null)}
+          onDuplicate={() => {
+            tree.duplicateById(contextMenu.sectionId);
+            setContextMenu(null);
+          }}
+          onCopy={() => {
+            tree.copyById(contextMenu.sectionId);
+            setContextMenu(null);
+          }}
+          onPaste={() => {
+            tree.pasteAfter(contextMenu.sectionId);
+            setContextMenu(null);
+          }}
+          onDelete={() => {
+            tree.removeById(contextMenu.sectionId);
+            setContextMenu(null);
+          }}
+          onMoveUp={() => {
+            tree.moveByDelta(contextMenu.sectionId, -1);
+            setContextMenu(null);
+          }}
+          onMoveDown={() => {
+            tree.moveByDelta(contextMenu.sectionId, 1);
+            setContextMenu(null);
+          }}
+          onToggleHidden={() => {
+            tree.toggleFlag(contextMenu.sectionId, 'hidden');
+            setContextMenu(null);
+          }}
+          onToggleLocked={() => {
+            tree.toggleFlag(contextMenu.sectionId, 'locked');
+            setContextMenu(null);
+          }}
+          onInsertChild={() => {
+            setSelectedSectionId(contextMenu.sectionId);
+            setContextMenu(null);
+            setInserterQuery('');
+            setShowInserter(true);
+          }}
+        />
+      )}
+    </EditorActionsContext.Provider>
   );
 }

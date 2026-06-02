@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
-import DebouncedInput from "../../../pages/components/customizer/DebouncedInput";
+import DebouncedInput from "../../../pages/components/customizer/panels/DebouncedInput";
 
 interface FooterLinkItemProps {
     link: any;

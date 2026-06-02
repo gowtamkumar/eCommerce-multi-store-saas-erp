@@ -28,8 +28,8 @@ export type SectionType =
   | 'checkout';
 
 export interface SectionStyles {
-  paddingTop: number | string;
-  paddingBottom: number | string;
+  paddingTop?: number | string;
+  paddingBottom?: number | string;
   mobilePaddingTop?: number | string;
   mobilePaddingBottom?: number | string;
   backgroundColor?: string;
@@ -128,6 +128,7 @@ export interface BrandGridSettings {
   source?: 'all' | 'manual';
   count?: number;
   columns?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   items?: any[];
 }
 
@@ -278,19 +279,37 @@ export type SectionSettings =
   | DividerSettings
   | SpacerSettings
   | CheckoutSettings
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | Record<string, any>;
+
+export type ViewportBreakpoint = 'desktop' | 'tablet' | 'mobile';
 
 export interface CustomizerSection {
   id: string;
   type: SectionType;
   settings: SectionSettings;
   styles?: SectionStyles;
+  /**
+   * Per-breakpoint visibility. Use this when the block should appear at some
+   * widths but not others (e.g. "show on desktop only"). Missing keys default
+   * to `true` so existing data keeps rendering.
+   */
   visibility?: {
     desktop: boolean;
+    tablet?: boolean;
     mobile: boolean;
   };
-  disabled?: boolean;
-  children?: CustomizerSection[]; // Allow recursive nesting
+  /**
+   * Universal soft-hide. When `true` the block is skipped on the storefront
+   * and rendered dimmed in the editor. Use this for "draft" blocks the user
+   * wants to keep but not publish yet.
+   */
+  hidden?: boolean;
+  /** Prevents accidental edits; toggled from the canvas toolbar. */
+  locked?: boolean;
+  /** Optional human-readable label shown in the layers tree. */
+  name?: string;
+  children?: CustomizerSection[];
 }
 
 export interface CustomizerData {
@@ -312,19 +331,51 @@ export interface PageData {
   metaTitle?: string;
   metaDescription?: string;
   ogImage?: string;
+  publishAt?: string | null;
   typography?: {
     fontFamily: string;
     headingFont: string;
     baseFontSize: number;
-    // Headings
     headingFontFamily?: string;
     headingFontWeight?: string;
     headingFontSize?: string;
     headingLineHeight?: string;
-    // Paragraphs
     paragraphFontFamily?: string;
     paragraphFontWeight?: string;
     paragraphFontSize?: string;
     paragraphLineHeight?: string;
+  };
+}
+
+/** Tenant-wide design tokens used by storefront and editor. */
+export interface ThemeTokens {
+  colors?: {
+    brand?: string;
+    accent?: string;
+    background?: string;
+    foreground?: string;
+    muted?: string;
+    border?: string;
+    success?: string;
+    danger?: string;
+  };
+  fonts?: {
+    body?: string;
+    heading?: string;
+  };
+  radii?: {
+    sm?: string;
+    md?: string;
+    lg?: string;
+  };
+  spacing?: {
+    sm?: string;
+    md?: string;
+    lg?: string;
+  };
+  shadows?: {
+    sm?: string;
+    md?: string;
+    lg?: string;
   };
 }

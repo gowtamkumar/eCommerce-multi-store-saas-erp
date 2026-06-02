@@ -25,7 +25,9 @@ export class PageResponseDto {
     type: PageSectionType
     settings?: any
     styles?: any
-    disabled?: boolean
+    hidden?: boolean
+    locked?: boolean
+    visibility?: { desktop?: boolean; tablet?: boolean; mobile?: boolean }
     children?: any[]
   }>
 
@@ -55,6 +57,9 @@ export class PageResponseDto {
 
   @Expose()
   status: PageStatus
+
+  @Expose()
+  publishAt: Date | null
 
   @Expose()
   @IsDate()

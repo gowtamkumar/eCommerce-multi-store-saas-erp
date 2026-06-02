@@ -1,4 +1,5 @@
 export enum PageStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
+  SCHEDULED = 'scheduled',
 }

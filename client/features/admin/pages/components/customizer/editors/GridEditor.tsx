@@ -2,13 +2,13 @@
 
 import { Monitor, Smartphone, Trash2, Plus } from 'lucide-react';
 import React, { useState } from 'react';
-import DebouncedInput from '../DebouncedInput';
+import DebouncedInput from '../panels/DebouncedInput';
 
 interface GridEditorProps {
   section: any;
   categories: any[];
   brands: any[];
-  viewMode: 'desktop' | 'mobile';
+  viewMode: 'desktop' | 'tablet' | 'mobile';
   onUpdate: (key: string, value: any) => void;
   updateArrayItem: (key: string, itemId: string, itemData: any) => void;
   addArrayItem: (key: string, defaultItem: any) => void;

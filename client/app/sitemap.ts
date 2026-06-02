@@ -71,7 +71,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // optional — if the endpoints don't exist or return unexpected shapes we
   // still ship the static skeleton.
   const [pageRows, productRows] = await Promise.all([
-    fetchTenantSlugs(tenantId, '/pages', '/pages?published=true'),
+    fetchTenantSlugs(tenantId, '/pages', '/store/pages'),
     fetchTenantSlugs(tenantId, '/products', '/products?status=published'),
   ])
 

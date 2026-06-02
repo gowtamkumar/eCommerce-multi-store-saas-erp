@@ -1,6 +1,6 @@
 import React from "react";
 import { ImageIcon, Eye, EyeOff } from "lucide-react";
-import DebouncedInput from "../../../pages/components/customizer/DebouncedInput";
+import DebouncedInput from "../../../pages/components/customizer/panels/DebouncedInput";
 import ImageUploadField from "@/components/shared/ImageUploadField";
 import { fetchAPI } from "@/services/api";
 

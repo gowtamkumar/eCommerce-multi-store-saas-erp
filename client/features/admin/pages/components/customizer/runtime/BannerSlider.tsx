@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BannerSliderProps } from "../../type";
+import { BannerSliderProps } from "../../../type";
 
 
 export default function BannerSlider({ settings, styles }: BannerSliderProps) {

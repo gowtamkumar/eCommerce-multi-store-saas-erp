@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
-import DebouncedInput from '../DebouncedInput';
+import DebouncedInput from '../panels/DebouncedInput';
 
 interface InteractiveEditorProps {
   section: any;

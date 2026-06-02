@@ -1,12 +1,11 @@
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
-import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { RequireFeature } from '@/common/decorators/require-feature.decorator'
-import { Public } from '@/common/decorators/public.decorator'
 import {
   Body,
   Controller,
@@ -14,8 +13,8 @@ import {
   Get,
   Logger,
   Param,
-  Post,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common'
@@ -23,8 +22,15 @@ import { PageResponseDto } from './dto/page-response.dto'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageService } from './page.service'
 
-@UseGuards(SubscriptionGuard)
+/**
+ * Admin-only page management. All routes require authentication and
+ * CONTENT_MANAGE permission. Public storefront reads live in
+ * StorePageController under `/store/pages` so there is no chance of
+ * accidentally exposing drafts here.
+ */
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
 @RequireFeature('content')
+@RequirePermissions(SystemPermissions.CONTENT_MANAGE)
 @Controller('pages')
 export class PageController {
   private readonly logger = new Logger(PageController.name)
@@ -32,8 +38,6 @@ export class PageController {
   constructor(private readonly pageService: PageService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async createPage(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePageDto,
@@ -49,7 +53,6 @@ export class PageController {
   }
 
   @Get()
-  @Public()
   async findAllPages(
     @RequestContext() ctx: RequestContextDto,
     @Query('status') status?: string,
@@ -64,40 +67,7 @@ export class PageController {
     }
   }
 
-  @Get('home')
-  @Public()
-  async findHomePage(
-    @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findHomePage.`)
-    const data = await this.pageService.findHomePage(ctx)
-    return {
-      success: true,
-      statusCode: 200,
-      message: 'Home page data fetched successfully',
-      data: data,
-    }
-  }
-
-  @Get('slug/:slug')
-  @Public()
-  async findBySlugPage(
-    @RequestContext() ctx: RequestContextDto,
-    @Param('slug') slug: string,
-  ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findBySlugPage.`)
-    const result = await this.pageService.findBySlugPage(slug, ctx)
-    return {
-      success: true,
-      statusCode: 200,
-      message: `Page details for slug: ${slug}`,
-      data: result,
-    }
-  }
-
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findOnePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -113,8 +83,6 @@ export class PageController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async updatePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -131,8 +99,6 @@ export class PageController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`)
     const result = await this.pageService.removePage(id, ctx)
@@ -142,5 +108,24 @@ export class PageController {
       message: result.message || `Page deleted successfully`,
       data: null,
     }
+  }
+
+  @Get(':id/revisions')
+  async listRevisions(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<unknown[]>> {
+    const data = await this.pageService.listRevisions(id, ctx)
+    return { success: true, statusCode: 200, message: 'Page revisions', data }
+  }
+
+  @Post(':id/revisions/:revisionId/restore')
+  async restoreRevision(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Param('revisionId') revisionId: string,
+  ): Promise<BaseApiSuccessResponse<unknown>> {
+    const data = await this.pageService.restoreRevision(id, revisionId, ctx)
+    return { success: true, statusCode: 200, message: 'Page restored from revision', data }
   }
 }

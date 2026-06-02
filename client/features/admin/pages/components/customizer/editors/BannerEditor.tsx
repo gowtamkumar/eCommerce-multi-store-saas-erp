@@ -3,7 +3,7 @@
 import { CustomizerSection } from '@/types/customizer';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
-import DebouncedInput from '../DebouncedInput';
+import DebouncedInput from '../panels/DebouncedInput';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 

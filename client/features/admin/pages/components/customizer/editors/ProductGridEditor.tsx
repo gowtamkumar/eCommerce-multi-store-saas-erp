@@ -2,11 +2,11 @@
 
 import { Monitor, Smartphone, Trash2 } from 'lucide-react';
 import React from 'react';
-import DebouncedInput from '../DebouncedInput';
+import DebouncedInput from '../panels/DebouncedInput';
 
 interface ProductGridEditorProps {
   settings: any;
-  viewMode: 'desktop' | 'mobile';
+  viewMode: 'desktop' | 'tablet' | 'mobile';
   products: any[];
   categories: any[];
   onUpdate: (key: string, value: any) => void;

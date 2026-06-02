@@ -1,6 +1,6 @@
 import React from "react";
 import { Columns } from "lucide-react";
-import DebouncedInput from "../../../pages/components/customizer/DebouncedInput";
+import DebouncedInput from "../../../pages/components/customizer/panels/DebouncedInput";
 
 interface FooterContentProps {
     footerData: any;

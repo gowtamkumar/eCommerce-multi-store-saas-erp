@@ -2,7 +2,10 @@ import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/shared/PaymentStatus";
 import SectionRenderer from "@/features/admin/pages/components/customizer/SectionRenderer";
+import { collectResponsiveStylesheet } from "@/features/admin/pages/components/customizer/responsive-styles";
+import { buildPageJsonLd } from "@/features/admin/pages/lib/seo-score";
 import { fetchAPI } from "@/services/api";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -12,7 +15,7 @@ export const revalidate = 600;
 async function getPageData(slug: string) {
     if (slug.length < 2) return null;
     try {
-        const data = await fetchAPI(`/pages/slug/${slug}`, { silent404: true } as any);
+        const data = await fetchAPI(`/store/pages/slug/${slug}`, { silent404: true } as any);
         return data.success ? data.data : null;
     } catch (error) {
         console.error(`Error fetching page [${slug}]:`, error);
@@ -60,7 +63,19 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
         notFound();
     }
 
-    // Modern Typography Injection (using CSS Variables for cleaner JSX)
+    const headerList = await headers();
+    const host = headerList.get('host') || 'localhost';
+    const proto = headerList.get('x-forwarded-proto') || 'https';
+    const baseUrl = `${proto}://${host}`;
+    const jsonLd = buildPageJsonLd(
+        {
+            ...page,
+            content: { sections: page.sections || [] },
+        } as any,
+        baseUrl,
+    );
+    const responsiveCss = collectResponsiveStylesheet(page.sections || []);
+
     const typographyStyles: React.CSSProperties = {
         fontFamily: page.typography?.fontFamily || 'Inter, sans-serif',
         fontSize: `${page.typography?.baseFontSize || 18}px`,
@@ -77,13 +92,17 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
 
     return (
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: jsonLd }}
+            />
+            {responsiveCss && <style dangerouslySetInnerHTML={{ __html: responsiveCss }} />}
             <Suspense fallback={null}>
                 <PaymentStatus />
             </Suspense>
             <Navbar />
 
             <div className="pt-20" style={typographyStyles}>
-                {/* Dynamically render page sections */}
                 {page.sections?.length > 0 &&
                     page.sections.map((section: any) => (
                         <SectionRenderer key={section.id} section={section} />

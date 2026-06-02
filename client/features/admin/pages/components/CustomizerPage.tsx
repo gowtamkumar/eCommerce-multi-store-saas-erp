@@ -1,24 +1,28 @@
 "use client";
 
 import CustomizerEditor from "@/features/admin/pages/components/customizer/CustomizerEditor";
+import TemplatePicker from "@/features/admin/pages/components/customizer/panels/TemplatePicker";
 import { fetchAPI } from "@/services/api";
 import { CustomizerSection, PageData } from "@/types/customizer";
 import { Loader2 } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+const EMPTY_PAGE: PageData = {
+  title: "",
+  slug: "",
+  isHomePage: false,
+  status: "draft",
+  content: { sections: [] },
+};
+
 export default function CustomizerPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const isNew = resolvedParams.id === "new";
 
   const [loading, setLoading] = useState(!isNew);
-  const [data, setData] = useState<PageData>({
-    title: "",
-    slug: "",
-    isHomePage: false,
-    status: "published",
-    content: { sections: [] },
-  });
+  const [data, setData] = useState<PageData>(EMPTY_PAGE);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(isNew);
 
   useEffect(() => {
     if (!isNew) {
@@ -31,19 +35,18 @@ export default function CustomizerPage({ params }: { params: Promise<{ id: strin
       const res = await fetchAPI(`/pages/${resolvedParams.id}`);
       if (res.success) {
         const page = res.data;
-        // The entity has 'sections' column, but Customizer expects data.content.sections
         const adaptSections = (sections: any[]): CustomizerSection[] => {
           return sections.map((s: any) => ({
             id: s.id,
-            type: s.type === 'hero' ? 'hero-banner' : s.type, // Migration support
-            settings: s.settings || s.content || {}, // Handle renamed content field
+            type: s.type === 'hero' || s.type === 'hero-banner' ? 'banner' : s.type,
+            settings: s.settings || s.content || {},
             styles: s.styles || { paddingTop: 40, paddingBottom: 40 },
-            disabled: s.disabled || false,
-            children: s.children ? adaptSections(s.children) : (['section', 'row', 'column'].includes(s.type) ? [] : undefined)
+            hidden: s.hidden ?? false,
+            locked: s.locked ?? false,
+            visibility: s.visibility,
+            children: s.children ? adaptSections(s.children) : (['section', 'row', 'column'].includes(s.type) ? [] : undefined),
           }));
         };
-
-        const adaptedSections = adaptSections(page.sections || []);
 
         setData({
           id: page.id,
@@ -53,8 +56,10 @@ export default function CustomizerPage({ params }: { params: Promise<{ id: strin
           status: page.status || "published",
           metaTitle: page.metaTitle || "",
           metaDescription: page.metaDescription || "",
+          ogImage: page.ogImage || "",
+          publishAt: page.publishAt || null,
           typography: page.typography || undefined,
-          content: { sections: adaptedSections }
+          content: { sections: adaptSections(page.sections || []) },
         });
       } else {
         toast.error("Page not found");
@@ -74,5 +79,18 @@ export default function CustomizerPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  return <CustomizerEditor pageId={resolvedParams.id} initialData={data} />;
+  return (
+    <>
+      <CustomizerEditor pageId={resolvedParams.id} initialData={data} />
+      {showTemplatePicker && (
+        <TemplatePicker
+          onClose={() => setShowTemplatePicker(false)}
+          onSelect={(sections) => {
+            setData((prev) => ({ ...prev, content: { sections } }));
+            setShowTemplatePicker(false);
+          }}
+        />
+      )}
+    </>
+  );
 }

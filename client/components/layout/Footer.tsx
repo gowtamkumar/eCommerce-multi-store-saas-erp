@@ -116,7 +116,7 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
 
   const fetchPages = async () => {
     try {
-      const res = await fetchAPI("/pages?status=published");
+      const res = await fetchAPI("/store/pages");
       if (res.success) {
         setPages(res.data);
       }

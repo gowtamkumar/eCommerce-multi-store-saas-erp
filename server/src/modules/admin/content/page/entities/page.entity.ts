@@ -27,7 +27,11 @@ export class PageEntity extends BaseEntity {
     type: PageSectionType
     settings?: any
     styles?: any
-    disabled?: boolean
+    /** Universal soft-hide flag; storefront skips these. */
+    hidden?: boolean
+    /** Per-breakpoint visibility. Missing keys default to true. */
+    visibility?: { desktop?: boolean; tablet?: boolean; mobile?: boolean }
+    locked?: boolean
     children?: any[]
   }>
 
@@ -61,6 +65,11 @@ export class PageEntity extends BaseEntity {
     default: PageStatus.PUBLISHED,
   })
   status: PageStatus
+
+  /** When set, page becomes published automatically at this timestamp via the scheduler. */
+  @Column({ type: 'timestamptz', name: 'publish_at', nullable: true })
+  @Index()
+  publishAt: Date | null
 
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string

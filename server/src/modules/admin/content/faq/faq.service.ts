@@ -16,10 +16,10 @@ export class FaqService {
   ) {}
 
   private async invalidateCache(tenantId: string) {
-    // Invalidate main lookups for this tenant
     await this.cache.delCache('faqs:global', tenantId)
-    // Note: In a large system, we would use Redis patterns to delete faqs:page:*
-    // but for now we'll target the main ones or let them expire.
+    await this.cache.delCache('home', tenantId)
+    await this.cache.delCacheByPattern('slug:*', tenantId)
+    await this.cache.delCacheByPattern('faqs:page:*', tenantId)
   }
 
   async createFaq(createFaqDto: CreateFaqDto, ctx: RequestContextDto): Promise<FaqEntity> {

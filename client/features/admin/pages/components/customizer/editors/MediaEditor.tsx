@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import DebouncedInput from '../DebouncedInput';
+import DebouncedInput from '../panels/DebouncedInput';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 

@@ -1,10 +1,11 @@
 import SectionRenderer from '@/features/admin/pages/components/customizer/SectionRenderer';
+import { collectResponsiveStylesheet } from '@/features/admin/pages/components/customizer/responsive-styles';
 import { CustomizerSection } from '@/types/customizer';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 interface PreviewProps {
   sections: CustomizerSection[];
-  viewMode: 'desktop' | 'mobile';
+  viewMode: 'desktop' | 'tablet' | 'mobile';
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   typography?: {
@@ -24,8 +25,8 @@ interface PreviewProps {
 
 const Preview = React.memo(({ sections, viewMode, selectedId, onSelect, typography }: PreviewProps) => {
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const aggregatedCss = useMemo(() => collectResponsiveStylesheet(sections), [sections]);
 
-  // Scroll to selected section
   useEffect(() => {
     if (selectedId && sectionRefs.current[selectedId]) {
       sectionRefs.current[selectedId]?.scrollIntoView({
@@ -36,8 +37,15 @@ const Preview = React.memo(({ sections, viewMode, selectedId, onSelect, typograp
   }, [selectedId]);
 
   return (
-    <div className={`bg-white dark:bg-slate-900 shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${viewMode === 'mobile' ? 'w-[375px] h-[667px] rounded-[40px] border-[12px] border-slate-800 dark:border-slate-800' : 'w-full h-full rounded-xl'}`}>
-      {/* Canvas Header (only if not mobile frame) */}
+    <div
+      className={`bg-white dark:bg-slate-900 shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${
+        viewMode === 'mobile'
+          ? 'w-[375px] h-[667px] rounded-[40px] border-12 border-slate-800 dark:border-slate-800'
+          : viewMode === 'tablet'
+          ? 'w-[820px] h-[1080px] max-h-[80vh] rounded-[28px] border-8 border-slate-800 dark:border-slate-800'
+          : 'w-full h-full rounded-xl'
+      }`}
+    >
       {viewMode === 'desktop' && (
         <div className="h-8 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-1.5 shrink-0">
           <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
@@ -47,10 +55,10 @@ const Preview = React.memo(({ sections, viewMode, selectedId, onSelect, typograp
         </div>
       )}
 
-      {/* Actual Content Area */}
       <div
-        className={`flex-1 overflow-y-auto scrollbar-hide flex flex-col ${viewMode === 'mobile' ? 'is-mobile-preview' : ''}`}
-
+        className={`flex-1 overflow-y-auto scrollbar-hide flex flex-col ${
+          viewMode === 'mobile' ? 'is-mobile-preview' : viewMode === 'tablet' ? 'is-tablet-preview' : ''
+        }`}
         style={{
           fontFamily: typography?.fontFamily || 'Inter, sans-serif',
           fontSize: `${typography?.baseFontSize || 18}px`,
@@ -65,11 +73,14 @@ const Preview = React.memo(({ sections, viewMode, selectedId, onSelect, typograp
           ...(typography?.paragraphLineHeight && { '--paragraph-line-height': typography.paragraphLineHeight } as React.CSSProperties),
         }}
       >
+        {aggregatedCss ? <style>{aggregatedCss}</style> : null}
+
         {sections.map((section) => (
           <div
             key={section.id}
             ref={(el) => {
               if (el) sectionRefs.current[section.id] = el;
+              else delete sectionRefs.current[section.id];
             }}
           >
             <SectionRenderer section={section} onSelect={onSelect} selectedId={selectedId} />

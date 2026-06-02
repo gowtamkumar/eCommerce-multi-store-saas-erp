@@ -1,5 +1,5 @@
 export interface Page {
-    _id: string;
+    id: string;
     title: string;
     slug: string;
     status: "draft" | "published";
