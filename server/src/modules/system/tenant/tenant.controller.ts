@@ -6,16 +6,19 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Logger,
+  NotFoundException,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common'
+import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
 import { UpdateCustomDomainDto } from './dto/update-custom-domain.dto'
@@ -62,6 +65,20 @@ export class TenantController {
       message: 'Tenants retrieved successfully',
       data: tenants as any,
     }
+  }
+
+  @Get('check-domain')
+  async checkDomain(
+    @Query('domain') domain: string,
+  ): Promise<void> {
+    if (!domain) {
+      throw new BadRequestException('Domain query parameter is required')
+    }
+    const tenant = await this.tenantService.findByCustomDomain(domain)
+    if (tenant && tenant.customDomainStatus === CustomDomainStatus.ACTIVE) {
+      return // 200 OK
+    }
+    throw new NotFoundException('Domain is not active or registered')
   }
 
   @Get('info')
