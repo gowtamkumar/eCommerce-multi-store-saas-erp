@@ -12,6 +12,7 @@ import {
   MaxLength,
   Matches,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator'
 import { BrandingSettingsDto } from './branding-settings.dto'
 import { CurrenciesDto } from './currencies.dto'
@@ -63,6 +64,7 @@ export class UpdateSiteSettingsDto {
   siteDescription?: string
 
   @ApiProperty({ required: false })
+  @ValidateIf((o, v) => v !== '' && v !== null && v !== undefined)
   @IsEmail()
   @IsOptional()
   contactEmail?: string
@@ -84,6 +86,7 @@ export class UpdateSiteSettingsDto {
 
   @ApiProperty({ required: false, example: 'BDT' })
   @IsString()
+  @ValidateIf((o, v) => v !== '' && v !== null && v !== undefined)
   @Matches(ISO_4217_RE, { message: 'currency must be a 3-letter ISO-4217 code' })
   @IsOptional()
   currency?: string
@@ -206,6 +209,7 @@ export class UpdateSiteSettingsDto {
 
   @ApiProperty({ required: false, example: 'Asia/Dhaka' })
   @IsString()
+  @ValidateIf((o, v) => v !== '' && v !== null && v !== undefined)
   @Matches(IANA_TIMEZONE_RE, { message: 'timezone must be an IANA timezone like Asia/Dhaka' })
   @MaxLength(64)
   @IsOptional()
@@ -213,6 +217,7 @@ export class UpdateSiteSettingsDto {
 
   @ApiProperty({ required: false, example: 'en-US' })
   @IsString()
+  @ValidateIf((o, v) => v !== '' && v !== null && v !== undefined)
   @Matches(IETF_LOCALE_RE, { message: 'locale must be an IETF locale like en-US' })
   @MaxLength(20)
   @IsOptional()
@@ -226,6 +231,7 @@ export class UpdateSiteSettingsDto {
   theme?: ThemeSettingsDto
 
   @ApiProperty({ required: false })
+  @ValidateIf((o, v) => v !== '' && v !== null && v !== undefined)
   @IsUUID()
   @IsOptional()
   defaultBranchId?: string

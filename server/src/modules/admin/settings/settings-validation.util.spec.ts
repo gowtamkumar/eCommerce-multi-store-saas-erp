@@ -12,13 +12,19 @@ describe('settings-validation.util', () => {
     expect(result.supportedCurrencies?.[0].code).toBe('BDT')
   })
 
-  it('requires base currency to exist in supportedCurrencies when configured', () => {
-    expect(() =>
-      normalizeAndValidateSettingsUpdate({
-        currency: 'BDT',
-        supportedCurrencies: [{ code: 'USD', symbol: '$', rate: 120, name: 'US Dollar' }],
-      }),
-    ).toThrow(BadRequestException)
+  it('automatically appends base currency to supportedCurrencies if missing', () => {
+    const result = normalizeAndValidateSettingsUpdate({
+      currency: 'BDT',
+      supportedCurrencies: [{ code: 'USD', symbol: '$', rate: 120, name: 'US Dollar' }],
+    })
+
+    expect(result.supportedCurrencies?.length).toBe(2)
+    expect(result.supportedCurrencies?.[1]).toEqual({
+      code: 'BDT',
+      symbol: '৳',
+      rate: 1,
+      name: 'Bangladeshi Taka',
+    })
   })
 
   it('rejects duplicate supported currency codes', () => {
@@ -33,15 +39,21 @@ describe('settings-validation.util', () => {
     ).toThrow(BadRequestException)
   })
 
-  it('uses existing currency when update only supplies supportedCurrencies', () => {
-    expect(() =>
-      normalizeAndValidateSettingsUpdate(
-        {
-          supportedCurrencies: [{ code: 'USD', symbol: '$', rate: 120, name: 'US Dollar' }],
-        },
-        { currency: 'BDT', supportedCurrencies: [] },
-      ),
-    ).toThrow(BadRequestException)
+  it('uses existing currency and appends it when update only supplies supportedCurrencies', () => {
+    const result = normalizeAndValidateSettingsUpdate(
+      {
+        supportedCurrencies: [{ code: 'USD', symbol: '$', rate: 120, name: 'US Dollar' }],
+      },
+      { currency: 'BDT', supportedCurrencies: [] },
+    )
+
+    expect(result.supportedCurrencies?.length).toBe(2)
+    expect(result.supportedCurrencies?.[1]).toEqual({
+      code: 'BDT',
+      symbol: '৳',
+      rate: 1,
+      name: 'Bangladeshi Taka',
+    })
   })
 
   it('allows an empty supportedCurrencies list', () => {
@@ -51,5 +63,19 @@ describe('settings-validation.util', () => {
     })
 
     expect(result.supportedCurrencies).toEqual([])
+  })
+
+  it('normalizes defaultBranchId empty string to null', () => {
+    const result = normalizeAndValidateSettingsUpdate({
+      defaultBranchId: '',
+    })
+
+    expect(result.defaultBranchId).toBeNull()
+  })
+
+  it('keeps defaultBranchId undefined if not supplied', () => {
+    const result = normalizeAndValidateSettingsUpdate({})
+
+    expect(result.defaultBranchId).toBeUndefined()
   })
 })

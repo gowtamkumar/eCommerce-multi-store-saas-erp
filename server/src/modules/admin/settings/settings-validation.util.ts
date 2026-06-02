@@ -29,12 +29,15 @@ export function normalizeAndValidateSettingsUpdate(
 ): UpdateSiteSettingsDto {
   const normalized: UpdateSiteSettingsDto = {
     ...dto,
-    currency: normalizeCurrencyCode(dto.currency),
+    currency: typeof dto.currency === 'string' && dto.currency.trim() !== '' ? normalizeCurrencyCode(dto.currency) : undefined,
     supportedCurrencies: normalizeSupportedCurrencies(dto.supportedCurrencies),
+    defaultBranchId: dto.defaultBranchId === undefined
+      ? undefined
+      : (typeof dto.defaultBranchId === 'string' && dto.defaultBranchId.trim() !== '' ? dto.defaultBranchId : null),
   }
 
   const effectiveCurrency = normalizeCurrencyCode(normalized.currency ?? existing?.currency)
-  const effectiveSupportedCurrencies =
+  let effectiveSupportedCurrencies =
     normalized.supportedCurrencies ?? normalizeSupportedCurrencies(existing?.supportedCurrencies)
 
   if (
@@ -46,9 +49,40 @@ export function normalizeAndValidateSettingsUpdate(
       (currency) => currency.code === effectiveCurrency,
     )
     if (matches.length === 0) {
-      throw new BadRequestException('Base currency must be included in supportedCurrencies')
-    }
-    if (matches.length > 1) {
+      const defaultSymbolMap: Record<string, string> = {
+        BDT: '৳',
+        USD: '$',
+        EUR: '€',
+        GBP: '£',
+        INR: '₹',
+        CAD: '$',
+        AUD: '$',
+        JPY: '¥',
+        CNY: '¥',
+      }
+      const defaultNameMap: Record<string, string> = {
+        BDT: 'Bangladeshi Taka',
+        USD: 'US Dollar',
+        EUR: 'Euro',
+        GBP: 'British Pound',
+        INR: 'Indian Rupee',
+        CAD: 'Canadian Dollar',
+        AUD: 'Australian Dollar',
+        JPY: 'Japanese Yen',
+        CNY: 'Chinese Yuan',
+      }
+      const baseEntry: CurrenciesDto = {
+        code: effectiveCurrency,
+        symbol: defaultSymbolMap[effectiveCurrency] || '$',
+        rate: 1,
+        name: defaultNameMap[effectiveCurrency] || `${effectiveCurrency} (Base)`,
+      }
+      if (!normalized.supportedCurrencies) {
+        normalized.supportedCurrencies = normalizeSupportedCurrencies(existing?.supportedCurrencies) || []
+      }
+      normalized.supportedCurrencies.push(baseEntry)
+      effectiveSupportedCurrencies = normalized.supportedCurrencies
+    } else if (matches.length > 1) {
       throw new BadRequestException(
         'supportedCurrencies cannot contain duplicate base currency entries',
       )
