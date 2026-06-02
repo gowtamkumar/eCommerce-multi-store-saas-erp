@@ -164,27 +164,28 @@ services:
         limits:
           cpus: '2.00'
           memory: 2G
-  # caddy:
-  #   image: caddy:2.7-alpine
-  #   container_name: multi_tenant_caddy_dev
-  #   restart: "no"
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./Caddyfile:/etc/caddy/Caddyfile
-  #     - caddy_data:/data
-  #     - caddy_config:/config
-  #   depends_on:
-  #     - server
-  #     - client
-  #   networks:
-  #     - multi_tenant_main_network
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '0.50'
-  #         memory: 128M
+
+  caddy:
+    image: caddy:2.7-alpine
+    container_name: multi_tenant_caddy_dev
+    restart: "no"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+      - client
+    networks:
+      - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
 
 networks:
   multi_tenant_main_network:
