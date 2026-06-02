@@ -12,7 +12,7 @@ import { getPagePublicPath, normalizePageSlugForSave } from '@/lib/page-url';
 import { themeTokensToCss } from '@/features/admin/pages/lib/theme-tokens-css';
 import { fetchAPI } from '@/services/api';
 import { CustomizerSection, PageData, ThemeTokens } from '@/types/customizer';
-import { Layout, Settings } from 'lucide-react';
+import { Layout, Settings, Bookmark, Layers, AlertCircle, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
@@ -54,6 +54,15 @@ export default function CustomizerEditor({ pageId, initialData, themeTokens }: C
   const [showInserter, setShowInserter] = useState(false);
   const [inserterQuery, setInserterQuery] = useState('');
   const { recent, push: pushRecent } = useRecentBlocks();
+  const [saveTemplateModal, setSaveTemplateModal] = useState<{
+    isOpen: boolean;
+    sections: CustomizerSection[];
+    defaultName: string;
+  }>({
+    isOpen: false,
+    sections: [],
+    defaultName: '',
+  });
 
   const sections = data.content.sections;
 
@@ -261,7 +270,18 @@ export default function CustomizerEditor({ pageId, initialData, themeTokens }: C
                   recentTypes={recent}
                 />
               ) : (
-                <PageSettings data={data} onUpdate={setData} pageId={pageId} />
+                <PageSettings
+                  data={data}
+                  onUpdate={setData}
+                  pageId={pageId}
+                  onSaveTemplate={useCallback(() => {
+                    setSaveTemplateModal({
+                      isOpen: true,
+                      sections: data.content.sections,
+                      defaultName: data.title || 'My Template',
+                    });
+                  }, [data.content.sections, data.title])}
+                />
               )}
             </div>
           </aside>
@@ -364,8 +384,160 @@ export default function CustomizerEditor({ pageId, initialData, themeTokens }: C
             setInserterQuery('');
             setShowInserter(true);
           }}
+          onSaveReusable={() => {
+            if (contextMenuSection) {
+              setSaveTemplateModal({
+                isOpen: true,
+                sections: [contextMenuSection],
+                defaultName: contextMenuSection.name || contextMenuSection.type,
+              });
+            }
+            setContextMenu(null);
+          }}
+        />
+      )}
+
+      {/* Save Template Modal */}
+      {saveTemplateModal.isOpen && (
+        <TemplateSaveModal
+          sections={saveTemplateModal.sections}
+          defaultName={saveTemplateModal.defaultName}
+          onClose={() => setSaveTemplateModal(prev => ({ ...prev, isOpen: false }))}
         />
       )}
     </EditorActionsContext.Provider>
+  );
+}
+
+interface TemplateSaveModalProps {
+  sections: CustomizerSection[];
+  defaultName: string;
+  onClose: () => void;
+}
+
+function TemplateSaveModal({ sections, defaultName, onClose }: TemplateSaveModalProps) {
+  const [name, setName] = useState(defaultName);
+  const [description, setDescription] = useState(`Saved template block`);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error('Template name is required');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await fetchAPI('/pages/reusable-blocks', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim(),
+          category: 'block',
+          payload: sections,
+        }),
+      });
+
+      if (res?.success) {
+        toast.success('Template saved to library successfully!');
+        onClose();
+      } else {
+        toast.error(res?.message || 'Failed to save template');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'An error occurred while saving.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-800 transform transition-all scale-100 opacity-100 flex flex-col animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-950/40 flex items-center justify-center text-brand-500">
+              <Layers className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Save Section Template</h3>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mt-0.5">Reusable Library</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSave}>
+          <div className="p-6 space-y-4">
+            <div className="space-y-1">
+              <label htmlFor="modal-template-name" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                Template Name
+              </label>
+              <input
+                id="modal-template-name"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Hero Banner with Features"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-205 dark:border-slate-850 bg-slate-50 dark:bg-slate-950 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 outline-none transition-all placeholder:text-slate-400 font-bold"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="modal-template-desc" className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                Description
+              </label>
+              <textarea
+                id="modal-template-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe what this template layout is used for..."
+                rows={3}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-205 dark:border-slate-850 bg-slate-50 dark:bg-slate-950 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 outline-none transition-all placeholder:text-slate-400 font-medium resize-none"
+              />
+            </div>
+
+            <div className="flex gap-2.5 p-3.5 bg-brand-50/50 dark:bg-brand-950/10 rounded-xl border border-brand-100/30">
+              <AlertCircle className="w-4.5 h-4.5 text-brand-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                This saves the selected layout sections as a reusable template. You can drag and drop it into other pages from the <strong>Saved</strong> tab in the Block Library.
+              </p>
+            </div>
+          </div>
+
+          {/* Actions Footer */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-950/40 flex justify-end gap-2.5 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-450 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-5 py-2 text-xs font-bold text-white bg-brand-500 hover:bg-brand-600 active:scale-95 rounded-xl shadow-lg shadow-brand-500/10 transition-all disabled:opacity-40 cursor-pointer"
+            >
+              {isSaving ? 'Saving Template...' : 'Save Template'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

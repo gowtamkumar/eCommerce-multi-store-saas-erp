@@ -12,6 +12,7 @@ import {
   Plus,
   Trash2,
   Unlock,
+  Bookmark,
 } from 'lucide-react';
 import React, { useEffect, useRef } from 'react';
 
@@ -35,6 +36,7 @@ export interface CanvasContextMenuProps {
   onToggleHidden: () => void;
   onToggleLocked: () => void;
   onInsertChild: () => void;
+  onSaveReusable: () => void;
 }
 
 const item =
@@ -54,6 +56,7 @@ const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
   onToggleHidden,
   onToggleLocked,
   onInsertChild,
+  onSaveReusable,
 }) => {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -110,6 +113,9 @@ const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
       <button type="button" className={item} onClick={onToggleLocked}>
         {section.locked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
         {section.locked ? 'Unlock' : 'Lock'}
+      </button>
+      <button type="button" className={item} onClick={onSaveReusable}>
+        <Bookmark className="w-3.5 h-3.5" /> Save as Template
       </button>
       <div className="h-px my-1 bg-slate-100 dark:bg-slate-800" />
       <button

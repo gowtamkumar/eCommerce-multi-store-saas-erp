@@ -14,6 +14,7 @@ interface PageSettingsProps {
   data: PageData;
   onUpdate: (updater: PageData | ((prev: PageData) => PageData)) => void;
   pageId?: string;
+  onSaveTemplate?: () => void;
 }
 
 /**
@@ -22,7 +23,7 @@ interface PageSettingsProps {
  * tiny makes it easy to reorder, conditionally render, or swap subpanels
  * without scrolling past 500 lines of unrelated JSX.
  */
-const PageSettings = React.memo(({ data, onUpdate, pageId }: PageSettingsProps) => {
+const PageSettings = React.memo(({ data, onUpdate, pageId, onSaveTemplate }: PageSettingsProps) => {
   // Confirms the home-page swap before mutating state, since this unsets
   // whichever other page is currently flagged as home.
   const handleChange = useCallback(
@@ -49,7 +50,7 @@ const PageSettings = React.memo(({ data, onUpdate, pageId }: PageSettingsProps) 
       />
       <SeoScoreCard data={data} />
       <A11yIssuesCard data={data} />
-      <ReusableBlockButton data={data} />
+      <ReusableBlockButton data={data} onSaveTemplate={onSaveTemplate} />
       {pageId && pageId !== 'new' && <RevisionsCard pageId={pageId} />}
       <SeoFieldsSection data={data} onChange={handleChange} />
       <TypographySection

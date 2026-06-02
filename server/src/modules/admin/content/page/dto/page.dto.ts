@@ -8,6 +8,7 @@ import {
   Max,
   MaxLength,
   IsISO8601,
+  IsDefined,
 } from 'class-validator'
 import { ApiProperty } from '@nestjs/swagger'
 import { PageStatus } from '@/common/enums/page-status.enum'
@@ -97,6 +98,7 @@ export class CreateReusableBlockDto {
   thumbnail?: string
 
   @ApiProperty()
+  @IsDefined()
   payload: any
 }
 

@@ -14,7 +14,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
   imports: [ProductModule, FaqModule, TenantModule],
-  controllers: [PageController, StorePageController, PageReusableBlockController],
+  controllers: [PageReusableBlockController, StorePageController, PageController],
   providers: [PageService, PageReusableBlockService],
   exports: [PageService, PageReusableBlockService],
 })

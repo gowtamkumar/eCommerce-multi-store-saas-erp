@@ -13,6 +13,7 @@ import {
   Get,
   Logger,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -70,7 +71,7 @@ export class PageController {
   @Get(':id')
   async findOnePage(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePage.`)
     const result = await this.pageService.findOnePage(id, ctx)
@@ -85,7 +86,7 @@ export class PageController {
   @Patch(':id')
   async updatePage(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePageDto,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePage.`)
@@ -99,7 +100,10 @@ export class PageController {
   }
 
   @Delete(':id')
-  async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async removePage(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`)
     const result = await this.pageService.removePage(id, ctx)
     return {
@@ -113,7 +117,7 @@ export class PageController {
   @Get(':id/revisions')
   async listRevisions(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BaseApiSuccessResponse<unknown[]>> {
     const data = await this.pageService.listRevisions(id, ctx)
     return { success: true, statusCode: 200, message: 'Page revisions', data }
@@ -122,8 +126,8 @@ export class PageController {
   @Post(':id/revisions/:revisionId/restore')
   async restoreRevision(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
-    @Param('revisionId') revisionId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('revisionId', ParseUUIDPipe) revisionId: string,
   ): Promise<BaseApiSuccessResponse<unknown>> {
     const data = await this.pageService.restoreRevision(id, revisionId, ctx)
     return { success: true, statusCode: 200, message: 'Page restored from revision', data }
