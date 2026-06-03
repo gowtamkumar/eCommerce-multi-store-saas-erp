@@ -4,92 +4,26 @@ import React, { useState } from 'react';
 import { HardDrive, CheckCircle2, PlusCircle, Loader2, Package, ShoppingCart, Users, MapPin } from 'lucide-react';
 import { SubscriptionInfo } from '../../type';
 
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+    HardDrive, Package, ShoppingCart, Users, MapPin,
+};
+function resolveIcon(name?: string): React.ComponentType<any> {
+    return (name && ICON_MAP[name]) ? ICON_MAP[name] : Package;
+}
+
 interface StorageAddonsProps {
     subInfo: SubscriptionInfo | null;
     onPurchaseAddon: (addonSlug: string) => Promise<void>;
+    addonCatalog?: any[];
 }
 
-interface AddonItem {
-    slug: string;
-    name: string;
-    size: string;
-    price: number;
-    description: string;
-    features: string[];
-    icon?: any;
-}
 
-const STORAGE_ADDONS: AddonItem[] = [
-    {
-        slug: 'addon_storage_5gb',
-        name: 'Lite Storage Boost',
-        size: '+5 GB',
-        price: 5,
-        description: 'Perfect for small stores uploading standard product photos and documents.',
-        features: ['5,120 MB Storage Space', 'High-speed MinIO hosting', 'Instant activation', 'Cancel anytime'],
-        icon: HardDrive
-    },
-    {
-        slug: 'addon_storage_10gb',
-        name: 'Growth Storage Boost',
-        size: '+10 GB',
-        price: 9,
-        description: 'Ideal for growing businesses with rich catalogs and product collections.',
-        features: ['10,240 MB Storage Space', 'High-speed MinIO hosting', 'Instant activation', 'Cancel anytime'],
-        icon: HardDrive
-    },
-    {
-        slug: 'addon_storage_20gb',
-        name: 'Pro Storage Boost',
-        size: '+20 GB',
-        price: 15,
-        description: 'Designed for large retailers with thousands of high-res photos and receipts.',
-        features: ['20,480 MB Storage Space', 'High-speed MinIO hosting', 'Instant activation', 'Cancel anytime'],
-        icon: HardDrive
-    }
-];
-
-const RESOURCE_ADDONS: AddonItem[] = [
-    {
-        slug: 'addon_products_1000',
-        name: 'Catalog Boost',
-        size: '+1,000 SKUs',
-        price: 15,
-        description: 'Expand your catalog capacity by adding 1,000 more products and variations.',
-        features: ['1,000 product capability', 'Immediate synchronization', 'Plan-independent override', 'One-off activation'],
-        icon: Package
-    },
-    {
-        slug: 'addon_orders_5000',
-        name: 'Transactions Boost',
-        size: '+5,000 Orders',
-        price: 25,
-        description: 'Increase monthly order limits by 5,000/mo to handle sales spikes and campaigns.',
-        features: ['5,000 extra monthly orders', 'Dynamic threshold update', 'Prevents checkout locks', 'One-off activation'],
-        icon: ShoppingCart
-    },
-    {
-        slug: 'addon_staff_10',
-        name: 'Collaborators Boost',
-        size: '+10 Staff',
-        price: 20,
-        description: 'Invite up to 10 additional staff members, managers, or warehouse assistants.',
-        features: ['10 team accounts', 'Granular role assignments', 'Global branch scoping', 'One-off activation'],
-        icon: Users
-    },
-    {
-        slug: 'addon_locations_3',
-        name: 'Logistics Expansion Boost',
-        size: '+3 Loc / WH',
-        price: 35,
-        description: 'Add 3 branches and 3 warehouses to expand physical operations and supply chain.',
-        features: ['3 physical branches', '3 warehouse inventories', 'Multi-source stock routing', 'One-off activation'],
-        icon: MapPin
-    }
-];
-
-const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon }) => {
+const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon, addonCatalog = [] }) => {
     const [purchasingSlug, setPurchasingSlug] = useState<string | null>(null);
+
+    // Split catalog into storage and resource groups from API data
+    const storageAddons = addonCatalog.filter((a: any) => a.category === 'storage' || a.boostUnit === 'mb');
+    const resourceAddons = addonCatalog.filter((a: any) => a.category !== 'storage' && a.boostUnit !== 'mb');
 
     const handleBuy = async (slug: string) => {
         try {
@@ -100,10 +34,11 @@ const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon 
         }
     };
 
-    const renderAddonCard = (addon: AddonItem) => {
-        const isActive = subInfo?.activeAddons?.includes(addon.slug) ?? false;
+    const renderAddonCard = (addon: any) => {
+        const activeCount = subInfo?.activeAddons?.filter((slug: string) => slug === addon.slug || slug.startsWith(addon.slug + '_')).length ?? 0;
+        const isActive = activeCount > 0;
         const isLoading = purchasingSlug === addon.slug;
-        const IconComponent = addon.icon || HardDrive;
+        const IconComponent = resolveIcon(addon.icon);
 
         return (
             <div
@@ -116,7 +51,7 @@ const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon 
             >
                 {isActive && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-brand-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-md z-10">
-                        Active Boost
+                        {activeCount > 1 ? `Active Boost (x${activeCount})` : 'Active Boost'}
                     </div>
                 )}
 
@@ -137,12 +72,12 @@ const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon 
                 </div>
 
                 <div className="flex items-baseline gap-1 mb-6 font-display text-left">
-                    <span className="text-4xl font-black text-slate-900 dark:text-white">{addon.size}</span>
+                    <span className="text-4xl font-black text-slate-900 dark:text-white">{addon.boostLabel || addon.size}</span>
                     <span className="text-slate-500 dark:text-slate-400 font-bold ml-2">/ ${addon.price} one-off</span>
                 </div>
 
                 <ul className="text-left space-y-3 mb-8 flex-1">
-                    {addon.features.map((feature, fIdx) => (
+                    {(addon.features || []).map((feature: string, fIdx: number) => (
                         <li key={fIdx} className="flex items-center gap-2.5 text-xs">
                             <div className="text-emerald-500 shrink-0">
                                 <CheckCircle2 className="w-4 h-4" />
@@ -154,21 +89,19 @@ const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon 
 
                 <button
                     onClick={() => handleBuy(addon.slug)}
-                    disabled={purchasingSlug !== null || isActive}
+                    disabled={purchasingSlug !== null}
                     className={`w-full py-3.5 rounded-xl font-black uppercase tracking-widest transition-all text-xs flex items-center justify-center gap-2 ${
                         isActive
-                            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 cursor-default'
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-500/20'
                             : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 hover:text-white dark:hover:bg-brand-600 dark:hover:text-white shadow-md'
                     }`}
                 >
                     {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : isActive ? (
-                        <CheckCircle2 className="w-4 h-4" />
                     ) : (
                         <PlusCircle className="w-4 h-4" />
                     )}
-                    {isActive ? 'Activated' : 'Add to Plan'}
+                    {isActive ? 'Buy Again' : 'Add to Plan'}
                 </button>
             </div>
         );
@@ -184,7 +117,9 @@ const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-                    {STORAGE_ADDONS.map(renderAddonCard)}
+                    {storageAddons.length > 0 ? storageAddons.map(renderAddonCard) : (
+                        <p className="col-span-3 text-center text-slate-400 font-medium italic py-8">No storage addons available.</p>
+                    )}
                 </div>
             </section>
 
@@ -196,7 +131,9 @@ const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-stretch">
-                    {RESOURCE_ADDONS.map(renderAddonCard)}
+                    {resourceAddons.length > 0 ? resourceAddons.map(renderAddonCard) : (
+                        <p className="col-span-4 text-center text-slate-400 font-medium italic py-8">No resource addons available.</p>
+                    )}
                 </div>
             </section>
         </div>

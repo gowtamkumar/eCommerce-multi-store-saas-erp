@@ -4,13 +4,12 @@ import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
 import { SubscriptionBillingController } from './subscription-billing.controller'
 import { SubscriptionBillingService } from './subscription-billing.service'
 import { ConfigModule } from '@nestjs/config'
-
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
-
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog.module'
 
 @Module({
-  imports: [PaymentModule, ConfigModule, CacheModule, TenantModule, NotificationModule],
+  imports: [PaymentModule, ConfigModule, CacheModule, TenantModule, NotificationModule, AddonCatalogModule],
   controllers: [SubscriptionBillingController],
   providers: [SubscriptionBillingService],
   exports: [SubscriptionBillingService],

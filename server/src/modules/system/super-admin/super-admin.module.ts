@@ -8,6 +8,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.module'
+import { AddonCatalogModule } from '../addon-catalog/addon-catalog.module'
 import { SuperAdminController } from './super-admin.controller'
 import { TrafficService } from './traffic.service'
 
@@ -19,6 +20,7 @@ import { TrafficService } from './traffic.service'
     ProductModule,
     PageModule,
     SubscriptionPlanModule,
+    AddonCatalogModule,
     AuthModule,
   ],
   controllers: [SuperAdminController],

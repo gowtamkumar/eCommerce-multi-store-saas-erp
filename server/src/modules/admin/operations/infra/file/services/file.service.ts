@@ -8,6 +8,7 @@ import { MinioService } from './minio.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { DataSource } from 'typeorm'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 
 @Injectable()
 export class FilesService {
@@ -18,7 +19,8 @@ export class FilesService {
     private readonly minioService: MinioService,
     private readonly tenantService: TenantService,
     private readonly dataSource: DataSource,
-  ) {}
+    private readonly addonCatalogService: AddonCatalogService,
+  ) { }
 
 
   async generatePresignedUpload(dto: GetPresignedUrlDto, ctx: RequestContextDto) {
@@ -35,13 +37,14 @@ export class FilesService {
           const activeOverrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
             where: { tenantId, isEnabled: true },
           })
+          // Load storage addon definitions from DB dynamically
+          const storageAddonDefs = await this.addonCatalogService.getStorageAddons()
           for (const override of activeOverrides) {
-            if (override.featureSlug === 'addon_storage_5gb') {
-              addonsMb += 5 * 1024
-            } else if (override.featureSlug === 'addon_storage_10gb') {
-              addonsMb += 10 * 1024
-            } else if (override.featureSlug === 'addon_storage_20gb') {
-              addonsMb += 20 * 1024
+            for (const def of storageAddonDefs) {
+              if (override.featureSlug === def.slug || override.featureSlug.startsWith(def.slug + '_')) {
+                addonsMb += def.boostValue
+                break
+              }
             }
           }
 

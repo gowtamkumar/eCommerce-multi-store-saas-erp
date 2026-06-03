@@ -9,16 +9,18 @@ import { ProductController } from './controllers/product.controller'
 import { ProductService } from './services/product.service'
 import { BullModule } from '@nestjs/bullmq'
 import { ProductProcessor } from './queue/product.processor'
+import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog.module'
 
 @Module({
   imports: [
-    BullModule.registerQueue({ name: 'product' }), // 👈 register queue
+    BullModule.registerQueue({ name: 'product' }),
     ReviewModule,
     CacheModule,
     InventoryLedgerModule,
     PurchaseModule,
     PromotionModule,
     TenantModule,
+    AddonCatalogModule,
   ],
   controllers: [ProductController],
   providers: [ProductService, ProductProcessor],

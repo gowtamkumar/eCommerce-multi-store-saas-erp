@@ -10,28 +10,33 @@ import SubscriptionOverview from "./SubscriptionOverview";
 import PlanGrid from "./PlanGrid";
 import InvoiceHistory from "./InvoiceHistory";
 import StorageAddons from "./StorageAddons";
+import { motion } from "framer-motion";
 
 export default function BillingDashboard() {
   const [loading, setLoading] = useState(true);
   const [subInfo, setSubInfo] = useState<SubscriptionInfo | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [history, setHistory] = useState<BillingInvoice[]>([]);
+  const [addonCatalog, setAddonCatalog] = useState<any[]>([]);
   const [initiating, setInitiating] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [activeTab, setActiveTab] = useState<'plans' | 'history'>('plans');
   const searchParams = useSearchParams();
 
   const loadBillingData = useCallback(async () => {
     try {
       setLoading(true);
-      const [infoRes, plansRes, historyRes] = await Promise.all([
+      const [infoRes, plansRes, historyRes, catalogRes] = await Promise.all([
         fetchAPI("/billing/current"),
         fetchAPI("/billing/plans"),
-        fetchAPI("/billing/history")
+        fetchAPI("/billing/history"),
+        fetchAPI("/billing/addon-catalog"),
       ]);
 
       setSubInfo(infoRes.data);
       setPlans(plansRes.data);
       setHistory(historyRes.data);
+      setAddonCatalog(catalogRes.data || []);
     } catch (error) {
       console.error("Failed to load billing data", error);
       toast.error("Failed to load billing information");
@@ -118,23 +123,68 @@ export default function BillingDashboard() {
         plans={plans}
         handleUpgrade={handleUpgrade}
         initiating={initiating}
+        addonCatalog={addonCatalog}
       />
 
-      <PlanGrid 
-        plans={plans}
-        subInfo={subInfo}
-        billingCycle={billingCycle}
-        setBillingCycle={setBillingCycle}
-        handleUpgrade={handleUpgrade}
-        initiating={initiating}
-      />
+      {/* Tabs Switcher */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-8">
+        <button
+          onClick={() => setActiveTab('plans')}
+          className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${
+            activeTab === 'plans'
+              ? 'text-brand-600 dark:text-brand-400 font-black'
+              : 'text-slate-405 hover:text-slate-600 dark:hover:text-slate-350'
+          }`}
+        >
+          Subscription & Addons
+          {activeTab === 'plans' && (
+            <motion.div
+              layoutId="activeBillingTabLine"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 dark:bg-brand-400"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
+        </button>
 
-      <StorageAddons 
-        subInfo={subInfo}
-        onPurchaseAddon={handlePurchaseAddon}
-      />
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`pb-4 text-sm font-black uppercase tracking-widest transition-all relative ${
+            activeTab === 'history'
+              ? 'text-brand-600 dark:text-brand-400 font-black'
+              : 'text-slate-405 hover:text-slate-600 dark:hover:text-slate-350'
+          }`}
+        >
+          Billing History
+          {activeTab === 'history' && (
+            <motion.div
+              layoutId="activeBillingTabLine"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 dark:bg-brand-400"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
+        </button>
+      </div>
 
-      <InvoiceHistory history={history} />
+      {activeTab === 'plans' ? (
+        <>
+          <PlanGrid 
+            plans={plans}
+            subInfo={subInfo}
+            billingCycle={billingCycle}
+            setBillingCycle={setBillingCycle}
+            handleUpgrade={handleUpgrade}
+            initiating={initiating}
+          />
+
+          <StorageAddons 
+            subInfo={subInfo}
+            onPurchaseAddon={handlePurchaseAddon}
+            addonCatalog={addonCatalog}
+          />
+        </>
+      ) : (
+        <InvoiceHistory history={history} />
+      )}
     </div>
   );
 }

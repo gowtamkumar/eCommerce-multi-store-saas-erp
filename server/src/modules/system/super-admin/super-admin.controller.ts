@@ -17,6 +17,7 @@ import { TenantService } from '@/modules/system/tenant/tenant.service'
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Logger,
@@ -29,6 +30,7 @@ import {
 } from '@nestjs/common'
 import si from 'systeminformation'
 import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
+import { AddonCatalogService } from '../addon-catalog/addon-catalog.service'
 import { TrafficService } from './traffic.service'
 
 function sanitizeLog(input: string | undefined | null): string {
@@ -48,6 +50,7 @@ export class SuperAdminController {
     private readonly productService: ProductService,
     private readonly pageService: PageService,
     private readonly planService: SubscriptionPlanService,
+    private readonly addonCatalogService: AddonCatalogService,
     private readonly cacheService: CacheService,
     private readonly authService: AuthService,
   ) { }
@@ -199,6 +202,9 @@ export class SuperAdminController {
         } as RequestContextDto)
       }
     }
+
+    // Seed default addon catalog
+    await this.addonCatalogService.seedDefaults()
 
     return {
       success: true,
@@ -568,5 +574,43 @@ export class SuperAdminController {
       message: 'Tenant feature override updated successfully',
       data: result,
     }
+  }
+
+  // ─── Addon Catalog CRUD ───────────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Get('/addon-catalog')
+  async getAddonCatalog(): Promise<BaseApiSuccessResponse<any[]>> {
+    const data = await this.addonCatalogService.findAll()
+    return { success: true, statusCode: 200, message: 'Addon catalog retrieved', data }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Post('/addon-catalog')
+  async createAddon(@Body() body: any): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.addonCatalogService.create(body)
+    return { success: true, statusCode: 201, message: 'Addon created successfully', data }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Patch('/addon-catalog/:id')
+  async updateAddon(
+    @Param('id') id: string,
+    @Body() body: any,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.addonCatalogService.update(id, body)
+    return { success: true, statusCode: 200, message: 'Addon updated successfully', data }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Delete('/addon-catalog/:id')
+  @HttpCode(200)
+  async deleteAddon(@Param('id') id: string): Promise<BaseApiSuccessResponse<null>> {
+    await this.addonCatalogService.remove(id)
+    return { success: true, statusCode: 200, message: 'Addon deleted successfully', data: null }
   }
 }

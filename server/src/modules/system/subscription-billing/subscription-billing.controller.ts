@@ -13,6 +13,7 @@ import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscripti
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
 import { SubscriptionInvoiceResponseDto } from './dto/subscription-invoice-response.dto'
 import { SubscriptionBillingService } from './subscription-billing.service'
+import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 
 @Controller('billing')
 export class SubscriptionBillingController {
@@ -21,7 +22,16 @@ export class SubscriptionBillingController {
   constructor(
     private readonly billingService: SubscriptionBillingService,
     private readonly configService: ConfigService,
+    private readonly addonCatalogService: AddonCatalogService,
   ) { }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('addon-catalog')
+  @PublicDuringExpiration()
+  async getAddonCatalog(): Promise<BaseApiSuccessResponse<any[]>> {
+    const data = await this.addonCatalogService.findActive()
+    return { success: true, statusCode: 200, message: 'Active addon catalog retrieved', data }
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('current')

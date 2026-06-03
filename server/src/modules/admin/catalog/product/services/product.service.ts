@@ -30,6 +30,7 @@ import { ProductAttributeRepository } from '../repositories/attribute.repository
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
 import { generateEAN13, generateProductSku, generateVariantSku } from '../utils/catalog-id.util'
+import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -48,6 +49,7 @@ export class ProductService {
     private readonly promotionService: PromotionService,
     private readonly tenantService: TenantService,
     private readonly dataSource: DataSource,
+    private readonly addonCatalogService: AddonCatalogService,
     @InjectQueue('product') private readonly productQueue: Queue,
   ) {}
 
@@ -59,9 +61,17 @@ export class ProductService {
     const activeOverrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
       where: { tenantId, isEnabled: true },
     })
+
+    // Load product addon definitions from DB dynamically (boost_unit === 'products')
+    const productAddonDefs = (await this.addonCatalogService.findActive()).filter(
+      (a) => a.boostUnit === 'products',
+    )
     for (const override of activeOverrides) {
-      if (override.featureSlug === 'addon_products_1000') {
-        maxProducts += 1000
+      for (const def of productAddonDefs) {
+        if (override.featureSlug === def.slug || override.featureSlug.startsWith(def.slug + '_')) {
+          maxProducts += def.boostValue
+          break
+        }
       }
     }
 

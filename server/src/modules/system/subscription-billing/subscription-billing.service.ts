@@ -19,10 +19,10 @@ import { CurrentSubscriptionResponseDto } from './dto/current-subscription-respo
 import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entity'
 import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
 import { buildAllowedBillingOrigins, resolveSafeBillingUrl } from './billing-origin.util'
-
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 
 const DEFAULT_PLATFORM_CURRENCY = 'BDT'
 
@@ -37,6 +37,7 @@ export class SubscriptionBillingService {
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
+    private readonly addonCatalogService: AddonCatalogService,
     @InjectRepository(TenantSubscriptionEntity)
     private readonly subscriptionRepo: Repository<TenantSubscriptionEntity>,
     private readonly dataSource: DataSource,
@@ -103,17 +104,22 @@ export class SubscriptionBillingService {
           where: { tenantId, isEnabled: true },
         })
 
+        // Load storage addon definitions from DB (boost_unit === 'mb')
+        const storageAddonDefs = await this.addonCatalogService.getStorageAddons()
+
         let addonsMb = 0
         for (const override of activeOverrides) {
-          if (override.featureSlug === 'addon_storage_5gb') {
-            addonsMb += 5 * 1024
-          } else if (override.featureSlug === 'addon_storage_10gb') {
-            addonsMb += 10 * 1024
-          } else if (override.featureSlug === 'addon_storage_20gb') {
-            addonsMb += 20 * 1024
-          }
           if (override.featureSlug.startsWith('addon_')) {
             activeAddons.push(override.featureSlug)
+          }
+          // Match against DB-defined storage addons by prefix
+          if (baseLimitMb !== -1) {
+            for (const def of storageAddonDefs) {
+              if (override.featureSlug === def.slug || override.featureSlug.startsWith(def.slug + '_')) {
+                addonsMb += def.boostValue
+                break
+              }
+            }
           }
         }
 
@@ -453,24 +459,33 @@ export class SubscriptionBillingService {
 
   async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
     this.logger.log(`Purchasing addon: ${addonSlug} for tenant: ${tenantId}`)
-    const validSlugs = [
-      'addon_storage_5gb',
-      'addon_storage_10gb',
-      'addon_storage_20gb',
-      'addon_products_1000',
-      'addon_orders_5000',
-      'addon_staff_10',
-      'addon_locations_3',
-    ]
-    if (!validSlugs.includes(addonSlug)) {
+
+    // Validate slug against DB catalog (supports suffixed stacked slugs)
+    const isValid = await this.addonCatalogService.isValidAddonSlug(addonSlug)
+    if (!isValid) {
       throw new BadRequestException(`Invalid addon slug: ${addonSlug}`)
     }
 
     const featureRepo = this.dataSource.getRepository(TenantFeatureEntity)
     let override = await featureRepo.findOne({ where: { tenantId, featureSlug: addonSlug } })
-    if (override) {
+    if (override && !override.isEnabled) {
       override.isEnabled = true
       override.updatedAt = new Date()
+      await featureRepo.save(override)
+    } else if (override && override.isEnabled) {
+      // Find the next available suffix
+      let suffix = 1
+      let newSlug = `${addonSlug}_${suffix}`
+      while (await featureRepo.findOne({ where: { tenantId, featureSlug: newSlug } })) {
+        suffix++
+        newSlug = `${addonSlug}_${suffix}`
+      }
+      override = featureRepo.create({
+        tenantId,
+        featureSlug: newSlug,
+        isEnabled: true,
+        enabledAt: new Date(),
+      })
       await featureRepo.save(override)
     } else {
       override = featureRepo.create({
