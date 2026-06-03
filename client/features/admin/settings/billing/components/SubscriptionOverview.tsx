@@ -46,11 +46,15 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
     const locationsAddonCount = catalogForCounting
         .filter((a: any) => a.boostUnit === 'locations')
         .reduce((sum: number, a: any) => sum + (subInfo?.activeAddons?.filter((slug: string) => slug === a.slug || slug.startsWith(a.slug + '_')).length ?? 0), 0);
+    const storageAddonBoostMb = catalogForCounting
+        .filter((a: any) => a.boostUnit === 'mb')
+        .reduce((sum: number, a: any) => sum + (subInfo?.activeAddons?.filter((slug: string) => slug === a.slug || slug.startsWith(a.slug + '_')).length ?? 0) * a.boostValue, 0);
 
     const hasProductsAddon = productsAddonCount > 0;
     const hasOrdersAddon = ordersAddonCount > 0;
     const hasStaffAddon = staffAddonCount > 0;
     const hasLocationsAddon = locationsAddonCount > 0;
+    const hasStorageAddon = storageAddonBoostMb > 0;
 
     return (
         <section className="relative overflow-hidden bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 border border-slate-200/60 dark:border-slate-700/50 shadow-sm transition-all duration-300">
@@ -99,50 +103,15 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-4">
-                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 w-44">
+                    <div className="flex flex-wrap gap-4 w-full md:w-auto">
+                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 flex-1 min-w-[140px] sm:w-44 sm:flex-none">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Billing Cycle</p>
                             <p className="text-xl font-bold text-slate-700 dark:text-slate-200 text-center capitalize">{subInfo?.billingCycle}</p>
                         </div>
-                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 w-44">
+                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 flex-1 min-w-[140px] sm:w-44 sm:flex-none">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Status</p>
                             <p className="text-xl font-bold text-slate-700 dark:text-slate-200 text-center capitalize">{subInfo?.status}</p>
                         </div>
-
-                        {subInfo?.storageLimit !== undefined && subInfo?.storageLimit !== -1 && (
-                            <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 min-w-[240px] flex-1">
-                                <div className="flex justify-between items-center mb-1.5">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Storage Used</p>
-                                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">
-                                        {Math.round((subInfo.storageUsage || 0) / (1024 * 1024))} MB / {subInfo.storageLimit >= 1024 ? `${(subInfo.storageLimit / 1024).toFixed(1)} GB` : `${subInfo.storageLimit} MB`}
-                                    </span>
-                                </div>
-                                {(() => {
-                                    const usedMb = (subInfo.storageUsage || 0) / (1024 * 1024);
-                                    const limitMb = subInfo.storageLimit || 1024;
-                                    const pct = Math.min(100, Math.round((usedMb / limitMb) * 100));
-                                    const barColor = pct > 90 ? 'bg-rose-500' : pct > 75 ? 'bg-amber-500' : 'bg-brand-600';
-                                    const textColor = pct > 90 ? 'text-rose-600 dark:text-rose-400' : pct > 75 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200';
-                                    return (
-                                        <div className="space-y-2">
-                                            <div className="w-full h-2.5 bg-slate-250 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
-                                            </div>
-                                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 text-left">
-                                                <span className={`${textColor} font-black`}>{pct}%</span> of total storage space utilized
-                                            </p>
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-
-                        {subInfo?.storageLimit === -1 && (
-                            <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 w-44">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Storage Used</p>
-                                <p className="text-xl font-bold text-violet-500 dark:text-violet-400 text-center font-black">∞ Unlimited</p>
-                            </div>
-                        )}
 
                         <button
                             onClick={() => {
@@ -150,7 +119,7 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                                 if (currentPlan) handleUpgrade(currentPlan.id);
                             }}
                             disabled={initiating !== null}
-                            className={`px-8 py-5 rounded-3xl font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 ${subInfo?.status === 'trial'
+                            className={`px-8 py-5 rounded-3xl font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 w-full sm:w-auto ${subInfo?.status === 'trial'
                                 ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-brand-600/20'
                                 : 'bg-brand-600 text-white hover:bg-brand-700 shadow-brand-600/20'
                                 }`}
@@ -168,7 +137,7 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                         <div className="relative">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Active Plan Quotas & Capacities</p>
                             
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                                 <div className="bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between text-left">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Products SKU Limit</span>
                                     <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
@@ -222,6 +191,33 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                                                 +{locationsAddonCount * 3} WH/Loc Boost
                                             </span>
                                         )}
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between text-left">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Storage Space</span>
+                                    <div className="mt-1 flex flex-col justify-between h-full w-full">
+                                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                                            <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                                                {subInfo?.storageLimit === -1 ? 'Unlimited' : `${Math.round((subInfo?.storageUsage || 0) / (1024 * 1024))} MB / ${subInfo?.storageLimit && subInfo.storageLimit >= 1024 ? `${(subInfo.storageLimit / 1024).toFixed(1)} GB` : `${subInfo?.storageLimit} MB`}`}
+                                            </span>
+                                            {hasStorageAddon && (
+                                                <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-150 dark:border-emerald-900/30">
+                                                    +{storageAddonBoostMb >= 1024 ? `${(storageAddonBoostMb / 1024).toFixed(1)} GB` : `${storageAddonBoostMb} MB`} Boost
+                                                </span>
+                                            )}
+                                        </div>
+                                        {subInfo?.storageLimit !== undefined && subInfo?.storageLimit !== -1 && (() => {
+                                            const usedMb = (subInfo.storageUsage || 0) / (1024 * 1024);
+                                            const limitMb = subInfo.storageLimit || 1024;
+                                            const pct = Math.min(100, Math.round((usedMb / limitMb) * 105) / 105 * 100);
+                                            const barColor = pct > 90 ? 'bg-rose-500' : pct > 75 ? 'bg-amber-500' : 'bg-brand-600';
+                                            return (
+                                                <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden mt-1.5">
+                                                    <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>

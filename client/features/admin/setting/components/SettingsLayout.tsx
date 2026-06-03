@@ -42,6 +42,8 @@ export function SettingsLayout({ children }: { children: React.ReactNode }) {
         );
     }
 
+    const isCustomLayoutTab = ['billing', 'system', 'organization', 'domain'].includes(currentTab);
+
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
@@ -84,7 +86,10 @@ export function SettingsLayout({ children }: { children: React.ReactNode }) {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-slate-200/60 dark:border-slate-700/50 p-8 min-h-[500px]"
+                        className={isCustomLayoutTab
+                            ? "min-h-[500px] w-full space-y-8"
+                            : "bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-slate-200/60 dark:border-slate-700/50 p-8 min-h-[500px]"
+                        }
                     >
                         {children}
                     </motion.div>
