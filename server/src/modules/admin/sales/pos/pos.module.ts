@@ -8,14 +8,14 @@ import { PosShiftRepository } from './repositories/pos-shift.repository'
 import { PosDrawerTransactionRepository } from './repositories/pos-drawer-transaction.repository'
 import { PosService } from './pos.service'
 import { PosController } from './pos.controller'
-import { InventoryLedgerModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
-import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
+import { BullModule } from '@nestjs/bullmq'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PosRegisterEntity, PosShiftEntity, PosDrawerTransactionEntity]),
-    InventoryLedgerModule,
-    AccountingModule,
+    BullModule.registerQueue({
+      name: 'accounting',
+    }),
   ],
   controllers: [PosController],
   providers: [

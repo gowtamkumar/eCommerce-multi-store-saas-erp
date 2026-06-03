@@ -1,10 +1,8 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
-import { InventoryLedgerModule } from '../../logistics/inventory-transaction/inventory-transaction.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { GrnModule } from '@/modules/admin/operations/logistics/grn/grn.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
-import { AccountingModule } from '../accounting/accounting.module'
 
 // Controllers
 import { PurchaseOrderController } from './controllers/purchase-order.controller'
@@ -32,11 +30,10 @@ import { SupplierInvoiceRepository } from './repositories/supplier-invoice.repos
 @Module({
   imports: [
     BullModule.registerQueue({ name: 'product' }),
-    InventoryLedgerModule,
+    BullModule.registerQueue({ name: 'accounting' }),
     TenantModule,
     GrnModule,
     NotificationModule,
-    AccountingModule,
   ],
   controllers: [
     PurchaseOrderController,

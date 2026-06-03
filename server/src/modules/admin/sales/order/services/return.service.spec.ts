@@ -6,17 +6,16 @@ import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inv
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { RefundMethod } from '@/common/enums/refund-method.enum'
-import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderReturnEntity } from '../entities/order-return.entity'
+import { getQueueToken } from '@nestjs/bullmq'
 
 describe('ReturnService', () => {
   let service: ReturnService
   let mockReturnRepository: any
-  let mockAccountingService: any
+  let mockAccountingQueue: any
   let mockCacheService: any
 
   const mockCtx: RequestContextDto = {
@@ -29,8 +28,8 @@ describe('ReturnService', () => {
       findByIdWithRelations: jest.fn(),
       updateStatus: jest.fn(),
     }
-    mockAccountingService = {
-      createJournalEntry: jest.fn(),
+    mockAccountingQueue = {
+      add: jest.fn().mockResolvedValue({}),
     }
     mockCacheService = {
       delCache: jest.fn(),
@@ -70,8 +69,8 @@ describe('ReturnService', () => {
           useValue: mockWalletService,
         },
         {
-          provide: AccountingService,
-          useValue: mockAccountingService,
+          provide: getQueueToken('accounting'),
+          useValue: mockAccountingQueue,
         },
       ],
     }).compile()
@@ -116,18 +115,17 @@ describe('ReturnService', () => {
         ReturnStatus.REFUNDED,
         'Refund completed',
       )
-      expect(mockAccountingService.createJournalEntry).toHaveBeenCalledWith(
+      expect(mockAccountingQueue.add).toHaveBeenCalledWith(
+        'post-return-refund',
         {
-          type: JournalType.CASH_PAYMENT,
-          description: 'Cash Refund for Return #return-1',
-          referenceType: 'ORDER_RETURN',
-          referenceId: 'return-123',
-          lines: [
-            { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: 150 },
-            { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: 150 },
-          ],
+          ctx: mockCtx,
+          payload: {
+            returnId: 'return-123',
+            refundMethod: RefundMethod.CASH,
+            refundAmount: 150,
+          },
         },
-        mockCtx,
+        { removeOnComplete: true },
       )
       expect(mockCacheService.delCacheByPattern).toHaveBeenCalledWith('returns:all*', 'test-tenant')
       expect(result.status).toBe(ReturnStatus.REFUNDED)

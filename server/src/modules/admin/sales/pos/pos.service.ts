@@ -8,7 +8,6 @@ import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
@@ -32,6 +31,8 @@ import { PosShiftEntity, PosShiftStatus } from './entities/pos-shift.entity'
 import { PosDrawerTransactionRepository } from './repositories/pos-drawer-transaction.repository'
 import { PosRegisterRepository } from './repositories/pos-register.repository'
 import { PosShiftRepository } from './repositories/pos-shift.repository'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 
 @Injectable()
 export class PosService {
@@ -42,7 +43,7 @@ export class PosService {
     private readonly shiftRepository: PosShiftRepository,
     private readonly drawerTransactionRepository: PosDrawerTransactionRepository,
     private readonly inventoryService: InventoryLedgerService,
-    private readonly accountingService: AccountingService,
+    @InjectQueue('accounting') private readonly accountingQueue: Queue,
     private readonly arService: ArService,
     private readonly walletService: WalletService,
     private readonly dataSource: DataSource,
@@ -198,6 +199,8 @@ export class PosService {
 
     // 2. Process transactions within a database runner to ensure transactional atomicity
     let savedOrderId = ''
+    let isNewSale = false
+    let jobData: any = null
     await this.dataSource.transaction(async (manager) => {
       // 1. Idempotency Check using offlineSaleId
       if (dto.offlineSaleId) {
@@ -530,18 +533,15 @@ export class PosService {
 
       const lines = Array.from(linesMap.values())
 
-      await this.accountingService.createJournalEntry(
-        {
-          type: JournalType.SALES,
-          description: `POS Sale Synced - Order ID: ${savedOrder.id} - Payments: ${JSON.stringify(paymentBreakdown)}${dto.appliedCoupon ? ` - Coupon Applied: ${dto.appliedCoupon}` : ''}`,
-          referenceType: 'POS_SHIFT',
-          referenceId: shift.id,
-          lines,
-          date: dto.createdAt ? new Date(dto.createdAt) : undefined,
-        },
-        ctx,
-        manager,
-      )
+      isNewSale = true
+      jobData = {
+        orderId: savedOrder.id,
+        shiftId: shift.id,
+        paymentBreakdown,
+        appliedCoupon: dto.appliedCoupon || null,
+        lines,
+        createdAt: dto.createdAt || null,
+      }
 
       // D. Increment coupon usage counter if valid
       if (dto.appliedCoupon) {
@@ -555,6 +555,19 @@ export class PosService {
         }
       }
     })
+
+    if (isNewSale && jobData) {
+      await this.accountingQueue.add(
+        'post-pos-sale',
+        {
+          ctx,
+          payload: jobData,
+        },
+        { removeOnComplete: true },
+      ).catch((err) => {
+        this.logger.error(`Failed to queue POS sale journal entry: ${err.message}`)
+      })
+    }
 
     return {
       success: true,

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, Global } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 import { StockReservationEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-reservation.entity'
@@ -29,6 +29,7 @@ import { ProductBatchService } from './product-batch.service'
 import { ProductBatchController } from './product-batch.controller'
 import { InventoryProcessor } from './inventory.processor'
 
+@Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([

@@ -17,8 +17,9 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 
 /** Return window policy: returns are only accepted within this many days of the original order. */
 const RETURN_WINDOW_DAYS = 30
@@ -34,7 +35,7 @@ export class ReturnService {
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
     private readonly walletService: WalletService,
-    private readonly accountingService: AccountingService,
+    @InjectQueue('accounting') private readonly accountingQueue: Queue,
   ) {}
 
   async createReturnRequest(
@@ -253,21 +254,20 @@ export class ReturnService {
     try {
       const refundAmount = Number(returnRequest.refundAmount || 0)
       if (refundAmount > 0) {
-        await this.accountingService.createJournalEntry(
+        await this.accountingQueue.add(
+          'post-exchange-completed',
           {
-            type: JournalType.GENERAL,
-            description: `Exchange Completed — Return #${returnRequest.id.substring(0, 8)} linked to new Order #${newOrderId.substring(0, 8)}`,
-            referenceType: 'ORDER_EXCHANGE',
-            referenceId: returnRequest.id,
-            lines: [
-              { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns Expense
-              { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Revenue (Exchange new sale offsets)
-            ],
+            ctx,
+            payload: {
+              returnId: returnRequest.id,
+              newOrderId,
+              refundAmount,
+            },
           },
-          ctx,
+          { removeOnComplete: true },
         )
         this.logger.log(
-          `Exchange GL memo posted for return ${returnRequest.id} → new order ${newOrderId}`,
+          `Exchange GL memo enqueued for return ${returnRequest.id} → new order ${newOrderId}`,
         )
       }
     } catch (e) {
@@ -409,101 +409,28 @@ export class ReturnService {
         break
 
       case RefundMethod.CASH:
-        try {
-          await this.accountingService.createJournalEntry(
-            {
-              type: JournalType.CASH_PAYMENT,
-              description: `Cash Refund for Return #${returnRequest.id.substring(0, 8)}`,
-              referenceType: 'ORDER_RETURN',
-              referenceId: returnRequest.id,
-              lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
-                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash Asset
-              ],
-            },
-            ctx,
-          )
-          this.logger.log(
-            `Cash refund of ${refundAmount} authorized for return ${returnRequest.id}. Posted GL journal entry.`,
-          )
-        } catch (e) {
-          this.logger.error(
-            `Failed to post Cash refund GL entry for return ${returnRequest.id}: ${e.message}`,
-          )
-        }
-        break
-
       case RefundMethod.CARD:
-        try {
-          await this.accountingService.createJournalEntry(
-            {
-              type: JournalType.CASH_PAYMENT,
-              description: `Card Refund (Gateway Reversal) for Return #${returnRequest.id.substring(0, 8)}`,
-              referenceType: 'ORDER_RETURN',
-              referenceId: returnRequest.id,
-              lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
-                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
-              ],
-            },
-            ctx,
-          )
-          this.logger.log(
-            `Card refund of ${refundAmount} required for return ${returnRequest.id}. Gateway reversal simulated & GL journal entry posted.`,
-          )
-        } catch (e) {
-          this.logger.error(
-            `Failed to post Card refund GL entry for return ${returnRequest.id}: ${e.message}`,
-          )
-        }
-        break
-
       case RefundMethod.MOBILE:
-        try {
-          await this.accountingService.createJournalEntry(
-            {
-              type: JournalType.CASH_PAYMENT,
-              description: `Mobile Payment Refund for Return #${returnRequest.id.substring(0, 8)}`,
-              referenceType: 'ORDER_RETURN',
-              referenceId: returnRequest.id,
-              lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
-                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
-              ],
-            },
-            ctx,
-          )
-          this.logger.log(
-            `Mobile payment refund of ${refundAmount} required for return ${returnRequest.id}. Mobile wallet reversal simulated & GL journal entry posted.`,
-          )
-        } catch (e) {
-          this.logger.error(
-            `Failed to post Mobile refund GL entry for return ${returnRequest.id}: ${e.message}`,
-          )
-        }
-        break
-
       case RefundMethod.BANK_TRANSFER:
         try {
-          await this.accountingService.createJournalEntry(
+          await this.accountingQueue.add(
+            'post-return-refund',
             {
-              type: JournalType.CASH_PAYMENT,
-              description: `Bank Transfer Refund for Return #${returnRequest.id.substring(0, 8)}`,
-              referenceType: 'ORDER_RETURN',
-              referenceId: returnRequest.id,
-              lines: [
-                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount }, // Sales Returns/Refund Expense
-                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
-              ],
+              ctx,
+              payload: {
+                returnId: returnRequest.id,
+                refundMethod: method,
+                refundAmount,
+              },
             },
-            ctx,
+            { removeOnComplete: true },
           )
           this.logger.log(
-            `Bank transfer refund of ${refundAmount} required for return ${returnRequest.id}. Manual bank transfer simulated & GL journal entry posted.`,
+            `Refund of ${refundAmount} via ${method} enqueued for return ${returnRequest.id}.`,
           )
         } catch (e) {
           this.logger.error(
-            `Failed to post Bank Transfer refund GL entry for return ${returnRequest.id}: ${e.message}`,
+            `Failed to enqueue refund GL entry for return ${returnRequest.id}: ${e.message}`,
           )
         }
         break

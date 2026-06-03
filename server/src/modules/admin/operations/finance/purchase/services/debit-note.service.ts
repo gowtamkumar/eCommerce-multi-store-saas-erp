@@ -8,8 +8,9 @@ import { PaginationDto } from '@/common/dto/pagination.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
 import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supplier/enums/supplier-ap-Refernce-type.enum'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 
 @Injectable()
 export class DebitNoteService {
@@ -17,7 +18,7 @@ export class DebitNoteService {
 
   constructor(
     private readonly repository: DebitNoteRepository,
-    private readonly accountingService: AccountingService,
+    @InjectQueue('accounting') private readonly accountingQueue: Queue,
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
   ) {}
@@ -148,25 +149,23 @@ export class DebitNoteService {
       })
       await queryRunner.manager.save(entry)
 
-      // 2. Post Financial Journal Entry
-      // Debit: 2100 Accounts Payable (reduces liability)
-      // Credit: 1100 Inventory (reduces assets)
-      await this.accountingService.createJournalEntry(
-        {
-          type: JournalType.GENERAL,
-          description: `Debit Note: ${dn.debitNoteNumber} for Supplier ${dn.supplierId}`,
-          referenceType: 'DEBIT_NOTE',
-          referenceId: dn.id,
-          lines: [
-            { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: Number(dn.amount) },
-            { accountCode: '1100', side: LedgerEntrySide.CREDIT, amount: Number(dn.amount) },
-          ],
-        },
-        ctx,
-        queryRunner.manager,
-      )
-
       await queryRunner.commitTransaction()
+
+      await this.accountingQueue.add(
+        'post-debit-note-approved',
+        {
+          ctx,
+          payload: {
+            debitNoteId: dn.id,
+            debitNoteNumber: dn.debitNoteNumber,
+            supplierId: dn.supplierId,
+            amount: dn.amount,
+          },
+        },
+        { removeOnComplete: true },
+      ).catch((err) => {
+        this.logger.error(`Failed to queue debit note journal entry: ${err.message}`)
+      })
 
       await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
       await this.cacheService.delCache(`dn:id:${dn.id}`, tenantId)

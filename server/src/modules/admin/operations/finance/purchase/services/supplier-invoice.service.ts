@@ -19,10 +19,11 @@ import { GrnStatus } from '@/common/enums/grn-status.enum'
 import { SupplierPaymentRepository } from '../repositories/supplier-payment.repository'
 import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
 import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supplier/enums/supplier-ap-Refernce-type.enum'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
 import { RecordSupplierPaymentDto } from '../dto/record-payment.dto'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 
 @Injectable()
 export class SupplierInvoiceService {
@@ -32,7 +33,7 @@ export class SupplierInvoiceService {
     private readonly repository: SupplierInvoiceRepository,
     private readonly poRepository: PurchaseOrderRepository,
     private readonly paymentRepository: SupplierPaymentRepository,
-    private readonly accountingService: AccountingService,
+    @InjectQueue('accounting') private readonly accountingQueue: Queue,
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
   ) {}
@@ -274,25 +275,22 @@ export class SupplierInvoiceService {
       })
       await queryRunner.manager.save(entry)
 
-      // 4. Post Balanced General Ledger Journal Entry
-      // Debit: Accounts Payable (2100)
-      // Credit: Cash (1000)
-      await this.accountingService.createJournalEntry(
-        {
-          type: JournalType.GENERAL,
-          description: `Payment against Supplier Invoice #${invoice.invoiceNumber}`,
-          referenceType: 'SUPPLIER_INVOICE',
-          referenceId: invoice.id,
-          lines: [
-            { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: Number(dto.amount) },
-            { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: Number(dto.amount) },
-          ],
-        },
-        ctx,
-        queryRunner.manager,
-      )
-
       await queryRunner.commitTransaction()
+
+      await this.accountingQueue.add(
+        'post-supplier-invoice-payment',
+        {
+          ctx,
+          payload: {
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            amount: Number(dto.amount),
+          },
+        },
+        { removeOnComplete: true },
+      ).catch((err) => {
+        this.logger.error(`Failed to queue supplier invoice payment journal entry: ${err.message}`)
+      })
 
       await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
       await this.cacheService.delCache(`si:id:${invoice.id}`, tenantId)

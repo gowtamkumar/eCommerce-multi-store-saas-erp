@@ -158,6 +158,115 @@ export class AccountingProcessor extends WorkerHost {
           return { success: true }
         }
 
+        case 'post-pos-sale': {
+          const { orderId, shiftId, paymentBreakdown, appliedCoupon, lines, createdAt } = payload
+          this.logger.log(`Posting POS Sale GL entries for order: ${orderId} on shift: ${shiftId}`)
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.SALES,
+              description: `POS Sale Synced - Order ID: ${orderId} - Payments: ${JSON.stringify(paymentBreakdown)}${appliedCoupon ? ` - Coupon Applied: ${appliedCoupon}` : ''}`,
+              referenceType: 'POS_SHIFT',
+              referenceId: shiftId,
+              lines,
+              date: createdAt ? new Date(createdAt) : undefined,
+            },
+            ctx,
+          )
+          this.logger.log(`Successfully posted POS Sale GL entries for order ${orderId}`)
+          return { success: true }
+        }
+
+        case 'post-exchange-completed': {
+          const { returnId, newOrderId, refundAmount } = payload
+          this.logger.log(`Posting Exchange Completed GL entries for Return: ${returnId}`)
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.GENERAL,
+              description: `Exchange Completed — Return #${returnId.substring(0, 8)} linked to new Order #${newOrderId.substring(0, 8)}`,
+              referenceType: 'ORDER_EXCHANGE',
+              referenceId: returnId,
+              lines: [
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },
+                { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: refundAmount },
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(`Successfully posted Exchange Completed GL entries for Return: ${returnId}`)
+          return { success: true }
+        }
+
+        case 'post-return-refund': {
+          const { returnId, refundMethod, refundAmount } = payload
+          this.logger.log(`Posting Refund GL entries for Return: ${returnId} via ${refundMethod}`)
+          let description = `Refund for Return #${returnId.substring(0, 8)}`
+          if (refundMethod === 'CASH') {
+            description = `Cash Refund for Return #${returnId.substring(0, 8)}`
+          } else if (refundMethod === 'CARD') {
+            description = `Card Refund (Gateway Reversal) for Return #${returnId.substring(0, 8)}`
+          } else if (refundMethod === 'MOBILE') {
+            description = `Mobile Payment Refund for Return #${returnId.substring(0, 8)}`
+          } else if (refundMethod === 'BANK_TRANSFER') {
+            description = `Bank Transfer Refund for Return #${returnId.substring(0, 8)}`
+          }
+
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.CASH_PAYMENT,
+              description,
+              referenceType: 'ORDER_RETURN',
+              referenceId: returnId,
+              lines: [
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: Number(refundAmount) },
+                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: Number(refundAmount) },
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(`Successfully posted Refund GL entries for Return: ${returnId}`)
+          return { success: true }
+        }
+
+        case 'post-supplier-invoice-payment': {
+          const { invoiceId, invoiceNumber, amount } = payload
+          this.logger.log(`Posting Supplier Invoice Payment GL entries for invoice: ${invoiceId}`)
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.GENERAL,
+              description: `Payment against Supplier Invoice #${invoiceNumber}`,
+              referenceType: 'SUPPLIER_INVOICE',
+              referenceId: invoiceId,
+              lines: [
+                { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: Number(amount) },
+                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: Number(amount) },
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(`Successfully posted Supplier Invoice Payment GL entries for invoice: ${invoiceId}`)
+          return { success: true }
+        }
+
+        case 'post-debit-note-approved': {
+          const { debitNoteId, debitNoteNumber, supplierId, amount } = payload
+          this.logger.log(`Posting Debit Note Approved GL entries for Debit Note: ${debitNoteId}`)
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.GENERAL,
+              description: `Debit Note: ${debitNoteNumber} for Supplier ${supplierId}`,
+              referenceType: 'DEBIT_NOTE',
+              referenceId: debitNoteId,
+              lines: [
+                { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: Number(amount) },
+                { accountCode: '1100', side: LedgerEntrySide.CREDIT, amount: Number(amount) },
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(`Successfully posted Debit Note Approved GL entries for Debit Note: ${debitNoteId}`)
+          return { success: true }
+        }
+
         default:
           this.logger.warn(`Unknown job name: ${job.name}`)
       }
