@@ -7,6 +7,7 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { LoyaltyTransactionType } from '@/common/enums/loyalty-transaction-type.enum'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class ReferralService {
@@ -16,6 +17,7 @@ export class ReferralService {
     private readonly dataSource: DataSource,
     private readonly loyaltyService: LoyaltyService,
     private readonly walletService: WalletService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -188,6 +190,7 @@ export class ReferralService {
           em,
         )
         this.logger.log(`Rewarded referrer ${referrerId} with $${rewardAmount} store credit`)
+        await this.notifyReferralWalletReward(referrerId, rewardAmount, ctx)
       } else {
         // Award as loyalty points
         await this.loyaltyService.creditPoints(
@@ -206,6 +209,27 @@ export class ReferralService {
       }
     } catch (err) {
       this.logger.error(`Failed to award referral bonus to referrer ${referrerId}: ${err.message}`)
+    }
+  }
+
+  private async notifyReferralWalletReward(
+    referrerId: string,
+    rewardAmount: number,
+    ctx: RequestContextDto,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: 'Referral Bonus Earned',
+          message: `Referral store credit of ${rewardAmount.toFixed(2)} has been added to your wallet.`,
+          type: 'SUCCESS',
+          link: '/account/wallet',
+          userId: referrerId,
+        },
+        ctx.tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger referral wallet notification: ${e.message}`)
     }
   }
 }

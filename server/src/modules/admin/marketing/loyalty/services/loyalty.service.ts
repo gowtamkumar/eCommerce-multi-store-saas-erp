@@ -7,12 +7,16 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { LoyaltyTransactionType } from '@/common/enums/loyalty-transaction-type.enum'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class LoyaltyService {
   private readonly logger = new Logger(LoyaltyService.name)
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   /**
    * Retrieves the tenant's loyalty configuration or creates a default one if it doesn't exist.
@@ -71,9 +75,15 @@ export class LoyaltyService {
     if (points === 0) return null
 
     if (manager) {
-      return this.creditPointsInternal(data, ctx, manager, points)
+      const ledger = await this.creditPointsInternal(data, ctx, manager, points)
+      await this.notifyPointsCredited(data.customerId, points, ledger, ctx)
+      return ledger
     }
-    return this.dataSource.transaction((em) => this.creditPointsInternal(data, ctx, em, points))
+    const ledger = await this.dataSource.transaction((em) =>
+      this.creditPointsInternal(data, ctx, em, points),
+    )
+    await this.notifyPointsCredited(data.customerId, points, ledger, ctx)
+    return ledger
   }
 
   private async creditPointsInternal(
@@ -322,6 +332,33 @@ export class LoyaltyService {
     return {
       outstandingPoints: Number(row?.pts ?? 0),
       customers: Number(row?.customers ?? 0),
+    }
+  }
+
+  private async notifyPointsCredited(
+    customerId: string,
+    points: number,
+    ledger: LoyaltyLedgerEntity | null,
+    ctx: RequestContextDto,
+  ): Promise<void> {
+    if (!ledger) return
+
+    try {
+      await this.notificationService.createNotification(
+        {
+          title:
+            ledger.type === LoyaltyTransactionType.REFERRAL_BONUS
+              ? 'Referral Bonus Earned'
+              : 'Loyalty Points Earned',
+          message: `${points} loyalty points have been added to your account.`,
+          type: 'SUCCESS',
+          link: '/account/loyalty',
+          userId: customerId,
+        },
+        ctx.tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger loyalty points notification: ${e.message}`)
     }
   }
 

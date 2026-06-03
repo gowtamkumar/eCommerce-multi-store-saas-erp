@@ -41,7 +41,15 @@ export class PlatformSettingsResponseDto {
       twitter: string
       instagram: string
       linkedin: string
+      github: string
     }
+  }
+
+  @Expose()
+  seo: {
+    metaTitle: string
+    metaDescription: string
+    ogImage: string
   }
 
   @Expose()

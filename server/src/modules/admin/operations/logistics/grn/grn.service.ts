@@ -11,6 +11,7 @@ import { InventoryTransactionReferenceType } from '@/common/enums/inventory-tran
 import { SupplierAPLedgerRepository } from '@/modules/admin/operations/finance/supplier/supplier-ap-ledger.repository'
 import { SupplierAPReferenceType } from '../../finance/supplier/enums/supplier-ap-Refernce-type.enum'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class GrnService {
@@ -21,7 +22,8 @@ export class GrnService {
     private readonly dataSource: DataSource,
     private readonly apLedgerRepository: SupplierAPLedgerRepository,
     private readonly inventoryLedgerService: InventoryLedgerService,
-  ) { }
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async createGrn(dto: CreateGrnDto, ctx: RequestContextDto): Promise<GoodsReceivedNoteEntity> {
     this.logger.log(`${this.createGrn.name} Service Called`)
@@ -45,14 +47,16 @@ export class GrnService {
     if (dto.status === GrnStatus.REJECTED) {
       grn.status = GrnStatus.REJECTED
       grn.notes = dto.notes || grn.notes
-      return this.repository.save(grn)
+      const savedGrn = await this.repository.save(grn)
+      await this.notifyGrnStatus(savedGrn, ctx.tenantId, 'WARNING')
+      return savedGrn
     }
 
     if (dto.status === GrnStatus.RECEIVED) {
       // Single atomic transaction: GRN status + AP ledger + inventory ledger
       // either ALL succeed or ALL roll back. No more async queue gap that could
       // leave AP incremented without matching stock.
-      return this.dataSource.transaction(async (manager) => {
+      const savedGrn = await this.dataSource.transaction(async (manager) => {
         grn.status = GrnStatus.RECEIVED
         grn.notes = dto.notes || grn.notes
         const savedGrn = await this.repository.save(grn, manager)
@@ -100,6 +104,8 @@ export class GrnService {
 
         return savedGrn
       })
+      await this.notifyGrnStatus(savedGrn, ctx.tenantId, 'SUCCESS')
+      return savedGrn
     }
 
     return grn
@@ -111,5 +117,26 @@ export class GrnService {
 
   async findAll(ctx: RequestContextDto, paginationDto: PaginationDto, status?: GrnStatus) {
     return this.repository.findAll(ctx.tenantId, paginationDto, status)
+  }
+
+  private async notifyGrnStatus(
+    grn: GoodsReceivedNoteEntity,
+    tenantId: string,
+    type: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: grn.status === GrnStatus.RECEIVED ? 'GRN Verified' : 'GRN Rejected',
+          message: `GRN #${grn.grnNumber} is now ${grn.status}.`,
+          type,
+          link: `/admin/procurement/grn/${grn.id}`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger GRN notification: ${e.message}`)
+    }
   }
 }

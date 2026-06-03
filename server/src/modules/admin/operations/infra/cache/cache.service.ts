@@ -146,6 +146,19 @@ export class CacheService {
     }
   }
 
+  /**
+   * Ping the cache backend (Redis) to check connectivity.
+   * Throws if the cache is unreachable.
+   */
+  async pingCache(): Promise<boolean> {
+    const testKey = `${CACHE_PREFIX}:health:ping`
+    await this.cacheRepository.set(testKey, 1, 5000)
+    const val = await this.cacheRepository.get<number>(testKey)
+    await this.cacheRepository.del(testKey)
+    if (val === null) throw new Error('Redis ping failed')
+    return true
+  }
+
   // Smart "remember" helper
   async rememberCache<T>(
     key: string,

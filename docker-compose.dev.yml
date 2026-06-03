@@ -23,8 +23,6 @@ services:
   pgadmin:
     container_name: multi_tenant_pgadmin_ecommerce
     image: dpage/pgadmin4:latest
-    profiles:
-      - debug
     environment:
       - PGADMIN_DEFAULT_EMAIL=gowtampaul0@gmail.com
       - PGADMIN_DEFAULT_PASSWORD=gowtampaul1995@

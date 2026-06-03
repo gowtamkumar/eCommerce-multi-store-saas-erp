@@ -2,7 +2,7 @@
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
-import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard } from 'lucide-react';
+import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -118,14 +118,25 @@ export default function GlobalSetting() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Platform Settings</h1>
                     <p className="text-slate-500 dark:text-slate-400">Configure global behavior and guest landing page content.</p>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70"
-                >
-                    {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Save className="w-4 h-4" />}
-                    Save Changes
-                </button>
+                <div className="flex items-center gap-3">
+                    <a
+                        href="http://localhost:8080"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 font-bold rounded-xl shadow-sm transition-all text-sm"
+                    >
+                        <Globe className="w-4 h-4" />
+                        Preview Landing Page
+                    </a>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70 text-sm"
+                    >
+                        {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Save className="w-4 h-4" />}
+                        Save Changes
+                    </button>
+                </div>
             </div>
 
             {/* Tabs */}
@@ -136,6 +147,7 @@ export default function GlobalSetting() {
                     { id: 'hero', label: 'Hero Section', icon: Layout },
                     { id: 'features', label: 'Features', icon: Zap },
                     { id: 'footer', label: 'Footer', icon: Shield },
+                    { id: 'seo', label: 'SEO & Meta', icon: Search },
                     { id: 'system', label: 'System & Cache', icon: Database },
                 ].map(tab => (
                     <button
@@ -314,6 +326,69 @@ export default function GlobalSetting() {
                                 description="SVG, PNG, JPG (MAX. 2MB)"
                                 aspectRatio="square"
                             />
+
+                            <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-700">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Navbar Navigation Links</h3>
+                                        <p className="text-xs text-slate-505 dark:text-slate-405">Add, edit, or remove links on the platform header.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newLinks = [...(settings.navbar?.links || []), { label: 'New Link', href: '/' }];
+                                            setSettings({ ...settings, navbar: { ...settings.navbar, links: newLinks } });
+                                        }}
+                                        className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                    >
+                                        <Plus className="w-4 h-4" /> Add Link
+                                    </button>
+                                </div>
+                                <div className="space-y-3">
+                                    {(settings.navbar?.links || []).map((link: any, idx: number) => (
+                                        <div key={idx} className="flex gap-4 items-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                            <div className="flex-1 grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Label</label>
+                                                    <input
+                                                        type="text"
+                                                        value={link.label || ''}
+                                                        onChange={(e) => {
+                                                            const newLinks = [...settings.navbar.links];
+                                                            newLinks[idx] = { ...newLinks[idx], label: e.target.value };
+                                                            setSettings({ ...settings, navbar: { ...settings.navbar, links: newLinks } });
+                                                        }}
+                                                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-indigo-500 font-semibold"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">URL Path</label>
+                                                    <input
+                                                        type="text"
+                                                        value={link.href || ''}
+                                                        onChange={(e) => {
+                                                            const newLinks = [...settings.navbar.links];
+                                                            newLinks[idx] = { ...newLinks[idx], href: e.target.value };
+                                                            setSettings({ ...settings, navbar: { ...settings.navbar, links: newLinks } });
+                                                        }}
+                                                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newLinks = settings.navbar.links.filter((_: any, i: number) => i !== idx);
+                                                    setSettings({ ...settings, navbar: { ...settings.navbar, links: newLinks } });
+                                                }}
+                                                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl mt-4"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -527,6 +602,93 @@ export default function GlobalSetting() {
                                     value={settings.footer?.copyright || ''}
                                     onChange={(e) => setSettings({ ...settings, footer: { ...settings.footer, copyright: e.target.value } })}
                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                />
+                            </div>
+
+                            <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-700">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Social Media Links</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Twitter / X URL</label>
+                                        <input
+                                            type="text"
+                                            value={settings.footer?.socials?.twitter || ''}
+                                            onChange={(e) => setSettings({ ...settings, footer: { ...settings.footer, socials: { ...(settings.footer?.socials || {}), twitter: e.target.value } } })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-950 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                            placeholder="https://x.com/your-brand"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">LinkedIn URL</label>
+                                        <input
+                                            type="text"
+                                            value={settings.footer?.socials?.linkedin || ''}
+                                            onChange={(e) => setSettings({ ...settings, footer: { ...settings.footer, socials: { ...(settings.footer?.socials || {}), linkedin: e.target.value } } })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-950 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                            placeholder="https://linkedin.com/company/your-brand"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">GitHub URL</label>
+                                        <input
+                                            type="text"
+                                            value={settings.footer?.socials?.github || ''}
+                                            onChange={(e) => setSettings({ ...settings, footer: { ...settings.footer, socials: { ...(settings.footer?.socials || {}), github: e.target.value } } })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-955 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                            placeholder="https://github.com/your-brand"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Facebook URL</label>
+                                        <input
+                                            type="text"
+                                            value={settings.footer?.socials?.facebook || ''}
+                                            onChange={(e) => setSettings({ ...settings, footer: { ...settings.footer, socials: { ...(settings.footer?.socials || {}), facebook: e.target.value } } })}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-955 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                            placeholder="https://facebook.com/your-brand"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* SEO & Meta Tab */}
+                {activeTab === 'seo' && (
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden animate-in fade-in duration-300">
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Meta Title</label>
+                                <input
+                                    type="text"
+                                    value={settings.seo?.metaTitle || ''}
+                                    onChange={(e) => setSettings({ ...settings, seo: { ...(settings.seo || {}), metaTitle: e.target.value } })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    placeholder="e.g. YourSaaS - Launch Your Store in Seconds"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Meta Description</label>
+                                <textarea
+                                    value={settings.seo?.metaDescription || ''}
+                                    onChange={(e) => setSettings({ ...settings, seo: { ...(settings.seo || {}), metaDescription: e.target.value } })}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-32"
+                                    placeholder="e.g. The ultimate multi-tenant eCommerce platform..."
+                                />
+                            </div>
+                            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Open Graph (OG) Image</h3>
+                                <ImageUploadField
+                                    label="OG Image"
+                                    value={settings.seo?.ogImage}
+                                    onChange={(val) => setSettings({ ...settings, seo: { ...(settings.seo || {}), ogImage: val } })}
+                                    uploadApi={fetchSuperAdminAPI}
+                                    loadingMsg="Uploading OG image..."
+                                    successMsg="OG image uploaded successfully"
+                                    errorMsg="Error uploading OG image"
+                                    description="Recommended size: 1200x630px for optimal social sharing visibility"
+                                    aspectRatio="wide"
                                 />
                             </div>
                         </div>

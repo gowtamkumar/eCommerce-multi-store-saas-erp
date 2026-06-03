@@ -196,6 +196,7 @@ export class ExpenseService {
 
     await this.cacheService.delCacheByPattern('expenses:list*', ctx.tenantId)
     await this.cacheService.delCache(`expenses:id:${id}`, ctx.tenantId)
+    await this.notifyExpenseStatus(result, ctx.tenantId, 'Expense Approved', 'SUCCESS')
     return result
   }
 
@@ -212,6 +213,7 @@ export class ExpenseService {
 
     await this.cacheService.delCacheByPattern('expenses:list*', ctx.tenantId)
     await this.cacheService.delCache(`expenses:id:${id}`, ctx.tenantId)
+    await this.notifyExpenseStatus(result, ctx.tenantId, 'Expense Rejected', 'DANGER')
     return result
   }
 
@@ -233,5 +235,27 @@ export class ExpenseService {
       this.cacheService.delCacheByPattern('finance:summary*', tenantId),
     ])
     return result
+  }
+
+  private async notifyExpenseStatus(
+    expense: ExpenseEntity,
+    tenantId: string,
+    title: string,
+    type: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title,
+          message: `Expense "${expense.title}" for ${Number(expense.amount).toFixed(2)} is now ${expense.status}.`,
+          type,
+          link: '/admin/finance/expenses',
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger expense status notification: ${e.message}`)
+    }
   }
 }

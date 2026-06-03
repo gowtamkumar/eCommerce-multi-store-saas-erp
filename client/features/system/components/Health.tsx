@@ -11,11 +11,12 @@ import {
     Database,
     HardDrive,
     Network,
+    RefreshCw,
     Server,
     ShieldCheck,
     Zap
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
     Area,
     AreaChart,
@@ -99,13 +100,15 @@ export default function PlatformHealth() {
     const [data, setData] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchHealth = async () => {
-            try {
-                const result = await fetchSuperAdminAPI('/super-admin/health');
-                const ss = result.data?.stats;
+    const fetchHealth = useCallback(async () => {
+        try {
+            const result = await fetchSuperAdminAPI('/super-admin/health');
+            if (result.success && result.data) {
+                const ss = result.data.stats;
                 setData(result.data);
+                setError(null);
                 if (ss) {
                     setHistory(prev => {
                         const newSnapshot = {
@@ -116,17 +119,21 @@ export default function PlatformHealth() {
                         return [...prev, newSnapshot].slice(-30);
                     });
                 }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
+            } else {
+                setError(result.message || 'Failed to fetch platform health metrics');
             }
-        };
+        } catch (err: any) {
+            setError(err.message || 'Connection lost to the server node');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
+    useEffect(() => {
         fetchHealth();
         const interval = setInterval(fetchHealth, 5000);
         return () => clearInterval(interval);
-    }, []);
+    }, [fetchHealth]);
 
     const formatUptime = (seconds: number) => {
         if (!seconds || isNaN(seconds)) return '0d 0h 0m';
@@ -135,6 +142,26 @@ export default function PlatformHealth() {
         const m = Math.floor((seconds % 3600) / 60);
         return `${d}d ${h}h ${m}m`;
     };
+
+    if (error && !data) {
+        return (
+            <div className="flex flex-col items-center justify-center py-40 space-y-6">
+                <div className="w-16 h-16 bg-rose-50 dark:bg-rose-950/20 rounded-3xl flex items-center justify-center text-rose-500 border border-rose-100 dark:border-rose-800 shadow-lg">
+                    <AlertCircle className="w-8 h-8" />
+                </div>
+                <div className="text-center space-y-2 max-w-md">
+                    <p className="text-slate-900 dark:text-white font-black uppercase tracking-widest text-sm">Telemetry Connection Failed</p>
+                    <p className="text-slate-400 text-xs font-semibold leading-relaxed">{error}</p>
+                </div>
+                <button
+                    onClick={() => { setLoading(true); setError(null); fetchHealth(); }}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 font-semibold hover:bg-indigo-700 transition-all text-sm"
+                >
+                    <RefreshCw className="w-4 h-4" /> Retry Connection
+                </button>
+            </div>
+        );
+    }
 
     if (loading && !data)
         return (
@@ -180,12 +207,24 @@ export default function PlatformHealth() {
             </header>
 
             {/* Quick Summary Bar */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                 <StatCard
                     icon={<Database className="w-7 h-7" />}
-                    label="Storage Layer"
+                    label="Database"
                     value={data?.database}
                     sub="PostgreSQL Engine"
+                />
+                <StatCard
+                    icon={<Activity className="w-7 h-7" />}
+                    label="Cache Engine"
+                    value={data?.redis || 'Unknown'}
+                    sub={data?.redis === 'Connected' ? 'Redis Operational' : 'Redis Offline'}
+                />
+                <StatCard
+                    icon={<Box className="w-7 h-7" />}
+                    label="Object Store"
+                    value={data?.minio || 'Unknown'}
+                    sub={data?.minio === 'Connected' ? 'MinIO Operational' : 'MinIO Offline'}
                 />
                 <StatCard
                     icon={<Clock className="w-7 h-7" />}

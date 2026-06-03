@@ -8,6 +8,7 @@ import { PaymentStrategyFactory } from '@/common/strategies/payment/payment-stra
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
@@ -29,6 +30,7 @@ export class PaymentService {
     private mailService: MailService,
     private readonly cacheService: CacheService,
     private readonly auditLogService: AuditLogService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async initPayment(dto: InitPaymentDto, ctx: RequestContextDto): Promise<{ gatewayUrl: string }> {
@@ -146,6 +148,13 @@ export class PaymentService {
       this.mailService.sendNewOrderNotification(orderWithRelations, order.tenantId)
     }
 
+    await this.notifyPaymentEvent(
+      order,
+      'Payment Received',
+      `Payment received for Order #${order.id.substring(0, 8)}.`,
+      'SUCCESS',
+    )
+
     await Promise.all([
       this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
       this.cacheService.delCacheByPattern('analytics*', order.tenantId),
@@ -215,6 +224,13 @@ export class PaymentService {
         status: PaymentStatus.FAILED,
       },
     })
+
+    await this.notifyPaymentEvent(
+      order,
+      'Payment Failed',
+      `Payment failed for Order #${order.id.substring(0, 8)}.`,
+      'DANGER',
+    )
     return { success: false }
   }
 
@@ -265,7 +281,36 @@ export class PaymentService {
         status: PaymentStatus.PENDING,
       },
     })
+
+    await this.notifyPaymentEvent(
+      order,
+      'Payment Cancelled',
+      `Payment was cancelled for Order #${order.id.substring(0, 8)}.`,
+      'WARNING',
+    )
     return { cancelled: true }
+  }
+
+  private async notifyPaymentEvent(
+    order: OrderEntity,
+    title: string,
+    message: string,
+    type: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title,
+          message,
+          type,
+          link: `/admin/sales/orders/${order.id}`,
+          userId: null as any,
+        },
+        order.tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger payment notification: ${e.message}`)
+    }
   }
 
   async getRedirectUrl(

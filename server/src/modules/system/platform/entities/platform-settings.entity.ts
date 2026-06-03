@@ -41,7 +41,15 @@ export class PlatformSettingsEntity extends BaseEntity {
       twitter: string
       instagram: string
       linkedin: string
+      github: string
     }
+  }
+
+  @Column({ type: 'jsonb', nullable: true })
+  seo: {
+    metaTitle: string
+    metaDescription: string
+    ogImage: string
   }
 
   @Column({ name: 'is_maintenance_mode', type: 'boolean', default: false })

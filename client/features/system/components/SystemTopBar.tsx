@@ -3,7 +3,7 @@
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSocketEvent } from '@/hooks/SocketContext';
-import { Bell, Menu, ShieldCheck, User } from 'lucide-react';
+import { Bell, Menu, ShieldCheck, User, Sun, Moon, ArrowUpRight } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 
@@ -16,7 +16,44 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
     const notificationRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+        setTheme(initialTheme);
+        if (initialTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        const nextTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(nextTheme);
+        localStorage.setItem('theme', nextTheme);
+        if (nextTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    };
+
+    const getMappedLink = (link?: string | null) => {
+        if (!link || typeof link !== 'string' || link.trim() === '') return null;
+        let targetLink = link.trim();
+        if (targetLink.startsWith('/admin/system/tenants/')) {
+            const tenantId = targetLink.split('/').pop();
+            return `/system/tenants/${tenantId}/analytics`;
+        }
+        if (targetLink.startsWith('/admin/system/billing/')) {
+            return '/system/billing';
+        }
+        return targetLink;
+    };
 
     const userName = session?.user?.name || session?.user?.username || 'Super Admin';
 
@@ -49,19 +86,22 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
                         {newNotif.message}
                     </p>
                 </div>
-                <div className="flex border-l border-slate-200 dark:border-slate-800 ml-4 pl-4 items-center">
-                    <button
-                        onClick={() => {
-                            toast.dismiss(t.id);
-                            if (newNotif.link) {
-                                window.location.href = newNotif.link;
-                            }
-                        }}
-                        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus:outline-none"
-                    >
-                        View
-                    </button>
-                </div>
+                {getMappedLink(newNotif.link) && (
+                    <div className="flex border-l border-slate-200 dark:border-slate-800 ml-4 pl-4 items-center">
+                        <button
+                            onClick={() => {
+                                toast.dismiss(t.id);
+                                const mappedLink = getMappedLink(newNotif.link);
+                                if (mappedLink) {
+                                    window.location.href = mappedLink;
+                                }
+                            }}
+                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus:outline-none"
+                        >
+                            View
+                        </button>
+                    </div>
+                )}
             </div>
         ), { duration: 6000 });
 
@@ -111,8 +151,9 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
                 console.error('Failed to mark notification as read:', error);
             }
         }
-        if (notif.link) {
-            window.location.href = notif.link;
+        const mappedLink = getMappedLink(notif.link);
+        if (mappedLink) {
+            window.location.href = mappedLink;
         }
     };
 
@@ -147,6 +188,15 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
             </div>
 
             <div className="flex items-center gap-4">
+                {/* Dark Mode Toggle */}
+                <button
+                    onClick={toggleTheme}
+                    className="p-2.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200/50 dark:border-slate-700/50"
+                    aria-label="Toggle dark mode"
+                >
+                    {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                </button>
+
                 {/* Notifications Dropdown */}
                 <div className="relative" ref={notificationRef}>
                     <button
@@ -218,10 +268,15 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
                                                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                                                             {notif.message}
                                                         </p>
-                                                        <p className="text-[10px] text-slate-400 dark:text-slate-550 mt-2 font-medium">
-                                                            {new Date(notif.createdAt).toLocaleDateString()} at{' '}
-                                                            {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
+                                                        <div className="flex items-center justify-between gap-2 mt-2">
+                                                            <p className="text-[10px] text-slate-400 dark:text-slate-550 font-medium">
+                                                                {new Date(notif.createdAt).toLocaleDateString()} at{' '}
+                                                                {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                            {getMappedLink(notif.link) && (
+                                                                <ArrowUpRight className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );

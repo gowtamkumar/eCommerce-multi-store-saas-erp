@@ -12,6 +12,8 @@ import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.m
 import { AddonCatalogModule } from '../addon-catalog/addon-catalog.module'
 import { SuperAdminController } from './super-admin.controller'
 import { TrafficService } from './traffic.service'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subscription-invoice.entity'
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { TrafficService } from './traffic.service'
     AddonCatalogModule,
     AuthModule,
     AuditLogModule,
+    TypeOrmModule.forFeature([SubscriptionInvoiceEntity]),
   ],
   controllers: [SuperAdminController],
   providers: [
@@ -36,3 +39,4 @@ import { TrafficService } from './traffic.service'
   exports: [TrafficService],
 })
 export class SuperAdminModule {}
+

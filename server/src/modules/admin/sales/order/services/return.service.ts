@@ -213,6 +213,7 @@ export class ReturnService {
     }
 
     const updated = await this.returnRepository.markReceived(returnRequest)
+    await this.notifyReturnStatus(updated, tenantId, ReturnStatus.RECEIVED)
     await Promise.all([
       this.cacheService.delCacheByPattern('returns:all*', tenantId),
       this.cacheService.delCacheByPattern('analytics*', tenantId),
@@ -284,6 +285,7 @@ export class ReturnService {
       this.cacheService.delCacheByPattern('cashflow*', tenantId),
       this.cacheService.delCacheByPattern('finance:summary*', tenantId),
     ])
+    await this.notifyReturnStatus(updated, tenantId, ReturnStatus.EXCHANGED)
     return updated
   }
 
@@ -354,6 +356,8 @@ export class ReturnService {
       await this.processRefund(updated, ctx)
     }
 
+    await this.notifyReturnStatus(updated, tenantId, targetStatus)
+
     // Invalidate the admin list cache
     await Promise.all([
       this.cacheService.delCacheByPattern('returns:all*', tenantId),
@@ -403,6 +407,7 @@ export class ReturnService {
           this.logger.log(
             `Wallet credited for return ${returnRequest.id}: customer=${customerId}, amount=${refundAmount}`,
           )
+          await this.notifyStoreCreditRefund(returnRequest, customerId, refundAmount, ctx.tenantId)
         } catch (e) {
           this.logger.error(`Failed to credit wallet for return ${returnRequest.id}: ${e.message}`)
         }
@@ -437,6 +442,86 @@ export class ReturnService {
 
       default:
         this.logger.warn(`Unknown refund method ${method} for return ${returnRequest.id}`)
+    }
+  }
+
+  private async notifyReturnStatus(
+    returnRequest: OrderReturnEntity,
+    tenantId: string,
+    status: ReturnStatus,
+  ): Promise<void> {
+    if (status === ReturnStatus.PENDING) return
+
+    const orderId = returnRequest.orderId
+    const shortReturnId = returnRequest.id.substring(0, 8)
+    const shortOrderId = orderId?.substring(0, 8) || 'unknown'
+    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1)
+    const titleByStatus: Partial<Record<ReturnStatus, string>> = {
+      [ReturnStatus.APPROVED]: 'Return Approved',
+      [ReturnStatus.RECEIVED]: 'Return Items Received',
+      [ReturnStatus.REJECTED]: 'Return Rejected',
+      [ReturnStatus.REFUNDED]: 'Refund Completed',
+      [ReturnStatus.EXCHANGED]: 'Exchange Completed',
+      [ReturnStatus.CANCELLED]: 'Return Cancelled',
+    }
+    const typeByStatus: Partial<Record<ReturnStatus, string>> = {
+      [ReturnStatus.APPROVED]: 'SUCCESS',
+      [ReturnStatus.RECEIVED]: 'INFO',
+      [ReturnStatus.REJECTED]: 'DANGER',
+      [ReturnStatus.REFUNDED]: 'SUCCESS',
+      [ReturnStatus.EXCHANGED]: 'SUCCESS',
+      [ReturnStatus.CANCELLED]: 'WARNING',
+    }
+
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: titleByStatus[status] || `Return ${statusLabel}`,
+          message: `Return #${shortReturnId} for Order #${shortOrderId} is now ${statusLabel}.`,
+          type: typeByStatus[status] || 'INFO',
+          link: `/admin/sales/returns/${returnRequest.id}`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+
+      const customerId = returnRequest.order?.userId || (returnRequest as any).userId
+      if (customerId) {
+        await this.notificationService.createNotification(
+          {
+            title: titleByStatus[status] || `Return ${statusLabel}`,
+            message: `Your return for Order #${shortOrderId} is now ${statusLabel}.`,
+            type: typeByStatus[status] || 'INFO',
+            link: `/account/returns/${returnRequest.id}`,
+            userId: customerId,
+          },
+          tenantId,
+        )
+      }
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger return status notification: ${e.message}`)
+    }
+  }
+
+  private async notifyStoreCreditRefund(
+    returnRequest: OrderReturnEntity,
+    customerId: string,
+    refundAmount: number,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: 'Store Credit Added',
+          message: `Store credit of ${refundAmount.toFixed(2)} has been added for Return #${returnRequest.id.substring(0, 8)}.`,
+          type: 'SUCCESS',
+          link: `/account/returns/${returnRequest.id}`,
+          userId: customerId,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger store credit notification: ${e.message}`)
     }
   }
 

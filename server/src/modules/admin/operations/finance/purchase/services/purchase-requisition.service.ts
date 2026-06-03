@@ -1,6 +1,7 @@
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import {
@@ -20,6 +21,7 @@ export class PurchaseRequisitionService {
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createPR(
@@ -119,6 +121,9 @@ export class PurchaseRequisitionService {
     }
 
     const saved = await this.repository.savePR(pr)
+    if (dto.status === PRStatus.APPROVED || dto.status === PRStatus.REJECTED) {
+      await this.notifyPRStatus(saved, tenantId)
+    }
     await this.cacheService.delCacheByPattern(`pr:list:*`, tenantId)
     await this.cacheService.delCache(`pr:id:${id}`, tenantId)
     return saved
@@ -211,6 +216,7 @@ export class PurchaseRequisitionService {
 
       await this.cacheService.delCacheByPattern(`pr:list:*`, tenantId)
       await this.cacheService.delCache(`pr:id:${id}`, tenantId)
+      await this.notifyPRConverted(pr, po.id, tenantId)
 
       return po
     } catch (error) {
@@ -232,5 +238,44 @@ export class PurchaseRequisitionService {
     await this.repository.savePR({ ...pr, isDeleted: true } as any)
     await this.cacheService.delCacheByPattern(`pr:list:*`, tenantId)
     await this.cacheService.delCache(`pr:id:${id}`, tenantId)
+  }
+
+  private async notifyPRStatus(pr: PurchaseRequisitionEntity, tenantId: string): Promise<void> {
+    const approved = pr.status === PRStatus.APPROVED
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: approved ? 'Purchase Requisition Approved' : 'Purchase Requisition Rejected',
+          message: `Purchase Requisition #${pr.prNumber} has been ${pr.status.toLowerCase()}.`,
+          type: approved ? 'SUCCESS' : 'DANGER',
+          link: `/admin/procurement/requisitions`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger purchase requisition notification: ${e.message}`)
+    }
+  }
+
+  private async notifyPRConverted(
+    pr: PurchaseRequisitionEntity,
+    purchaseOrderId: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: 'Purchase Requisition Converted',
+          message: `Purchase Requisition #${pr.prNumber} was converted to a purchase order.`,
+          type: 'SUCCESS',
+          link: `/admin/procurement/purchases/${purchaseOrderId}`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger PR conversion notification: ${e.message}`)
+    }
   }
 }

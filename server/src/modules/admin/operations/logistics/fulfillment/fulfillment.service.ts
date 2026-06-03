@@ -16,6 +16,7 @@ import { StockReservationService } from '../inventory-transaction/stock-reservat
 import { StockReservationEntity } from '../inventory-transaction/entities/stock-reservation.entity'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { ProductBatchService } from '../inventory-transaction/product-batch.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class FulfillmentService {
@@ -29,6 +30,7 @@ export class FulfillmentService {
     private readonly orderRepository: Repository<OrderEntity>,
     private readonly reservationService: StockReservationService,
     private readonly batchService: ProductBatchService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createFromOrder(
@@ -49,6 +51,7 @@ export class FulfillmentService {
     if (physicalItems.length === 0) {
       // If there are no physical items to fulfill, we mark order as SHIPPED immediately
       await this.orderRepository.update(orderId, { status: OrderStatus.SHIPPED })
+      await this.notifyOrderShipped(order.id, ctx.tenantId)
       return null
     }
 
@@ -234,7 +237,7 @@ export class FulfillmentService {
       throw new BadRequestException('Task must be PACKED before shipping')
     }
 
-    return await this.dataSource.transaction(async (manager) => {
+    const shippedTask = await this.dataSource.transaction(async (manager) => {
       // 1. Record Inventory Movement (SALE) and Reconcile active Stock Reservations
       for (const item of task.items) {
         // Find corresponding reservation for this order / product / variant
@@ -338,6 +341,26 @@ export class FulfillmentService {
 
       return this.repository.findTaskById(taskId, ctx.tenantId) as Promise<FulfillmentTaskEntity>
     })
+
+    await this.notifyOrderShipped(task.orderId, ctx.tenantId)
+    return shippedTask
+  }
+
+  private async notifyOrderShipped(orderId: string, tenantId: string): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: 'Order Shipped',
+          message: `Order #${orderId.substring(0, 8)} has been shipped.`,
+          type: 'INFO',
+          link: `/admin/sales/orders/${orderId}`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger fulfillment notification: ${e.message}`)
+    }
   }
 
   async findAllTasks(ctx: RequestContextDto, status?: string): Promise<FulfillmentTaskEntity[]> {

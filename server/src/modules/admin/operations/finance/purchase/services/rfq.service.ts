@@ -1,5 +1,6 @@
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { CreateQuotationDto, CreateRfqDto, UpdateRfqStatusDto } from '../dto/rfq.dto'
@@ -18,6 +19,7 @@ export class RfqService {
     private readonly quotationRepository: QuotationRepository,
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createRfq(dto: CreateRfqDto, ctx: RequestContextDto): Promise<RfqEntity> {
@@ -84,6 +86,7 @@ export class RfqService {
 
     rfq.status = dto.status
     const saved = await this.rfqRepository.saveRfq(rfq)
+    await this.notifyRfqStatus(saved, tenantId)
     return saved
   }
 
@@ -189,12 +192,56 @@ export class RfqService {
 
       await queryRunner.commitTransaction()
 
+      await this.notifyQuotationAwarded(rfq, quotation, po?.id, tenantId)
       return po
     } catch (error) {
       await queryRunner.rollbackTransaction()
       throw error
     } finally {
       await queryRunner.release()
+    }
+  }
+
+  private async notifyRfqStatus(rfq: RfqEntity, tenantId: string): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: 'RFQ Status Updated',
+          message: `RFQ #${rfq.rfqNumber} is now ${rfq.status}.`,
+          type: rfq.status === RFQStatus.CANCELLED ? 'WARNING' : 'INFO',
+          link: `/admin/procurement/rfqs`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger RFQ status notification: ${e.message}`)
+    }
+  }
+
+  private async notifyQuotationAwarded(
+    rfq: RfqEntity,
+    quotation: QuotationEntity,
+    purchaseOrderId: string | undefined,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: 'Quotation Awarded',
+          message: `Quotation for RFQ #${rfq.rfqNumber} was awarded and a purchase order was created.`,
+          type: 'SUCCESS',
+          link: purchaseOrderId
+            ? `/admin/procurement/purchases/${purchaseOrderId}`
+            : `/admin/procurement/rfqs`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(
+        `Failed to trigger quotation award notification for ${quotation.id}: ${e.message}`,
+      )
     }
   }
 }

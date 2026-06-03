@@ -14,7 +14,8 @@ import {
     Laptop,
     ChevronLeft,
     ChevronRight,
-    ShieldCheck
+    ShieldCheck,
+    Download,
 } from 'lucide-react';
 
 interface AuditLog {
@@ -138,6 +139,22 @@ export default function PlatformAuditLogsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <button
+                        onClick={() => {
+                            const apiBase = process.env.NEXT_PUBLIC_NEST_API_URL || 'http://localhost:4000';
+                            const qs = new URLSearchParams();
+                            if (actionFilter) qs.set('action', actionFilter);
+                            if (tenantFilter) qs.set('tenantId', tenantFilter);
+                            if (fromDate) qs.set('from', new Date(fromDate).toISOString());
+                            if (toDate) qs.set('to', new Date(toDate).toISOString());
+                            window.open(`${apiBase}/super-admin/audit-logs/export?${qs}`, '_blank');
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-xs font-semibold border border-slate-200 dark:border-slate-700"
+                        title="Export CSV"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                    </button>
+                    <button
                         onClick={fetchLogs}
                         className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-550 dark:text-slate-450 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 transition-all hover:scale-110 active:rotate-180 duration-500 shadow-sm"
                         title="Refresh Logs"
@@ -171,6 +188,10 @@ export default function PlatformAuditLogsPage() {
                             <option value="ROLE_DELETED">ROLE_DELETED</option>
                             <option value="USER_ROLE_ASSIGNED">USER_ROLE_ASSIGNED</option>
                             <option value="USER_ROLE_REVOKED">USER_ROLE_REVOKED</option>
+                            <option value="TENANT_STATUS_CHANGE">TENANT_STATUS_CHANGE</option>
+                            <option value="TENANT_PLAN_CHANGE">TENANT_PLAN_CHANGE</option>
+                            <option value="TENANT_FEATURE_OVERRIDE">TENANT_FEATURE_OVERRIDE</option>
+                            <option value="IMPERSONATE_START">IMPERSONATE_START</option>
                             <option value="PERMISSION_CHECK_FAILED">SECURITY ALERT</option>
                         </select>
                     </div>

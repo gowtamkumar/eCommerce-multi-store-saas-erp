@@ -16,6 +16,7 @@ import {
   Search,
   ShieldCheck,
   XCircle,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useState } from 'react';
@@ -115,6 +116,19 @@ export default function SuperAdminNotificationsPage() {
     }
   };
 
+  const getMappedLink = (link?: string | null) => {
+    if (!link || typeof link !== 'string' || link.trim() === '') return null;
+    let targetLink = link.trim();
+    if (targetLink.startsWith('/admin/system/tenants/')) {
+      const tenantId = targetLink.split('/').pop();
+      return `/system/tenants/${tenantId}/analytics`;
+    }
+    if (targetLink.startsWith('/admin/system/billing/')) {
+      return '/system/billing';
+    }
+    return targetLink;
+  };
+
   const handleNotificationClick = async (notif: Notification) => {
     if (!notif.isRead) {
       try {
@@ -131,8 +145,9 @@ export default function SuperAdminNotificationsPage() {
       }
     }
 
-    if (notif.link) {
-      window.location.href = notif.link;
+    const mappedLink = getMappedLink(notif.link);
+    if (mappedLink) {
+      window.location.href = mappedLink;
     }
   };
 
@@ -278,20 +293,28 @@ export default function SuperAdminNotificationsPage() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                       {notif.message}
                     </p>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-3">
-                      <Calendar className="w-3.5 h-3.5 opacity-55" />
-                      <span>
-                        {new Date(notif.createdAt).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}{' '}
-                        at{' '}
-                        {new Date(notif.createdAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
+                    <div className="flex items-center justify-between gap-2 flex-wrap mt-3">
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider">
+                        <Calendar className="w-3.5 h-3.5 opacity-55" />
+                        <span>
+                          {new Date(notif.createdAt).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}{' '}
+                          at{' '}
+                          {new Date(notif.createdAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      {getMappedLink(notif.link) && (
+                        <span className="flex items-center gap-1 text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                          View details
+                          <ArrowUpRight className="w-3 h-3" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </motion.div>

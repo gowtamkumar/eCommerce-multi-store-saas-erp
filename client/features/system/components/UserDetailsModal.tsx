@@ -3,8 +3,10 @@
 import { UserStatus } from '@/lib/enums/user-status.enum';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CheckCircle, Loader2, Store, User as UserIcon, X } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import { User } from '../types/user-management.types';
+import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import toast from 'react-hot-toast';
 
 interface UserDetailsModalProps {
   user: User | null;
@@ -19,6 +21,43 @@ const UserDetailsModal = ({
   onClose,
   onStatusChange,
 }: UserDetailsModalProps) => {
+  const [isResetting, setIsResetting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleForcePasswordReset = async () => {
+    if (!user) return;
+    setIsResetting(true);
+    try {
+      const res = await fetchSuperAdminAPI(`/super-admin/users/${user.id}/force-password-reset`, {
+        method: 'POST',
+      });
+      if (res.success) {
+        toast.success('User will be forced to reset password on next login.');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to force password reset');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleSendVerification = async () => {
+    if (!user) return;
+    setIsVerifying(true);
+    try {
+      const res = await fetchSuperAdminAPI(`/super-admin/users/${user.id}/send-verification`, {
+        method: 'POST',
+      });
+      if (res.success) {
+        toast.success('Verification email sent successfully.');
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to send verification email');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -128,11 +167,28 @@ const UserDetailsModal = ({
                   </div>
                 </div>
 
-                <div className="pt-4 mt-auto">
+                <div className="pt-4 mt-auto space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={handleForcePasswordReset}
+                      disabled={isResetting}
+                      className="py-3 rounded-2xl font-bold uppercase tracking-wider text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {isResetting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Force Password Reset'}
+                    </button>
+                    <button
+                      onClick={handleSendVerification}
+                      disabled={isVerifying}
+                      className="py-3 rounded-2xl font-bold uppercase tracking-wider text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {isVerifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send Verification'}
+                    </button>
+                  </div>
+
                   <button
                     onClick={() => onStatusChange(user.id, user.status === UserStatus.ACTIVE ? UserStatus.BLOCKED : UserStatus.ACTIVE)}
                     disabled={updatingId === user.id}
-                    className={`w-full py-5 rounded-3xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 shadow-2xl ${user.status === UserStatus.ACTIVE
+                    className={`w-full py-4.5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 shadow-xl ${user.status === UserStatus.ACTIVE
                       ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
                       : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
                       } disabled:opacity-50`}

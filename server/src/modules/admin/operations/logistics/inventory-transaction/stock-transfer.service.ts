@@ -12,6 +12,7 @@ import { CreateStockTransferDocDto } from './dto/create-stock-transfer-doc.dto'
 import { UpdateStockTransferDocDto } from './dto/update-stock-transfer-doc.dto'
 import { ReceiveStockTransferDto } from './dto/receive-stock-transfer.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class StockTransferService {
@@ -23,6 +24,7 @@ export class StockTransferService {
     @InjectRepository(StockTransferItemEntity)
     private readonly itemRepo: Repository<StockTransferItemEntity>,
     private readonly inventoryLedgerService: InventoryLedgerService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private r(manager?: EntityManager): Repository<StockTransferEntity> {
@@ -223,7 +225,9 @@ export class StockTransferService {
     }
 
     transfer.status = StockTransferStatus.APPROVED
-    return await this.repo.save(transfer)
+    const saved = await this.repo.save(transfer)
+    await this.notifyStockTransfer(saved, 'Stock Transfer Approved', 'SUCCESS')
+    return saved
   }
 
   async ship(id: string, ctx: RequestContextDto): Promise<StockTransferEntity> {
@@ -280,7 +284,9 @@ export class StockTransferService {
       }
     })
 
-    return this.findOne(id, ctx)
+    const shipped = await this.findOne(id, ctx)
+    await this.notifyStockTransfer(shipped, 'Stock Transfer Shipped', 'INFO')
+    return shipped
   }
 
   async receive(
@@ -328,7 +334,9 @@ export class StockTransferService {
       }
     })
 
-    return this.findOne(id, ctx)
+    const received = await this.findOne(id, ctx)
+    await this.notifyStockTransfer(received, 'Stock Transfer Received', 'SUCCESS')
+    return received
   }
 
   async cancel(id: string, ctx: RequestContextDto): Promise<StockTransferEntity> {
@@ -369,6 +377,29 @@ export class StockTransferService {
       await activeRepo.save(transfer)
     })
 
-    return this.findOne(id, ctx)
+    const cancelled = await this.findOne(id, ctx)
+    await this.notifyStockTransfer(cancelled, 'Stock Transfer Cancelled', 'WARNING')
+    return cancelled
+  }
+
+  private async notifyStockTransfer(
+    transfer: StockTransferEntity,
+    title: string,
+    type: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title,
+          message: `Stock Transfer #${transfer.transferNumber} is now ${transfer.status}.`,
+          type,
+          link: `/admin/stock-transfers`,
+          userId: null as any,
+        },
+        transfer.tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger stock transfer notification: ${e.message}`)
+    }
   }
 }

@@ -2,8 +2,8 @@
 
 import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
-import { AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Loader2, Search, Terminal } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Loader2, Search, Terminal, Filter, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -25,6 +25,26 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
 
+  // Filters State
+  const [selectedRole, setSelectedRole] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedTenantId, setSelectedTenantId] = useState('ALL');
+  const [tenantsList, setTenantsList] = useState<any[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Load tenants on mount
+  useEffect(() => {
+    const loadTenants = async () => {
+      try {
+        const res = await fetchSuperAdminAPI('/super-admin/tenants');
+        if (res.success) setTenantsList(res.data || []);
+      } catch (e) {
+        console.error('Error loading tenants:', e);
+      }
+    };
+    loadTenants();
+  }, []);
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -34,12 +54,17 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
   }, [searchTerm]);
 
   /**
-   * Fetch users from server with pagination and search
+   * Fetch users from server with pagination and filters
    */
   const fetchUsers = useCallback(async (page: number, q: string) => {
     setIsLoading(true);
     try {
-      const endpoint = `/super-admin/users?page=${page}&limit=${pagination.limit}${q ? `&q=${q}` : ''}`;
+      let endpoint = `/super-admin/users?page=${page}&limit=${pagination.limit}`;
+      if (q) endpoint += `&q=${q}`;
+      if (selectedRole !== 'ALL') endpoint += `&role=${selectedRole}`;
+      if (selectedStatus !== 'ALL') endpoint += `&status=${selectedStatus}`;
+      if (selectedTenantId !== 'ALL') endpoint += `&tenantId=${selectedTenantId}`;
+      
       const res = await fetchSuperAdminAPI(endpoint);
 
       if (res.success) {
@@ -51,12 +76,12 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
     } finally {
       setIsLoading(false);
     }
-  }, [pagination.limit]);
+  }, [pagination.limit, selectedRole, selectedStatus, selectedTenantId]);
 
-  // Refetch when search or page changes
+  // Refetch when search, role, status, or tenant changes
   useEffect(() => {
     fetchUsers(1, debouncedSearch);
-  }, [debouncedSearch, fetchUsers]);
+  }, [debouncedSearch, selectedRole, selectedStatus, selectedTenantId, fetchUsers]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -115,7 +140,7 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">System Identity Repository</h1>
           <p className="text-slate-500 dark:text-slate-400 font-medium">Monitoring {pagination.total} neural identities across the network cluster.</p>
         </div>
-        <div className="flex gap-4 w-full md:w-auto">
+        <div className="flex gap-3 w-full md:w-auto items-center">
           <div className="relative flex-1 md:w-80">
             <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isLoading ? 'text-indigo-500' : 'text-slate-400'}`} />
             <input
@@ -123,7 +148,7 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
               placeholder="Query by identity name or mail..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium shadow-sm"
+              className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium shadow-sm text-slate-900 dark:text-white"
             />
             {isLoading && (
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -131,8 +156,93 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
               </div>
             )}
           </div>
+          <button
+            onClick={() => setShowFilters(v => !v)}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium ${showFilters ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/80'}`}
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+          </button>
+          <button 
+            onClick={() => fetchUsers(1, debouncedSearch)} 
+            disabled={isLoading} 
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+            title="Refresh users"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-indigo-500' : 'text-slate-500'}`} />
+          </button>
         </div>
       </div>
+
+      {/* Filters Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-wrap gap-6">
+              {/* Role Dropdown */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Role</label>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => { setSelectedRole(e.target.value); handlePageChange(1); }}
+                  className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="super_admin">Super Admin</option>
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+                  <option value="staff">Staff</option>
+                  <option value="user">User</option>
+                </select>
+              </div>
+
+              {/* Status Dropdown */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => { setSelectedStatus(e.target.value); handlePageChange(1); }}
+                  className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
+                >
+                  <option value="ALL">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="blocked">Blocked</option>
+                </select>
+              </div>
+
+              {/* Tenant Dropdown */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Store Partition</label>
+                <select
+                  value={selectedTenantId}
+                  onChange={(e) => { setSelectedTenantId(e.target.value); handlePageChange(1); }}
+                  className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px] max-w-[280px]"
+                >
+                  <option value="ALL">All Stores (Global)</option>
+                  {tenantsList.map((t) => (
+                    <option key={t.id} value={t.id}>{t.storeName} ({t.subdomain})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Clear filters */}
+              <div className="flex items-end">
+                <button
+                  onClick={() => { setSelectedRole('ALL'); setSelectedStatus('ALL'); setSelectedTenantId('ALL'); setSearchTerm(''); }}
+                  className="px-4 py-2 text-xs font-semibold text-rose-600 border border-rose-200 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Table Section */}
       <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none">

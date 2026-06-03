@@ -13,6 +13,7 @@ import {
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { PurchaseOrderRepository } from '../repositories/purchase-order.repository'
 import { GoodsReceivedNoteEntity } from '@/modules/admin/operations/logistics/grn/entities/grn.entity'
 import { GrnStatus } from '@/common/enums/grn-status.enum'
@@ -36,6 +37,7 @@ export class SupplierInvoiceService {
     @InjectQueue('accounting') private readonly accountingQueue: Queue,
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createInvoice(
@@ -150,6 +152,15 @@ export class SupplierInvoiceService {
       await queryRunner.commitTransaction()
 
       await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
+      if (finalInvoice.status === SupplierInvoiceStatus.DISCREPANCY) {
+        await this.notifySupplierInvoice(
+          finalInvoice,
+          'Supplier Invoice Discrepancy',
+          `Supplier Invoice #${finalInvoice.invoiceNumber} has 3-way match discrepancies.`,
+          'WARNING',
+          tenantId,
+        )
+      }
       return finalInvoice
     } catch (error) {
       await queryRunner.rollbackTransaction()
@@ -294,6 +305,15 @@ export class SupplierInvoiceService {
 
       await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
       await this.cacheService.delCache(`si:id:${invoice.id}`, tenantId)
+      await this.notifySupplierInvoice(
+        savedInvoice,
+        savedInvoice.status === SupplierInvoiceStatus.PAID
+          ? 'Supplier Invoice Paid'
+          : 'Supplier Invoice Payment Recorded',
+        `Payment of ${Number(dto.amount).toFixed(2)} recorded for Supplier Invoice #${savedInvoice.invoiceNumber}.`,
+        savedInvoice.status === SupplierInvoiceStatus.PAID ? 'SUCCESS' : 'INFO',
+        tenantId,
+      )
 
       return savedInvoice
     } catch (error) {
@@ -324,6 +344,13 @@ export class SupplierInvoiceService {
     const saved = await this.repository.saveInvoice(invoice)
     await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
     await this.cacheService.delCache(`si:id:${id}`, tenantId)
+    await this.notifySupplierInvoice(
+      saved,
+      'Supplier Invoice Status Updated',
+      `Supplier Invoice #${saved.invoiceNumber} is now ${saved.status}.`,
+      saved.status === SupplierInvoiceStatus.DISCREPANCY ? 'WARNING' : 'INFO',
+      tenantId,
+    )
     return saved
   }
 
@@ -455,6 +482,31 @@ export class SupplierInvoiceService {
       failedCount: errors.length,
       payments: results,
       failures: errors,
+    }
+  }
+
+  private async notifySupplierInvoice(
+    invoice: SupplierInvoiceEntity,
+    title: string,
+    message: string,
+    type: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      await this.notificationService.createNotification(
+        {
+          title,
+          message,
+          type,
+          link: `/admin/procurement/invoices`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e: any) {
+      this.logger.error(
+        `Failed to trigger supplier invoice notification for ${invoice.id}: ${e.message}`,
+      )
     }
   }
 }
