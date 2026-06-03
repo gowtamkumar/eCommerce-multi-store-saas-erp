@@ -3,32 +3,22 @@ import { InjectDataSource } from '@nestjs/typeorm'
 import { Job } from 'bullmq'
 import { Logger } from '@nestjs/common'
 import { DataSource } from 'typeorm'
-import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
 import { PushService } from '@/modules/admin/operations/infra/push/push.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
-import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderService } from '../services/order.service'
-import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
-import { AccountingOutboxService } from '@/modules/admin/operations/finance/accounting/services/accounting-outbox.service'
-import { ProductBatchService } from '@/modules/admin/operations/logistics/inventory-transaction/product-batch.service'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 
 @Processor('order')
 export class OrderProcessor extends WorkerHost {
   private readonly logger = new Logger(OrderProcessor.name)
 
   constructor(
-    private readonly invoiceService: InvoiceService,
     private readonly mailService: MailService,
     private readonly smsService: SmsService,
     private readonly pushService: PushService,
     private readonly notificationService: NotificationService,
     private readonly orderService: OrderService,
-    private readonly stockReservationService: StockReservationService,
-    private readonly accountingOutboxService: AccountingOutboxService,
-    private readonly productBatchService: ProductBatchService,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {
     super()
@@ -38,20 +28,8 @@ export class OrderProcessor extends WorkerHost {
     this.logger.log(`Processing job ${job.id} of type ${job.name}`)
     try {
       switch (job.name) {
-        case 'create-invoice':
-          return await this.handleCreateInvoice(job.data)
         case 'send-order-notification':
           return await this.handleSendOrderNotification(job.data)
-        case 'sweep-expired-reservations':
-          this.logger.log('Starting automated sweep of expired active reservations...')
-          const count = await this.stockReservationService.expireStale()
-          return { expiredCount: count }
-        case 'process-accounting-outbox':
-          this.logger.log('Starting execution of accounting outbox pending transactions sweep...')
-          await this.accountingOutboxService.processPending()
-          return { success: true }
-        case 'sweep-expired-batches':
-          return await this.handleSweepExpiredBatches()
         default:
           this.logger.warn(`Unknown job name: ${job.name}`)
       }
@@ -59,49 +37,6 @@ export class OrderProcessor extends WorkerHost {
       this.logger.error(`Failed to process job ${job.id}: ${error.message}`, error.stack)
       throw error
     }
-  }
-
-  /**
-   * Sweeps expired batches across every tenant and writes off any residual stock.
-   * The actual transactional work runs inside ProductBatchService.markExpiredBatches.
-   */
-  async handleSweepExpiredBatches() {
-    this.logger.log('Starting daily sweep of expired product batches...')
-    const tenantRepo = this.dataSource.getRepository(TenantEntity)
-    const tenants = await tenantRepo.find({ select: ['id'] })
-    let totalAffected = 0
-    for (const tenant of tenants) {
-      try {
-        const affected = await this.productBatchService.markExpiredBatches(tenant.id)
-        if (affected > 0) {
-          this.logger.log(`Tenant ${tenant.id}: marked ${affected} expired batch(es)`)
-        }
-        totalAffected += affected
-      } catch (err: any) {
-        this.logger.error(
-          `Tenant ${tenant.id}: expired-batch sweep failed: ${err.message}`,
-          err.stack,
-        )
-      }
-    }
-    this.logger.log(`Daily batch sweep finished. Total batches expired: ${totalAffected}`)
-    return { totalAffected }
-  }
-
-  async handleCreateInvoice(data: any) {
-    const { orderId, tenantId, paymentStatus } = data
-    this.logger.log(`Creating invoice for order ${orderId} (tenant: ${tenantId})`)
-
-    await this.invoiceService.createInvoice(
-      {
-        orderId: orderId,
-        issueDate: new Date(),
-        status: paymentStatus === 'PAID' ? InvoiceStatus.PAID : InvoiceStatus.PENDING,
-      } as any,
-      tenantId,
-    )
-
-    this.logger.log(`Invoice created successfully for order ${orderId}`)
   }
 
   async handleSendOrderNotification(data: any) {

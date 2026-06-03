@@ -1,5 +1,4 @@
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
-import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoice.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
 import { PushModule } from '@/modules/admin/operations/infra/push/push.module'
@@ -19,8 +18,6 @@ import { OrderProcessor } from './queue/order.processor'
 import { OrderProcessHelper } from './services/order-process.helper'
 
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
-import { FulfillmentModule } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.module'
-import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
 
 @Module({
@@ -33,15 +30,12 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     PaymentModule,
     CartModule,
     InventoryLedgerModule,
-    InvoiceModule,
     ShippingAddressModule,
     MailModule,
     SmsModule,
     PushModule,
     NotificationModule,
     PricingModule,
-    AccountingModule,
-    FulfillmentModule,
     LoyaltyModule,
   ],
   controllers: [OrderController, ReturnController], // Registered

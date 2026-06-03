@@ -6,13 +6,13 @@ import { Queue } from 'bullmq'
 export class StockReservationSchedulerService implements OnModuleInit {
   private readonly logger = new Logger(StockReservationSchedulerService.name)
 
-  constructor(@InjectQueue('order') private readonly orderQueue: Queue) {}
+  constructor(@InjectQueue('inventory') private readonly inventoryQueue: Queue) {}
 
   async onModuleInit() {
     this.logger.log('Initializing Stock Reservations Expiry Repeatable Scheduler...')
     try {
       // Setup repeatable cron job to sweep expired reservations every minute
-      await this.orderQueue.add(
+      await this.inventoryQueue.add(
         'sweep-expired-reservations',
         {},
         {
@@ -26,24 +26,9 @@ export class StockReservationSchedulerService implements OnModuleInit {
         'Successfully registered repeatable job "sweep-expired-reservations" (* * * * *)',
       )
 
-      // Setup repeatable cron job to process accounting outbox every minute
-      await this.orderQueue.add(
-        'process-accounting-outbox',
-        {},
-        {
-          repeat: {
-            pattern: '* * * * *', // Run every minute
-          },
-          jobId: 'process-accounting-outbox-repeatable',
-        },
-      )
-      this.logger.log(
-        'Successfully registered repeatable job "process-accounting-outbox" (* * * * *)',
-      )
-
       // Sweep expired product batches and write off residual stock once a day.
       // Runs at 02:00 server time — outside business hours.
-      await this.orderQueue.add(
+      await this.inventoryQueue.add(
         'sweep-expired-batches',
         {},
         {

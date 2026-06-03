@@ -27,6 +27,7 @@ import { StockReservationSchedulerService } from './stock-reservation-scheduler.
 
 import { ProductBatchService } from './product-batch.service'
 import { ProductBatchController } from './product-batch.controller'
+import { InventoryProcessor } from './inventory.processor'
 
 @Module({
   imports: [
@@ -46,7 +47,7 @@ import { ProductBatchController } from './product-batch.controller'
     CacheModule,
     NotificationModule,
     BullModule.registerQueue({
-      name: 'order',
+      name: 'inventory',
     }),
   ],
   controllers: [
@@ -64,6 +65,7 @@ import { ProductBatchController } from './product-batch.controller'
     StockReservationSchedulerService,
     StockTransferService,
     ProductBatchService,
+    InventoryProcessor,
   ],
   exports: [
     InventoryLedgerService,

@@ -6,7 +6,14 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
+import { EventBusService } from '@/common/event-bus/event-bus.service'
+import {
+  ORDER_CREDIT_PLACED_EVENT,
+  ORDER_PAID_EVENT,
+  ORDER_CANCELLED_EVENT,
+  ORDER_CONFIRMED_EVENT,
+  ORDER_PLACED_EVENT,
+} from '@/common/event-bus/events/order.events'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 import { StockReservationEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-reservation.entity'
@@ -29,7 +36,6 @@ import {
   NotFoundException,
   Inject,
 } from '@nestjs/common'
-import { FulfillmentService } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.service'
 import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
 import { PaymentEntity } from '../../payment/entities/payment.entity'
@@ -40,7 +46,6 @@ import { OrderProcessHelper } from './order-process.helper'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
 import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
@@ -59,15 +64,13 @@ export class OrderService {
     private readonly reservationService: StockReservationService,
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
-    private readonly invoiceService: InvoiceService,
+    private readonly eventBus: EventBusService,
     private readonly shippingAddressService: ShippingAddressService,
     private readonly cacheService: CacheService,
     private readonly orderProcessHelper: OrderProcessHelper,
     @InjectQueue('order') private readonly orderQueue: Queue,
-    private readonly fulfillmentService: FulfillmentService,
     private readonly notificationService: NotificationService,
     private readonly arService: ArService,
-    private readonly accountingService: AccountingService,
     private readonly walletService: WalletService,
     private readonly loyaltyService: LoyaltyService,
     private readonly referralService: ReferralService,
@@ -304,18 +307,17 @@ export class OrderService {
           lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: taxAmount })
         }
 
-        // Post General Ledger Double-Entry
-        await this.accountingService.createJournalEntry(
-          {
-            type: JournalType.SALES,
-            description: `B2B Credit Sale - Net 30 Terms - Order ID: ${savedOrder.id}`,
-            referenceType: 'ORDER',
-            referenceId: savedOrder.id,
-            lines,
-          },
+        this.eventBus.publish({
+          type: ORDER_CREDIT_PLACED_EVENT,
           ctx,
-          manager,
-        )
+          payload: {
+            orderId: savedOrder.id,
+            walletDeduction,
+            remainingAmount,
+            netRevenue,
+            taxAmount,
+          },
+        })
       }
 
       // 8. Link Inventory Transactions
@@ -370,15 +372,14 @@ export class OrderService {
 
     // 10. Queue background jobs after successful transaction commit
     try {
-      await this.orderQueue.add(
-        'create-invoice',
-        {
+      this.eventBus.publish({
+        type: ORDER_PLACED_EVENT,
+        ctx,
+        payload: {
           orderId: result.order.id,
-          tenantId,
           paymentStatus: result.order.paymentStatus,
         },
-        { removeOnComplete: true },
-      )
+      })
 
       if (result.order.paymentMethod === PaymentMethod.COD) {
         await this.orderQueue.add(
@@ -391,7 +392,7 @@ export class OrderService {
         )
       }
     } catch (jobError) {
-      this.logger.error('Failed to enqueue order background jobs', jobError)
+      this.logger.error('Failed to publish order placed event / enqueue notification', jobError)
     }
 
     return result
@@ -574,59 +575,36 @@ export class OrderService {
         }
 
         // Recognition of Cash/Payment and Sales Revenue for standard sales
-        if (savedOrder.paymentMethod !== PaymentMethod.ON_ACCOUNT) {
-          const orderTotal = Number(savedOrder.totalAmount)
-          const walletDeduction = Number(savedOrder.walletDeductionAmount || 0)
-          const remainingAmount = orderTotal - walletDeduction
-          const taxAmount = Number(savedOrder.taxAmount || 0)
-          const netRevenue = orderTotal - taxAmount
-
-          const lines = []
-          if (walletDeduction > 0) {
-            lines.push({
-              accountCode: '2300',
-              side: LedgerEntrySide.DEBIT,
-              amount: walletDeduction,
-            })
-          }
-          if (remainingAmount > 0) {
-            lines.push({
-              accountCode: '1000',
-              side: LedgerEntrySide.DEBIT,
-              amount: remainingAmount,
-            })
-          }
-          if (netRevenue > 0) {
-            lines.push({ accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netRevenue })
-          }
-          if (taxAmount > 0) {
-            lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: taxAmount })
-          }
-
-          await this.accountingService.createJournalEntry(
-            {
-              type: JournalType.SALES,
-              description: `Sales Revenue & Cash Recognition - Order ID: ${savedOrder.id}`,
-              referenceType: 'ORDER',
-              referenceId: savedOrder.id,
-              lines,
-            },
-            ctx,
-            queryRunner.manager,
-          )
-        }
+        this.eventBus.publish({
+          type: ORDER_PAID_EVENT,
+          ctx,
+          payload: {
+            orderId: savedOrder.id,
+            paymentMethod: savedOrder.paymentMethod,
+            walletDeduction: Number(savedOrder.walletDeductionAmount || 0),
+            remainingAmount: Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
+            netRevenue: Number(savedOrder.totalAmount) - Number(savedOrder.taxAmount || 0),
+            taxAmount: Number(savedOrder.taxAmount || 0),
+          },
+        })
       }
 
       // Sync Invoice Status
-      if (updateOrderDto.paymentStatus === PaymentStatus.PAID) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.PAID, ctx)
-      } else if (updateOrderDto.status === OrderStatus.CANCELLED) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.CANCELLED, ctx)
+      if (updateOrderDto.status === OrderStatus.CANCELLED) {
+        this.eventBus.publish({
+          type: ORDER_CANCELLED_EVENT,
+          ctx,
+          payload: { orderId: id },
+        })
       }
 
       // Check for Order Confirmation to Trigger Fulfillment
       if (updateOrderDto.status === OrderStatus.CONFIRMED && oldStatus !== OrderStatus.CONFIRMED) {
-        await this.fulfillmentService.createFromOrder(id, ctx)
+        this.eventBus.publish({
+          type: ORDER_CONFIRMED_EVENT,
+          ctx,
+          payload: { orderId: id },
+        })
       }
 
       await queryRunner.commitTransaction()

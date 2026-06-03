@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, Global } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { AccountEntity } from './entities/account.entity'
 import { JournalEntryEntity } from './entities/journal-entry.entity'
@@ -28,7 +28,11 @@ import { TaxRuleEntity } from './entities/tax-rule.entity'
 import { TaxService } from './services/tax.service'
 import { TaxController } from './controllers/tax.controller'
 import { AccountingEventSubscriber } from './accounting-event.subscriber'
+import { BullModule } from '@nestjs/bullmq'
+import { AccountingSchedulerService } from './accounting-scheduler.service'
+import { AccountingProcessor } from './accounting.processor'
 
+@Global()
 @Module({
   imports: [
     MailModule,
@@ -45,6 +49,9 @@ import { AccountingEventSubscriber } from './accounting-event.subscriber'
       DunningLogEntity,
       TaxRuleEntity,
     ]),
+    BullModule.registerQueue({
+      name: 'accounting',
+    }),
   ],
   controllers: [AccountingController, ArController, WalletController, TaxController],
   providers: [
@@ -58,6 +65,8 @@ import { AccountingEventSubscriber } from './accounting-event.subscriber'
     DunningService,
     TaxService,
     AccountingEventSubscriber,
+    AccountingSchedulerService,
+    AccountingProcessor,
   ],
   exports: [
     AccountingService,
