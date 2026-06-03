@@ -76,6 +76,10 @@ export class ReportService {
             break
         }
 
+        // Equal-length trailing window used to compute period-over-period growth.
+        const windowMs = Math.max(now.getTime() - startDate.getTime(), 1)
+        const prevStartDate = new Date(startDate.getTime() - windowMs)
+
         // Fetch optimized stats from SQL (parallelized)
         const [
           stats,
@@ -84,18 +88,22 @@ export class ReportService {
           lowStockProductsRaw,
           products,
           recentPurchaseOrders,
+          recentOrders,
+          prevPeriodSales,
         ] = await Promise.all([
           this.reportRepo.getDashboardStats(tenantId, startDate),
-          this.reportRepo.getSalesChartData(tenantId, 7),
+          this.reportRepo.getSalesChartData(tenantId, period),
           this.reportRepo.getMonthlyGrowth(tenantId),
           this.reportRepo.getLowStockProducts(tenantId, 10),
           this.productService.findAllProducts(ctx),
           this.reportRepo.getRecentPurchaseOrders(tenantId, 5),
+          this.reportRepo.getRecentOrders(tenantId, 5),
+          this.reportRepo.getSalesSumInRange(tenantId, prevStartDate, startDate),
         ])
 
         const recentProducts = products.products || []
 
-        // Calculate growth
+        // Month-over-month growth (kept for backward compatibility)
         let monthlyGrowth: number | null = null
         if (monthlySales.length >= 2) {
           const currentMonthSales = parseFloat(monthlySales[0].sales)
@@ -107,11 +115,28 @@ export class ReportService {
           }
         }
 
-        // Format chart data for UI
-        const salesData = chartData.map((d: any) => ({
-          name: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          sales: parseFloat(d.sales),
-        }))
+        // Period-over-period growth aligned with the selected period.
+        const periodSalesValue = parseFloat(stats.periodSales)
+        let periodGrowth: number | null = null
+        if (prevPeriodSales > 0) {
+          periodGrowth = ((periodSalesValue - prevPeriodSales) / prevPeriodSales) * 100
+        } else if (periodSalesValue > 0) {
+          periodGrowth = 100
+        }
+
+        // Average order value for the selected period.
+        const periodOrdersValue = parseInt(stats.periodOrders, 10)
+        const avgOrderValue = periodOrdersValue > 0 ? periodSalesValue / periodOrdersValue : 0
+
+        // Format chart data for UI (label granularity depends on period).
+        const salesData = chartData.map((d: any) => {
+          const date = new Date(d.date)
+          const name =
+            d.granularity === 'hour'
+              ? date.toLocaleTimeString('en-US', { hour: 'numeric' })
+              : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          return { name, sales: parseFloat(d.sales) }
+        })
 
         const lowStockProducts = lowStockProductsRaw.map((p: any) => ({
           id: p.id,
@@ -126,14 +151,17 @@ export class ReportService {
 
         return {
           totalSales: parseFloat(stats.totalSales),
-          periodSales: parseFloat(stats.periodSales),
-          periodOrders: parseInt(stats.periodOrders, 10),
+          periodSales: periodSalesValue,
+          periodOrders: periodOrdersValue,
           activeOrders: parseInt(stats.activeOrders, 10),
           totalProducts: parseInt(stats.totalProducts, 10),
           totalPages: parseInt(stats.totalPages, 10),
           salesData,
           monthlyGrowth,
+          periodGrowth,
+          avgOrderValue,
           recentProducts,
+          recentOrders,
           lowStockProducts,
           supplierStats: {
             totalSuppliers: parseInt(stats.totalSuppliers, 10),

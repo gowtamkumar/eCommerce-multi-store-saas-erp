@@ -17,10 +17,9 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 export class CustomerController {
   private readonly logger = new Logger(CustomerController.name)
 
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get()
-  @RequirePermissions(SystemPermissions.CRM_READ)
   @RequirePermissions(SystemPermissions.CRM_READ)
   async findAll(
     @RequestContext() ctx: RequestContextDto,

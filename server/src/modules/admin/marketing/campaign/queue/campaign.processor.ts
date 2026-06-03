@@ -82,7 +82,7 @@ export class CampaignProcessor extends WorkerHost {
           title: 'Campaign Budget Alert',
           message: `Campaign '${campaign.name}' has reached 90% of its budget.`,
           type: 'WARNING',
-          link: `/admin/marketing/campaigns/${campaign.id}`,
+          link: `/admin/campaigns`,
           userId: null as any, // Send to all admins
         },
         tenantId,

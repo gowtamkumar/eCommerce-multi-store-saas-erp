@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
 import toast from 'react-hot-toast';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 interface ImpersonationLog {
     id: string;
@@ -101,6 +102,60 @@ export default function SecurityDashboardPage() {
             return next;
         });
     };
+
+    const columns: DataTableColumn<ImpersonationLog>[] = [
+        {
+            key: 'actorName',
+            header: 'Session Operator',
+            cell: (log) => <span className="font-bold text-slate-850 dark:text-slate-200">{log.actorName}</span>
+        },
+        {
+            key: 'targetIdentity',
+            header: 'Target Identity',
+            cell: (log) => (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                        {log.newValue?.targetUsername || 'Unknown User'}
+                    </span>
+                    <span className="text-xs text-slate-400">{log.newValue?.targetUserId || 'N/A'}</span>
+                </div>
+            )
+        },
+        {
+            key: 'ipAddress',
+            header: 'IP Address',
+            className: 'text-xs font-mono text-slate-500 dark:text-slate-400',
+            cell: (log) => <span>{log.ipAddress || '127.0.0.1'}</span>
+        },
+        {
+            key: 'createdAt',
+            header: 'Date / Time',
+            className: 'text-xs text-slate-400 font-bold',
+            cell: (log) => <span>{new Date(log.createdAt).toLocaleString()}</span>
+        },
+        {
+            key: 'action',
+            header: 'Security Action',
+            cell: (log) => (
+                <span className="flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full text-[9px] font-black tracking-wider uppercase bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
+                    <ShieldAlert className="w-3 h-3" /> IMPERSONATION
+                </span>
+            )
+        }
+    ];
+
+    const pagination = {
+        page,
+        total: totalLogs,
+        totalPages,
+        onPageChange: (p: number) => setPage(p)
+    };
+
+    const paginationSummary = (
+        <span className="text-xs text-slate-400 font-bold">
+            Showing page {page} of {totalPages} ({totalLogs} events logged)
+        </span>
+    );
 
     return (
         <div className="space-y-8">
@@ -204,8 +259,8 @@ export default function SecurityDashboardPage() {
             </div>
 
             {/* Impersonation Logs Table */}
-            <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
+            <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-sm overflow-hidden animate-in fade-in duration-500">
+                <div className="p-8 border-b border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">Impersonation Registry</h2>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">Trace super admin store login sessions</p>
@@ -219,87 +274,17 @@ export default function SecurityDashboardPage() {
                     </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-900/40 text-slate-400 font-black uppercase text-[10px] tracking-wider">
-                                <th className="px-6 py-4">Session Operator</th>
-                                <th className="px-6 py-4">Target Identity</th>
-                                <th className="px-6 py-4">IP Address</th>
-                                <th className="px-6 py-4">Date / Time</th>
-                                <th className="px-6 py-4">Security Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {isLoadingLogs ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
-                                        <RefreshCw className="w-6 h-6 animate-spin text-indigo-500 mx-auto mb-2" />
-                                        Refreshing impersonation trace...
-                                    </td>
-                                </tr>
-                            ) : logs.length > 0 ? (
-                                logs.map((log) => (
-                                    <tr key={log.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-700/20 transition-all">
-                                        <td className="px-6 py-4 font-bold text-slate-850 dark:text-slate-200">
-                                            {log.actorName}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-900 dark:text-white">
-                                                    {log.newValue?.targetUsername || 'Unknown User'}
-                                                </span>
-                                                <span className="text-xs text-slate-400">{log.newValue?.targetUserId || 'N/A'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-xs font-mono text-slate-500 dark:text-slate-400">
-                                            {log.ipAddress || '127.0.0.1'}
-                                        </td>
-                                        <td className="px-6 py-4 text-xs text-slate-400 font-bold">
-                                            {new Date(log.createdAt).toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="flex items-center gap-1.5 w-fit px-2.5 py-1 rounded-full text-[9px] font-black tracking-wider uppercase bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
-                                                <ShieldAlert className="w-3 h-3" /> IMPERSONATION
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
-                                        No impersonation logs recorded in database.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="p-6 border-t border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-bold">
-                            Showing page {page} of {totalPages} ({totalLogs} events logged)
-                        </span>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setPage(p => Math.max(p - 1, 1))}
-                                disabled={page === 1}
-                                className="p-2 border border-slate-100 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-all"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setPage(p => Math.min(p + 1, totalPages))}
-                                disabled={page === totalPages}
-                                className="p-2 border border-slate-100 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-all"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <DataTable
+                    data={logs}
+                    columns={columns}
+                    getRowKey={(log) => log.id}
+                    loading={isLoadingLogs}
+                    loadingLabel="Refreshing impersonation trace..."
+                    emptyLabel="No impersonation logs recorded in database."
+                    containerClassName="border-0 shadow-none rounded-t-none rounded-b-[2rem] bg-transparent"
+                    pagination={pagination}
+                    paginationSummary={paginationSummary}
+                />
             </div>
         </div>
     );

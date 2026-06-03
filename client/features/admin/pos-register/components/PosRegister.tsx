@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Monitor, 
@@ -23,7 +23,7 @@ import {
 import { fetchAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/shared/ConfirmModal';
-import Pagination from '@/components/shared/Pagination';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 export default function PosRegisters() {
     const [activeTab, setActiveTab] = useState<'registers' | 'shifts'>('registers');
@@ -201,6 +201,111 @@ export default function PosRegisters() {
         currentPage * itemsPerPage
     );
 
+    const shiftColumns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'user',
+            header: 'Cashier',
+            className: 'p-4 font-bold text-slate-800 dark:text-slate-200',
+            cell: (shift) => shift.user?.username || shift.user?.email || shift.userId.substring(0, 8),
+        },
+        {
+            key: 'register',
+            header: 'Terminal',
+            className: 'p-4 font-semibold text-slate-600 dark:text-slate-300',
+            cell: (shift) => shift.register?.name || 'N/A',
+        },
+        {
+            key: 'openingTime',
+            header: 'Opened At',
+            className: 'p-4 text-xs text-slate-500 dark:text-slate-400 font-medium',
+            cell: (shift) => new Date(shift.openingTime).toLocaleString(),
+        },
+        {
+            key: 'closingTime',
+            header: 'Closed At',
+            className: 'p-4 text-xs text-slate-500 dark:text-slate-400 font-medium',
+            cell: (shift) => shift.closingTime ? new Date(shift.closingTime).toLocaleString() : '-',
+        },
+        {
+            key: 'expectedClosingBalance',
+            header: 'Expected',
+            headerClassName: 'text-right',
+            className: 'p-4 text-right font-semibold text-slate-700 dark:text-slate-355',
+            cell: (shift) => `$${Number(shift.expectedClosingBalance).toFixed(2)}`,
+        },
+        {
+            key: 'closingBalance',
+            header: 'Audited Actual',
+            headerClassName: 'text-right',
+            className: 'p-4 text-right font-extrabold text-slate-800 dark:text-slate-200',
+            cell: (shift) => shift.closingBalance !== null ? `$${Number(shift.closingBalance).toFixed(2)}` : '-',
+        },
+        {
+            key: 'variance',
+            header: 'Variance',
+            headerClassName: 'text-right',
+            className: 'p-4 text-right font-black',
+            cell: (shift) => {
+                const variance = shift.difference !== null ? Number(shift.difference) : 0;
+                if (shift.status !== 'CLOSED') {
+                    return <span className="text-slate-400 font-bold">-</span>;
+                }
+                if (variance === 0) {
+                    return <span className="text-emerald-600 dark:text-emerald-400">$0.00</span>;
+                }
+                if (variance > 0) {
+                    return <span className="text-emerald-500">+${variance.toFixed(2)}</span>;
+                }
+                return <span className="text-red-500">-${Math.abs(variance).toFixed(2)}</span>;
+            },
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            headerClassName: 'text-center',
+            className: 'p-4 text-center',
+            cell: (shift) => (
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${
+                    shift.status === 'OPEN'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-455'
+                        : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                }`}>
+                    {shift.status === 'OPEN' ? 'Open / Active' : 'Audited'}
+                </span>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-center',
+            className: 'p-4 text-center',
+            cell: (shift) => (
+                <button
+                    type="button"
+                    onClick={() => setSelectedShift(shift)}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-brand-600 rounded-lg transition-colors inline-flex items-center gap-1 font-bold text-xs"
+                    title="View Shift Detail"
+                >
+                    <Info className="w-4 h-4" />
+                    Details
+                </button>
+            ),
+        },
+    ], []);
+
+    const dataTablePagination = useMemo(() => ({
+        page: currentPage,
+        total: filteredShifts.length,
+        totalPages: totalPages,
+        onPageChange: (p: number) => setCurrentPage(p),
+    }), [currentPage, filteredShifts.length, totalPages]);
+
+    const dataTablePaginationSummary = useMemo(() => (
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            Page <span className="text-slate-900 dark:text-white px-1">{currentPage}</span> of <span className="text-slate-900 dark:text-white px-1">{totalPages}</span>
+        </p>
+    ), [currentPage, totalPages]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -370,116 +475,18 @@ export default function PosRegisters() {
                         </div>
                     </div>
 
-                    {loadingShifts ? (
-                        <div className="flex items-center justify-center min-h-[250px]">
-                            <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
-                        </div>
-                    ) : (
-                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse text-sm">
-                                    <thead>
-                                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 font-bold border-b border-slate-100 dark:border-slate-850">
-                                            <th className="p-4">Cashier</th>
-                                            <th className="p-4">Terminal</th>
-                                            <th className="p-4">Opened At</th>
-                                            <th className="p-4">Closed At</th>
-                                            <th className="p-4 text-right">Expected</th>
-                                            <th className="p-4 text-right">Audited Actual</th>
-                                            <th className="p-4 text-right">Variance</th>
-                                            <th className="p-4 text-center">Status</th>
-                                            <th className="p-4 text-center">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-850">
-                                        {paginatedShifts.map((shift) => {
-                                            const variance = shift.difference !== null ? Number(shift.difference) : 0;
-                                            return (
-                                                <tr key={shift.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/30 transition-colors">
-                                                    <td className="p-4 font-bold text-slate-800 dark:text-slate-200">
-                                                        {shift.user?.username || shift.user?.email || shift.userId.substring(0, 8)}
-                                                    </td>
-                                                    <td className="p-4 font-semibold text-slate-600 dark:text-slate-300">
-                                                        {shift.register?.name || 'N/A'}
-                                                    </td>
-                                                    <td className="p-4 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                                        {new Date(shift.openingTime).toLocaleString()}
-                                                    </td>
-                                                    <td className="p-4 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                                        {shift.closingTime ? new Date(shift.closingTime).toLocaleString() : '-'}
-                                                    </td>
-                                                    <td className="p-4 text-right font-semibold text-slate-700 dark:text-slate-355">
-                                                        ${Number(shift.expectedClosingBalance).toFixed(2)}
-                                                    </td>
-                                                    <td className="p-4 text-right font-extrabold text-slate-800 dark:text-slate-200">
-                                                        {shift.closingBalance !== null ? `$${Number(shift.closingBalance).toFixed(2)}` : '-'}
-                                                    </td>
-                                                    <td className="p-4 text-right font-black">
-                                                        {shift.status === 'CLOSED' ? (
-                                                            variance === 0 ? (
-                                                                <span className="text-emerald-600 dark:text-emerald-400">$0.00</span>
-                                                            ) : variance > 0 ? (
-                                                                <span className="text-emerald-500">
-                                                                    +${variance.toFixed(2)}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-red-500">
-                                                                    -${Math.abs(variance).toFixed(2)}
-                                                                </span>
-                                                            )
-                                                        ) : (
-                                                            <span className="text-slate-400 font-bold">-</span>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-4 text-center">
-                                                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${
-                                                            shift.status === 'OPEN'
-                                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-455'
-                                                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                                                        }`}>
-                                                            {shift.status === 'OPEN' ? 'Open / Active' : 'Audited'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4 text-center">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setSelectedShift(shift)}
-                                                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-brand-600 rounded-lg transition-colors inline-flex items-center gap-1 font-bold text-xs"
-                                                            title="View Shift Detail"
-                                                        >
-                                                            <Info className="w-4 h-4" />
-                                                            Details
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                        {filteredShifts.length === 0 && (
-                                            <tr>
-                                                <td colSpan={9} className="p-12 text-center text-slate-400 font-semibold">
-                                                    No cashier shift audits recorded.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {totalPages > 1 && (
-                                <div className="px-8 py-5 border-t border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                                        Page <span className="text-slate-900 dark:text-white px-1">{currentPage}</span> of <span className="text-slate-900 dark:text-white px-1">{totalPages}</span>
-                                    </p>
-                                    <Pagination
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        onPageChange={(p) => setCurrentPage(p)}
-                                        loading={loadingShifts}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    <DataTable
+                        data={paginatedShifts}
+                        columns={shiftColumns}
+                        getRowKey={(shift) => shift.id}
+                        loading={loadingShifts}
+                        loadingLabel="Scanning shifts registry..."
+                        emptyLabel="No cashier shift audits recorded."
+                        containerClassName="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden"
+                        minWidthClassName="min-w-[1000px]"
+                        pagination={dataTablePagination}
+                        paginationSummary={dataTablePaginationSummary}
+                    />
                 </div>
             )}
 

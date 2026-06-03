@@ -1,100 +1,63 @@
 'use client';
 
-import { useSettings } from '@/hooks/SettingsContext';
-import { useSettings as useLocalSettings } from '@/hooks/SettingsContext'; // Re-importing to ensure access if needed
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { useDebounce } from '@/hooks/useDebounce';
+import { fetchAPI } from '@/services/api';
 import { 
     Plus, Search, Package, ArrowUpCircle, ArrowDownCircle, 
-    ChevronLeft, ChevronRight, Loader2, Filter
+    Filter
 } from 'lucide-react';
-import { useEffect, useState, memo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import StockAdjustmentModal from './StockAdjustmentModal';
-import { fetchAPI } from '@/services/api';
-import { useDebounce } from '@/hooks/useDebounce';
 
-// Memoized Transaction Row component to prevent full table re-renders
-const TransactionRow = memo(({ transaction }: { transaction: any }) => {
-    const isPositive = [
-        'PURCHASE', 'RETURN', 'INITIAL_BALANCE', 'TRANSFER_IN'
-    ].includes(transaction.type) || (transaction.type === 'ADJUSTMENT' && transaction.quantity > 0);
+type WarehouseOption = {
+    id: string;
+    name: string;
+};
 
-    const typeLabels: Record<string, string> = {
-        PURCHASE: 'Purchase',
-        SALE: 'Sale',
-        TRANSFER_IN: 'Transfer In',
-        TRANSFER_OUT: 'Transfer Out',
-        ADJUSTMENT: 'Adjustment',
-        RETURN: 'Return',
-        DAMAGE: 'Damage',
-        INITIAL_BALANCE: 'Initial'
+type InventoryTransaction = {
+    id: string;
+    createdAt: string;
+    type: string;
+    quantity: number;
+    balanceAfter: number;
+    referenceType?: string;
+    referenceId?: string;
+    product?: {
+        name?: string;
     };
+    variant?: {
+        combination?: Record<string, string>;
+    };
+    warehouse?: {
+        name?: string;
+    };
+};
 
-    return (
-        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-            <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                {new Date(transaction.createdAt).toLocaleString()}
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg">
-                        <Package className="w-4 h-4 text-slate-500" />
-                    </div>
-                    <div>
-                        <span className="text-slate-900 dark:text-white font-medium block">
-                            {transaction.product?.name}
-                        </span>
-                        {transaction.variant && (
-                            <span className="text-[10px] text-slate-400 font-mono">
-                                {Object.entries(transaction.variant.combination || {}).map(([k, v]) => `${k}: ${v}`).join(' / ')}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    {transaction.warehouse?.name || 'Global'}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <div className={`flex items-center gap-1.5 font-medium ${
-                    isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                }`}>
-                    {isPositive ? <ArrowUpCircle className="w-4 h-4" /> : <ArrowDownCircle className="w-4 h-4" />}
-                    {typeLabels[transaction.type] || transaction.type}
-                </div>
-            </td>
-            <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
-                {transaction.quantity > 0 ? '+' : ''}{transaction.quantity}
-            </td>
-            <td className="px-6 py-4">
-                <div className="text-sm font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 px-2 py-1 rounded-lg w-fit">
-                    {transaction.balanceAfter}
-                </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                    {transaction.referenceType}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <code className="text-[10px] bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400 font-mono">
-                    {transaction.referenceId || 'N/A'}
-                </code>
-            </td>
-        </tr>
-    );
-});
+const typeLabels: Record<string, string> = {
+    PURCHASE: 'Purchase',
+    SALE: 'Sale',
+    TRANSFER_IN: 'Transfer In',
+    TRANSFER_OUT: 'Transfer Out',
+    ADJUSTMENT: 'Adjustment',
+    RETURN: 'Return',
+    DAMAGE: 'Damage',
+    INITIAL_BALANCE: 'Initial'
+};
 
-TransactionRow.displayName = 'TransactionRow';
+const isPositiveTransaction = (transaction: InventoryTransaction) => (
+    ['PURCHASE', 'RETURN', 'INITIAL_BALANCE', 'TRANSFER_IN'].includes(transaction.type) ||
+    (transaction.type === 'ADJUSTMENT' && transaction.quantity > 0)
+);
 
 export default function InventoryList() {
-    const [transactions, setTransactions] = useState<any[]>([]);
+    const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [warehouseFilter, setWarehouseFilter] = useState('');
-    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
     const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
     const [pagination, setPagination] = useState({
         page: 1,
@@ -144,11 +107,17 @@ export default function InventoryList() {
     }, []);
 
     useEffect(() => {
-        fetchWarehouses();
+        const timeout = window.setTimeout(() => {
+            void fetchWarehouses();
+        }, 0);
+        return () => window.clearTimeout(timeout);
     }, [fetchWarehouses]);
 
     useEffect(() => {
-        fetchTransactions(1, debouncedSearch, typeFilter, warehouseFilter);
+        const timeout = window.setTimeout(() => {
+            void fetchTransactions(1, debouncedSearch, typeFilter, warehouseFilter);
+        }, 0);
+        return () => window.clearTimeout(timeout);
     }, [debouncedSearch, typeFilter, warehouseFilter, fetchTransactions]);
 
     const handlePageChange = (newPage: number) => {
@@ -156,6 +125,91 @@ export default function InventoryList() {
             fetchTransactions(newPage, debouncedSearch, typeFilter, warehouseFilter);
         }
     };
+
+    const columns = useMemo<DataTableColumn<InventoryTransaction>[]>(() => [
+        {
+            key: 'date',
+            header: 'Date',
+            className: 'text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap',
+            cell: (transaction) => new Date(transaction.createdAt).toLocaleString(),
+        },
+        {
+            key: 'product',
+            header: 'Product',
+            cell: (transaction) => (
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg">
+                        <Package className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div>
+                        <span className="text-slate-900 dark:text-white font-medium block">
+                            {transaction.product?.name || 'Unknown product'}
+                        </span>
+                        {transaction.variant && (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                                {Object.entries(transaction.variant.combination || {}).map(([k, v]) => `${k}: ${v}`).join(' / ')}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'warehouse',
+            header: 'Warehouse',
+            cell: (transaction) => (
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    {transaction.warehouse?.name || 'Global'}
+                </span>
+            ),
+        },
+        {
+            key: 'type',
+            header: 'Type',
+            cell: (transaction) => {
+                const isPositive = isPositiveTransaction(transaction);
+                return (
+                    <div className={`flex items-center gap-1.5 font-medium ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {isPositive ? <ArrowUpCircle className="w-4 h-4" /> : <ArrowDownCircle className="w-4 h-4" />}
+                        {typeLabels[transaction.type] || transaction.type}
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'qty',
+            header: 'Qty',
+            className: 'font-bold text-slate-900 dark:text-white',
+            cell: (transaction) => `${transaction.quantity > 0 ? '+' : ''}${transaction.quantity}`,
+        },
+        {
+            key: 'balance',
+            header: 'Balance',
+            cell: (transaction) => (
+                <div className="text-sm font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 px-2 py-1 rounded-lg w-fit">
+                    {transaction.balanceAfter}
+                </div>
+            ),
+        },
+        {
+            key: 'referenceType',
+            header: 'Ref Type',
+            cell: (transaction) => (
+                <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                    {transaction.referenceType || 'N/A'}
+                </span>
+            ),
+        },
+        {
+            key: 'referenceId',
+            header: 'Ref ID',
+            cell: (transaction) => (
+                <code className="text-[10px] bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400 font-mono">
+                    {transaction.referenceId || 'N/A'}
+                </code>
+            ),
+        },
+    ], []);
 
     return (
         <div className="space-y-6">
@@ -221,71 +275,25 @@ export default function InventoryList() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Date</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Product</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Warehouse</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Type</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Qty</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Balance</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ref Type</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ref ID</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
-                                            <span>Loading history...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : transactions.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="px-6 py-8 text-center text-slate-500 font-medium">
-                                        {searchQuery || typeFilter ? 'No records match your criteria.' : 'No inventory records found.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                transactions.map((t) => (
-                                    <TransactionRow key={t.id} transaction={t} />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Controls */}
-                {!loading && pagination.totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/20">
-                        <p className="text-sm text-slate-500 font-medium">
-                            Showing page <span className="font-bold text-slate-900 dark:text-white">{pagination.page}</span> of <span className="font-bold">{pagination.totalPages}</span>
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50 hover:bg-white dark:hover:bg-slate-700 transition-colors shadow-sm"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50 hover:bg-white dark:hover:bg-slate-700 transition-colors shadow-sm"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+            <DataTable
+                data={transactions}
+                columns={columns}
+                getRowKey={(transaction) => transaction.id}
+                loading={loading}
+                loadingLabel="Loading history..."
+                emptyLabel={searchQuery || typeFilter ? 'No records match your criteria.' : 'No inventory records found.'}
+                pagination={{
+                    page: pagination.page,
+                    total: pagination.total,
+                    totalPages: pagination.totalPages,
+                    onPageChange: handlePageChange,
+                }}
+                paginationSummary={
+                    <p className="text-sm text-slate-500 font-medium">
+                        Showing page <span className="font-bold text-slate-900 dark:text-white">{pagination.page}</span> of <span className="font-bold">{pagination.totalPages}</span>
+                    </p>
+                }
+            />
         </div>
     );
 }

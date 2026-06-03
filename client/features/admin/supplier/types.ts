@@ -6,9 +6,13 @@ export interface Supplier {
     email?: string;
     phone?: string;
     address?: string;
-    category?: any;
+    category?: {
+        id?: string;
+        name?: string;
+    };
     rating?: number;
     leadTimeDays?: number;
+    outstandingBalance?: number;
     isActive?: boolean;
     createdAt?: string;
     updatedAt?: string;

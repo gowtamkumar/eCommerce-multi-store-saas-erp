@@ -28,7 +28,7 @@ export class LeadService {
           title: 'New Lead Generated',
           message: `New lead "${lead.name || lead.email}" generated from Website.`,
           type: 'SUCCESS',
-          link: `/admin/marketing/leads`,
+          link: `/admin/leads`,
           userId: null as any, // Send to all admins
         },
         tenantId,

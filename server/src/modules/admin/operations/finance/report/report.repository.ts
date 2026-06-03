@@ -32,7 +32,39 @@ export class ReportRepository {
     return result[0]
   }
 
-  async getSalesChartData(tenantId: string, days: number = 7) {
+  /**
+   * Period-aware sales series:
+   *  - day   → 24 hourly buckets for the current day
+   *  - week  → 7 daily buckets
+   *  - month → 30 daily buckets
+   * Each row is `{ date, sales, granularity }` so the service can format labels.
+   */
+  async getSalesChartData(tenantId: string, period: string = 'month') {
+    if (period === 'day') {
+      const query = `
+        WITH hours AS (
+          SELECT generate_series(
+            date_trunc('day', CURRENT_DATE),
+            date_trunc('day', CURRENT_DATE) + INTERVAL '23 hours',
+            INTERVAL '1 hour'
+          ) as bucket
+        )
+        SELECT
+          h.bucket as date,
+          COALESCE(SUM(p.amount), 0) as sales,
+          'hour' as granularity
+        FROM hours h
+        LEFT JOIN payments p
+          ON date_trunc('hour', p.created_at) = h.bucket
+          AND p.tenant_id = $1
+          AND p.status = 'completed'
+        GROUP BY h.bucket
+        ORDER BY h.bucket ASC
+      `
+      return this.dataSource.query(query, [tenantId])
+    }
+
+    const days = period === 'week' ? 7 : 30
     const query = `
       WITH RECURSIVE days AS (
         SELECT CURRENT_DATE - INTERVAL '1 day' * (n - 1) as day_date
@@ -40,13 +72,44 @@ export class ReportRepository {
       )
       SELECT 
         d.day_date as date,
-        COALESCE(SUM(p.amount), 0) as sales
+        COALESCE(SUM(p.amount), 0) as sales,
+        'day' as granularity
       FROM days d
       LEFT JOIN payments p ON p.created_at::date = d.day_date AND p.tenant_id = $1 AND p.status = 'completed'
       GROUP BY d.day_date
       ORDER BY d.day_date ASC
     `
     return this.dataSource.query(query, [tenantId, days])
+  }
+
+  /** Sum of completed payment amounts within an inclusive date range. */
+  async getSalesSumInRange(tenantId: string, startDate: Date, endDate: Date): Promise<number> {
+    const result = await this.dataSource.query(
+      `SELECT COALESCE(SUM(amount), 0) as sales
+       FROM payments
+       WHERE tenant_id = $1 AND status = 'completed' AND created_at >= $2 AND created_at < $3`,
+      [tenantId, startDate, endDate],
+    )
+    return parseFloat(result[0]?.sales ?? 0)
+  }
+
+  /** Most recent customer orders for the dashboard activity feed. */
+  async getRecentOrders(tenantId: string, limit: number = 5) {
+    const query = `
+      SELECT
+        o.id,
+        o.customer_name as "customerName",
+        o.total_amount as "totalAmount",
+        o.status,
+        o.payment_status as "paymentStatus",
+        o.currency,
+        o.created_at as "createdAt"
+      FROM orders o
+      WHERE o.tenant_id = $1
+      ORDER BY o.created_at DESC
+      LIMIT $2
+    `
+    return this.dataSource.query(query, [tenantId, limit])
   }
 
   async getMonthlyGrowth(tenantId: string) {

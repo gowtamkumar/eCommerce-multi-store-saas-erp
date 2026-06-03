@@ -3,48 +3,11 @@
 import { useDebounce } from '@/hooks/useDebounce';
 import { LeadStatus } from '@/lib/enums/lead-status.enum';
 import { fetchAPI } from '@/services/api';
-import { ChevronLeft, ChevronRight, Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Pagination } from '../../customer/type';
-import { LeadRowProps } from '../type';
-
-const LeadRow = memo(({ msg, updatingStatus, onStatusUpdate, getStatusColor }: LeadRowProps) => {
-    return (
-        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-            <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                {new Date(msg.createdAt).toLocaleDateString()}
-            </td>
-            <td className="px-6 py-4">
-                <div className="font-medium text-slate-900 dark:text-white">{msg.name}</div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">{msg.email}</div>
-            </td>
-            <td className="px-6 py-4 text-slate-900 dark:text-white">{msg.phone}</td>
-            <td className="px-6 py-4 text-slate-900 dark:text-white">{msg.subject}</td>
-            <td className="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={msg.message}>
-                {msg.message}
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
-                    <select
-                        value={msg.status}
-                        onChange={(e) => onStatusUpdate(msg.id, e.target.value)}
-                        disabled={updatingStatus === msg.id}
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border-none cursor-pointer focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none ${getStatusColor(msg.status)}`}
-                    >
-                        {Object.values(LeadStatus).map((status) => (
-                            <option key={status} value={status} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                                {status.toUpperCase()}
-                            </option>
-                        ))}
-                    </select>
-                    {updatingStatus === msg.id && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
-                </div>
-            </td>
-        </tr>
-    );
-});
-LeadRow.displayName = 'LeadRow';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 export default function Lead() {
     const [messages, setMessages] = useState([]);
@@ -174,6 +137,83 @@ export default function Lead() {
         }
     }, []);
 
+    const columns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'createdAt',
+            header: 'Date',
+            className: 'px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap',
+            cell: (msg) => new Date(msg.createdAt).toLocaleDateString(),
+        },
+        {
+            key: 'name',
+            header: 'Name',
+            className: 'px-6 py-4',
+            cell: (msg) => (
+                <div>
+                    <div className="font-medium text-slate-900 dark:text-white">{msg.name}</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">{msg.email}</div>
+                </div>
+            ),
+        },
+        {
+            key: 'phone',
+            header: 'Phone',
+            className: 'px-6 py-4 text-slate-900 dark:text-white',
+            cell: (msg) => msg.phone,
+        },
+        {
+            key: 'subject',
+            header: 'Subject',
+            className: 'px-6 py-4 text-slate-900 dark:text-white',
+            cell: (msg) => msg.subject,
+        },
+        {
+            key: 'message',
+            header: 'Message',
+            className: 'px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate',
+            cell: (msg) => (
+                <span title={msg.message}>
+                    {msg.message}
+                </span>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            className: 'px-6 py-4',
+            cell: (msg) => (
+                <div className="flex items-center gap-2">
+                    <select
+                        value={msg.status}
+                        onChange={(e) => handleStatusUpdate(msg.id, e.target.value)}
+                        disabled={updatingStatus === msg.id}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border-none cursor-pointer focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none ${getStatusColor(msg.status)}`}
+                    >
+                        {Object.values(LeadStatus).map((status) => (
+                            <option key={status} value={status} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                                {status.toUpperCase()}
+                            </option>
+                        ))}
+                    </select>
+                    {updatingStatus === msg.id && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                </div>
+            ),
+        },
+    ], [updatingStatus, handleStatusUpdate, getStatusColor]);
+
+    const dataTablePagination = useMemo(() => ({
+        page: pagination.page || 1,
+        total: pagination.total || 0,
+        totalPages: pagination.totalPages || 1,
+        onPageChange: handlePageChange,
+    }), [pagination, handlePageChange]);
+
+    const dataTablePaginationSummary = useMemo(() => (
+        <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:block">
+            Page {pagination.page || 1} of {pagination.totalPages || 1}
+        </span>
+    ), [pagination]);
+
     return (
         <div>
             <div className="flex justify-between items-center mb-8">
@@ -212,7 +252,7 @@ export default function Lead() {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none appearance-none transition-all"
+                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none appearance-none transition-all cursor-pointer"
                         >
                             <option value="">All Statuses</option>
                             {Object.values(LeadStatus).map((status) => (
@@ -229,76 +269,21 @@ export default function Lead() {
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white">Date</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white">Name</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white">Phone</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white">Subject</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white">Message</th>
-                                <th className="px-6 py-4 font-semibold text-slate-900 dark:text-white">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                            Loading subscribers...
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : messages.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                        {searchQuery ? 'No subscribers match your search.' : 'No subscribers found.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                messages.map((msg: any) => (
-                                    <LeadRow
-                                        key={msg.id}
-                                        msg={msg}
-                                        updatingStatus={updatingStatus}
-                                        onStatusUpdate={handleStatusUpdate}
-                                        getStatusColor={getStatusColor}
-                                    />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable
+                    data={messages}
+                    columns={columns}
+                    getRowKey={(msg) => msg.id}
+                    loading={loading}
+                    loadingLabel="Loading subscribers..."
+                    emptyLabel={
+                        searchQuery ? 'No subscribers match your search.' : 'No subscribers found.'
+                    }
+                    containerClassName="border-0 shadow-none rounded-t-none bg-transparent"
+                    rowClassName="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    pagination={dataTablePagination}
+                    paginationSummary={dataTablePaginationSummary}
+                />
             </div>
-
-            {/* Pagination Controls */}
-            {pagination?.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-6">
-                    <button
-                        onClick={() => handlePageChange((pagination?.page || 1) - 1)}
-                        disabled={(pagination?.page || 1) === 1 || loading}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                            Page {pagination?.page || 1} of {pagination?.totalPages || 1}
-                        </span>
-                    </div>
-
-                    <button
-                        onClick={() => handlePageChange((pagination?.page || 1) + 1)}
-                        disabled={(pagination?.page || 1) === (pagination?.totalPages || 1) || loading}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </button>
-                </div>
-            )}
         </div>
     );
 }

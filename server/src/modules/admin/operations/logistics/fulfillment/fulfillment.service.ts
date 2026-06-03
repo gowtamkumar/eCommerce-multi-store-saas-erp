@@ -353,7 +353,7 @@ export class FulfillmentService {
           title: 'Order Shipped',
           message: `Order #${orderId.substring(0, 8)} has been shipped.`,
           type: 'INFO',
-          link: `/admin/sales/orders/${orderId}`,
+          link: `/admin/orders/${orderId}`,
           userId: null as any,
         },
         tenantId,

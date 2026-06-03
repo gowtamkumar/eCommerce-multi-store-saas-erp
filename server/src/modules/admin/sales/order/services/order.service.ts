@@ -1,7 +1,6 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
@@ -22,13 +21,7 @@ import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-setti
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { InjectQueue } from '@nestjs/bullmq'
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-  Inject,
-} from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
 import { PaymentEntity } from '../../payment/entities/payment.entity'
@@ -36,14 +29,13 @@ import { PaymentRepository } from '../../payment/repositoris/payment.repository'
 import { OrderRepository } from '../repositoris/order.repository'
 import { OrderProcessHelper } from './order-process.helper'
 
-import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
-import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
 import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
-import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
-import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
-import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
+import { LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { LoyaltyService } from '@/modules/admin/marketing/loyalty/services/loyalty.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
+import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
+import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class OrderService {
@@ -69,7 +61,7 @@ export class OrderService {
     private readonly walletService: WalletService,
     private readonly loyaltyService: LoyaltyService,
     private readonly referralService: ReferralService,
-  ) { }
+  ) {}
 
   async createOrder(
     createOrderDto: CreateOrderDto,
@@ -233,10 +225,10 @@ export class OrderService {
         if (availableBalance > 0) {
           const deductAmount = createOrderDto.walletAmountToUse
             ? Math.min(
-              Number(createOrderDto.walletAmountToUse),
-              availableBalance,
-              Number(savedOrder.totalAmount),
-            )
+                Number(createOrderDto.walletAmountToUse),
+                availableBalance,
+                Number(savedOrder.totalAmount),
+              )
             : Math.min(availableBalance, Number(savedOrder.totalAmount))
 
           if (deductAmount > 0) {
@@ -584,7 +576,8 @@ export class OrderService {
               orderId: savedOrder.id,
               paymentMethod: savedOrder.paymentMethod,
               walletDeduction: Number(savedOrder.walletDeductionAmount || 0),
-              remainingAmount: Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
+              remainingAmount:
+                Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
               netRevenue: Number(savedOrder.totalAmount) - Number(savedOrder.taxAmount || 0),
               taxAmount: Number(savedOrder.taxAmount || 0),
             },
@@ -643,7 +636,7 @@ export class OrderService {
               title: 'Payment Failed',
               message: `Payment for Order #${savedOrder.id.substring(0, 8)} ${action}.`,
               type: 'DANGER',
-              link: `/admin/sales/orders/${savedOrder.id}`,
+              link: `/admin/orders/${savedOrder.id}`,
               userId: null as any,
             },
             tenantId,
@@ -657,7 +650,7 @@ export class OrderService {
               title: 'Order Shipped',
               message: `Order #${savedOrder.id.substring(0, 8)} has been shipped.`,
               type: 'INFO',
-              link: `/admin/sales/orders/${savedOrder.id}`,
+              link: `/admin/orders/${savedOrder.id}`,
               userId: null as any,
             },
             tenantId,
@@ -671,7 +664,7 @@ export class OrderService {
               title: 'Order Delivered',
               message: `Order #${savedOrder.id.substring(0, 8)} has been delivered successfully.`,
               type: 'SUCCESS',
-              link: `/admin/sales/orders/${savedOrder.id}`,
+              link: `/admin/orders/${savedOrder.id}`,
               userId: null as any,
             },
             tenantId,

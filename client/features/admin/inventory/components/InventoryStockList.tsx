@@ -1,14 +1,15 @@
 'use client';
 
 import {
-    Package, Search, AlertTriangle, XCircle, CheckCircle,
-    BarChart3, DollarSign, ChevronDown, ChevronRight, Settings2, Loader2
+    Package, AlertTriangle, XCircle, CheckCircle,
+    BarChart3, DollarSign, ChevronDown, ChevronRight, Settings2, Loader2, Search
 } from 'lucide-react';
-import { Fragment, memo } from 'react';
+import { useMemo } from 'react';
 import { InventoryStockListProps, ProductStock, VariantStock } from '../type';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 // Memoized Summary Card component
-const SummaryCard = memo(({ title, value, icon: Icon, colorClass, borderClass }: any) => (
+const SummaryCard = ({ title, value, icon: Icon, colorClass, borderClass }: any) => (
     <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border ${borderClass || 'border-slate-100 dark:border-slate-700'} shadow-sm transition-all hover:shadow-md group`}>
         <div className="flex items-center gap-3 mb-3">
             <div className={`p-2.5 ${colorClass} rounded-xl transition-transform group-hover:scale-110`}>
@@ -18,114 +19,7 @@ const SummaryCard = memo(({ title, value, icon: Icon, colorClass, borderClass }:
         </div>
         <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{value}</p>
     </div>
-));
-SummaryCard.displayName = 'SummaryCard';
-
-// Memoized Product Row component
-const ProductRow = memo(({ product, isExpanded, onToggle, onAdjust, formatPrice }: any) => {
-    const stockStatus = (p: ProductStock) => {
-        if (p.outOfStock) return { label: 'Out of Stock', class: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400', Icon: XCircle, bar: 'bg-red-500', pct: 0 };
-        if (p.lowStock) return { label: 'Low Stock', class: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400', Icon: AlertTriangle, bar: 'bg-orange-500', pct: 20 };
-        return { label: 'In Stock', class: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400', Icon: CheckCircle, bar: 'bg-emerald-500', pct: Math.min(100, (p.stock / 50) * 100) };
-    };
-
-    const s = stockStatus(product);
-
-    return (
-        <tr
-            className={`group hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors ${product.hasVariants ? 'cursor-pointer' : ''}`}
-            onClick={() => product.hasVariants && onToggle(product.id)}
-        >
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-4">
-                    {product.hasVariants && (
-                        <div className="transition-transform group-hover:scale-110">
-                            {isExpanded
-                                ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                                : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                            }
-                        </div>
-                    )}
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600 transition-transform group-hover:scale-105">
-                        {product.images?.[0] ? (
-                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <Package className="w-5 h-5 text-slate-400" />
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <p className="font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{product.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5 font-bold uppercase tracking-widest">{formatPrice(product.price)}</p>
-                        {product.hasVariants && (
-                            <span className="inline-block mt-1 text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 bg-brand-50/50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-md border border-brand-100/50 dark:border-brand-900/30">
-                                {product.variants.length} variations
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
-                    {product.categoryName || '—'}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
-                    {product.supplierName || '—'}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3 min-w-[120px]">
-                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                        <div
-                            className={`h-full ${s.bar} rounded-full transition-all duration-700 ease-out`}
-                            style={{ width: `${s.pct}%` }}
-                        />
-                    </div>
-                    <span className="font-black text-slate-900 dark:text-white text-xs w-8 text-right font-mono" title="Physical Stock">{product.stock}</span>
-                </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="font-black text-amber-600 dark:text-amber-400 text-xs font-mono">
-                    {product.reservedStock || 0}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className={`font-black text-xs font-mono ${(product.stock - (product.reservedStock || 0)) <= (product.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
-                    {product.stock - (product.reservedStock || 0)}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className="font-black text-slate-900 dark:text-white font-mono text-sm underline decoration-slate-200 dark:decoration-slate-700 decoration-2 underline-offset-4">
-                    {formatPrice(product.stockValue)}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-sm border ${s.class} border-current/10`}>
-                    <s.Icon className="w-3 h-3" />
-                    {s.label}
-                </span>
-            </td>
-            <td className="px-6 py-4 text-right">
-                {!product.hasVariants && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onAdjust(product);
-                        }}
-                        className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-400 hover:text-brand-500 transition-all hover:rotate-90 active:scale-90"
-                        title="Adjust Stock"
-                    >
-                        <Settings2 className="w-5 h-5" />
-                    </button>
-                )}
-            </td>
-        </tr>
-    );
-});
-ProductRow.displayName = 'ProductRow';
+);
 
 const InventoryStockList = ({
     products,
@@ -148,6 +42,265 @@ const InventoryStockList = ({
         { key: 'lowStock', label: 'Low Stock', count: stats.lowStockCount },
         { key: 'outOfStock', label: 'Out of Stock', count: stats.outOfStockCount },
     ];
+
+    const displayRows = useMemo(() => {
+        const rows: any[] = [];
+        filteredProducts.forEach(p => {
+            rows.push({ type: 'product', id: p.id, data: p });
+            if (p.hasVariants && expandedIds.has(p.id)) {
+                p.variants.forEach((v: VariantStock) => {
+                    rows.push({ type: 'variant', id: `${p.id}-${v.id}`, data: v, parentProduct: p });
+                });
+            }
+        });
+        return rows;
+    }, [filteredProducts, expandedIds]);
+
+    const columns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'name',
+            header: 'Product Line',
+            cell: (row) => {
+                if (row.type === 'product') {
+                    const product = row.data;
+                    const isExpanded = expandedIds.has(product.id);
+                    return (
+                        <div className="flex items-center gap-4">
+                            {product.hasVariants && (
+                                <div className="transition-transform group-hover:scale-110 shrink-0">
+                                    {isExpanded
+                                        ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                        : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                    }
+                                </div>
+                            )}
+                            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600 transition-transform group-hover:scale-105">
+                                {product.images?.[0] ? (
+                                    <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <Package className="w-5 h-5 text-slate-400" />
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <p className="font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{product.name}</p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5 font-bold uppercase tracking-widest">{formatPrice(product.price)}</p>
+                                {product.hasVariants && (
+                                    <span className="inline-block mt-1 text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 bg-brand-50/50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-md border border-brand-100/50 dark:border-brand-900/30">
+                                        {product.variants.length} variations
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                } else {
+                    const variant = row.data;
+                    return (
+                        <div className="flex items-center gap-4 pl-12 sm:pl-20">
+                            <div className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_10px_rgba(var(--brand-600),0.4)] flex-shrink-0" />
+                            <div>
+                                <p className="font-black text-slate-700 dark:text-slate-300 text-xs italic uppercase tracking-wider">
+                                    {Object.entries(variant.combination || {}).map(([k, val]) => `${val}`).join(' / ')}
+                                </p>
+                                <p className="text-[9px] text-slate-400 font-mono font-black mt-0.5 uppercase tracking-tighter">SKU: {variant.sku}</p>
+                            </div>
+                        </div>
+                    );
+                }
+            }
+        },
+        {
+            key: 'category',
+            header: 'Category',
+            cell: (row) => row.type === 'product' ? (
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
+                    {row.data.categoryName || '—'}
+                </span>
+            ) : null
+        },
+        {
+            key: 'supplier',
+            header: 'Supplier',
+            cell: (row) => row.type === 'product' ? (
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
+                    {row.data.supplierName || '—'}
+                </span>
+            ) : null
+        },
+        {
+            key: 'physical',
+            header: 'Physical',
+            cell: (row) => {
+                if (row.type === 'product') {
+                    const product = row.data;
+                    const stockStatus = (p: ProductStock) => {
+                        if (p.outOfStock) return { bar: 'bg-red-500', pct: 0 };
+                        if (p.lowStock) return { bar: 'bg-orange-500', pct: 20 };
+                        return { bar: 'bg-emerald-500', pct: Math.min(100, (p.stock / 50) * 100) };
+                    };
+                    const s = stockStatus(product);
+                    return (
+                        <div className="flex items-center gap-3 min-w-[120px]">
+                            <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full ${s.bar} rounded-full transition-all duration-700 ease-out`}
+                                    style={{ width: `${s.pct}%` }}
+                                />
+                            </div>
+                            <span className="font-black text-slate-900 dark:text-white text-xs w-8 text-right font-mono" title="Physical Stock">{product.stock}</span>
+                        </div>
+                    );
+                } else {
+                    const variant = row.data;
+                    return (
+                        <div className="flex items-center gap-3 min-w-[120px]">
+                            <div className="flex-1 h-1 bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-1000 ${variant.stock === 0 ? 'bg-red-500' : variant.stock <= (variant.lowStockThreshold || 5) ? 'bg-orange-500' : 'bg-emerald-500'}`}
+                                    style={{ width: `${Math.min(100, (variant.stock / 20) * 100)}%` }}
+                                />
+                            </div>
+                            <span className={`font-black text-[10px] min-w-[20px] text-right font-mono ${variant.stock === 0 ? 'text-red-500' : variant.stock <= (variant.lowStockThreshold || 5) ? 'text-orange-500' : 'text-slate-500'}`}>
+                                {variant.stock}
+                            </span>
+                        </div>
+                    );
+                }
+            }
+        },
+        {
+            key: 'reserved',
+            header: 'Reserved',
+            cell: (row) => {
+                if (row.type === 'product') {
+                    return (
+                        <span className="font-black text-amber-600 dark:text-amber-400 text-xs font-mono">
+                            {row.data.reservedStock || 0}
+                        </span>
+                    );
+                } else {
+                    return (
+                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 font-mono">
+                            {row.data.reservedStock || 0}
+                        </span>
+                    );
+                }
+            }
+        },
+        {
+            key: 'available',
+            header: 'Available',
+            cell: (row) => {
+                if (row.type === 'product') {
+                    const product = row.data;
+                    const available = product.stock - (product.reservedStock || 0);
+                    return (
+                        <span className={`font-black text-xs font-mono ${available <= (product.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
+                            {available}
+                        </span>
+                    );
+                } else {
+                    const variant = row.data;
+                    const available = variant.stock - (variant.reservedStock || 0);
+                    return (
+                        <span className={`text-[10px] font-black font-mono ${available <= (variant.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
+                            {available}
+                        </span>
+                    );
+                }
+            }
+        },
+        {
+            key: 'assets',
+            header: 'Assets',
+            cell: (row) => {
+                if (row.type === 'product') {
+                    return (
+                        <span className="font-black text-slate-900 dark:text-white font-mono text-sm underline decoration-slate-200 dark:decoration-slate-700 decoration-2 underline-offset-4">
+                            {formatPrice(row.data.stockValue)}
+                        </span>
+                    );
+                } else {
+                    const variant = row.data;
+                    return (
+                        <span className="text-xs font-black text-slate-500 dark:text-slate-400 font-mono">
+                            {formatPrice(variant.stock * Number(variant.price))}
+                        </span>
+                    );
+                }
+            }
+        },
+        {
+            key: 'health',
+            header: 'Health',
+            cell: (row) => {
+                if (row.type === 'product') {
+                    const product = row.data;
+                    const stockStatus = (p: ProductStock) => {
+                        if (p.outOfStock) return { label: 'Out of Stock', class: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400', Icon: XCircle };
+                        if (p.lowStock) return { label: 'Low Stock', class: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400', Icon: AlertTriangle };
+                        return { label: 'In Stock', class: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400', Icon: CheckCircle };
+                    };
+                    const s = stockStatus(product);
+                    return (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-sm border ${s.class} border-current/10`}>
+                            <s.Icon className="w-3 h-3" />
+                            {s.label}
+                        </span>
+                    );
+                } else {
+                    const variant = row.data;
+                    const variantClass = variant.stock === 0 ? 'bg-red-50 text-red-500 border-red-100' : variant.stock <= (variant.lowStockThreshold || 5) ? 'bg-orange-50 text-orange-500 border-orange-100' : 'bg-emerald-50 text-emerald-500 border-emerald-100';
+                    const variantLabel = variant.stock === 0 ? 'Depleted' : variant.stock <= (variant.lowStockThreshold || 5) ? 'Critical' : 'Stable';
+                    return (
+                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${variantClass}`}>
+                            {variantLabel}
+                        </span>
+                    );
+                }
+            }
+        },
+        {
+            key: 'actions',
+            header: 'Settings',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (row) => {
+                if (row.type === 'product') {
+                    const product = row.data;
+                    if (product.hasVariants) return null;
+                    return (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAdjustProduct(product);
+                            }}
+                            className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-400 hover:text-brand-500 transition-all hover:rotate-90 active:scale-90"
+                            title="Adjust Stock"
+                        >
+                            <Settings2 className="w-5 h-5" />
+                        </button>
+                    );
+                } else {
+                    const variant = row.data;
+                    const product = row.parentProduct;
+                    return (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onAdjustVariant(product, variant);
+                            }}
+                            className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-brand-500 transition-all shadow-sm active:scale-90"
+                            title="Adjust Variant Stock"
+                        >
+                            <Settings2 className="w-4 h-4" />
+                        </button>
+                    );
+                }
+            }
+        }
+    ], [expandedIds, onAdjustProduct, onAdjustVariant, formatPrice]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -214,125 +367,17 @@ const InventoryStockList = ({
 
             {/* Table */}
             <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Product Line</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Category</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Physical</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reserved</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Available</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assets</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Health</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Settings</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading && products.length === 0 ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>
-                                        <td colSpan={9} className="px-6 py-10">
-                                            <div className="h-12 bg-slate-100 dark:bg-slate-700/30 animate-pulse rounded-2xl" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : filteredProducts.length === 0 ? (
-                                <tr>
-                                    <td colSpan={9} className="py-32 text-center">
-                                        <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
-                                            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
-                                                <BarChart3 className="w-10 h-10 text-slate-200" strokeWidth={1} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">No Inventory Matched</p>
-                                                <p className="text-sm text-slate-500 font-medium">Try adjusting your search criteria or filters to view stock levels.</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredProducts.map(p => (
-                                    <Fragment key={p.id}>
-                                        <ProductRow
-                                            product={p}
-                                            isExpanded={expandedIds.has(p.id)}
-                                            onToggle={onToggleExpand}
-                                            onAdjust={onAdjustProduct}
-                                            formatPrice={formatPrice}
-                                        />
-                                        {/* Variant rows */}
-                                        {p.hasVariants && expandedIds.has(p.id) && p.variants.map((v: VariantStock) => (
-                                            <tr key={v.id} className="bg-slate-50/50 dark:bg-slate-900/30 transition-all">
-                                                <td className="px-6 py-4 pl-24">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_10px_rgba(var(--brand-600),0.4)] flex-shrink-0" />
-                                                        <div>
-                                                            <p className="font-black text-slate-700 dark:text-slate-300 text-xs italic uppercase tracking-wider">
-                                                                {Object.entries(v.combination || {}).map(([k, val]) => `${val}`).join(' / ')}
-                                                            </p>
-                                                            <p className="text-[9px] text-slate-400 font-mono font-black mt-0.5 uppercase tracking-tighter">SKU: {v.sku}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4" />
-                                                <td className="px-6 py-4" />
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3 min-w-[120px]">
-                                                        <div className="flex-1 h-1 bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={`h-full rounded-full transition-all duration-1000 ${v.stock === 0 ? 'bg-red-500' : v.stock <= (v.lowStockThreshold || 5) ? 'bg-orange-500' : 'bg-emerald-500'}`}
-                                                                style={{ width: `${Math.min(100, (v.stock / 20) * 100)}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className={`font-black text-[10px] min-w-[20px] text-right font-mono ${v.stock === 0 ? 'text-red-500' : v.stock <= (v.lowStockThreshold || 5) ? 'text-orange-500' : 'text-slate-500'}`}>
-                                                            {v.stock}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 font-mono">
-                                                        {v.reservedStock || 0}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`text-[10px] font-black font-mono ${(v.stock - (v.reservedStock || 0)) <= (v.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
-                                                        {v.stock - (v.reservedStock || 0)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-xs font-black text-slate-500 dark:text-slate-400 font-mono">
-                                                        {formatPrice(v.stock * Number(v.price))}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${v.stock === 0 ? 'bg-red-50 text-red-500 border-red-100' : v.stock <= (v.lowStockThreshold || 5) ? 'bg-orange-50 text-orange-500 border-orange-100' : 'bg-emerald-50 text-emerald-500 border-emerald-100'}`}>
-                                                        {v.stock === 0 ? 'Depleted' : v.stock <= (v.lowStockThreshold || 5) ? 'Critical' : 'Stable'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onAdjustVariant(p, v);
-                                                        }}
-                                                        className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-brand-500 transition-all shadow-sm active:scale-90"
-                                                        title="Adjust Variant Stock"
-                                                    >
-                                                        <Settings2 className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </Fragment>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Footer */}
+                <DataTable
+                    data={displayRows}
+                    columns={columns}
+                    getRowKey={(row) => row.id}
+                    loading={loading && products.length === 0}
+                    loadingLabel="Loading history..."
+                    emptyLabel={searchQuery || filter !== 'all' ? 'No records match your criteria.' : 'No inventory records found.'}
+                    containerClassName="border-0 shadow-none rounded-t-none bg-transparent"
+                    rowClassName={(row) => row.type === 'variant' ? 'bg-slate-50/50 dark:bg-slate-900/30' : ''}
+                    onRowClick={(row) => row.type === 'product' && row.data.hasVariants && onToggleExpand(row.data.id)}
+                />
                 {!loading && filteredProducts.length > 0 && (
                     <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
                         <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.15em]">
@@ -349,4 +394,4 @@ const InventoryStockList = ({
     );
 };
 
-export default memo(InventoryStockList);
+export default InventoryStockList;

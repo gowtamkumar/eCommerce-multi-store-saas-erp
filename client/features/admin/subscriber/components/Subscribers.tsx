@@ -2,11 +2,11 @@
 
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, CheckCircle, ChevronLeft, ChevronRight, Download, Loader2, Mail, Search, XCircle } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { Calendar, CheckCircle, Download, Loader2, Mail, Search, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Pagination } from '../../customer/type';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 interface Subscriber {
     id: string;
@@ -19,68 +19,12 @@ interface Subscriber {
     createdAt: string;
 }
 
-const SubscriberRow = memo(({ subscriber }: { subscriber: Subscriber }) => {
-    const status = subscriber.status || (subscriber.isActive ? 'confirmed' : 'unsubscribed');
-    const statusStyles: Record<string, string> = {
-        confirmed: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50',
-        pending: 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50',
-        unsubscribed: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700',
-        suppressed: 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50',
-    };
-
-    return (
-        <motion.tr
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors group"
-        >
-            <td className="px-6 py-5">
-                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                    <Calendar className="w-4 h-4 text-brand-400" />
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                        {new Date(subscriber.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-                </div>
-            </td>
-            <td className="px-6 py-5">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-brand-500 transition-colors">
-                        <Mail className="w-4 h-4" />
-                    </div>
-                    <div>
-                        <span className="font-semibold text-slate-900 dark:text-white">{subscriber.email}</span>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            {subscriber.source || 'storefront'}
-                        </p>
-                    </div>
-                </div>
-            </td>
-            <td className="px-6 py-5">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${statusStyles[status] || statusStyles.unsubscribed}`}>
-                    {status === 'confirmed' ? (
-                        <>
-                            <CheckCircle className="w-3 h-3" />
-                            Confirmed
-                        </>
-                    ) : (
-                        <>
-                            <XCircle className="w-3 h-3" />
-                            {status}
-                        </>
-                    )}
-                </span>
-                <p className="mt-1 text-[10px] text-slate-400 font-semibold">
-                    {subscriber.confirmedAt
-                        ? `Confirmed ${new Date(subscriber.confirmedAt).toLocaleDateString()}`
-                        : subscriber.unsubscribedAt
-                            ? `Left ${new Date(subscriber.unsubscribedAt).toLocaleDateString()}`
-                            : 'Awaiting opt-in'}
-                </p>
-            </td>
-        </motion.tr>
-    );
-});
-SubscriberRow.displayName = 'SubscriberRow';
+const statusStyles: Record<string, string> = {
+    confirmed: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50',
+    pending: 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50',
+    unsubscribed: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700',
+    suppressed: 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50',
+};
 
 export default function Subscribers() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -164,6 +108,85 @@ export default function Subscribers() {
         }
     };
 
+    const columns = useMemo<DataTableColumn<Subscriber>[]>(() => [
+        {
+            key: 'createdAt',
+            header: 'Timestamp',
+            className: 'px-6 py-5',
+            cell: (subscriber) => (
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <Calendar className="w-4 h-4 text-brand-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                        {new Date(subscriber.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            key: 'email',
+            header: 'Identity Mail',
+            className: 'px-6 py-5',
+            cell: (subscriber) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-brand-500 transition-colors">
+                        <Mail className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{subscriber.email}</span>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            {subscriber.source || 'storefront'}
+                        </p>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Pulse State',
+            className: 'px-6 py-5',
+            cell: (subscriber) => {
+                const status = subscriber.status || (subscriber.isActive ? 'confirmed' : 'unsubscribed');
+                return (
+                    <div>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${statusStyles[status] || statusStyles.unsubscribed}`}>
+                            {status === 'confirmed' ? (
+                                <>
+                                    <CheckCircle className="w-3 h-3" />
+                                    Confirmed
+                                </>
+                            ) : (
+                                <>
+                                    <XCircle className="w-3 h-3" />
+                                    {status}
+                                </>
+                            )}
+                        </span>
+                        <p className="mt-1 text-[10px] text-slate-400 font-semibold">
+                            {subscriber.confirmedAt
+                                ? `Confirmed ${new Date(subscriber.confirmedAt).toLocaleDateString()}`
+                                : subscriber.unsubscribedAt
+                                    ? `Left ${new Date(subscriber.unsubscribedAt).toLocaleDateString()}`
+                                    : 'Awaiting opt-in'}
+                        </p>
+                    </div>
+                );
+            },
+        },
+    ], []);
+
+    const dataTablePagination = useMemo(() => ({
+        page: pagination.page || 1,
+        total: pagination.total || 0,
+        totalPages: pagination.totalPages || 1,
+        onPageChange: handlePageChange,
+    }), [pagination, handlePageChange]);
+
+    const dataTablePaginationSummary = useMemo(() => (
+        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+            Sector {pagination.page} <span className="mx-1 opacity-30">/</span> {pagination.totalPages}
+        </span>
+    ), [pagination]);
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -205,68 +228,20 @@ export default function Subscribers() {
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50 dark:bg-slate-900/30">
-                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Timestamp</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identity Mail</th>
-                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Pulse State</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={3} className="px-6 py-24 text-center">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
-                                            <p className="text-xs font-black uppercase tracking-widest text-slate-300">Synchronizing records...</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : subscribers.length === 0 ? (
-                                <tr>
-                                    <td colSpan={3} className="px-6 py-24 text-center">
-                                        <p className="text-sm font-black uppercase tracking-widest text-slate-300">
-                                            {searchQuery ? 'Zero identity matches' : 'Neural repository empty'}
-                                        </p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                <AnimatePresence mode="popLayout">
-                                    {subscribers.map((subscriber) => (
-                                        <SubscriberRow key={subscriber.id} subscriber={subscriber} />
-                                    ))}
-                                </AnimatePresence>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                    <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-900/10 border-t border-slate-100 dark:border-slate-700 flex justify-center items-center gap-4">
-                        <button
-                            onClick={() => handlePageChange(pagination.page - 1)}
-                            disabled={pagination.page === 1 || loading}
-                            className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                                Sector {pagination.page} <span className="mx-1 opacity-30">/</span> {pagination.totalPages}
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => handlePageChange(pagination.page + 1)}
-                            disabled={pagination.page === pagination.totalPages || loading}
-                            className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm"
-                        >
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
-                    </div>
-                )}
+                <DataTable
+                    data={subscribers}
+                    columns={columns}
+                    getRowKey={(subscriber) => subscriber.id}
+                    loading={loading}
+                    loadingLabel="Synchronizing records..."
+                    emptyLabel={
+                        searchQuery ? 'Zero identity matches' : 'Neural repository empty'
+                    }
+                    containerClassName="border-0 shadow-none rounded-t-none bg-transparent"
+                    rowClassName="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors group"
+                    pagination={dataTablePagination}
+                    paginationSummary={dataTablePaginationSummary}
+                />
             </div>
         </div>
     );

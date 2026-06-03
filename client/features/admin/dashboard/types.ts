@@ -6,8 +6,11 @@ export interface DashboardStats {
     totalProducts: number;
     totalPages: number;
     recentProducts: any[];
+    recentOrders?: any[];
     salesData: any[];
     monthlyGrowth: number | null;
+    periodGrowth?: number | null;
+    avgOrderValue?: number;
     supplierStats?: {
         totalSuppliers: number;
         totalPurchaseOrders: number;

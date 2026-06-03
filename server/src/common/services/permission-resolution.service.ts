@@ -3,6 +3,7 @@ import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/use
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
 import { OverrideEffect } from '@/common/enums/override-effect.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { CORE_FEATURE_SLUGS, isCoreFeature } from '@/common/constants/feature-mapping'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Injectable, Logger } from '@nestjs/common'
@@ -72,6 +73,12 @@ export class PermissionResolutionService {
 
     if (override !== null) {
       return override.isEnabled
+    }
+
+    // Core features (account/self-management) are always enabled regardless of
+    // plan tier, so every tenant can manage their own team, roles, and settings.
+    if (isCoreFeature(featureSlug)) {
+      return true
     }
 
     const tenant = await this.tenantRepo.findOne({
@@ -173,6 +180,13 @@ export class PermissionResolutionService {
     for (const [f, isEnabled] of overridesMap.entries()) {
       if (isEnabled) {
         featuresEnabledSet.add(f)
+      }
+    }
+
+    // Core features are always enabled unless explicitly disabled via override.
+    for (const coreFeature of CORE_FEATURE_SLUGS) {
+      if (overridesMap.get(coreFeature) !== false) {
+        featuresEnabledSet.add(coreFeature)
       }
     }
 

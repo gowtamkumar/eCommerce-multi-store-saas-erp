@@ -281,7 +281,7 @@ export class TenantService {
             title: 'New Tenant Signup',
             message: `A new store '${storeName}' (${subdomain}) has registered on the platform.`,
             type: 'INFO',
-            link: `/admin/system/tenants/${result.tenant.id}`,
+            link: `/system/tenants/${result.tenant.id}`,
             userId: null as any,
           },
           null,

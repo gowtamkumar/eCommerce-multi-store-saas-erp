@@ -1,18 +1,28 @@
 'use client';
 
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';
-import { Loader2, Search, ShoppingBag } from 'lucide-react';
+import { Search, ShoppingBag } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import Pagination from '@/components/shared/Pagination';
+
+type CartSummary = {
+    id: string;
+    customerName: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    itemCount: number;
+    totalAmount?: number;
+    updatedAt?: string;
+};
 
 export default function CartsList() {
     const { data: session } = useSession();
     const { formatPrice } = useSettings();
-    const [carts, setCarts] = useState<any[]>([]);
+    const [carts, setCarts] = useState<CartSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
@@ -35,20 +45,80 @@ export default function CartsList() {
             } else {
                 toast.error(res.message || 'Failed to fetch carts');
             }
-        } catch (error: any) {
-            toast.error(error.message || 'An error occurred while fetching carts');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'An error occurred while fetching carts');
         } finally {
             setLoading(false);
         }
     }, [session, pagination.limit]);
 
     useEffect(() => {
-        fetchCarts(1, debouncedSearch);
+        const timeout = window.setTimeout(() => {
+            void fetchCarts(1, debouncedSearch);
+        }, 0);
+        return () => window.clearTimeout(timeout);
     }, [debouncedSearch, fetchCarts]);
 
     const handlePageChange = (newPage: number) => {
         fetchCarts(newPage, debouncedSearch);
     };
+
+    const columns = useMemo<DataTableColumn<CartSummary>[]>(() => [
+        {
+            key: 'id',
+            header: 'Cart ID',
+            cell: (cart) => (
+                <span className="font-mono text-xs font-bold text-slate-400 group-hover:text-brand-500 transition-colors">
+                    #{cart.id.slice(-8).toUpperCase()}
+                </span>
+            ),
+        },
+        {
+            key: 'customer',
+            header: 'Customer',
+            cell: (cart) => (
+                <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                        {cart.customerName}
+                    </span>
+                    <span className="text-xs text-slate-500 truncate max-w-[200px]">
+                        {cart.customerEmail || cart.customerPhone || 'Guest Configuration'}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            key: 'items',
+            header: 'Items Count',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (cart) => (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
+                    {cart.itemCount} items
+                </span>
+            ),
+        },
+        {
+            key: 'value',
+            header: 'Rough Value',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (cart) => (
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                    {formatPrice(cart.totalAmount || 0)}
+                </span>
+            ),
+        },
+        {
+            key: 'updated',
+            header: 'Last Modified',
+            className: 'text-xs font-medium text-slate-500',
+            cell: (cart) => cart.updatedAt ? new Date(cart.updatedAt).toLocaleString(undefined, {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            }) : '-',
+        },
+    ], [formatPrice]);
 
     return (
         <div className="space-y-6">
@@ -76,91 +146,21 @@ export default function CartsList() {
                 </div>
             </div>
 
-            {/* Carts Table */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-400 dark:hover:scrollbar-thumb-slate-500 scrollbar-track-transparent">
-                    <table className="w-full text-left min-w-[1000px]">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Cart ID</th>
-                                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Customer</th>
-                                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-center">Items Count</th>
-                                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-right">Rough Value</th>
-                                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Last Modified</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <Loader2 className="w-5 h-5 animate-spin text-brand-500" />
-                                            <span className="font-medium">Loading carts...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : carts.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic">
-                                        {searchQuery ? 'No carts match your search query.' : 'No active carts found in the system.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                carts.map((cart) => (
-                                    <tr key={cart.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <span className="font-mono text-xs font-bold text-slate-400 group-hover:text-brand-500 transition-colors">
-                                                #{cart.id.slice(-8).toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                                    {cart.customerName}
-                                                </span>
-                                                <span className="text-xs text-slate-500 truncate max-w-[200px]">
-                                                    {cart.customerEmail || cart.customerPhone || 'Guest Configuration'}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
-                                                {cart.itemCount} items
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <span className="text-sm font-black text-slate-900 dark:text-white">
-                                                {formatPrice(cart.totalAmount || 0)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-xs font-medium text-slate-500">
-                                            {cart.updatedAt && new Date(cart.updatedAt).toLocaleString(undefined, {
-                                                dateStyle: 'medium',
-                                                timeStyle: 'short'
-                                            })}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center sm:text-left">
-                            Page {pagination.page} of {pagination.totalPages}
-                        </p>
-                        <Pagination
-                            currentPage={pagination.page}
-                            totalPages={pagination.totalPages}
-                            onPageChange={handlePageChange}
-                            loading={loading}
-                        />
-                    </div>
-                )}
-            </div>
+            <DataTable
+                data={carts}
+                columns={columns}
+                getRowKey={(cart) => cart.id}
+                loading={loading}
+                loadingLabel="Loading carts..."
+                emptyLabel={searchQuery ? 'No carts match your search query.' : 'No active carts found in the system.'}
+                minWidthClassName="min-w-[1000px]"
+                pagination={{
+                    page: pagination.page,
+                    total: pagination.total,
+                    totalPages: pagination.totalPages,
+                    onPageChange: handlePageChange,
+                }}
+            />
         </div>
     );
 }

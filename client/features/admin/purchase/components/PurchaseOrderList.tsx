@@ -1,10 +1,10 @@
 'use client';
 
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { useSettings } from '@/hooks/SettingsContext';
 import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
 import {
     CheckCircle,
-    ChevronLeft, ChevronRight,
     Eye,
     FileText,
     Filter,
@@ -13,22 +13,34 @@ import {
     ShoppingBag
 } from 'lucide-react';
 import Link from 'next/link';
-import { memo } from 'react';
-import type { PurchaseOrderListProps } from '../types';
+import { useMemo } from 'react';
+import type { PurchaseOrder, PurchaseOrderListProps } from '../types';
 import { getPaymentStatusBadge, getStatusBadge } from './comonfun';
 
-const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
-    order: any,
-    onReceive: (id: string) => void,
-    formatPrice: (p: number) => string
-}) => {
-
-    return (
-        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-            <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
-                {new Date(order.createdAt).toLocaleDateString()}
-            </td>
-            <td className="px-6 py-4">
+export default function PurchaseOrderList({
+    orders,
+    loading,
+    searchQuery,
+    onSearchChange,
+    statusFilter,
+    onStatusFilterChange,
+    pagination,
+    onPageChange,
+    onReceive,
+    isSearchLoading
+}: PurchaseOrderListProps) {
+    const { formatPrice } = useSettings();
+    const columns = useMemo<DataTableColumn<PurchaseOrder>[]>(() => [
+        {
+            key: 'date',
+            header: 'Order Date',
+            className: 'text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono',
+            cell: (order) => new Date(order.createdAt).toLocaleDateString(),
+        },
+        {
+            key: 'identity',
+            header: 'Identity',
+            cell: (order) => (
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg">
                         <FileText className="w-4 h-4 text-slate-500" />
@@ -38,20 +50,37 @@ const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
                         <span className="text-[10px] text-slate-400 uppercase tracking-tight">{order.id.slice(0, 8)}</span>
                     </div>
                 </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="text-slate-700 dark:text-slate-300 font-semibold">{order.supplier?.name}</span>
-            </td>
-            <td className="px-6 py-4 font-black text-slate-900 dark:text-white font-mono">
-                {formatPrice(Number(order.totalAmount) || 0)}
-            </td>
-            <td className="px-6 py-4">
-                {getPaymentStatusBadge(order.paymentStatus)}
-            </td>
-            <td className="px-6 py-4">
-                {getStatusBadge(order.status)}
-            </td>
-            <td className="px-6 py-4 text-right">
+            ),
+        },
+        {
+            key: 'supplier',
+            header: 'Entity',
+            cell: (order) => (
+                <span className="text-slate-700 dark:text-slate-300 font-semibold">{order.supplier?.name || 'Unknown supplier'}</span>
+            ),
+        },
+        {
+            key: 'total',
+            header: 'Fiscal Total',
+            className: 'font-black text-slate-900 dark:text-white font-mono',
+            cell: (order) => formatPrice(Number(order.totalAmount) || 0),
+        },
+        {
+            key: 'payment',
+            header: 'Fiscal State',
+            cell: (order) => getPaymentStatusBadge(order.paymentStatus || 'UNPAID'),
+        },
+        {
+            key: 'lifecycle',
+            header: 'Lifecycle',
+            cell: (order) => getStatusBadge(order.status),
+        },
+        {
+            key: 'actions',
+            header: 'Settings',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (order) => (
                 <div className="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <Link
                         href={`/admin/procurement/purchases/${order.id}`}
@@ -70,26 +99,9 @@ const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
                         </button>
                     )}
                 </div>
-            </td>
-        </tr>
-    );
-});
-
-PurchaseOrderRow.displayName = 'PurchaseOrderRow';
-
-export default function PurchaseOrderList({
-    orders,
-    loading,
-    searchQuery,
-    onSearchChange,
-    statusFilter,
-    onStatusFilterChange,
-    pagination,
-    onPageChange,
-    onReceive,
-    isSearchLoading
-}: PurchaseOrderListProps) {
-    const { formatPrice } = useSettings();
+            ),
+        },
+    ], [formatPrice, onReceive]);
 
     return (
         <div className="space-y-6">
@@ -138,78 +150,28 @@ export default function PurchaseOrderList({
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden min-h-[400px]">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Date</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identity</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Entity</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fiscal Total</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fiscal State</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lifecycle</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Settings</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading && !orders.length ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>
-                                        <td colSpan={7} className="px-6 py-8">
-                                            <div className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-2xl" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : orders.length === 0 ? (
-                                <tr key={1}>
-                                    <td colSpan={7} className="py-24 text-center">
-                                        <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
-                                            <ShoppingBag className="w-8 h-8 text-slate-300" strokeWidth={1} />
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No matching orders found</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                orders.map((order) => (
-                                    <PurchaseOrderRow
-                                        key={order.id}
-                                        order={order}
-                                        onReceive={onReceive}
-                                        formatPrice={formatPrice}
-                                    />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Footer */}
-                {!loading && pagination.totalPages > 0 && (
-                    <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                            Index <span className="text-slate-900 dark:text-white px-1">{pagination.page}</span> of <span className="text-slate-900 dark:text-white px-1">{pagination.totalPages}</span>
-                            <span className="ml-2 text-slate-400 font-bold">({pagination.total} ENTITIES)</span>
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => onPageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-40 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => onPageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-40 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+            <DataTable
+                data={orders}
+                columns={columns}
+                getRowKey={(order) => order.id}
+                loading={loading && !orders.length}
+                loadingLabel="Loading purchase orders..."
+                emptyLabel={
+                    <div>
+                        <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
+                            <ShoppingBag className="w-8 h-8 text-slate-300" strokeWidth={1} />
                         </div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No matching orders found</p>
                     </div>
-                )}
-            </div>
+                }
+                containerClassName="rounded-3xl min-h-[400px]"
+                pagination={{
+                    page: pagination.page,
+                    total: pagination.total,
+                    totalPages: pagination.totalPages,
+                    onPageChange,
+                }}
+            />
         </div>
     );
 }

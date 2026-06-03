@@ -282,7 +282,7 @@ export class PurchaseOrderService {
             title: 'Supplier Invoice Due soon',
             message: `Invoice for PO ${savedOrder.referenceNumber} is generated and will be due.`,
             type: 'WARNING',
-            link: `/admin/finance/purchases/orders/${savedOrder.id}`,
+            link: `/admin/procurement/purchases/${savedOrder.id}`,
             userId: null as any,
           },
           tenantId,

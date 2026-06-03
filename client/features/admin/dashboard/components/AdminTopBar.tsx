@@ -5,7 +5,7 @@ import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSocketEvent } from '@/hooks/SocketContext';
 import { io, Socket } from 'socket.io-client';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     Bell,
     Building2,
@@ -41,6 +41,7 @@ export default function AdminTopBar({
     onLogout,
 }: AdminTopBarProps) {
     const pathname = usePathname();
+    const router = useRouter();
     const isSupportRoute = pathname === "/admin/support";
 
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -107,7 +108,7 @@ export default function AdminTopBar({
                         onClick={() => {
                             toast.dismiss(t.id);
                             if (newNotif.link) {
-                                window.location.href = newNotif.link;
+                                router.push(newNotif.link);
                             }
                         }}
                         className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-500 focus:outline-none"
@@ -125,8 +126,9 @@ export default function AdminTopBar({
     useEffect(() => {
         if (session) {
             fetchNotifications();
-            // Poll every 30 seconds
-            const interval = setInterval(fetchNotifications, 30000);
+            // Live updates arrive over WebSockets; this is a low-frequency
+            // fallback poll to reconcile state (e.g. after missed sockets).
+            const interval = setInterval(fetchNotifications, 120000);
             return () => clearInterval(interval);
         }
     }, [session]);
@@ -266,7 +268,8 @@ export default function AdminTopBar({
         }
 
         if (notif.link) {
-            window.location.href = notif.link;
+            setIsNotificationOpen(false);
+            router.push(notif.link);
         }
     };
 
@@ -515,7 +518,7 @@ export default function AdminTopBar({
                         </AnimatePresence>
                     </div>
 
-                    <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
+                    <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
 
                     {/* Profile Account Trigger */}
                     <div className="relative" ref={profileRef}>
@@ -527,7 +530,7 @@ export default function AdminTopBar({
                             }}
                             className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-800"
                         >
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-black shadow-md flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-purple-600 text-white text-xs font-black shadow-md flex items-center justify-center">
                                 {session?.user?.image ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={session.user.image} alt="" className="w-full h-full object-cover" />
@@ -614,7 +617,7 @@ export default function AdminTopBar({
                                 className="w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl shadow-indigo-500/15 overflow-hidden flex flex-col mb-4 animate-in fade-in slide-in-from-bottom-5 duration-200"
                             >
                                 {/* Header */}
-                                <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-sm">
+                                <div className="p-4 bg-linear-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-sm">
                                     <div className="flex items-center gap-2.5">
                                         {selectedConv ? (
                                             <button
@@ -718,7 +721,7 @@ export default function AdminTopBar({
                                                                 </p>
                                                             </div>
                                                             {conv.unreadCountAdmin > 0 && (
-                                                                <span className="w-2.5 h-2.5 bg-rose-600 rounded-full flex-shrink-0" />
+                                                                <span className="w-2.5 h-2.5 bg-rose-600 rounded-full shrink-0" />
                                                             )}
                                                         </button>
                                                     );

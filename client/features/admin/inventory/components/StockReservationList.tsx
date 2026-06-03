@@ -1,15 +1,33 @@
 'use client';
 
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Search, Filter, Calendar, ChevronLeft, ChevronRight, Loader2, 
-    Info, ArrowUpRight, CheckCircle2, BookmarkCheck, RefreshCw, 
-    XCircle, Clock, AlertTriangle, FileText, Lock, Layers, HelpCircle
+import {
+    Search, Filter, Calendar, ChevronRight, Loader2,
+    Info, ArrowUpRight, CheckCircle2, BookmarkCheck, RefreshCw,
+    XCircle, Clock, AlertTriangle, FileText, Lock, Layers
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { fetchAPI } from '@/services/api';
-import { useSettings } from '@/hooks/SettingsContext';
+
+type ReservationStatus = 'ACTIVE' | 'FULFILLED' | 'RELEASED' | 'EXPIRED';
+
+interface AtpVariant {
+    id: string;
+    sku?: string;
+    stock?: number;
+    combination?: Record<string, string>;
+}
+
+interface AtpProduct {
+    id: string;
+    name: string;
+    slug?: string;
+    stock?: number;
+    images?: string[];
+    variants?: AtpVariant[];
+}
 
 interface StockReservation {
     id: string;
@@ -36,7 +54,7 @@ interface StockReservation {
     reservedQty: number;
     fulfilledQty: number;
     releasedQty: number;
-    status: 'ACTIVE' | 'FULFILLED' | 'RELEASED' | 'EXPIRED';
+    status: ReservationStatus;
     expiresAt: string | null;
     reservedAt: string;
     releasedAt: string | null;
@@ -55,13 +73,11 @@ export default function StockReservationList() {
         totalPages: 0
     });
 
-    const { formatPrice } = useSettings();
-
     // ATP Calculator State
-    const [atpProducts, setAtpProducts] = useState<any[]>([]);
+    const [atpProducts, setAtpProducts] = useState<AtpProduct[]>([]);
     const [atpSearchQuery, setAtpSearchQuery] = useState('');
-    const [selectedAtpProduct, setSelectedAtpProduct] = useState<any | null>(null);
-    const [selectedAtpVariant, setSelectedAtpVariant] = useState<any | null>(null);
+    const [selectedAtpProduct, setSelectedAtpProduct] = useState<AtpProduct | null>(null);
+    const [selectedAtpVariant, setSelectedAtpVariant] = useState<AtpVariant | null>(null);
     const [atpPhysicalBalance, setAtpPhysicalBalance] = useState<number>(0);
     const [calculatingAtp, setCalculatingAtp] = useState(false);
     const [atpResult, setAtpResult] = useState<{
@@ -103,7 +119,11 @@ export default function StockReservationList() {
 
     // Initial load and filter change
     useEffect(() => {
-        fetchReservations(1, statusFilter);
+        const timer = window.setTimeout(() => {
+            void fetchReservations(1, statusFilter);
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, [statusFilter, fetchReservations]);
 
     // Fetch products for ATP tool
@@ -144,7 +164,7 @@ export default function StockReservationList() {
     // Filter products list for ATP dropdown
     const filteredAtpProducts = useMemo(() => {
         if (!atpSearchQuery) return atpProducts;
-        return atpProducts.filter(p => 
+        return atpProducts.filter(p =>
             p.name.toLowerCase().includes(atpSearchQuery.toLowerCase()) ||
             p.slug?.toLowerCase().includes(atpSearchQuery.toLowerCase())
         );
@@ -187,7 +207,7 @@ export default function StockReservationList() {
     };
 
     // Render Status Badge
-    const renderStatusBadge = (status: string) => {
+    const renderStatusBadge = useCallback((status: ReservationStatus) => {
         switch (status) {
             case 'ACTIVE':
                 return (
@@ -220,14 +240,142 @@ export default function StockReservationList() {
             default:
                 return null;
         }
-    };
+    }, []);
+
+    const columns = useMemo<DataTableColumn<StockReservation>[]>(() => [
+        {
+            key: 'product',
+            header: 'Reserved Product',
+            cell: (reservation) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-600">
+                        {reservation.product?.images?.[0] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={reservation.product.images[0]} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <Layers className="w-4 h-4 text-slate-400" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="min-w-0">
+                        <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate block">
+                            {reservation.product?.name}
+                        </span>
+                        {reservation.variant && (
+                            <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 font-mono">
+                                SKU: {reservation.variant.sku} - {Object.values(reservation.variant.combination || {}).join(' / ')}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'warehouse',
+            header: 'Warehouse',
+            cell: (reservation) => (
+                <>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {reservation.warehouse?.name || 'Global'}
+                    </span>
+                    {reservation.warehouse?.code && (
+                        <span className="block text-[10px] text-slate-400 font-mono">
+                            Code: {reservation.warehouse.code}
+                        </span>
+                    )}
+                </>
+            ),
+        },
+        {
+            key: 'order',
+            header: 'Order Ref',
+            cell: (reservation) => reservation.orderId ? (
+                <div className="flex items-center gap-1">
+                    <code className="text-[10px] font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400 font-semibold truncate max-w-[120px]" title={reservation.orderId}>
+                        {reservation.orderId.slice(0, 8)}...
+                    </code>
+                    <a href={`/admin/orders/${reservation.orderId}`} className="text-slate-400 hover:text-brand-500 transition-colors" title="View Order">
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                    </a>
+                </div>
+            ) : (
+                <span className="text-xs text-slate-400 italic">No Document</span>
+            ),
+        },
+        {
+            key: 'allocation',
+            header: 'Allocation (Qty)',
+            cell: (reservation) => {
+                const total = Number(reservation.reservedQty);
+                const fulfilled = Number(reservation.fulfilledQty);
+                const released = Number(reservation.releasedQty);
+                const activeRem = Math.max(0, total - fulfilled - released);
+                const progressPct = total > 0 ? (fulfilled / total) * 100 : 0;
+                const releasePct = total > 0 ? (released / total) * 100 : 0;
+
+                return (
+                    <div className="space-y-1.5 min-w-[140px]">
+                        <div className="flex items-center justify-between text-[11px] font-extrabold font-mono text-slate-700 dark:text-slate-300">
+                            <span>Res: {total}</span>
+                            {fulfilled > 0 && <span className="text-emerald-500">Ful: {fulfilled}</span>}
+                            {released > 0 && <span className="text-slate-400">Rel: {released}</span>}
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden flex">
+                            {fulfilled > 0 && (
+                                <div className="h-full bg-emerald-500" style={{ width: `${progressPct}%` }} title={`Fulfilled: ${fulfilled}`} />
+                            )}
+                            {released > 0 && (
+                                <div className="h-full bg-slate-400" style={{ width: `${releasePct}%` }} title={`Released: ${released}`} />
+                            )}
+                            {activeRem > 0 && total > 0 && (
+                                <div className="h-full bg-blue-500" style={{ width: `${(activeRem / total) * 100}%` }} title={`Active Reserve: ${activeRem}`} />
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (reservation) => renderStatusBadge(reservation.status),
+        },
+        {
+            key: 'dates',
+            header: 'Lifespan / Dates',
+            className: 'text-xs',
+            cell: (reservation) => (
+                <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-medium">
+                        <Calendar className="w-3 h-3" />
+                        <span>{new Date(reservation.reservedAt).toLocaleDateString()}</span>
+                    </div>
+                    {reservation.expiresAt ? (
+                        <div className={`flex items-center gap-1 font-bold ${reservation.status === 'ACTIVE' && new Date(reservation.expiresAt) < new Date() ? 'text-red-500' : 'text-slate-400'}`}>
+                            <Clock className="w-3 h-3" />
+                            <span>Exp: {new Date(reservation.expiresAt).toLocaleDateString()}</span>
+                        </div>
+                    ) : (
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Never Expires</span>
+                    )}
+                    {reservation.notes && (
+                        <div className="flex items-start gap-1 mt-1 text-[10px] bg-slate-50 dark:bg-slate-900/50 p-1 rounded border border-slate-100 dark:border-slate-800 text-slate-500 max-w-[150px] truncate" title={reservation.notes}>
+                            <FileText className="w-3 h-3 shrink-0 mt-0.5 text-slate-400" />
+                            <span>{reservation.notes}</span>
+                        </div>
+                    )}
+                </div>
+            ),
+        },
+    ], [renderStatusBadge]);
 
     return (
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start animate-in fade-in duration-500">
             {/* Left side: Main listing panel */}
             <div className="xl:col-span-3 space-y-6">
                 {/* Header Section */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-4xl border border-slate-100 dark:border-slate-700 shadow-sm">
                     <div>
                         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                             <BookmarkCheck className="w-8 h-8 text-brand-600 dark:text-brand-400" />
@@ -237,7 +385,7 @@ export default function StockReservationList() {
                             Manage committed items, prevent stockouts, and inspect ATP status
                         </p>
                     </div>
-                    <button 
+                    <button
                         onClick={() => fetchReservations(pagination.page, statusFilter)}
                         className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-sm transition-all flex items-center gap-2 shadow-sm"
                     >
@@ -277,193 +425,38 @@ export default function StockReservationList() {
                     </div>
                 </div>
 
-                {/* Table Container */}
-                <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                                <tr>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reserved Product</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Warehouse</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Ref</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Allocation (Qty)</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
-                                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lifespan / Dates</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                {loading ? (
-                                    Array.from({ length: 5 }).map((_, i) => (
-                                        <tr key={i}>
-                                            <td colSpan={6} className="px-6 py-8">
-                                                <div className="h-10 bg-slate-100 dark:bg-slate-700/30 animate-pulse rounded-xl" />
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : filteredReservations.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} className="py-24 text-center">
-                                            <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
-                                                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-1">
-                                                    <Lock className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">No Reservations</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                                        No stock reservations match your current query or filters.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredReservations.map((res) => {
-                                        const total = Number(res.reservedQty);
-                                        const fulfilled = Number(res.fulfilledQty);
-                                        const released = Number(res.releasedQty);
-                                        const activeRem = Math.max(0, total - fulfilled - released);
-                                        const progressPct = total > 0 ? (fulfilled / total) * 100 : 0;
-                                        const releasePct = total > 0 ? (released / total) * 100 : 0;
-
-                                        return (
-                                            <tr key={res.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
-                                                {/* Product Info */}
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600">
-                                                            {res.product?.images?.[0] ? (
-                                                                <img src={res.product.images[0]} alt="" className="w-full h-full object-cover" />
-                                                            ) : (
-                                                                <div className="w-full h-full flex items-center justify-center">
-                                                                    <Layers className="w-4 h-4 text-slate-400" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate block">
-                                                                {res.product?.name}
-                                                            </span>
-                                                            {res.variant && (
-                                                                <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 font-mono">
-                                                                    SKU: {res.variant.sku} • {Object.entries(res.variant.combination || {}).map(([k, v]) => `${v}`).join(' / ')}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                {/* Warehouse */}
-                                                <td className="px-6 py-4">
-                                                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                                        {res.warehouse?.name || 'Global'}
-                                                    </span>
-                                                    {res.warehouse?.code && (
-                                                        <span className="block text-[10px] text-slate-400 font-mono">
-                                                            Code: {res.warehouse.code}
-                                                        </span>
-                                                    )}
-                                                </td>
-
-                                                {/* Order Link */}
-                                                <td className="px-6 py-4">
-                                                    {res.orderId ? (
-                                                        <div className="flex items-center gap-1">
-                                                            <code className="text-[10px] font-mono bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400 font-semibold truncate max-w-[120px]" title={res.orderId}>
-                                                                {res.orderId.slice(0, 8)}...
-                                                            </code>
-                                                            <a href={`/admin/sales/orders/${res.orderId}`} className="text-slate-400 hover:text-brand-500 transition-colors" title="View Order">
-                                                                <ArrowUpRight className="w-3.5 h-3.5" />
-                                                            </a>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-xs text-slate-400 italic">No Document</span>
-                                                    )}
-                                                </td>
-
-                                                {/* Quantities & Progress */}
-                                                <td className="px-6 py-4">
-                                                    <div className="space-y-1.5 min-w-[140px]">
-                                                        <div className="flex items-center justify-between text-[11px] font-extrabold font-mono text-slate-700 dark:text-slate-300">
-                                                            <span>Res: {total}</span>
-                                                            {fulfilled > 0 && <span className="text-emerald-500">Ful: {fulfilled}</span>}
-                                                            {released > 0 && <span className="text-slate-400">Rel: {released}</span>}
-                                                        </div>
-                                                        {/* Quantity Allocation visual bar */}
-                                                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden flex">
-                                                            {fulfilled > 0 && (
-                                                                <div className="h-full bg-emerald-500" style={{ width: `${progressPct}%` }} title={`Fulfilled: ${fulfilled}`} />
-                                                            )}
-                                                            {released > 0 && (
-                                                                <div className="h-full bg-slate-400" style={{ width: `${releasePct}%` }} title={`Released: ${released}`} />
-                                                            )}
-                                                            {activeRem > 0 && (
-                                                                <div className="h-full bg-blue-500" style={{ width: `${(activeRem / total) * 100}%` }} title={`Active Reserve: ${activeRem}`} />
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                {/* Status */}
-                                                <td className="px-6 py-4">
-                                                    {renderStatusBadge(res.status)}
-                                                </td>
-
-                                                {/* Lifespan & Dates */}
-                                                <td className="px-6 py-4 text-xs">
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-medium">
-                                                            <Calendar className="w-3 h-3" />
-                                                            <span>{new Date(res.reservedAt).toLocaleDateString()}</span>
-                                                        </div>
-                                                        {res.expiresAt ? (
-                                                            <div className={`flex items-center gap-1 font-bold ${res.status === 'ACTIVE' && new Date(res.expiresAt) < new Date() ? 'text-red-500' : 'text-slate-400'}`}>
-                                                                <Clock className="w-3 h-3" />
-                                                                <span>Exp: {new Date(res.expiresAt).toLocaleDateString()}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Never Expires</span>
-                                                        )}
-                                                        {res.notes && (
-                                                            <div className="flex items-start gap-1 mt-1 text-[10px] bg-slate-50 dark:bg-slate-900/50 p-1 rounded border border-slate-100 dark:border-slate-800 text-slate-500 max-w-[150px] truncate" title={res.notes}>
-                                                                <FileText className="w-3 h-3 flex-shrink-0 mt-0.5 text-slate-400" />
-                                                                <span>{res.notes}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination Controls */}
-                    {!loading && pagination.totalPages > 1 && (
-                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/20">
-                            <p className="text-xs text-slate-500 font-black uppercase tracking-wider">
-                                Showing page <span className="font-bold text-slate-900 dark:text-white">{pagination.page}</span> of <span className="font-bold">{pagination.totalPages}</span>
-                            </p>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => handlePageChange(pagination.page - 1)}
-                                    disabled={pagination.page === 1}
-                                    className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-30 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm"
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => handlePageChange(pagination.page + 1)}
-                                    disabled={pagination.page === pagination.totalPages}
-                                    className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-30 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm"
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
+                <DataTable
+                    data={filteredReservations}
+                    columns={columns}
+                    getRowKey={(reservation) => reservation.id}
+                    loading={loading}
+                    loadingLabel="Loading reservations..."
+                    emptyLabel={
+                        <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
+                            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-1">
+                                <Lock className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">No Reservations</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                    No stock reservations match your current query or filters.
+                                </p>
                             </div>
                         </div>
-                    )}
-                </div>
+                    }
+                    containerClassName="rounded-[2rem]"
+                    pagination={{
+                        page: pagination.page,
+                        total: pagination.total,
+                        totalPages: pagination.totalPages,
+                        onPageChange: handlePageChange,
+                    }}
+                    paginationSummary={
+                        <p className="text-xs text-slate-500 font-black uppercase tracking-wider">
+                            Showing page <span className="font-bold text-slate-900 dark:text-white">{pagination.page}</span> of <span className="font-bold">{pagination.totalPages}</span>
+                        </p>
+                    }
+                />
             </div>
 
             {/* Right side: ATP (Available to Promise) Calculator */}
@@ -506,7 +499,7 @@ export default function StockReservationList() {
                                     className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all text-sm font-semibold"
                                 />
                                 {selectedAtpProduct && (
-                                    <button 
+                                    <button
                                         onClick={handleResetAtp}
                                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors"
                                     >
@@ -532,7 +525,7 @@ export default function StockReservationList() {
                                                 }}
                                                 className="w-full flex items-center gap-2 p-2.5 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-left transition-colors"
                                             >
-                                                <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex-shrink-0 overflow-hidden">
+                                                <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 shrink-0 overflow-hidden">
                                                     {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
                                                 </div>
                                                 <div className="min-w-0">
@@ -553,7 +546,7 @@ export default function StockReservationList() {
                                     Select Variant
                                 </label>
                                 <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
-                                    {selectedAtpProduct.variants.map((v: any) => (
+                                    {selectedAtpProduct.variants.map((v) => (
                                         <button
                                             key={v.id}
                                             type="button"
@@ -563,7 +556,7 @@ export default function StockReservationList() {
                                                 : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30'
                                                 }`}
                                         >
-                                            {Object.entries(v.combination || {}).map(([k, val]) => `${val}`).join('/')} ({v.stock})
+                                            {Object.values(v.combination || {}).join('/')} ({v.stock})
                                         </button>
                                     ))}
                                 </div>
@@ -576,7 +569,7 @@ export default function StockReservationList() {
                                 <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     Physical Balance
                                 </label>
-                                <span 
+                                <span
                                     onClick={() => {
                                         if (selectedAtpVariant) setAtpPhysicalBalance(Number(selectedAtpVariant.stock));
                                         else if (selectedAtpProduct) setAtpPhysicalBalance(Number(selectedAtpProduct.stock));
@@ -641,7 +634,7 @@ export default function StockReservationList() {
                                 </div>
 
                                 <div className="flex gap-2 items-start text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-900/10 p-2.5 rounded-lg font-medium leading-relaxed border border-slate-100/50 dark:border-slate-800">
-                                    <Info className="w-4.5 h-4.5 text-slate-400 flex-shrink-0 mt-0.5" />
+                                    <Info className="w-4.5 h-4.5 text-slate-400 shrink-0 mt-0.5" />
                                     <span>
                                         ATP = Physical Balance ({atpResult.physicalBalance}) - Active Reservations ({atpResult.openReserved}).
                                     </span>

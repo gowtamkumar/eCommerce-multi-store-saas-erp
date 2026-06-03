@@ -126,6 +126,16 @@ export default function SuperAdminNotificationsPage() {
     if (targetLink.startsWith('/admin/system/billing/')) {
       return '/system/billing';
     }
+    if (targetLink.startsWith('/admin/settings/billing')) {
+      return '/system/billing';
+    }
+    if (targetLink.startsWith('/system/tenants/') && !targetLink.endsWith('/analytics')) {
+      const parts = targetLink.split('/');
+      const tenantId = parts[3];
+      if (tenantId) {
+        return `/system/tenants/${tenantId}/analytics`;
+      }
+    }
     return targetLink;
   };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Activity, 
@@ -21,6 +21,9 @@ import {
 import Link from 'next/link';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
 import toast from 'react-hot-toast';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+
+type RankedTenantAnalytics = TenantAnalytics & { rank: number };
 
 interface TrafficData {
   date: string;
@@ -187,6 +190,63 @@ export default function SuperAdminDashboard({ stats: initialStats, traffic: init
     starter: 'bg-slate-400',
     basic: 'bg-slate-400',
   };
+
+  const topActiveStores = useMemo(() => {
+    return [...initialAnalytics]
+      .sort((a, b) => (b.stats?.orders || 0) - (a.stats?.orders || 0))
+      .slice(0, 5)
+      .map((t, idx) => ({ ...t, rank: idx + 1 }));
+  }, [initialAnalytics]);
+
+  const columns: DataTableColumn<RankedTenantAnalytics>[] = [
+    {
+      key: 'store',
+      header: 'Store',
+      className: 'px-6 py-4',
+      cell: (t) => (
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-black text-slate-350 dark:text-slate-600 w-4">#{t.rank}</span>
+          <div>
+            <Link href={`/system/tenants/${t.id}/analytics`} className="font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              {t.storeName}
+            </Link>
+            <p className="text-xs text-slate-400">{t.subdomain}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'plan',
+      header: 'Plan',
+      className: 'px-6 py-4',
+      cell: (t) => (
+        <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded-full ${planColorMap[t.subscriptionPlan?.name?.toLowerCase() || 'basic'] || 'bg-slate-400'} text-white`}>
+          {t.subscriptionPlan?.name || 'Basic'}
+        </span>
+      ),
+    },
+    {
+      key: 'users',
+      header: 'Users',
+      headerClassName: 'text-center',
+      className: 'px-6 py-4 text-center font-bold text-slate-700 dark:text-slate-300',
+      cell: (t) => t.stats?.users || 0,
+    },
+    {
+      key: 'products',
+      header: 'Products',
+      headerClassName: 'text-center',
+      className: 'px-6 py-4 text-center font-bold text-slate-700 dark:text-slate-300',
+      cell: (t) => t.stats?.products || 0,
+    },
+    {
+      key: 'orders',
+      header: 'Orders',
+      headerClassName: 'text-center',
+      className: 'px-6 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400',
+      cell: (t) => t.stats?.orders || 0,
+    },
+  ];
 
   return (
     <div className="space-y-8">
@@ -375,47 +435,12 @@ export default function SuperAdminDashboard({ stats: initialStats, traffic: init
             </div>
             <Link href="/system/tenants" className="text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors">View all →</Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-900/50">
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Store</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Plan</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider text-center">Users</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider text-center">Products</th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider text-center">Orders</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                {initialAnalytics
-                  .sort((a, b) => (b.stats?.orders || 0) - (a.stats?.orders || 0))
-                  .slice(0, 5)
-                  .map((t, i) => (
-                    <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-black text-slate-300 dark:text-slate-600 w-4">#{i + 1}</span>
-                          <div>
-                            <Link href={`/system/tenants/${t.id}/analytics`} className="font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                              {t.storeName}
-                            </Link>
-                            <p className="text-xs text-slate-400">{t.subdomain}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-widest rounded-full ${planColorMap[t.subscriptionPlan?.name?.toLowerCase() || 'basic'] || 'bg-slate-400'} text-white`}>
-                          {t.subscriptionPlan?.name || 'Basic'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center font-bold text-slate-700 dark:text-slate-300">{t.stats?.users || 0}</td>
-                      <td className="px-6 py-4 text-center font-bold text-slate-700 dark:text-slate-300">{t.stats?.products || 0}</td>
-                      <td className="px-6 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400">{t.stats?.orders || 0}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            data={topActiveStores}
+            columns={columns}
+            getRowKey={t => t.id}
+            containerClassName="border-0 shadow-none rounded-t-none rounded-b-3xl bg-transparent"
+          />
         </div>
       )}
     </div>

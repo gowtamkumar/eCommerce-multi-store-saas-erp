@@ -1,16 +1,16 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Loader2, Search, Terminal, Filter, RefreshCw } from 'lucide-react';
+import { Search, Terminal, Filter, RefreshCw, Shield, Store, User as UserIcon, Info, Loader2, UserCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { UserStatus } from '@/lib/enums/user-status.enum';
+import { UserRole } from '@/lib/enums/user-role.enum';
 import { PaginationMeta, User, UserListProps } from '../types/user-management.types';
 import UserDetailsModal from './UserDetailsModal';
-import UserRow from './UserRow';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 export default function UserList({ initialUsers, initialPagination }: UserListProps) {
   // Data State
@@ -68,7 +68,7 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
       const res = await fetchSuperAdminAPI(endpoint);
 
       if (res.success) {
-        setUsers(res.data.users);
+        setUsers(res.data.users || []);
         setPagination(res.data.pagination);
       }
     } catch (error: any) {
@@ -112,7 +112,6 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
   const handleStatusChange = useCallback(async (userId: string, newStatus: UserStatus) => {
     setUpdatingId(userId);
     try {
-      // Note: Endpoint might need to be adjusted based on actual API design
       const res = await fetchSuperAdminAPI(`/super-admin/users/${userId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
@@ -132,12 +131,140 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
     }
   }, [selectedUser]);
 
+  const columns: DataTableColumn<User>[] = [
+    {
+      key: 'name',
+      header: 'Identity Node',
+      className: 'px-6 py-4',
+      cell: (user) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 overflow-hidden bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
+            {user.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.image} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <UserIcon className="w-5 h-5" />
+            )}
+          </div>
+          <div>
+            <p className="font-bold text-slate-900 dark:text-white capitalize leading-tight">{user.name}</p>
+            <p className="text-xs text-slate-500 font-medium">{user.email}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'role',
+      header: 'Access Tier',
+      className: 'px-6 py-4',
+      cell: (user) => (
+        <div className="flex items-center gap-2">
+          {user.role === UserRole.SUPER_ADMIN ? (
+            <Shield className="w-4 h-4 text-rose-500" />
+          ) : user.role === UserRole.ADMIN ? (
+            <Shield className="w-4 h-4 text-indigo-500" />
+          ) : (
+            <UserIcon className="w-4 h-4 text-slate-400" />
+          )}
+          <span className={`text-[10px] font-black uppercase tracking-widest ${user.role === UserRole.SUPER_ADMIN ? 'text-rose-500' :
+            user.role === UserRole.ADMIN ? 'text-indigo-500' : 'text-slate-500'
+            }`}>
+            {user.role?.replace('_', ' ')}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'partition',
+      header: 'Partition Association',
+      className: 'px-6 py-4',
+      cell: (user) => user.tenantId ? (
+        <div className="flex items-center gap-2 text-slate-900 dark:text-white text-sm">
+          <Store className="w-4 h-4 text-indigo-400" />
+          <span className="font-semibold">{user.tenantId.storeName}</span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded">
+            {user.tenantId.subdomain}
+          </span>
+        </div>
+      ) : (
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-3 py-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">Platform</span>
+      )
+    },
+    {
+      key: 'createdAt',
+      header: 'Sync Date',
+      className: 'px-6 py-4 text-xs text-slate-500 font-bold uppercase tracking-widest',
+      cell: (user) => <span>{new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+    },
+    {
+      key: 'actions',
+      header: 'System Actions',
+      headerClassName: 'text-right',
+      className: 'px-6 py-4',
+      cell: (user) => (
+        <div className="flex items-center justify-end gap-3">
+          <button
+            onClick={() => handleImpersonate(user.id)}
+            disabled={updatingId !== null || impersonatingId !== null}
+            className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-all disabled:opacity-30"
+            title="Impersonate User"
+          >
+            {impersonatingId === user.id ? (
+              <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+            ) : (
+              <UserCheck className="w-5 h-5" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setSelectedUser(user)}
+            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
+            title="View Details"
+          >
+            <Info className="w-5 h-5" />
+          </button>
+
+          <div className="relative">
+            {updatingId === user.id ? (
+              <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+            ) : (
+              <select
+                value={user.status}
+                onChange={(e) => handleStatusChange(user.id, e.target.value as UserStatus)}
+                className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border-0 outline-none cursor-pointer appearance-none transition-all pr-1 ${user.status === UserStatus.ACTIVE
+                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
+                  : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'
+                  }`}
+              >
+                <option value={UserStatus.ACTIVE}>Active</option>
+                <option value={UserStatus.BLOCKED}>Blocked</option>
+              </select>
+            )}
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const dataTablePagination = {
+    page: pagination.page,
+    total: pagination.total,
+    totalPages: pagination.totalPages,
+    onPageChange: (p: number) => handlePageChange(p)
+  };
+
+  const dataTablePaginationSummary = (
+    <div className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+      Showing <span className="text-slate-900 dark:text-white">{users.length}</span> of <span className="text-slate-900 dark:text-white">{pagination.total}</span> Records
+    </div>
+  );
+
   return (
     <div className="space-y-8">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">System Identity Repository</h1>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight animate-in fade-in duration-300">System Identity Repository</h1>
           <p className="text-slate-500 dark:text-slate-400 font-medium">Monitoring {pagination.total} neural identities across the network cluster.</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto items-center">
@@ -150,11 +277,6 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium shadow-sm text-slate-900 dark:text-white"
             />
-            {isLoading && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-              </div>
-            )}
           </div>
           <button
             onClick={() => setShowFilters(v => !v)}
@@ -245,105 +367,23 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
       </AnimatePresence>
 
       {/* Table Section */}
-      <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900/50">
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identity Node</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Access Tier</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Partition Association</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Sync Date</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">System Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {isLoading && users.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-32 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-                      </div>
-                      <p className="text-sm font-black uppercase tracking-widest text-slate-400">Syncing database records...</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-32 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <Terminal className="w-12 h-12 text-slate-200 dark:text-slate-700" />
-                      <p className="text-sm font-black uppercase tracking-widest text-slate-400">Zero matches found in repository</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <AnimatePresence mode="popLayout">
-                  {users.map((user) => (
-                    <UserRow
-                      key={user.id}
-                      user={user}
-                      updatingId={updatingId}
-                      onStatusChange={handleStatusChange}
-                      onSelectUser={setSelectedUser}
-                      onImpersonate={handleImpersonate}
-                      impersonatingId={impersonatingId}
-                    />
-                  ))}
-                </AnimatePresence>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Section */}
-        <div className="px-8 py-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:row justify-between items-center gap-4">
-          <div className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
-            Showing <span className="text-slate-900 dark:text-white">{users.length}</span> of <span className="text-slate-900 dark:text-white">{pagination.total}</span> Records
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1 || isLoading}
-              className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm"
-              title="Previous Page"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                let pageNum = i + 1;
-                // Simple windowing logic
-                if (pagination.totalPages > 5 && pagination.page > 3) {
-                  pageNum = pagination.page - 3 + i + 1;
-                }
-                if (pageNum > pagination.totalPages) return null;
-
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${pagination.page === pageNum
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                      : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-sm'
-                      }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+      <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none animate-in fade-in duration-500">
+        <DataTable
+          data={users}
+          columns={columns}
+          getRowKey={(user) => user.id}
+          loading={isLoading}
+          loadingLabel="Syncing database records..."
+          emptyLabel={
+            <div className="flex flex-col items-center gap-3 opacity-30 py-12">
+              <Terminal className="w-12 h-12 text-slate-200 dark:text-slate-700" />
+              <p className="text-sm font-black uppercase tracking-widest text-slate-400">Zero matches found in repository</p>
             </div>
-            <button
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages || isLoading}
-              className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm"
-              title="Next Page"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+          }
+          containerClassName="border-0 shadow-none rounded-t-none bg-transparent rounded-b-[2rem]"
+          pagination={dataTablePagination}
+          paginationSummary={dataTablePaginationSummary}
+        />
       </div>
 
       <UserDetailsModal

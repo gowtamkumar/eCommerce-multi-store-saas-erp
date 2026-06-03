@@ -1,5 +1,11 @@
 import { RefundMethod, ReturnType } from "@/lib/enums/refund-method.enum";
 
+export interface ReturnRequestItem {
+  productId?: string;
+  variantId?: string;
+  quantity: number;
+}
+
 export interface ReturnRequest {
   id: string;
   orderId: string;
@@ -28,10 +34,10 @@ export interface ReturnRequest {
     customerName: string;
     customerEmail: string;
     customerPhone?: string;
-    items?: any[];
+    items?: ReturnRequestItem[];
     userId?: string;
   };
-  items: any[];
+  items: ReturnRequestItem[];
   createdAt: string;
   updatedAt?: string;
 }

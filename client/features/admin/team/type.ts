@@ -11,7 +11,12 @@ export interface TeamMember {
     status: TeamStatus;
     image?: string;
     createdAt: string;
-    roleAssignments?: any[];
+    roleAssignments?: Array<{
+        id: string;
+        role?: {
+            name?: string;
+        };
+    }>;
 }
 
 export interface Invitation {
@@ -23,18 +28,6 @@ export interface Invitation {
     expiresAt: string;
 }
 
-
-export interface MemberRowProps {
-    member: TeamMember;
-    activeDropdown: string | null;
-    setActiveDropdown: (id: string | null) => void;
-    handleRoleChange: (memberId: string, role: UserRole) => void;
-    handleRemoveMember: (memberId: string) => void;
-    handleEditRole: (member: TeamMember) => void;
-    roleIcons: Record<UserRole, React.ReactElement>;
-    roleColors: Record<UserRole, string>;
-    getInitials: (name: string) => string;
-}
 
 export interface MemberTableProps {
     members: TeamMember[];

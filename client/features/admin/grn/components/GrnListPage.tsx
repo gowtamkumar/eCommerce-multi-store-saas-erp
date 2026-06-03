@@ -1,5 +1,6 @@
 'use client';
 
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { useSettings } from '@/hooks/SettingsContext';
 import { GrnStatus } from '@/lib/enums/grn-status.enum';
 import {
@@ -13,8 +14,7 @@ import {
     XCircle
 } from 'lucide-react';
 import Link from 'next/link';
-import { memo } from 'react';
-import Pagination from '@/components/shared/Pagination';
+import { useMemo } from 'react';
 import { GrnData, GrnItem } from '@/features/admin/grn/types';
 
 
@@ -44,56 +44,6 @@ export const getGrnStatusBadge = (status: GrnStatus) => {
     }
 };
 
-const GrnRow = memo(({ grn, formatPrice }: {
-    grn: GrnData,
-    formatPrice: (p: number) => string
-}) => {
-    return (
-        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-            <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
-                {grn.createdAt ? new Date(grn.createdAt).toLocaleDateString() : 'N/A'}
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg">
-                        <FileText className="w-4 h-4 text-slate-500" />
-                    </div>
-                    <div>
-                        <span className="text-slate-900 dark:text-white font-bold block tracking-tight">{grn.grnNumber}</span>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-tight">PO: {grn.purchaseOrder?.referenceNumber || 'N/A'}</span>
-                    </div>
-                </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="text-slate-700 dark:text-slate-300 font-semibold">{grn.supplier?.name}</span>
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-2">
-                    <Warehouse className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-600 dark:text-slate-400 text-sm font-medium">{grn.warehouse?.name || 'Main Warehouse'}</span>
-                </div>
-            </td>
-            <td className="px-6 py-4 font-black text-slate-900 dark:text-white font-mono text-sm">
-                {formatPrice(grn.items?.reduce((sum: number, item: GrnItem) => sum + (Number(item.receivedQty) * Number(item.unitCost)), 0) || 0)}
-            </td>
-            <td className="px-6 py-4">
-                {getGrnStatusBadge(grn.status)}
-            </td>
-            <td className="px-6 py-4 text-right">
-                <Link
-                    href={`/admin/procurement/grn/${grn.id}`}
-                    className="inline-flex p-2 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors"
-                    title="View Details"
-                >
-                    <Eye className="w-5 h-5" />
-                </Link>
-            </td>
-        </tr>
-    );
-});
-
-GrnRow.displayName = 'GrnRow';
-
 interface GrnListPageProps {
     grns?: GrnData[];
     loading?: boolean;
@@ -120,6 +70,72 @@ export default function GrnListPage({
     onPageChange = () => {}
 }: GrnListPageProps) {
     const { formatPrice } = useSettings();
+    const columns = useMemo<DataTableColumn<GrnData>[]>(() => [
+        {
+            key: 'date',
+            header: 'Date',
+            className: 'text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono',
+            cell: (grn) => grn.createdAt ? new Date(grn.createdAt).toLocaleDateString() : 'N/A',
+        },
+        {
+            key: 'identity',
+            header: 'Identity',
+            cell: (grn) => (
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-lg">
+                        <FileText className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div>
+                        <span className="text-slate-900 dark:text-white font-bold block tracking-tight">{grn.grnNumber}</span>
+                        <span className="text-[10px] text-slate-400 uppercase tracking-tight">PO: {grn.purchaseOrder?.referenceNumber || 'N/A'}</span>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'supplier',
+            header: 'Supplier',
+            cell: (grn) => (
+                <span className="text-slate-700 dark:text-slate-300 font-semibold">{grn.supplier?.name || 'Unknown supplier'}</span>
+            ),
+        },
+        {
+            key: 'destination',
+            header: 'Destination',
+            cell: (grn) => (
+                <div className="flex items-center gap-2">
+                    <Warehouse className="w-4 h-4 text-slate-400" />
+                    <span className="text-slate-600 dark:text-slate-400 text-sm font-medium">{grn.warehouse?.name || 'Main Warehouse'}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'valuation',
+            header: 'Valuation',
+            className: 'font-black text-slate-900 dark:text-white font-mono text-sm',
+            cell: (grn) => formatPrice(grn.items?.reduce((sum: number, item: GrnItem) => sum + (Number(item.receivedQty) * Number(item.unitCost)), 0) || 0),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (grn) => getGrnStatusBadge(grn.status),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (grn) => (
+                <Link
+                    href={`/admin/procurement/grn/${grn.id}`}
+                    className="inline-flex p-2 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors"
+                    title="View Details"
+                >
+                    <Eye className="w-5 h-5" />
+                </Link>
+            ),
+        },
+    ], [formatPrice]);
 
     return (
         <div className="space-y-6">
@@ -160,65 +176,33 @@ export default function GrnListPage({
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden min-h-[400px]">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Date</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identity</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Destination</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Valuation</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>
-                                        <td colSpan={7} className="px-6 py-8">
-                                            <div className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-2xl" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : grns.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="py-24 text-center">
-                                        <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
-                                            <CheckCircle2 className="w-8 h-8 text-slate-300" strokeWidth={1} />
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No GRNs found</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                grns.map((grn: GrnData) => (
-                                    <GrnRow
-                                        key={grn.id}
-                                        grn={grn}
-                                        formatPrice={formatPrice}
-                                    />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {pagination.totalPages > 1 && (
-                    <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                            Page <span className="text-slate-900 dark:text-white px-1">{pagination.page}</span> of <span className="text-slate-900 dark:text-white px-1">{pagination.totalPages}</span>
-                        </p>
-                        <Pagination
-                            currentPage={Number(pagination.page) || 1}
-                            totalPages={Number(pagination.totalPages) || 1}
-                            onPageChange={(p) => onPageChange(p)}
-                            loading={loading}
-                        />
+            <DataTable
+                data={grns}
+                columns={columns}
+                getRowKey={(grn) => grn.id}
+                loading={loading}
+                loadingLabel="Loading GRNs..."
+                emptyLabel={
+                    <div>
+                        <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
+                            <CheckCircle2 className="w-8 h-8 text-slate-300" strokeWidth={1} />
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No GRNs found</p>
                     </div>
-                )}
-            </div>
+                }
+                containerClassName="rounded-3xl min-h-[400px]"
+                pagination={{
+                    page: Number(pagination.page) || 1,
+                    total: Number(pagination.total) || 0,
+                    totalPages: Number(pagination.totalPages) || 1,
+                    onPageChange,
+                }}
+                paginationSummary={
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                        Page <span className="text-slate-900 dark:text-white px-1">{pagination.page}</span> of <span className="text-slate-900 dark:text-white px-1">{pagination.totalPages}</span>
+                    </p>
+                }
+            />
         </div>
     );
 }

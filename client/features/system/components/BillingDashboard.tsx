@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity,
@@ -16,13 +16,12 @@ import {
     TrendingDown,
     Calendar,
     Users,
-    ChevronLeft,
-    ChevronRight,
     ArrowUpRight,
     Filter
 } from 'lucide-react';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
 import toast from 'react-hot-toast';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import {
     AreaChart,
     Area,
@@ -74,14 +73,14 @@ export default function BillingDashboard() {
     const [revenueData, setRevenueData] = useState<any[]>([]);
     const [churnedTenants, setChurnedTenants] = useState<ChurnedTenant[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    
+
     // Pagination & Filter States
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    
+
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -97,7 +96,7 @@ export default function BillingDashboard() {
     const loadData = useCallback(async (silent = false) => {
         if (!silent) setIsLoading(true);
         else setIsRefreshing(true);
-        
+
         try {
             const [overviewRes, revenueRes, churnRes] = await Promise.all([
                 fetchSuperAdminAPI('/super-admin/billing/overview'),
@@ -188,6 +187,86 @@ export default function BillingDashboard() {
         }
     };
 
+    const columns: DataTableColumn<Invoice>[] = [
+        {
+            key: 'invoiceNumber',
+            header: 'Invoice #',
+            className: 'px-6 py-4.5 font-bold text-slate-800 dark:text-slate-200',
+            cell: (invoice) => invoice.invoiceNumber,
+        },
+        {
+            key: 'merchant',
+            header: 'Store / Merchant',
+            className: 'px-6 py-4.5',
+            cell: (invoice) => (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                        {invoice.tenant?.storeName || 'Unknown Store'}
+                    </span>
+                    <span className="text-xs text-slate-400">{invoice.tenant?.subdomain || 'no-subdomain'}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'plan',
+            header: 'Plan / Cycle',
+            className: 'px-6 py-4.5',
+            cell: (invoice) => (
+                <div className="flex flex-col gap-1">
+                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 w-fit">
+                        {invoice.subscriptionPlan?.name || 'Starter'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 capitalize">{invoice.billingCycle}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'amount',
+            header: 'Amount',
+            className: 'px-6 py-4.5 font-black text-slate-900 dark:text-white',
+            cell: (invoice) => invoice.amount.toLocaleString('en-US', { style: 'currency', currency: invoice.currency || 'USD' }),
+        },
+        {
+            key: 'date',
+            header: 'Date',
+            className: 'px-6 py-4.5 text-xs text-slate-400 font-bold',
+            cell: (invoice) => new Date(invoice.billingDate).toLocaleDateString(),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            className: 'px-6 py-4.5',
+            cell: (invoice) => getStatusBadge(invoice.status),
+        },
+        {
+            key: 'actions',
+            header: '',
+            headerClassName: 'text-right',
+            className: 'px-6 py-4.5 text-right',
+            cell: (invoice) => invoice.tenant?.id ? (
+                <a
+                    href={`/system/tenants/${invoice.tenant.id}/analytics`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-xs text-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
+                >
+                    Merchant <ArrowUpRight className="w-3 h-3" />
+                </a>
+            ) : null,
+        },
+    ];
+
+    const dataTablePagination = {
+        page: currentPage,
+        total: overview.totalInvoices || 0,
+        totalPages: totalPages,
+        onPageChange: (page: number) => setCurrentPage(page),
+    };
+
+    const dataTablePaginationSummary = (
+        <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] hidden sm:block">
+            Page {currentPage} of {totalPages}
+        </span>
+    );
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
@@ -270,15 +349,15 @@ export default function BillingDashboard() {
                         </div>
                         <Calendar className="w-5 h-5 text-slate-400" />
                     </div>
-                    
+
                     <div className="h-64 flex-1 min-h-[250px]">
                         {revenueData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-700/40" />
@@ -388,98 +467,17 @@ export default function BillingDashboard() {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-900/40 text-slate-400 font-black uppercase text-[10px] tracking-wider">
-                                <th className="px-6 py-4">Invoice #</th>
-                                <th className="px-6 py-4">Store / Merchant</th>
-                                <th className="px-6 py-4">Plan / Cycle</th>
-                                <th className="px-6 py-4">Amount</th>
-                                <th className="px-6 py-4">Date</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {invoices.length > 0 ? (
-                                invoices.map((invoice) => (
-                                    <tr key={invoice.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-700/20 transition-all">
-                                        <td className="px-6 py-4.5 font-bold text-slate-800 dark:text-slate-200">
-                                            {invoice.invoiceNumber}
-                                        </td>
-                                        <td className="px-6 py-4.5">
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-900 dark:text-white">
-                                                    {invoice.tenant?.storeName || 'Unknown Store'}
-                                                </span>
-                                                <span className="text-xs text-slate-400">{invoice.tenant?.subdomain || 'no-subdomain'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4.5">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 w-fit">
-                                                    {invoice.subscriptionPlan?.name || 'Starter'}
-                                                </span>
-                                                <span className="text-[10px] text-slate-400 capitalize">{invoice.billingCycle}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4.5 font-black text-slate-900 dark:text-white">
-                                            {invoice.amount.toLocaleString('en-US', { style: 'currency', currency: invoice.currency || 'USD' })}
-                                        </td>
-                                        <td className="px-6 py-4.5 text-xs text-slate-400 font-bold">
-                                            {new Date(invoice.billingDate).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4.5">
-                                            {getStatusBadge(invoice.status)}
-                                        </td>
-                                        <td className="px-6 py-4.5 text-right">
-                                            {invoice.tenant?.id && (
-                                                <a
-                                                    href={`/system/tenants/${invoice.tenant.id}/analytics`}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-xs text-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
-                                                >
-                                                    Merchant <ArrowUpRight className="w-3 h-3" />
-                                                </a>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
-                                        No invoices matching the search criteria.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                    <div className="p-6 border-t border-slate-100 dark:border-slate-700/60 flex justify-between items-center">
-                        <span className="text-xs text-slate-400 font-bold">
-                            Page {currentPage} of {totalPages}
-                        </span>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                                disabled={currentPage === 1}
-                                className="p-2 border border-slate-100 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-all"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                                className="p-2 border border-slate-100 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-all"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <DataTable
+                    data={invoices}
+                    columns={columns}
+                    getRowKey={(invoice) => invoice.id}
+                    loading={isLoading}
+                    loadingLabel="Syncing billing registry..."
+                    emptyLabel="No invoices matching the search criteria."
+                    containerClassName="border-0 shadow-none rounded-t-none bg-transparent"
+                    pagination={dataTablePagination}
+                    paginationSummary={dataTablePaginationSummary}
+                />
             </div>
         </div>
     );

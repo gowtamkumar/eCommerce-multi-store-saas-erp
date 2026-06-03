@@ -303,7 +303,7 @@ export class PaymentService {
           title,
           message,
           type,
-          link: `/admin/sales/orders/${order.id}`,
+          link: `/admin/orders/${order.id}`,
           userId: null as any,
         },
         order.tenantId,

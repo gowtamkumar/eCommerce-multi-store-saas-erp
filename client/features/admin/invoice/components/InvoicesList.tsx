@@ -1,89 +1,56 @@
 'use client';
 
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useSettings } from '@/hooks/SettingsContext';
-import dayjs from 'dayjs';
-import { Download, Eye, Receipt, Search, Filter, Loader2 } from 'lucide-react';
-import { useEffect, useState, useCallback, memo } from 'react';
-import toast from 'react-hot-toast';
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
 import { fetchAPI } from '@/services/api';
+import dayjs from 'dayjs';
+import { Download, Eye, Filter, Receipt, Search } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import InvoiceDetailsModal from './InvoiceDetailsModal';
-import { useDebounce } from '@/hooks/useDebounce';
-import Pagination from '@/components/shared/Pagination';
 
-// Memoized Invoice Row component to prevent full table re-renders
-const InvoiceRow = memo(({ invoice, onView, onDownload, formatPrice }: { 
-    invoice: any, 
-    onView: (inv: any) => void, 
-    onDownload: (inv: any) => void,
-    formatPrice: (val: number) => string 
-}) => {
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'PAID': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-            case 'PENDING': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-            case 'OVERDUE': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-            case 'CANCELLED': return 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400';
-            default: return 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400';
-        }
+type InvoiceStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED' | string;
+
+type Invoice = {
+    id: string;
+    invoiceNumber: string;
+    orderId?: string;
+    issueDate: string;
+    status: InvoiceStatus;
+    order?: {
+        customerName?: string;
+        totalAmount?: number;
     };
+};
 
-    return (
-        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            <td className="p-4">
-                <span className="font-medium text-slate-900 dark:text-white">
-                    {invoice.invoiceNumber}
-                </span>
-            </td>
-            <td className="p-4 text-slate-600 dark:text-slate-300">
-                #{invoice.orderId?.slice(-6).toUpperCase() || 'N/A'}
-            </td>
-            <td className="p-4 text-slate-600 dark:text-slate-300">
-                {invoice.order?.customerName || 'N/A'}
-            </td>
-            <td className="p-4 text-slate-600 dark:text-slate-300">
-                {dayjs(invoice.issueDate).format('MMM D, YYYY')}
-            </td>
-            <td className="p-4">
-                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(invoice.status)}`}>
-                    {invoice.status}
-                </span>
-            </td>
-            <td className="p-4 font-medium text-slate-900 dark:text-white">
-                {formatPrice(invoice.order?.totalAmount || 0)}
-            </td>
-            <td className="p-4 text-right">
-                <div className="flex justify-end gap-2">
-                    <button
-                        onClick={() => onView(invoice)}
-                        className="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                        title="View Details"
-                    >
-                        <Eye className="w-5 h-5" />
-                    </button>
-                    <button
-                        onClick={() => onDownload(invoice)}
-                        className="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                        title="Download PDF"
-                    >
-                        <Download className="w-5 h-5" />
-                    </button>
-                </div>
-            </td>
-        </tr>
-    );
-});
+type InvoiceResponse = {
+    items: Invoice[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+};
 
-InvoiceRow.displayName = 'InvoiceRow';
+const getStatusColor = (status: string) => {
+    switch (status) {
+        case 'PAID': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+        case 'PENDING': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+        case 'OVERDUE': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+        case 'CANCELLED': return 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400';
+        default: return 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400';
+    }
+};
 
 export default function InvoicesList() {
     const { formatPrice } = useSettings();
     const { downloadInvoice } = useDownloadInvoice();
     
     // State management
-    const [invoices, setInvoices] = useState<any[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [pagination, setPagination] = useState({
@@ -108,15 +75,16 @@ export default function InvoicesList() {
             const res = await fetchAPI(`/invoices?${params}`);
             
             if (res.success && res.data) {
-                setInvoices(res.data.items);
+                const data = res.data as InvoiceResponse;
+                setInvoices(data.items);
                 setPagination({
-                    page: res.data.page,
-                    limit: res.data.limit,
-                    total: res.data.total,
-                    totalPages: res.data.totalPages
+                    page: data.page,
+                    limit: data.limit,
+                    total: data.total,
+                    totalPages: data.totalPages
                 });
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to fetch invoices');
         } finally {
             setIsLoading(false);
@@ -124,7 +92,10 @@ export default function InvoicesList() {
     }, []);
 
     useEffect(() => {
-        fetchInvoices(1, debouncedSearch, statusFilter);
+        const timeout = window.setTimeout(() => {
+            void fetchInvoices(1, debouncedSearch, statusFilter);
+        }, 0);
+        return () => window.clearTimeout(timeout);
     }, [debouncedSearch, statusFilter, fetchInvoices]);
 
     const handlePageChange = (newPage: number) => {
@@ -133,16 +104,85 @@ export default function InvoicesList() {
         }
     };
 
-    const handleDownload = useCallback((invoice: any) => {
+    const handleDownload = useCallback((invoice: Invoice) => {
         downloadInvoice({
             ...invoice.order,
             invoiceNumber: invoice.invoiceNumber
         });
     }, [downloadInvoice]);
 
-    const handleView = useCallback((invoice: any) => {
+    const handleView = useCallback((invoice: Invoice) => {
         setSelectedInvoice(invoice);
     }, []);
+
+    const columns = useMemo<DataTableColumn<Invoice>[]>(() => [
+        {
+            key: 'invoiceNumber',
+            header: 'Invoice Number',
+            cell: (invoice) => (
+                <span className="font-medium text-slate-900 dark:text-white">
+                    {invoice.invoiceNumber}
+                </span>
+            ),
+        },
+        {
+            key: 'order',
+            header: 'Order ID',
+            className: 'text-slate-600 dark:text-slate-300',
+            cell: (invoice) => `#${invoice.orderId?.slice(-6).toUpperCase() || 'N/A'}`,
+        },
+        {
+            key: 'customer',
+            header: 'Customer',
+            className: 'text-slate-600 dark:text-slate-300',
+            cell: (invoice) => invoice.order?.customerName || 'N/A',
+        },
+        {
+            key: 'issueDate',
+            header: 'Issue Date',
+            className: 'text-slate-600 dark:text-slate-300',
+            cell: (invoice) => dayjs(invoice.issueDate).format('MMM D, YYYY'),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (invoice) => (
+                <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(invoice.status)}`}>
+                    {invoice.status}
+                </span>
+            ),
+        },
+        {
+            key: 'amount',
+            header: 'Amount',
+            className: 'font-medium text-slate-900 dark:text-white',
+            cell: (invoice) => formatPrice(invoice.order?.totalAmount || 0),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (invoice) => (
+                <div className="flex justify-end gap-2">
+                    <button
+                        onClick={() => handleView(invoice)}
+                        className="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                        title="View Details"
+                    >
+                        <Eye className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => handleDownload(invoice)}
+                        className="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                        title="Download PDF"
+                    >
+                        <Download className="w-5 h-5" />
+                    </button>
+                </div>
+            ),
+        },
+    ], [formatPrice, handleDownload, handleView]);
 
     return (
         <div className="space-y-6">
@@ -184,64 +224,25 @@ export default function InvoicesList() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-sm">
-                                <th className="p-4 font-medium">Invoice Number</th>
-                                <th className="p-4 font-medium">Order ID</th>
-                                <th className="p-4 font-medium">Customer</th>
-                                <th className="p-4 font-medium">Issue Date</th>
-                                <th className="p-4 font-medium">Status</th>
-                                <th className="p-4 font-medium">Amount</th>
-                                <th className="p-4 font-medium text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan={7} className="p-12 text-center text-slate-500">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
-                                            <span>Loading invoices...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : invoices.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="p-12 text-center text-slate-500">No invoices found matching your criteria</td>
-                                </tr>
-                            ) : (
-                                invoices.map((invoice) => (
-                                    <InvoiceRow 
-                                        key={invoice.id} 
-                                        invoice={invoice} 
-                                        onView={handleView}
-                                        onDownload={handleDownload}
-                                        formatPrice={formatPrice}
-                                    />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Controls */}
-                {!isLoading && pagination.totalPages > 1 && (
-                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <p className="text-sm text-slate-500">
-                            Showing page <span className="font-medium">{pagination.page}</span> of <span className="font-medium">{pagination.totalPages}</span>
-                        </p>
-                        <Pagination
-                            currentPage={pagination.page}
-                            totalPages={pagination.totalPages}
-                            onPageChange={handlePageChange}
-                            loading={isLoading}
-                        />
-                    </div>
-                )}
-            </div>
+            <DataTable
+                data={invoices}
+                columns={columns}
+                getRowKey={(invoice) => invoice.id}
+                loading={isLoading}
+                loadingLabel="Loading invoices..."
+                emptyLabel="No invoices found matching your criteria"
+                pagination={{
+                    page: pagination.page,
+                    total: pagination.total,
+                    totalPages: pagination.totalPages,
+                    onPageChange: handlePageChange,
+                }}
+                paginationSummary={
+                    <p className="text-sm text-slate-500">
+                        Showing page <span className="font-medium">{pagination.page}</span> of <span className="font-medium">{pagination.totalPages}</span>
+                    </p>
+                }
+            />
 
             {selectedInvoice && (
                 <InvoiceDetailsModal

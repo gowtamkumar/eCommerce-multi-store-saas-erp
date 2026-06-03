@@ -18,8 +18,9 @@ import {
     Warehouse,
     X
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 interface TransferLine {
     productId: string;
@@ -302,6 +303,92 @@ export default function StockTransfer() {
         (t.remarks && t.remarks.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
+    const columns = useMemo<DataTableColumn<StockTransferDoc>[]>(() => [
+        {
+            key: 'transferNumber',
+            header: 'Transfer Doc',
+            className: 'px-6 py-5',
+            cell: (item) => (
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-600 dark:text-slate-300">
+                        <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-black text-slate-900 dark:text-white">{item.transferNumber}</p>
+                        {item.remarks && (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 truncate max-w-xs mt-0.5">{item.remarks}</p>
+                        )}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'route',
+            header: 'Route',
+            className: 'px-6 py-5',
+            cell: (item) => (
+                <div className="flex items-center gap-2">
+                    <div className="text-xs font-black text-slate-800 dark:text-slate-200">
+                        {item.sourceWarehouse?.name || 'Origin'}
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="text-xs font-black text-slate-800 dark:text-slate-200">
+                        {item.destinationWarehouse?.name || 'Destination'}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            className: 'px-6 py-5',
+            cell: (item) => (
+                <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase ${getStatusStyle(item.status)}`}>
+                    {item.status}
+                </span>
+            ),
+        },
+        {
+            key: 'createdAt',
+            header: 'Created At',
+            className: 'px-6 py-5',
+            cell: (item) => (
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                    {new Date(item.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                </div>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'px-6 py-5 text-right',
+            cell: (item) => (
+                <button
+                    onClick={() => loadDetail(item.id)}
+                    className="inline-flex items-center gap-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                >
+                    <Eye className="w-3.5 h-3.5" />
+                    Manage
+                </button>
+            ),
+        },
+    ], []);
+
+    const dataTablePagination = useMemo(() => ({
+        page: currentPage,
+        total: totalTransfers,
+        totalPages: Math.ceil(totalTransfers / 10) || 1,
+        onPageChange: (p: number) => setCurrentPage(p),
+    }), [currentPage, totalTransfers]);
+
+    const dataTablePaginationSummary = useMemo(() => (
+        <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:block">
+            Page {currentPage} of {Math.ceil(totalTransfers / 10) || 1}
+        </span>
+    ), [currentPage, totalTransfers]);
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -372,80 +459,18 @@ export default function StockTransfer() {
                         </select>
                     </div>
 
-                    {/* Table List */}
-                    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-slate-50 dark:border-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                                        <th className="px-6 py-5">Transfer Doc</th>
-                                        <th className="px-6 py-5">Route</th>
-                                        <th className="px-6 py-5">Status</th>
-                                        <th className="px-6 py-5">Created At</th>
-                                        <th className="px-6 py-5 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                                    {filteredTransfers.map((item) => (
-                                        <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-600 dark:text-slate-300">
-                                                        <FileText className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-black text-slate-900 dark:text-white">{item.transferNumber}</p>
-                                                        {item.remarks && (
-                                                            <p className="text-xs text-slate-400 dark:text-slate-500 truncate max-w-xs mt-0.5">{item.remarks}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                                        {item.sourceWarehouse?.name || 'Origin'}
-                                                    </div>
-                                                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                                                    <div className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                                        {item.destinationWarehouse?.name || 'Destination'}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase ${getStatusStyle(item.status)}`}>
-                                                    {item.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                                                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                                    {new Date(item.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5 text-right">
-                                                <button
-                                                    onClick={() => loadDetail(item.id)}
-                                                    className="inline-flex items-center gap-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
-                                                >
-                                                    <Eye className="w-3.5 h-3.5" />
-                                                    Manage
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-
-                                    {filteredTransfers.length === 0 && (
-                                        <tr>
-                                            <td colSpan={5} className="py-12 text-center text-slate-400 text-sm">
-                                                No stock transfer documents found.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DataTable
+                        data={filteredTransfers}
+                        columns={columns}
+                        getRowKey={(item) => item.id}
+                        loading={loading}
+                        loadingLabel="Loading stock transfers..."
+                        emptyLabel="No stock transfer documents found."
+                        containerClassName="border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm bg-transparent"
+                        rowClassName="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
+                        pagination={dataTablePagination}
+                        paginationSummary={dataTablePaginationSummary}
+                    />
                 </div>
             )}
 

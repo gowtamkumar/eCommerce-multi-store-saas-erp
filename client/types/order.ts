@@ -1,4 +1,5 @@
 import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
+import { ReturnStatus } from "@/lib/enums/return-status.enum";
 
 export interface OrderItem {
   id: string;
@@ -7,7 +8,7 @@ export interface OrderItem {
   discountAmount: number;
   taxAmount: number;
   totalAmount: number;
-  snapshot?: any;
+  snapshot?: OrderItemSnapshot;
   product: {
     id: string;
     name: string;
@@ -19,6 +20,14 @@ export interface OrderItem {
     sku: string;
     combination: Record<string, string>;
   } | null;
+}
+
+export interface OrderItemSnapshot {
+  productId?: string;
+  productName?: string;
+  productImage?: string;
+  variantSku?: string;
+  variantOptions?: Record<string, string>;
 }
 
 
@@ -48,8 +57,9 @@ export interface Order {
   transactionId?: string;
   trackingId?: string;
   courierStatus?: string;
+  orderSource?: "website" | "pos" | "manual" | string;
   items: OrderItem[];
-  returns?: any[];
+  returns?: ReturnRequest[];
   createdAt: string;
   orderNotes?: string;
   currency?: string;
@@ -65,8 +75,10 @@ export interface ReturnRequest {
   orderId: string;
   order?: Order;
   userId: string;
-  user?: any;
-  status: string;
+  user?: {
+    email?: string;
+  };
+  status: ReturnStatus;
   returnType?: string;   // 'refund' | 'exchange'
   refundMethod?: string; // 'store_credit' | 'cash' | 'card' | 'mobile' | 'bank_transfer'
   reason: string;
@@ -82,5 +94,5 @@ export interface ReturnRequest {
   createdAt: string;
   updatedAt: string;
   tenantId: string;
-  users?: any; // Compatibility with existing code using 'users'
+  users?: unknown; // Compatibility with existing code using 'users'
 }

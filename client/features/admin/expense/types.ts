@@ -6,6 +6,9 @@ export interface Expense {
   expenseDate: string;
   referenceNumber?: string;
   description?: string;
+  status?: string;
+  recurrence?: string;
+  attachmentUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 }

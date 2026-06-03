@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
-import { Edit, HelpCircle, Plus, Search, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import DebouncedInput from '@/components/shared/DebouncedInput';
 import { fetchAPI } from '@/services/api';
-import { FAQModal } from './FAQModal';
+import { Edit, HelpCircle, Plus, Search, Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import type { FAQ } from '../type';
+import { FAQModal } from './FAQModal';
 
 const ITEMS_PER_PAGE = 10;
+type FAQFormData = Pick<FAQ, 'question' | 'answer' | 'order' | 'status'>;
 
 export default function FAQs() {
     const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -51,7 +53,10 @@ export default function FAQs() {
     }, []);
 
     useEffect(() => {
-        fetchFaqs(page, searchQuery);
+        const timeout = window.setTimeout(() => {
+            void fetchFaqs(page, searchQuery);
+        }, 0);
+        return () => window.clearTimeout(timeout);
     }, [page, searchQuery, fetchFaqs]);
 
     const handleSearch = useCallback((val: string) => {
@@ -59,7 +64,7 @@ export default function FAQs() {
         setPage(1); // Reset to first page on new search
     }, []);
 
-    const handleModalSubmit = async (formData: any) => {
+    const handleModalSubmit = async (formData: FAQFormData) => {
         try {
             const url = editingFaq ? `/faqs/${editingFaq.id}` : '/faqs';
             const method = editingFaq ? 'PATCH' : 'POST';
@@ -75,7 +80,7 @@ export default function FAQs() {
                 setIsModalOpen(false);
                 setEditingFaq(null);
             }
-        } catch (error) {
+        } catch {
             toast.error('Error saving FAQ');
         }
     };
@@ -89,7 +94,7 @@ export default function FAQs() {
                 fetchFaqs(page, searchQuery);
                 setConfirmModal(prev => ({ ...prev, isOpen: false }));
             }
-        } catch (error) {
+        } catch {
             toast.error('Error deleting FAQ');
         }
     };
@@ -100,6 +105,68 @@ export default function FAQs() {
     }, []);
 
     const totalPages = useMemo(() => Math.ceil(total / ITEMS_PER_PAGE), [total]);
+    const columns = useMemo<DataTableColumn<FAQ>[]>(() => [
+        {
+            key: 'order',
+            header: '# Order',
+            cell: (faq) => (
+                <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center border border-brand-100 dark:border-brand-800">
+                    <span className="text-xs font-black text-brand-600 dark:text-brand-400">{faq.order}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'content',
+            header: 'FAQ Content',
+            cell: (faq) => (
+                <div className="space-y-1 max-w-xl">
+                    <h4 className="font-bold text-slate-900 dark:text-white leading-snug">{faq.question}</h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{faq.answer}</p>
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (faq) => (
+                <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors ${faq.status === 'active'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                    }`}>
+                    {faq.status}
+                </span>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (faq) => (
+                <div className="flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <button
+                        onClick={() => openModal(faq)}
+                        className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
+                        title="Edit FAQ"
+                    >
+                        <Edit className="w-4.5 h-4.5" />
+                    </button>
+                    <button
+                        onClick={() => setConfirmModal({
+                            isOpen: true,
+                            id: faq.id,
+                            title: 'Delete FAQ',
+                            message: 'Are you sure you want to delete this FAQ? This action cannot be undone.'
+                        })}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                        title="Delete FAQ"
+                    >
+                        <Trash2 className="w-4.5 h-4.5" />
+                    </button>
+                </div>
+            ),
+        },
+    ], [openModal]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -130,125 +197,30 @@ export default function FAQs() {
                 />
             </div>
 
-            {/* Content Table */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden transition-all">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400"># Order</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">FAQ Content</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                Array.from({ length: 3 }).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={4} className="px-6 py-8"><div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-full" /></td>
-                                    </tr>
-                                ))
-                            ) : faqs.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center">
-                                        <div className="flex flex-col items-center gap-2 text-slate-400">
-                                            <HelpCircle className="w-12 h-12 opacity-20" />
-                                            <p className="font-bold">No FAQs found.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                faqs.map((faq) => (
-                                    <tr key={faq.id} className="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-6">
-                                            <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center border border-brand-100 dark:border-brand-800">
-                                                <span className="text-xs font-black text-brand-600 dark:text-brand-400">{faq.order}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-6">
-                                            <div className="space-y-1 max-w-xl">
-                                                <h4 className="font-bold text-slate-900 dark:text-white leading-snug">{faq.question}</h4>
-                                                <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{faq.answer}</p>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-6">
-                                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors ${faq.status === 'active'
-                                                ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                                                }`}>
-                                                {faq.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-6 text-right">
-                                            <div className="flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                                <button
-                                                    onClick={() => openModal(faq)}
-                                                    className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
-                                                    title="Edit FAQ"
-                                                >
-                                                    <Edit className="w-4.5 h-4.5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setConfirmModal({
-                                                        isOpen: true,
-                                                        id: faq.id,
-                                                        title: 'Delete FAQ',
-                                                        message: 'Are you sure you want to delete this FAQ? This action cannot be undone.'
-                                                    })}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                                                    title="Delete FAQ"
-                                                >
-                                                    <Trash2 className="w-4.5 h-4.5" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {!loading && totalPages > 1 && (
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
-                        <p className="text-xs font-bold text-slate-500">
-                            Showing <span className="text-slate-900 dark:text-white">{faqs.length}</span> of <span className="text-slate-900 dark:text-white">{total}</span> FAQs
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 transition-all hover:bg-slate-50"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <div className="flex items-center gap-1">
-                                {Array.from({ length: totalPages }).map((_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setPage(i + 1)}
-                                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === i + 1
-                                            ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
-                                            : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500'
-                                            }`}
-                                    >
-                                        {i + 1}
-                                    </button>
-                                ))}
-                            </div>
-                            <button
-                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 transition-all hover:bg-slate-50"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
+            <DataTable
+                data={faqs}
+                columns={columns}
+                getRowKey={(faq) => faq.id}
+                loading={loading}
+                loadingLabel="Loading FAQs..."
+                emptyLabel={
+                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                        <HelpCircle className="w-12 h-12 opacity-20" />
+                        <p className="font-bold">No FAQs found.</p>
                     </div>
-                )}
-            </div>
+                }
+                pagination={{
+                    page,
+                    total,
+                    totalPages,
+                    onPageChange: setPage,
+                }}
+                paginationSummary={
+                    <p className="text-xs font-bold text-slate-500">
+                        Showing <span className="text-slate-900 dark:text-white">{faqs.length}</span> of <span className="text-slate-900 dark:text-white">{total}</span> FAQs
+                    </p>
+                }
+            />
 
             {/* Modals */}
             <FAQModal

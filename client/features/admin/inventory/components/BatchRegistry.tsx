@@ -1,14 +1,21 @@
 'use client';
 
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, Search, AlertTriangle, XCircle, CheckCircle, Calendar, Plus, X,
-  Edit2, Loader2, Sparkles, Clock, ArrowRight, Save, ClipboardList, ShieldAlert
+  Edit2, Loader2, Clock, Save, ClipboardList, ShieldAlert
 } from 'lucide-react';
 import { fetchAPI } from '@/services/api';
-import { useSettings } from '@/hooks/SettingsContext';
+
+type BatchStatus = 'ACTIVE' | 'EXPIRED' | 'HOLD' | 'DELETED';
+
+interface ProductVariant {
+  id: string;
+  sku?: string;
+  combination?: Record<string, string>;
+}
 
 interface Product {
   id: string;
@@ -17,7 +24,7 @@ interface Product {
   images?: string[];
   stock: number;
   price: number;
-  variants?: any[];
+  variants?: ProductVariant[];
 }
 
 interface ProductBatch {
@@ -27,7 +34,7 @@ interface ProductBatch {
   expiryDate: string;
   initialQuantity: number;
   currentQuantity: number;
-  status: 'ACTIVE' | 'EXPIRED' | 'HOLD' | 'DELETED';
+  status: BatchStatus;
   productId: string;
   variantId: string | null;
   product: {
@@ -35,6 +42,7 @@ interface ProductBatch {
     images?: string[];
   };
   variant?: {
+    id?: string;
     combination?: Record<string, string>;
     sku?: string;
   } | null;
@@ -91,7 +99,11 @@ export default function BatchRegistry() {
   }, [page, searchQuery, statusFilter, expiringSoonFilter]);
 
   useEffect(() => {
-    fetchBatches();
+    const timer = window.setTimeout(() => {
+      void fetchBatches();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [fetchBatches]);
 
   const handleSweepExpired = async () => {
@@ -102,7 +114,7 @@ export default function BatchRegistry() {
         toast.success(`Sweep complete. ${res.data.affected} batches marked as expired.`);
         fetchBatches();
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to perform expired batch sweep.');
     } finally {
       setSweeping(false);
@@ -132,6 +144,116 @@ export default function BatchRegistry() {
     const diffTime = new Date(expiryDateStr).getTime() - new Date().getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
+
+  const columns = useMemo<DataTableColumn<ProductBatch>[]>(() => [
+    {
+      key: 'product',
+      header: 'Product / Item Details',
+      cell: (batch) => (
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+            {batch.product.images?.[0] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={batch.product.images[0]} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <Package className="w-5 h-5 text-slate-400" />
+            )}
+          </div>
+          <div>
+            <p className="font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{batch.product.name}</p>
+            {batch.variant && (
+              <p className="text-[10px] text-slate-400 font-mono mt-0.5 uppercase tracking-tighter">
+                {Object.values(batch.variant.combination || {}).join(' / ')}
+              </p>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'batchNumber',
+      header: 'Batch Number',
+      className: 'font-mono font-black text-xs text-slate-700 dark:text-slate-300',
+      cell: (batch) => batch.batchNumber,
+    },
+    {
+      key: 'manufactured',
+      header: 'Manufactured',
+      className: 'text-xs text-slate-600 dark:text-slate-400 font-medium',
+      cell: (batch) => batch.manufactureDate ? new Date(batch.manufactureDate).toLocaleDateString() : '-',
+    },
+    {
+      key: 'expiry',
+      header: 'Expiration Date',
+      className: 'text-xs font-bold',
+      cell: (batch) => {
+        const daysLeft = getDaysRemaining(batch.expiryDate);
+        const isSoon = daysLeft > 0 && daysLeft <= 30;
+        const isPast = daysLeft <= 0;
+        return (
+          <div className="flex flex-col">
+            <span>{new Date(batch.expiryDate).toLocaleDateString()}</span>
+            {batch.status === 'ACTIVE' && isSoon && (
+              <span className="text-[9px] text-orange-500 font-bold mt-0.5">Expiring in {daysLeft} days</span>
+            )}
+            {batch.status === 'ACTIVE' && isPast && (
+              <span className="text-[9px] text-red-500 font-bold mt-0.5">Expired</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'initialQty',
+      header: 'Initial Qty',
+      className: 'text-xs text-slate-600 dark:text-slate-400 font-mono',
+      cell: (batch) => batch.initialQuantity,
+    },
+    {
+      key: 'currentQty',
+      header: 'Current Qty',
+      className: 'font-mono text-xs font-bold text-slate-900 dark:text-white',
+      cell: (batch) => batch.currentQuantity,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (batch) => {
+        const daysLeft = getDaysRemaining(batch.expiryDate);
+        const isSoon = daysLeft > 0 && daysLeft <= 30;
+        return (
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${batch.status === 'ACTIVE'
+            ? isSoon
+              ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-950/30'
+              : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30'
+            : batch.status === 'EXPIRED'
+              ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30'
+              : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800'
+            }`}>
+            {batch.status === 'ACTIVE' && isSoon ? 'Expiring Soon' : batch.status}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      cell: (batch) => (
+        <button
+          onClick={() => {
+            setSelectedBatch(batch);
+            setIsEditModalOpen(true);
+          }}
+          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-400 hover:text-brand-500 transition-all active:scale-90"
+          title="Edit Batch"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+      ),
+    },
+  ], []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -185,7 +307,7 @@ export default function BatchRegistry() {
           <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-mono">{stats.active}</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group border-orange-100 dark:border-orange-900/30">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border shadow-sm transition-all hover:shadow-md group border-orange-100 dark:border-orange-900/30">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-xl transition-transform group-hover:scale-110">
               <AlertTriangle className="w-5 h-5" />
@@ -195,7 +317,7 @@ export default function BatchRegistry() {
           <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-mono">{stats.nearExpiry}</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group border-red-100 dark:border-red-900/30">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border shadow-sm transition-all hover:shadow-md group border-red-100 dark:border-red-900/30">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl transition-transform group-hover:scale-110">
               <XCircle className="w-5 h-5" />
@@ -254,155 +376,36 @@ export default function BatchRegistry() {
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-              <tr>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Product / Item Details</th>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Batch Number</th>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Manufactured</th>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Expiration Date</th>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Initial Qty</th>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Current Qty</th>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
-                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {loading && batches.length === 0 ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={8} className="px-6 py-10">
-                      <div className="h-12 bg-slate-100 dark:bg-slate-700/30 animate-pulse rounded-2xl" />
-                    </td>
-                  </tr>
-                ))
-              ) : batches.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-24 text-center">
-                    <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
-                      <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
-                        <Calendar className="w-8 h-8 text-slate-200" strokeWidth={1} />
-                      </div>
-                      <div>
-                        <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">No Batches Registered</p>
-                        <p className="text-xs text-slate-500 font-medium">Create a product batch to track manufacture and expiry schedules.</p>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                batches.map(batch => {
-                  const daysLeft = getDaysRemaining(batch.expiryDate);
-                  const isSoon = daysLeft > 0 && daysLeft <= 30;
-                  const isPast = daysLeft <= 0;
-
-                  return (
-                    <tr key={batch.id} className="group hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-                            {batch.product.images?.[0] ? (
-                              <img src={batch.product.images[0]} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Package className="w-5 h-5 text-slate-400" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{batch.product.name}</p>
-                            {batch.variant && (
-                              <p className="text-[10px] text-slate-400 font-mono mt-0.5 uppercase tracking-tighter">
-                                {Object.values(batch.variant.combination || {}).join(' / ')}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-mono font-black text-xs text-slate-700 dark:text-slate-300">
-                        {batch.batchNumber}
-                      </td>
-                      <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                        {batch.manufactureDate ? new Date(batch.manufactureDate).toLocaleDateString() : '—'}
-                      </td>
-                      <td className="px-6 py-4 text-xs font-bold">
-                        <div className="flex flex-col">
-                          <span>{new Date(batch.expiryDate).toLocaleDateString()}</span>
-                          {batch.status === 'ACTIVE' && isSoon && (
-                            <span className="text-[9px] text-orange-500 font-bold mt-0.5">Expiring in {daysLeft} days</span>
-                          )}
-                          {batch.status === 'ACTIVE' && isPast && (
-                            <span className="text-[9px] text-red-500 font-bold mt-0.5">Expired</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 font-mono">
-                        {batch.initialQuantity}
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs font-bold text-slate-900 dark:text-white">
-                        {batch.currentQuantity}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${batch.status === 'ACTIVE'
-                          ? isSoon
-                            ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-950/30'
-                            : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30'
-                          : batch.status === 'EXPIRED'
-                            ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30'
-                            : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800'
-                          }`}>
-                          {batch.status === 'ACTIVE' && isSoon ? 'Expiring Soon' : batch.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedBatch(batch);
-                            setIsEditModalOpen(true);
-                          }}
-                          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-400 hover:text-brand-500 transition-all active:scale-90"
-                          title="Edit Batch"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer / Pagination */}
-        {!loading && totalItems > 0 && (
-          <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">
-              Showing {batches.length} of {totalItems} registered batches
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage(page - 1)}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage(page + 1)}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-50"
-              >
-                Next
-              </button>
+      <DataTable
+        data={batches}
+        columns={columns}
+        getRowKey={(batch) => batch.id}
+        loading={loading && batches.length === 0}
+        loadingLabel="Loading batches..."
+        emptyLabel={
+          <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
+              <Calendar className="w-8 h-8 text-slate-200" strokeWidth={1} />
+            </div>
+            <div>
+              <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">No Batches Registered</p>
+              <p className="text-xs text-slate-500 font-medium">Create a product batch to track manufacture and expiry schedules.</p>
             </div>
           </div>
-        )}
-      </div>
+        }
+        containerClassName="rounded-[2.5rem] transition-all hover:shadow-md"
+        pagination={{
+          page,
+          total: totalItems,
+          totalPages,
+          onPageChange: setPage,
+        }}
+        paginationSummary={
+          <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">
+            Showing {batches.length} of {totalItems} registered batches
+          </p>
+        }
+      />
 
       {/* CREATE MODAL */}
       <CreateBatchModal
@@ -437,7 +440,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   // Form Fields
   const [batchNumber, setBatchNumber] = useState('');
@@ -445,13 +448,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
   const [expiryDate, setExpiryDate] = useState('');
   const [initialQuantity, setInitialQuantity] = useState<number>(0);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchProducts();
-    }
-  }, [isOpen]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const res = await fetchAPI('/products?limit=50');
       if (res.success) {
@@ -460,7 +457,17 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     } catch (error) {
       console.error('Failed to fetch products', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = window.setTimeout(() => {
+      void fetchProducts();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchProducts, isOpen]);
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -493,7 +500,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         resetForm();
         onSuccess();
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to register batch.');
     } finally {
       setLoading(false);
@@ -513,7 +520,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
@@ -553,7 +560,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                     onClick={() => setSelectedProduct(p)}
                     className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-brand-500 hover:bg-brand-50/10 transition-all text-left"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0">
                       {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -569,7 +576,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               {/* Product Info */}
               <div className="p-4 bg-brand-50/20 dark:bg-brand-900/10 rounded-2xl border border-brand-100/50 dark:border-brand-900/30 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-700">
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-100 dark:border-slate-700">
                     {selectedProduct.images?.[0] && <img src={selectedProduct.images[0]} alt="" className="w-full h-full object-cover" />}
                   </div>
                   <div>
@@ -679,15 +686,19 @@ function EditBatchModal({ isOpen, batch, onClose, onSuccess }: { isOpen: boolean
   const [batchNumber, setBatchNumber] = useState('');
   const [manufactureDate, setManufactureDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
-  const [status, setStatus] = useState<'ACTIVE' | 'EXPIRED' | 'HOLD' | 'DELETED'>('ACTIVE');
+  const [status, setStatus] = useState<BatchStatus>('ACTIVE');
 
   useEffect(() => {
-    if (batch) {
+    if (!batch) return;
+
+    const timer = window.setTimeout(() => {
       setBatchNumber(batch.batchNumber);
       setManufactureDate(batch.manufactureDate ? batch.manufactureDate.split('T')[0] : '');
       setExpiryDate(batch.expiryDate.split('T')[0]);
       setStatus(batch.status);
-    }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [batch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -710,7 +721,7 @@ function EditBatchModal({ isOpen, batch, onClose, onSuccess }: { isOpen: boolean
         toast.success('Batch updated successfully');
         onSuccess();
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to update batch.');
     } finally {
       setLoading(false);
@@ -720,7 +731,7 @@ function EditBatchModal({ isOpen, batch, onClose, onSuccess }: { isOpen: boolean
   if (!isOpen || !batch) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
@@ -777,7 +788,7 @@ function EditBatchModal({ isOpen, batch, onClose, onSuccess }: { isOpen: boolean
               <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Status</label>
               <select
                 value={status}
-                onChange={e => setStatus(e.target.value as any)}
+                onChange={e => setStatus(e.target.value as BatchStatus)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm font-bold"
               >
                 <option value="ACTIVE">ACTIVE</option>

@@ -14,12 +14,18 @@ import {
   Search,
   Terminal,
   XCircle,
+  BarChart3,
+  ExternalLink,
+  Layers,
+  Store,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import TenantRow from './TenantRow';
-import { StatusStyles, TenantListProps } from '../types/tenant.types';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { StatusStyles, TenantListProps, Tenant } from '../types/tenant.types';
+
+type TenantWithExpiry = Tenant & { daysUntilExpiry?: number | null };
 
 const PLAN_OPTIONS = ['All Plans', 'Starter', 'Pro Seller', 'Enterprise'];
 const STATUS_OPTIONS = ['All Status', 'active', 'trial', 'suspended', 'expired'];
@@ -140,6 +146,152 @@ export default function TenantList({ initialTenants }: TenantListProps) {
       setIsBulkProcessing(false);
     }
   };
+
+  const columns: DataTableColumn<TenantWithExpiry>[] = [
+    {
+      key: 'select',
+      header: (
+        <input
+          type="checkbox"
+          checked={selectedIds.size === tenants.length && tenants.length > 0}
+          onChange={toggleSelectAll}
+          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+        />
+      ),
+      className: 'px-4 py-4 w-[50px]',
+      cell: (tenant) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(tenant.id)}
+          onChange={() => toggleSelect(tenant.id)}
+          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+        />
+      ),
+    },
+    {
+      key: 'storeName',
+      header: 'Merchant Details',
+      className: 'px-6 py-4',
+      cell: (tenant) => {
+        const styles = getStatusStyles(tenant.status);
+        return (
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all group-hover:scale-105 ${styles.icon}`}>
+              <Store className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="font-black text-slate-900 dark:text-white leading-tight capitalize">{tenant.storeName}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                {tenant.subdomain}
+                <span className="text-slate-300 dark:text-slate-600">.HOST.LOCAL</span>
+              </p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'plan',
+      header: 'Subscription Plan',
+      className: 'px-6 py-4',
+      cell: (tenant) => (
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4 text-indigo-500" />
+          <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+            {tenant.subscriptionPlan?.name || 'Legacy Tier'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'subscriptionStatus',
+      header: 'Sub Status',
+      className: 'px-6 py-4',
+      cell: (tenant) => (
+        <div className="flex flex-col gap-1">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+            tenant.subscriptionStatus === 'ACTIVE'
+              ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
+              : 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+          }`}>
+            {tenant.subscriptionStatus || 'ACTIVE'}
+          </span>
+          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+            {tenant.subscriptionBillingCycle || 'MONTHLY'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Store Status',
+      className: 'px-6 py-4',
+      cell: (tenant) => {
+        const styles = getStatusStyles(tenant.status);
+        return (
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${styles.bg}`}>
+            <span className={`w-1 h-1 rounded-full ${styles.dot} ${tenant.status === 'active' ? 'animate-pulse' : ''}`} />
+            {tenant.status}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'expiry',
+      header: 'Expiry',
+      className: 'px-6 py-4',
+      cell: (tenant) => {
+        const isExpiringSoon = tenant.daysUntilExpiry !== null && tenant.daysUntilExpiry !== undefined && tenant.daysUntilExpiry >= 0 && tenant.daysUntilExpiry <= 7;
+        const isExpired = tenant.daysUntilExpiry !== null && tenant.daysUntilExpiry !== undefined && tenant.daysUntilExpiry < 0;
+        return (
+          <div>
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              {tenant.subscriptionEndsAt
+                ? new Date(tenant.subscriptionEndsAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                : 'PERPETUAL'}
+            </div>
+            {isExpiringSoon && !isExpired && (
+              <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                <AlertTriangle className="w-2.5 h-2.5" />
+                {tenant.daysUntilExpiry}d left
+              </span>
+            )}
+            {isExpired && (
+              <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200">
+                Expired
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: '',
+      headerClassName: 'text-right',
+      className: 'px-6 py-4 text-right',
+      cell: (tenant) => (
+        <div className="flex justify-end gap-2">
+          <Link
+            href={`/system/tenants/${tenant.id}/analytics`}
+            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
+            title="Audit & Analytics"
+          >
+            <BarChart3 className="w-5 h-5" />
+          </Link>
+          <a
+            href={tenant.primaryCustomDomain ? tenant.primaryCustomDomain : `http://${tenant.subdomain}.localhost:3000`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
+            title="Access Partition"
+          >
+            <ExternalLink className="w-5 h-5" />
+          </a>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-8">
@@ -277,62 +429,21 @@ export default function TenantList({ initialTenants }: TenantListProps) {
         </motion.div>
       )}
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900/50">
-                <th className="px-4 py-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size === tenants.length && tenants.length > 0}
-                    onChange={toggleSelectAll}
-                    className="rounded border-slate-300 text-indigo-600"
-                  />
-                </th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Merchant Details</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Subscription Plan</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Sub Status</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Store Status</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Expiry</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-24 text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-3" />
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-400">Loading merchants...</p>
-                  </td>
-                </tr>
-              ) : tenants.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-2 text-slate-400">
-                      <Terminal className="w-8 h-8 opacity-20" />
-                      <p className="italic font-medium">No records found matching criteria</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <AnimatePresence mode="popLayout">
-                  {tenants.map(tenant => (
-                    <TenantRow
-                      key={tenant.id}
-                      tenant={tenant}
-                      styles={getStatusStyles(tenant.status)}
-                      isSelected={selectedIds.has(tenant.id)}
-                      onSelect={toggleSelect}
-                    />
-                  ))}
-                </AnimatePresence>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        data={tenants}
+        columns={columns}
+        getRowKey={tenant => tenant.id}
+        loading={loading}
+        loadingLabel="Syncing merchants..."
+        emptyLabel={
+          <div className="flex flex-col items-center gap-2 text-slate-400 py-12">
+            <Terminal className="w-8 h-8 opacity-20" />
+            <p className="italic font-medium">No records found matching criteria</p>
+          </div>
+        }
+        containerClassName="border border-slate-150 dark:border-slate-700 shadow-sm rounded-3xl overflow-hidden"
+        rowClassName={tenant => selectedIds.has(tenant.id) ? 'bg-indigo-50/40 dark:bg-indigo-950/10' : ''}
+      />
     </div>
   );
 }
