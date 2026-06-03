@@ -27,7 +27,6 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
 import { TaxRuleEntity } from './entities/tax-rule.entity'
 import { TaxService } from './services/tax.service'
 import { TaxController } from './controllers/tax.controller'
-import { AccountingEventSubscriber } from './accounting-event.subscriber'
 import { BullModule } from '@nestjs/bullmq'
 import { AccountingSchedulerService } from './accounting-scheduler.service'
 import { AccountingProcessor } from './accounting.processor'
@@ -64,7 +63,6 @@ import { AccountingProcessor } from './accounting.processor'
     AccountingOutboxService,
     DunningService,
     TaxService,
-    AccountingEventSubscriber,
     AccountingSchedulerService,
     AccountingProcessor,
   ],

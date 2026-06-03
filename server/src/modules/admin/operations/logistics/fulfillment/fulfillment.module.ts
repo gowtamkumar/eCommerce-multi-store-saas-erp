@@ -5,7 +5,8 @@ import { FulfillmentItemEntity } from './entities/fulfillment-item.entity'
 import { FulfillmentService } from './fulfillment.service'
 import { FulfillmentController } from './fulfillment.controller'
 import { FulfillmentRepository } from './fulfillment.repository'
-import { FulfillmentEventSubscriber } from './fulfillment-event.subscriber'
+import { FulfillmentProcessor } from './fulfillment.processor'
+import { BullModule } from '@nestjs/bullmq'
 import { InventoryLedgerModule } from '../inventory-transaction/inventory-transaction.module'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 
@@ -13,9 +14,12 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
   imports: [
     TypeOrmModule.forFeature([FulfillmentTaskEntity, FulfillmentItemEntity, OrderEntity]),
     InventoryLedgerModule,
+    BullModule.registerQueue({
+      name: 'fulfillment',
+    }),
   ],
   controllers: [FulfillmentController],
-  providers: [FulfillmentService, FulfillmentRepository, FulfillmentEventSubscriber],
-  exports: [FulfillmentService, FulfillmentRepository],
+  providers: [FulfillmentService, FulfillmentRepository, FulfillmentProcessor],
+  exports: [FulfillmentService, FulfillmentRepository, BullModule],
 })
 export class FulfillmentModule { }

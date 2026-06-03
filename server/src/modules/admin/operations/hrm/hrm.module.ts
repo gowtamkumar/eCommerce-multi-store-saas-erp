@@ -31,6 +31,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     UserModule,
     NotificationModule,
     BullModule.registerQueue({ name: 'hrm' }),
+    BullModule.registerQueue({ name: 'accounting' }),
     TypeOrmModule.forFeature([
       DepartmentEntity,
       DesignationEntity,

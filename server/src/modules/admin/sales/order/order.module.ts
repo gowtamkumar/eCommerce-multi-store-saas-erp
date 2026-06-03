@@ -26,6 +26,15 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     BullModule.registerQueue({
       name: 'order',
     }),
+    BullModule.registerQueue({
+      name: 'accounting',
+    }),
+    BullModule.registerQueue({
+      name: 'invoice',
+    }),
+    BullModule.registerQueue({
+      name: 'fulfillment',
+    }),
     CouponModule,
     PaymentModule,
     CartModule,

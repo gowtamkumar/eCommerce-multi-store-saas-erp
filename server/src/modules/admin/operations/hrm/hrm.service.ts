@@ -11,8 +11,8 @@ import {
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { EventBusService } from '@/common/event-bus/event-bus.service'
-import { PAYROLL_ACCRUED_EVENT, PAYROLL_PAID_EVENT } from '@/common/event-bus/events/payroll.events'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import {
@@ -67,7 +67,7 @@ export class HrmService {
 
   constructor(
     private readonly hrmRepo: HrmRepository,
-    private readonly eventBus: EventBusService,
+    @InjectQueue('accounting') private readonly accountingQueue: Queue,
     private readonly auditLogService: AuditLogService,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
@@ -897,27 +897,30 @@ export class HrmService {
         totalInactiveDeductions += Number(d.inactiveDeductions ?? 0)
       }
 
-      this.eventBus.publish({
-        type: PAYROLL_ACCRUED_EVENT,
-        ctx,
-        payload: {
-          batchId: batch.id,
-          name: batch.name,
-          period: batch.period,
-          totalSalary: parseFloat(
-            (
-              totalGrossSalaries -
-              totalLateDeductions -
-              totalUnpaidLeaveDeductions -
-              totalUnpaidAbsenceDeductions -
-              totalInactiveDeductions
-            ).toFixed(2),
-          ),
-          totalTaxesWithheld: parseFloat(totalTaxesWithheld.toFixed(2)),
-          totalDeductions: parseFloat(totalBaseDeductions.toFixed(2)),
-          totalAmount: parseFloat(Number(batch.totalAmount).toFixed(2)),
+      await this.accountingQueue.add(
+        'post-payroll-accrual',
+        {
+          ctx,
+          payload: {
+            batchId: batch.id,
+            name: batch.name,
+            period: batch.period,
+            totalSalary: parseFloat(
+              (
+                totalGrossSalaries -
+                totalLateDeductions -
+                totalUnpaidLeaveDeductions -
+                totalUnpaidAbsenceDeductions -
+                totalInactiveDeductions
+              ).toFixed(2),
+            ),
+            totalTaxesWithheld: parseFloat(totalTaxesWithheld.toFixed(2)),
+            totalDeductions: parseFloat(totalBaseDeductions.toFixed(2)),
+            totalAmount: parseFloat(Number(batch.totalAmount).toFixed(2)),
+          },
         },
-      })
+        { removeOnComplete: true },
+      )
 
       await payrollBatchRepo.update(batch.id, {
         status: PayrollBatchStatus.APPROVED,
@@ -953,15 +956,18 @@ export class HrmService {
         )
       }
 
-      this.eventBus.publish({
-        type: PAYROLL_PAID_EVENT,
-        ctx,
-        payload: {
-          batchId: batch.id,
-          name: batch.name,
-          totalAmount: Number(batch.totalAmount),
+      await this.accountingQueue.add(
+        'post-payroll-settlement',
+        {
+          ctx,
+          payload: {
+            batchId: batch.id,
+            name: batch.name,
+            totalAmount: Number(batch.totalAmount),
+          },
         },
-      })
+        { removeOnComplete: true },
+      )
 
       await payrollBatchRepo.update(batch.id, {
         status: PayrollBatchStatus.PAID,

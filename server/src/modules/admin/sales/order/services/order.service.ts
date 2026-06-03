@@ -6,14 +6,7 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { EventBusService } from '@/common/event-bus/event-bus.service'
-import {
-  ORDER_CREDIT_PLACED_EVENT,
-  ORDER_PAID_EVENT,
-  ORDER_CANCELLED_EVENT,
-  ORDER_CONFIRMED_EVENT,
-  ORDER_PLACED_EVENT,
-} from '@/common/event-bus/events/order.events'
+
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 import { StockReservationEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-reservation.entity'
@@ -64,7 +57,9 @@ export class OrderService {
     private readonly reservationService: StockReservationService,
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
-    private readonly eventBus: EventBusService,
+    @InjectQueue('accounting') private readonly accountingQueue: Queue,
+    @InjectQueue('invoice') private readonly invoiceQueue: Queue,
+    @InjectQueue('fulfillment') private readonly fulfillmentQueue: Queue,
     private readonly shippingAddressService: ShippingAddressService,
     private readonly cacheService: CacheService,
     private readonly orderProcessHelper: OrderProcessHelper,
@@ -74,7 +69,7 @@ export class OrderService {
     private readonly walletService: WalletService,
     private readonly loyaltyService: LoyaltyService,
     private readonly referralService: ReferralService,
-  ) {}
+  ) { }
 
   async createOrder(
     createOrderDto: CreateOrderDto,
@@ -238,10 +233,10 @@ export class OrderService {
         if (availableBalance > 0) {
           const deductAmount = createOrderDto.walletAmountToUse
             ? Math.min(
-                Number(createOrderDto.walletAmountToUse),
-                availableBalance,
-                Number(savedOrder.totalAmount),
-              )
+              Number(createOrderDto.walletAmountToUse),
+              availableBalance,
+              Number(savedOrder.totalAmount),
+            )
             : Math.min(availableBalance, Number(savedOrder.totalAmount))
 
           if (deductAmount > 0) {
@@ -307,17 +302,20 @@ export class OrderService {
           lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: taxAmount })
         }
 
-        this.eventBus.publish({
-          type: ORDER_CREDIT_PLACED_EVENT,
-          ctx,
-          payload: {
-            orderId: savedOrder.id,
-            walletDeduction,
-            remainingAmount,
-            netRevenue,
-            taxAmount,
+        await this.accountingQueue.add(
+          'post-order-credit-placed',
+          {
+            ctx,
+            payload: {
+              orderId: savedOrder.id,
+              walletDeduction,
+              remainingAmount,
+              netRevenue,
+              taxAmount,
+            },
           },
-        })
+          { removeOnComplete: true },
+        )
       }
 
       // 8. Link Inventory Transactions
@@ -372,14 +370,17 @@ export class OrderService {
 
     // 10. Queue background jobs after successful transaction commit
     try {
-      this.eventBus.publish({
-        type: ORDER_PLACED_EVENT,
-        ctx,
-        payload: {
-          orderId: result.order.id,
-          paymentStatus: result.order.paymentStatus,
+      await this.invoiceQueue.add(
+        'create-invoice',
+        {
+          ctx,
+          payload: {
+            orderId: result.order.id,
+            paymentStatus: result.order.paymentStatus,
+          },
         },
-      })
+        { removeOnComplete: true },
+      )
 
       if (result.order.paymentMethod === PaymentMethod.COD) {
         await this.orderQueue.add(
@@ -575,36 +576,56 @@ export class OrderService {
         }
 
         // Recognition of Cash/Payment and Sales Revenue for standard sales
-        this.eventBus.publish({
-          type: ORDER_PAID_EVENT,
-          ctx,
-          payload: {
-            orderId: savedOrder.id,
-            paymentMethod: savedOrder.paymentMethod,
-            walletDeduction: Number(savedOrder.walletDeductionAmount || 0),
-            remainingAmount: Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
-            netRevenue: Number(savedOrder.totalAmount) - Number(savedOrder.taxAmount || 0),
-            taxAmount: Number(savedOrder.taxAmount || 0),
+        await this.accountingQueue.add(
+          'post-order-paid',
+          {
+            ctx,
+            payload: {
+              orderId: savedOrder.id,
+              paymentMethod: savedOrder.paymentMethod,
+              walletDeduction: Number(savedOrder.walletDeductionAmount || 0),
+              remainingAmount: Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
+              netRevenue: Number(savedOrder.totalAmount) - Number(savedOrder.taxAmount || 0),
+              taxAmount: Number(savedOrder.taxAmount || 0),
+            },
           },
-        })
+          { removeOnComplete: true },
+        )
+
+        await this.invoiceQueue.add(
+          'update-invoice-paid',
+          {
+            ctx,
+            payload: {
+              orderId: savedOrder.id,
+            },
+          },
+          { removeOnComplete: true },
+        )
       }
 
       // Sync Invoice Status
       if (updateOrderDto.status === OrderStatus.CANCELLED) {
-        this.eventBus.publish({
-          type: ORDER_CANCELLED_EVENT,
-          ctx,
-          payload: { orderId: id },
-        })
+        await this.invoiceQueue.add(
+          'update-invoice-cancelled',
+          {
+            ctx,
+            payload: { orderId: id },
+          },
+          { removeOnComplete: true },
+        )
       }
 
       // Check for Order Confirmation to Trigger Fulfillment
       if (updateOrderDto.status === OrderStatus.CONFIRMED && oldStatus !== OrderStatus.CONFIRMED) {
-        this.eventBus.publish({
-          type: ORDER_CONFIRMED_EVENT,
-          ctx,
-          payload: { orderId: id },
-        })
+        await this.fulfillmentQueue.add(
+          'create-fulfillment-task',
+          {
+            ctx,
+            payload: { orderId: id },
+          },
+          { removeOnComplete: true },
+        )
       }
 
       await queryRunner.commitTransaction()
