@@ -94,7 +94,7 @@ export class TenantService {
 
     const {
       storeName,
-      subdomain,
+      subdomain: rawSubdomain,
       planId,
       name,
       username,
@@ -102,6 +102,8 @@ export class TenantService {
       password,
       subscriptionBillingCycle,
     } = createTenantDto
+
+    const subdomain = rawSubdomain.trim().toLowerCase()
 
     // 1. Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findBySubdomain(subdomain)
@@ -309,12 +311,13 @@ export class TenantService {
   }
 
   async findBySubdomain(subdomain: string): Promise<TenantEntity | null> {
-    const cacheKey = `${this.CACHE_PREFIX}subdomain:${subdomain}`
+    const normalized = subdomain.trim().toLowerCase()
+    const cacheKey = `${this.CACHE_PREFIX}subdomain:${normalized}`
     const cached = await this.cacheService.getCache<TenantEntity>(cacheKey)
     const hydratedCached = this.hydrateTenant(cached)
     if (hydratedCached) return hydratedCached
 
-    const tenant = await this.tenantRepository.findBySubdomain(subdomain)
+    const tenant = await this.tenantRepository.findBySubdomain(normalized)
     if (tenant) {
       await this.cacheService.setCache(cacheKey, tenant, 3600)
     }

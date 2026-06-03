@@ -20,6 +20,7 @@ export interface Tenant {
   subscriptionEndsAt?: string;
   createdAt: string;
   sslEnabled?: boolean;
+  primaryCustomDomain?: string | null;
 }
 
 export interface TenantListProps {

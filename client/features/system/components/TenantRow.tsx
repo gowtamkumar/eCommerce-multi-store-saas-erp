@@ -81,7 +81,7 @@ const TenantRow = ({
             <BarChart3 className="w-5 h-5" />
           </Link>
           <a
-            href={tenant.customDomain ? tenant.customDomain : `http://${tenant.subdomain}.localhost:3000`}
+            href={tenant.primaryCustomDomain ? tenant.primaryCustomDomain : `http://${tenant.subdomain}.localhost:3000`}
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"

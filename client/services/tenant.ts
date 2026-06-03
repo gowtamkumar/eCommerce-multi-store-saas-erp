@@ -47,7 +47,9 @@ export async function getTenantId(
     if (
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
-      hostname.endsWith(".luxesaas.com")
+      hostname === "luxesaas.com" ||
+      hostname === "www.luxesaas.com" ||
+      hostname === "api.luxesaas.com"
     ) {
       return null;
     }
@@ -112,7 +114,9 @@ export async function getTenantId(
     if (
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
-      hostname.endsWith("luxesaas.com")
+      hostname === "luxesaas.com" ||
+      hostname === "www.luxesaas.com" ||
+      hostname === "api.luxesaas.com"
     ) {
       return null;
     }

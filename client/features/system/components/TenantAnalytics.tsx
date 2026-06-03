@@ -175,12 +175,12 @@ export default function TenantAnalytics({ tenantId, data, tenant: initialTenant 
                   <Terminal className="w-3.5 h-3.5" />
                   {currentTenant.subdomain}.host.local
                 </span>
-                {currentTenant.customDomain && (
+                {currentTenant.primaryCustomDomain && (
                   <>
                     <div className="w-1.5 h-1.5 bg-slate-350 dark:bg-slate-650 rounded-full" />
                     <span className="flex items-center gap-1 text-indigo-500 font-bold uppercase tracking-widest text-[10px]">
                       <Globe className="w-3.5 h-3.5" />
-                      {currentTenant.customDomain}
+                      {currentTenant.primaryCustomDomain}
                     </span>
                   </>
                 )}
@@ -214,7 +214,7 @@ export default function TenantAnalytics({ tenantId, data, tenant: initialTenant 
             )}
           </button>
           <a
-            href={currentTenant.customDomain ? currentTenant.customDomain : `http://${currentTenant.subdomain}.localhost:3000`}
+            href={currentTenant.primaryCustomDomain ? currentTenant.primaryCustomDomain : `http://${currentTenant.subdomain}.localhost:3000`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-wider text-xs hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all flex items-center justify-center gap-2 border border-indigo-150 dark:border-indigo-800/50 shadow-sm"
