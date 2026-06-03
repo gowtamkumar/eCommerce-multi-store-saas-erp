@@ -3,7 +3,8 @@
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { UserStatus } from '@/lib/enums/user-status.enum';
-import { AlertTriangle, Building2, CreditCard, Edit2, Plus, Search, Trash2, User as UserIcon } from 'lucide-react';
+import { AlertTriangle, Building2, CreditCard, Edit2, History, Plus, Search, Trash2, User as UserIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo } from 'react';
 import type { CustomerListProps, User } from '../type';
 
@@ -102,6 +103,13 @@ export default function CustomerList({
             className: 'text-right',
             cell: (user) => (
                 <div className="flex justify-end gap-1 items-center">
+                    <Link
+                        href={`/admin/reports/customer-ledger?customerId=${user.id}`}
+                        className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-all"
+                        title="View Ledger"
+                    >
+                        <History className="w-4 h-4" />
+                    </Link>
                     <button
                         onClick={() => onEdit(user)}
                         className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-all"
