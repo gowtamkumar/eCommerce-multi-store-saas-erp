@@ -11,7 +11,8 @@ import {
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
+import { EventBusService } from '@/common/event-bus/event-bus.service'
+import { PAYROLL_ACCRUED_EVENT, PAYROLL_PAID_EVENT } from '@/common/event-bus/events/payroll.events'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import {
@@ -66,7 +67,7 @@ export class HrmService {
 
   constructor(
     private readonly hrmRepo: HrmRepository,
-    private readonly accountingService: AccountingService,
+    private readonly eventBus: EventBusService,
     private readonly auditLogService: AuditLogService,
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
@@ -896,53 +897,27 @@ export class HrmService {
         totalInactiveDeductions += Number(d.inactiveDeductions ?? 0)
       }
 
-      try {
-        await this.accountingService.createJournalEntry(
-          {
-            type: JournalType.GENERAL,
-            description: `Salary Accrual for Period ${batch.period}: ${batch.name}`,
-            referenceType: 'PAYROLL_BATCH',
-            referenceId: batch.id,
-            lines: [
-              {
-                accountCode: '6000',
-                side: LedgerEntrySide.DEBIT,
-                amount: parseFloat(
-                  (
-                    totalGrossSalaries -
-                    totalLateDeductions -
-                    totalUnpaidLeaveDeductions -
-                    totalUnpaidAbsenceDeductions -
-                    totalInactiveDeductions
-                  ).toFixed(2),
-                ),
-              },
-              {
-                accountCode: '2100',
-                side: LedgerEntrySide.CREDIT,
-                amount: parseFloat(Number(batch.totalAmount).toFixed(2)),
-              },
-              {
-                accountCode: '2200',
-                side: LedgerEntrySide.CREDIT,
-                amount: parseFloat(totalTaxesWithheld.toFixed(2)),
-              },
-              {
-                accountCode: '2100',
-                side: LedgerEntrySide.CREDIT,
-                amount: parseFloat(totalBaseDeductions.toFixed(2)),
-              },
-            ].filter((line) => line.amount > 0),
-          },
-          ctx,
-          em,
-        )
-      } catch (error: any) {
-        this.logger.error(
-          `Failed to create accrual accounting entries for payroll batch ${batch.id}: ${error.message}`,
-        )
-        throw new BadRequestException(`Accounting GL post failed: ${error.message}`)
-      }
+      this.eventBus.publish({
+        type: PAYROLL_ACCRUED_EVENT,
+        ctx,
+        payload: {
+          batchId: batch.id,
+          name: batch.name,
+          period: batch.period,
+          totalSalary: parseFloat(
+            (
+              totalGrossSalaries -
+              totalLateDeductions -
+              totalUnpaidLeaveDeductions -
+              totalUnpaidAbsenceDeductions -
+              totalInactiveDeductions
+            ).toFixed(2),
+          ),
+          totalTaxesWithheld: parseFloat(totalTaxesWithheld.toFixed(2)),
+          totalDeductions: parseFloat(totalBaseDeductions.toFixed(2)),
+          totalAmount: parseFloat(Number(batch.totalAmount).toFixed(2)),
+        },
+      })
 
       await payrollBatchRepo.update(batch.id, {
         status: PayrollBatchStatus.APPROVED,
@@ -978,28 +953,15 @@ export class HrmService {
         )
       }
 
-      try {
-        const amountToPay = Number(batch.totalAmount)
-        await this.accountingService.createJournalEntry(
-          {
-            type: JournalType.GENERAL,
-            description: `Payment Settlement for Payroll Batch: ${batch.name}`,
-            referenceType: 'PAYROLL_PAYMENT',
-            referenceId: batch.id,
-            lines: [
-              { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: amountToPay },
-              { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: amountToPay },
-            ],
-          },
-          ctx,
-          em,
-        )
-      } catch (error: any) {
-        this.logger.error(
-          `Failed to post payment journal entries for batch ${batchId}: ${error.message}`,
-        )
-        throw new BadRequestException(`Accounting GL post failed: ${error.message}`)
-      }
+      this.eventBus.publish({
+        type: PAYROLL_PAID_EVENT,
+        ctx,
+        payload: {
+          batchId: batch.id,
+          name: batch.name,
+          totalAmount: Number(batch.totalAmount),
+        },
+      })
 
       await payrollBatchRepo.update(batch.id, {
         status: PayrollBatchStatus.PAID,

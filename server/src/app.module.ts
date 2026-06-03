@@ -31,6 +31,7 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { CacheModule } from './modules/admin/operations/infra/cache/cache.module'
 import { QueueModule } from './modules/admin/operations/infra/queue/queue.module'
+import { EventBusModule } from './common/event-bus/event-bus.module'
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     PersistenceModule,
     SettingsModule,
     CacheModule,
+    EventBusModule,
 
     // Core & System Domains
     AdminModule,

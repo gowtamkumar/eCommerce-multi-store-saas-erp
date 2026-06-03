@@ -27,6 +27,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
 import { TaxRuleEntity } from './entities/tax-rule.entity'
 import { TaxService } from './services/tax.service'
 import { TaxController } from './controllers/tax.controller'
+import { AccountingEventSubscriber } from './accounting-event.subscriber'
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { TaxController } from './controllers/tax.controller'
     AccountingOutboxService,
     DunningService,
     TaxService,
+    AccountingEventSubscriber,
   ],
   exports: [
     AccountingService,
