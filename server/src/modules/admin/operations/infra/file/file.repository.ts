@@ -53,4 +53,14 @@ export class FileRepository {
   async removeFile(file: FileEntity): Promise<FileEntity> {
     return await this.repo.softRemove(file)
   }
+
+  async getTotalStorageUsed(tenantId: string): Promise<number> {
+    const result = await this.repo
+      .createQueryBuilder('file')
+      .select('SUM(file.size)', 'total')
+      .where('file.tenantId = :tenantId', { tenantId })
+      .getRawOne()
+    return parseInt(result?.total || '0', 10)
+  }
 }
+

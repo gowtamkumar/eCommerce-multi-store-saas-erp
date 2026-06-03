@@ -20,4 +20,15 @@ export class CurrentSubscriptionResponseDto {
 
   @Expose()
   isExpired: boolean
+
+  @Expose()
+  storageUsage: number
+
+  @Expose()
+  storageLimit: number
+
+  @Expose()
+  activeAddons: string[]
 }
+
+

@@ -118,9 +118,21 @@ export class TenantService {
 
     if (planId) {
       subscriptionPlan = await this.subscriptionPlanService.findOneSubscriptionPlan(planId)
-      if (subscriptionPlan && !subscriptionBillingCycle) {
-        billingCycle = subscriptionPlan.billingCycle
-      }
+    } else {
+      // No plan chosen at signup → default to the cheapest active plan (Starter/free)
+      // so the trial subscription always references a real plan.
+      const activePlans = await this.subscriptionPlanService.findActiveSubscriptionPlans()
+      subscriptionPlan = activePlans[0] ?? null
+    }
+
+    if (!subscriptionPlan) {
+      throw new BadRequestException(
+        'No subscription plan is available. Please configure at least one active plan before onboarding tenants.',
+      )
+    }
+
+    if (!subscriptionBillingCycle) {
+      billingCycle = subscriptionPlan.billingCycle
     }
 
     const trialEndsAt = new Date()
@@ -143,7 +155,7 @@ export class TenantService {
       const subRepo = manager.getRepository(TenantSubscriptionEntity)
       const sub = subRepo.create({
         tenantId: savedTenant.id,
-        subscriptionPlanId: subscriptionPlan ? subscriptionPlan.id : null,
+        subscriptionPlanId: subscriptionPlan.id,
         status: SubscriptionStatus.TRIAL,
         billingCycle: billingCycle,
         startsAt: now,

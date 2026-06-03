@@ -2,6 +2,7 @@ import { GlobalExceptionFilter } from '@/common/exception/exception-filter'
 import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import { MaintenanceGuard } from '@/common/guards/maintenance.guard'
 import { PermissionsGuard } from '@/common/guards/permissions.guard'
+import { TenantIsolationGuard } from '@/common/guards/tenant-isolation.guard'
 import { TenantStatusGuard } from '@/common/guards/tenant-status.guard'
 import { AuditLogInterceptor } from '@/common/interceptors/audit-log.interceptor'
 import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
@@ -83,6 +84,10 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     {
       provide: APP_GUARD,
       useClass: MaintenanceGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TenantIsolationGuard,
     },
     {
       provide: APP_GUARD,

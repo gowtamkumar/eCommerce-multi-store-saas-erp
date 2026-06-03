@@ -14,6 +14,9 @@ export interface SubscriptionInfo {
     endsAt: string;
     billingCycle: string;
     isExpired: boolean;
+    storageUsage?: number;
+    storageLimit?: number;
+    activeAddons?: string[];
 }
 
 export interface BillingInvoice {

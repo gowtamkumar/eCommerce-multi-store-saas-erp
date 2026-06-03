@@ -72,6 +72,41 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps> = ({
                         <p className="text-xl font-bold text-slate-700 dark:text-slate-200 text-center capitalize">{subInfo?.status}</p>
                     </div>
 
+                    {subInfo?.storageLimit !== undefined && subInfo?.storageLimit !== -1 && (
+                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 min-w-[240px] flex-1">
+                            <div className="flex justify-between items-center mb-1.5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Storage Used</p>
+                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">
+                                    {Math.round((subInfo.storageUsage || 0) / (1024 * 1024))} MB / {subInfo.storageLimit >= 1024 ? `${(subInfo.storageLimit / 1024).toFixed(1)} GB` : `${subInfo.storageLimit} MB`}
+                                </span>
+                            </div>
+                            {(() => {
+                                const usedMb = (subInfo.storageUsage || 0) / (1024 * 1024);
+                                const limitMb = subInfo.storageLimit || 1024;
+                                const pct = Math.min(100, Math.round((usedMb / limitMb) * 100));
+                                const barColor = pct > 90 ? 'bg-rose-500' : pct > 75 ? 'bg-amber-500' : 'bg-brand-600';
+                                const textColor = pct > 90 ? 'text-rose-600 dark:text-rose-400' : pct > 75 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200';
+                                return (
+                                    <div className="space-y-2">
+                                        <div className="w-full h-2.5 bg-slate-250 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 text-left">
+                                            <span className={`${textColor} font-black`}>{pct}%</span> of total storage space utilized
+                                        </p>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
+
+                    {subInfo?.storageLimit === -1 && (
+                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-3xl border border-slate-100 dark:border-slate-700/30 w-44">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Storage Used</p>
+                            <p className="text-xl font-bold text-violet-500 dark:text-violet-400 text-center font-black">∞ Unlimited</p>
+                        </div>
+                    )}
+
                     <button
                         onClick={() => {
                             const currentPlan = plans.find(p => p.name === subInfo?.planName);

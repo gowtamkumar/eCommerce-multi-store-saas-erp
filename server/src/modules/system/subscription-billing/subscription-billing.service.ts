@@ -12,7 +12,7 @@ import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { TenantSubscriptionEntity } from '@/modules/system/tenant/entities/tenant-subscription.entity'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, DataSource } from 'typeorm'
 import { ConfigService } from '@nestjs/config'
 import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
@@ -21,6 +21,8 @@ import { SubscriptionInvoiceRepository } from './subscription-invoice.repository
 import { buildAllowedBillingOrigins, resolveSafeBillingUrl } from './billing-origin.util'
 
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
+import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 
 const DEFAULT_PLATFORM_CURRENCY = 'BDT'
 
@@ -37,7 +39,9 @@ export class SubscriptionBillingService {
     private readonly notificationService: NotificationService,
     @InjectRepository(TenantSubscriptionEntity)
     private readonly subscriptionRepo: Repository<TenantSubscriptionEntity>,
+    private readonly dataSource: DataSource,
   ) {}
+
 
   async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
@@ -81,6 +85,42 @@ export class SubscriptionBillingService {
           }
         }
 
+        // Calculate storage usage
+        const fileResult = await this.dataSource
+          .getRepository(FileEntity)
+          .createQueryBuilder('file')
+          .select('SUM(file.size)', 'total')
+          .where('file.tenantId = :tenantId', { tenantId })
+          .getRawOne()
+        const storageUsage = parseInt(fileResult?.total || '0', 10)
+
+        // Calculate storage limit and collect active overrides
+        const baseLimitMb = tenant.subscriptionPlan?.maxStorageMb ?? 1024 // default 1GB
+        let storageLimit = baseLimitMb
+        const activeAddons: string[] = []
+
+        const activeOverrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
+          where: { tenantId, isEnabled: true },
+        })
+
+        let addonsMb = 0
+        for (const override of activeOverrides) {
+          if (override.featureSlug === 'addon_storage_5gb') {
+            addonsMb += 5 * 1024
+          } else if (override.featureSlug === 'addon_storage_10gb') {
+            addonsMb += 10 * 1024
+          } else if (override.featureSlug === 'addon_storage_20gb') {
+            addonsMb += 20 * 1024
+          }
+          if (override.featureSlug.startsWith('addon_')) {
+            activeAddons.push(override.featureSlug)
+          }
+        }
+
+        if (baseLimitMb !== -1) {
+          storageLimit = baseLimitMb + addonsMb
+        }
+
         return {
           planName: tenant.subscriptionPlan?.name || 'No Plan',
           status: tenant.subscriptionStatus,
@@ -88,6 +128,9 @@ export class SubscriptionBillingService {
           endsAt: tenant.subscriptionEndsAt,
           billingCycle: tenant.subscriptionBillingCycle,
           isExpired: tenant.isExpired,
+          storageUsage,
+          storageLimit,
+          activeAddons,
         }
       },
       3600, // 1 hour
@@ -407,4 +450,56 @@ export class SubscriptionBillingService {
 
     return `${baseUrl}/billing/${status}?tran_id=${transactionId}`
   }
+
+  async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
+    this.logger.log(`Purchasing addon: ${addonSlug} for tenant: ${tenantId}`)
+    const validSlugs = [
+      'addon_storage_5gb',
+      'addon_storage_10gb',
+      'addon_storage_20gb',
+      'addon_products_1000',
+      'addon_orders_5000',
+      'addon_staff_10',
+      'addon_locations_3',
+    ]
+    if (!validSlugs.includes(addonSlug)) {
+      throw new BadRequestException(`Invalid addon slug: ${addonSlug}`)
+    }
+
+    const featureRepo = this.dataSource.getRepository(TenantFeatureEntity)
+    let override = await featureRepo.findOne({ where: { tenantId, featureSlug: addonSlug } })
+    if (override) {
+      override.isEnabled = true
+      override.updatedAt = new Date()
+      await featureRepo.save(override)
+    } else {
+      override = featureRepo.create({
+        tenantId,
+        featureSlug: addonSlug,
+        isEnabled: true,
+        enabledAt: new Date(),
+      })
+      await featureRepo.save(override)
+    }
+
+    // Invalidate current subscription cache
+    await this.cacheService.delCache(`subscription:${tenantId}:current`, tenantId)
+
+    // Trigger local notification
+    try {
+      await this.notificationService.createNotification(
+        {
+          title: 'Storage Addon Activated',
+          message: `Storage addon '${addonSlug.replace('addon_storage_', '').toUpperCase()}' has been successfully purchased and activated.`,
+          type: 'SUCCESS',
+          link: `/admin/settings/billing`,
+          userId: null as any,
+        },
+        tenantId,
+      )
+    } catch (e) {
+      this.logger.error(`Failed to trigger billing notification for addon purchase: ${e.message}`)
+    }
+  }
 }
+

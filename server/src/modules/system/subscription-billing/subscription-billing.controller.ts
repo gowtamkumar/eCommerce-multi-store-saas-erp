@@ -21,7 +21,7 @@ export class SubscriptionBillingController {
   constructor(
     private readonly billingService: SubscriptionBillingService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Get('current')
@@ -102,7 +102,7 @@ export class SubscriptionBillingController {
     @Query('tran_id') tran_id: string,
     @Body() body: any,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`Payment completion success callback for tran_id: ${tran_id}`)
+    this.logger.verbose(`Payment completion success callback for tran_id: ${sanitizeLogInput(tran_id)}`)
     try {
       const data: any = await this.billingService.handleSuccessPayment(tran_id, body)
       return {
@@ -131,7 +131,7 @@ export class SubscriptionBillingController {
     @Query('tran_id') tran_id: string,
     @Body() body: any,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`Payment completion failure callback for tran_id: ${tran_id}`)
+    this.logger.verbose(`Payment completion failure callback for tran_id: ${sanitizeLogInput(tran_id)}`)
     try {
       const data: any = await this.billingService.handleFailPayment(tran_id, body)
       return {
@@ -163,7 +163,7 @@ export class SubscriptionBillingController {
     @Query('tran_id') tran_id: string,
     @Body() body: any,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`Payment completion cancel callback for tran_id: ${tran_id}`)
+    this.logger.verbose(`Payment completion cancel callback for tran_id: ${sanitizeLogInput(tran_id)}`)
     try {
       const data: any = await this.billingService.handleCancelPayment(tran_id, body)
       return {
@@ -199,7 +199,7 @@ export class SubscriptionBillingController {
       try {
         await this.billingService.handleSuccessPayment(tran_id, body)
       } catch (err: any) {
-        this.logger.warn(`IPN handling failed for tran_id=${tran_id}: ${err?.message}`)
+        this.logger.warn(`IPN handling failed for tran_id=${sanitizeLogInput(tran_id)}: ${sanitizeLogInput(err?.message)}`)
       }
     }
     return { received: true }
@@ -214,4 +214,29 @@ export class SubscriptionBillingController {
     const defaultAppUrl = this.configService.get('FRONTEND_URL')
     return res.redirect(`${defaultAppUrl}/billing/success?tran_id=${transactionId}`)
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('purchase-addon')
+  @PublicDuringExpiration()
+  @Audit({ entity: 'SubscriptionInvoice', action: 'PURCHASE_ADDON' })
+  async purchaseAddon(
+    @RequestContext() ctx: RequestContextDto,
+    @Body('addonSlug') addonSlug: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${sanitizeLogInput(ctx.user?.username || 'System')}" purchasing addon "${sanitizeLogInput(addonSlug)}".`)
+    await this.billingService.purchaseAddon(ctx.tenantId, addonSlug)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Addon purchased successfully',
+      data: null,
+    }
+  }
+}
+
+function sanitizeLogInput(input: any): string {
+  if (input === null || input === undefined) {
+    return ''
+  }
+  return String(input).replace(/[\r\n]/g, '_')
 }

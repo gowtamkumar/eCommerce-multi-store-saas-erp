@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import SubscriptionOverview from "./SubscriptionOverview";
 import PlanGrid from "./PlanGrid";
 import InvoiceHistory from "./InvoiceHistory";
+import StorageAddons from "./StorageAddons";
 
 export default function BillingDashboard() {
   const [loading, setLoading] = useState(true);
@@ -83,6 +84,24 @@ export default function BillingDashboard() {
     }
   }, [billingCycle]);
 
+  const handlePurchaseAddon = useCallback(async (addonSlug: string) => {
+    try {
+      const res = await fetchAPI("/billing/purchase-addon", {
+        method: "POST",
+        body: JSON.stringify({ addonSlug })
+      });
+      if (res.success) {
+        toast.success("Storage addon activated successfully!");
+        await loadBillingData();
+      } else {
+        toast.error(res.message || "Failed to purchase storage addon");
+      }
+    } catch (error: any) {
+      console.error("Failed to purchase storage addon", error);
+      toast.error(error.message || "Failed to purchase storage addon");
+    }
+  }, [loadBillingData]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
@@ -108,6 +127,11 @@ export default function BillingDashboard() {
         setBillingCycle={setBillingCycle}
         handleUpgrade={handleUpgrade}
         initiating={initiating}
+      />
+
+      <StorageAddons 
+        subInfo={subInfo}
+        onPurchaseAddon={handlePurchaseAddon}
       />
 
       <InvoiceHistory history={history} />

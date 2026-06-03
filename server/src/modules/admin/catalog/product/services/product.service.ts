@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common'
 import { Queue } from 'bullmq'
 import { DataSource, Not } from 'typeorm'
+import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { PromotionTargetType } from '../../../sales/promotion/enums/promotion-target-type.enum'
 import { BrandRepository } from '../../brand/brand.repository'
 import { CreateProductDto } from '../dto/create-product.dto'
@@ -52,8 +53,17 @@ export class ProductService {
 
   private async assertProductQuotaAvailable(tenantId: string): Promise<void> {
     const tenant = await this.tenantService.findOneTenants(tenantId)
-    const maxProducts = Number(tenant.subscriptionPlan?.maxProducts ?? 0)
+    let maxProducts = Number(tenant.subscriptionPlan?.maxProducts ?? 0)
     if (!Number.isFinite(maxProducts) || maxProducts <= 0) return
+
+    const activeOverrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
+      where: { tenantId, isEnabled: true },
+    })
+    for (const override of activeOverrides) {
+      if (override.featureSlug === 'addon_products_1000') {
+        maxProducts += 1000
+      }
+    }
 
     const currentProducts = await this.productRepository.countByTenant(tenantId)
     if (currentProducts >= maxProducts) {
