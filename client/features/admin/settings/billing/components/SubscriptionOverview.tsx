@@ -29,7 +29,7 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
     addonCatalog = [],
 }) => {
     const activePlan = plans.find(p => p.name === subInfo?.planName) as any;
-    
+
     // Use API-driven catalog, or fallback to empty for counting
     const catalogForCounting = addonCatalog.length > 0 ? addonCatalog : [];
 
@@ -133,32 +133,40 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                 {activePlan && (
                     <>
                         <div className="w-full h-px bg-slate-100 dark:bg-slate-750 my-2" />
-                        
+
                         <div className="relative">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-left">Active Plan Quotas & Capacities</p>
-                            
+
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                                 <div className="bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between text-left">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Products SKU Limit</span>
                                     <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                                         <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                                            {activePlan.maxProducts === -1 ? 'Unlimited' : (activePlan.maxProducts + (productsAddonCount * 1000)).toLocaleString()}
+                                            {activePlan.maxProducts === -1 ? (
+                                                <span className="text-violet-500 dark:text-violet-400 font-black">∞ Unlimited</span>
+                                            ) : (
+                                                (activePlan.maxProducts + (productsAddonCount * 1000)).toLocaleString()
+                                            )}
                                         </span>
-                                        {hasProductsAddon && (
+                                        {hasProductsAddon && activePlan.maxProducts !== -1 && (
                                             <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-150 dark:border-emerald-900/30">
                                                 +{productsAddonCount * 1000} SKU Boost
                                             </span>
                                         )}
                                     </div>
                                 </div>
-                                
+
                                 <div className="bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between text-left">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Order Limit</span>
                                     <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                                         <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                                            {activePlan.maxMonthlyOrders === -1 ? 'Unlimited' : (activePlan.maxMonthlyOrders + (ordersAddonCount * 5000)).toLocaleString()}
+                                            {activePlan.maxMonthlyOrders === -1 ? (
+                                                <span className="text-violet-500 dark:text-violet-400 font-black">∞ Unlimited</span>
+                                            ) : (
+                                                (activePlan.maxMonthlyOrders + (ordersAddonCount * 5000)).toLocaleString()
+                                            )}
                                         </span>
-                                        {hasOrdersAddon && (
+                                        {hasOrdersAddon && activePlan.maxMonthlyOrders !== -1 && (
                                             <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-150 dark:border-emerald-900/30">
                                                 +{ordersAddonCount * 5000} Order Boost
                                             </span>
@@ -170,9 +178,13 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff Accounts Limit</span>
                                     <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                                         <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                                            {activePlan.maxStaffUsers === -1 ? 'Unlimited' : `${activePlan.maxStaffUsers + (staffAddonCount * 10)} Users`}
+                                            {activePlan.maxStaffUsers === -1 ? (
+                                                <span className="text-violet-500 dark:text-violet-400 font-black">∞ Unlimited</span>
+                                            ) : (
+                                                `${activePlan.maxStaffUsers + (staffAddonCount * 10)} Users`
+                                            )}
                                         </span>
-                                        {hasStaffAddon && (
+                                        {hasStaffAddon && activePlan.maxStaffUsers !== -1 && (
                                             <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-150 dark:border-emerald-900/30">
                                                 +{staffAddonCount * 10} User Boost
                                             </span>
@@ -184,9 +196,13 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Locations / WH</span>
                                     <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
                                         <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                                            {activePlan.maxBranches === -1 ? 'Unlimited' : `${activePlan.maxBranches + (locationsAddonCount * 3)} / ${activePlan.maxWarehouses + (locationsAddonCount * 3)}`}
+                                            {activePlan.maxBranches === -1 ? (
+                                                <span className="text-violet-500 dark:text-violet-400 font-black">∞ Unlimited</span>
+                                            ) : (
+                                                `${activePlan.maxBranches + (locationsAddonCount * 3)} / ${activePlan.maxWarehouses + (locationsAddonCount * 3)}`
+                                            )}
                                         </span>
-                                        {hasLocationsAddon && (
+                                        {hasLocationsAddon && activePlan.maxBranches !== -1 && (
                                             <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-150 dark:border-emerald-900/30">
                                                 +{locationsAddonCount * 3} WH/Loc Boost
                                             </span>
@@ -199,9 +215,14 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                                     <div className="mt-1 flex flex-col justify-between h-full w-full">
                                         <div className="flex items-baseline gap-1.5 flex-wrap">
                                             <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                                                {subInfo?.storageLimit === -1 ? 'Unlimited' : `${Math.round((subInfo?.storageUsage || 0) / (1024 * 1024))} MB / ${subInfo?.storageLimit && subInfo.storageLimit >= 1024 ? `${(subInfo.storageLimit / 1024).toFixed(1)} GB` : `${subInfo?.storageLimit} MB`}`}
+                                                {Math.round((subInfo?.storageUsage || 0) / (1024 * 1024))} MB /{' '}
+                                                {subInfo?.storageLimit === -1 ? (
+                                                    <span className="text-violet-500 dark:text-violet-400 font-black">∞ Unlimited</span>
+                                                ) : (
+                                                    subInfo?.storageLimit && subInfo.storageLimit >= 1024 ? `${(subInfo.storageLimit / 1024).toFixed(1)} GB` : `${subInfo?.storageLimit} MB`
+                                                )}
                                             </span>
-                                            {hasStorageAddon && (
+                                            {hasStorageAddon && subInfo?.storageLimit !== -1 && (
                                                 <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-150 dark:border-emerald-900/30">
                                                     +{storageAddonBoostMb >= 1024 ? `${(storageAddonBoostMb / 1024).toFixed(1)} GB` : `${storageAddonBoostMb} MB`} Boost
                                                 </span>
@@ -213,7 +234,7 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
                                             const pct = Math.min(100, Math.round((usedMb / limitMb) * 105) / 105 * 100);
                                             const barColor = pct > 90 ? 'bg-rose-500' : pct > 75 ? 'bg-amber-500' : 'bg-brand-600';
                                             return (
-                                                <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden mt-1.5">
+                                                <div className="w-full h-1.5 bg-slate-250 dark:bg-slate-700/50 rounded-full overflow-hidden mt-1.5">
                                                     <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
                                                 </div>
                                             );
@@ -225,7 +246,7 @@ const SubscriptionOverview: React.FC<SubscriptionOverviewProps & { addonCatalog?
 
                         {/* Plan and Addons active details list */}
                         <div className="w-full h-px bg-slate-100 dark:bg-slate-750 my-4" />
-                        
+
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
                             {/* Active Plan Features */}
                             <div className="bg-slate-50/30 dark:bg-slate-900/10 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 flex flex-col">
