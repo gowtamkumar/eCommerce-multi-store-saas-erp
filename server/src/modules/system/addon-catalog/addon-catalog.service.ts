@@ -34,10 +34,36 @@ export class AddonCatalogService {
     return addon
   }
 
+  private generateSlug(name?: string, providedSlug?: string): string {
+    let slug = providedSlug
+    if (!slug || slug.trim() === '') {
+      if (!name || name.trim() === '') {
+        throw new BadRequestException('Addon name is required to auto-generate a slug.')
+      }
+      const nameSlug = name
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/(^_+|_+$)/g, '')
+      slug = nameSlug.startsWith('addon_') ? nameSlug : `addon_${nameSlug}`
+    } else {
+      slug = slug
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/(^_+|_+$)/g, '')
+      if (!slug.startsWith('addon_')) {
+        slug = `addon_${slug}`
+      }
+    }
+    return slug
+  }
+
   async create(data: Partial<AddonCatalogEntity>): Promise<AddonCatalogEntity> {
+    data.slug = this.generateSlug(data.name, data.slug)
     this.logger.log(`Creating addon: ${data.slug}`)
     // Validate slug uniqueness
-    const existing = await this.addonRepo.findBySlug(data.slug!)
+    const existing = await this.addonRepo.findBySlug(data.slug)
     if (existing) throw new BadRequestException(`Addon with slug "${data.slug}" already exists`)
     const addon = await this.addonRepo.createAndSave(data)
     await this.invalidateCache()
@@ -47,11 +73,20 @@ export class AddonCatalogService {
   async update(id: string, data: Partial<AddonCatalogEntity>): Promise<AddonCatalogEntity> {
     this.logger.log(`Updating addon ID: ${id}`)
     const addon = await this.findById(id)
-    // If slug changes, check uniqueness
-    if (data.slug && data.slug !== addon.slug) {
-      const existing = await this.addonRepo.findBySlug(data.slug)
-      if (existing) throw new BadRequestException(`Addon with slug "${data.slug}" already exists`)
+
+    // If slug or name is modified, handle slug regeneration/uniqueness check
+    if (data.slug !== undefined || data.name !== undefined) {
+      const targetSlug = data.slug !== undefined ? data.slug : addon.slug
+      const targetName = data.name !== undefined ? data.name : addon.name
+      const processedSlug = this.generateSlug(targetName, targetSlug)
+
+      if (processedSlug !== addon.slug) {
+        const existing = await this.addonRepo.findBySlug(processedSlug)
+        if (existing) throw new BadRequestException(`Addon with slug "${processedSlug}" already exists`)
+      }
+      data.slug = processedSlug
     }
+
     const updated = await this.addonRepo.updateAndSave(addon, data)
     await this.invalidateCache()
     return updated
