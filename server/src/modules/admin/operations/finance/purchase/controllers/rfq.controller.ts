@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, Query } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RfqService } from '../services/rfq.service'
 import { CreateRfqDto, CreateQuotationDto, UpdateRfqStatusDto } from '../dto/rfq.dto'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -22,6 +23,7 @@ export class RfqController {
 
   @Post()
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'Rfq', action: 'CREATE' })
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateRfqDto,
@@ -68,6 +70,7 @@ export class RfqController {
 
   @Patch(':id/status')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'Rfq', action: 'STATUS_CHANGE' })
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -84,6 +87,7 @@ export class RfqController {
 
   @Post(':id/quotations')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'Quotation', action: 'SUBMIT' })
   async submitQuotation(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -100,6 +104,7 @@ export class RfqController {
 
   @Post('quotations/:id/award')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'Quotation', action: 'AWARD' })
   async award(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

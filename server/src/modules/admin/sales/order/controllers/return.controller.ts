@@ -1,4 +1,5 @@
 import { FilterReturnDto } from '@/modules/admin/sales/order/dto/filter-return.dto'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Logger } from '@nestjs/common'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { RefundMethod } from '@/common/enums/refund-method.enum'
@@ -24,6 +25,7 @@ export class ReturnController {
 
   @Post()
   @RequirePermissions(SystemPermissions.RETURNS_WRITE)
+  @Audit({ entity: 'OrderReturn', action: 'CREATE' })
   async createReturnRequest(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateReturnDto,
@@ -99,6 +101,7 @@ export class ReturnController {
    */
   @Patch(':id/status')
   @RequirePermissions(SystemPermissions.RETURNS_APPROVE)
+  @Audit({ entity: 'OrderReturn', action: 'STATUS_CHANGE' })
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -128,6 +131,7 @@ export class ReturnController {
    */
   @Patch(':id/received')
   @RequirePermissions(SystemPermissions.RETURNS_WRITE)
+  @Audit({ entity: 'OrderReturn', action: 'RECEIVED' })
   async markItemsReceived(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -148,6 +152,7 @@ export class ReturnController {
    */
   @Post(':id/exchange')
   @RequirePermissions(SystemPermissions.RETURNS_APPROVE)
+  @Audit({ entity: 'OrderReturn', action: 'EXCHANGE' })
   async linkExchangeOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

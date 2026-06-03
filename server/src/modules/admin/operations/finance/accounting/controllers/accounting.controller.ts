@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Post, Put, Delete, UseGuards, Body, Param, Query } from '@nestjs/common'
@@ -24,6 +25,7 @@ export class AccountingController {
 
   @Post('init')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'ChartOfAccounts', action: 'INITIALIZE' })
   async initialize(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<void>> {
@@ -53,6 +55,7 @@ export class AccountingController {
 
   @Post('accounts')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'Account', action: 'CREATE' })
   async createAccount(
     @RequestContext() ctx: RequestContextDto,
     @Body() body: { code: string; name: string; type: AccountType; category: AccountCategory },
@@ -68,6 +71,7 @@ export class AccountingController {
 
   @Put('accounts/:id')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'Account', action: 'UPDATE' })
   async updateAccount(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -84,6 +88,7 @@ export class AccountingController {
 
   @Delete('accounts/:id')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'Account', action: 'DELETE' })
   async deleteAccount(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -114,6 +119,7 @@ export class AccountingController {
 
   @Post('fiscal-periods')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'FiscalPeriod', action: 'CREATE' })
   async createFiscalPeriod(
     @RequestContext() ctx: RequestContextDto,
     @Body() body: { name: string; startDate: string; endDate: string },
@@ -129,6 +135,7 @@ export class AccountingController {
 
   @Put('fiscal-periods/:id/status')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'FiscalPeriod', action: 'STATUS_CHANGE' })
   async setFiscalPeriodStatus(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -191,6 +198,7 @@ export class AccountingController {
 
   @Post('journal-entries/:id/reverse')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'JournalEntry', action: 'REVERSE' })
   async reverseJournalEntry(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -220,6 +228,7 @@ export class AccountingController {
 
   @Post('journal-entries')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'JournalEntry', action: 'CREATE' })
   async createJournalEntry(
     @RequestContext() ctx: RequestContextDto,
     @Body()

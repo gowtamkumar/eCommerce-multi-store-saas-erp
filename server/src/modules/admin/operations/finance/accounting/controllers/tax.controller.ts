@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Post, Put, Delete, UseGuards, Body, Param, Query } from '@nestjs/common'
@@ -46,6 +47,7 @@ export class TaxController {
 
   @Post('rules')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'TaxRule', action: 'CREATE' })
   async createTaxRule(
     @RequestContext() ctx: RequestContextDto,
     @Body()
@@ -62,6 +64,7 @@ export class TaxController {
 
   @Put('rules/:id')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'TaxRule', action: 'UPDATE' })
   async updateTaxRule(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -78,6 +81,7 @@ export class TaxController {
 
   @Delete('rules/:id')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'TaxRule', action: 'DELETE' })
   async deleteTaxRule(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

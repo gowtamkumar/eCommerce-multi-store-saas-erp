@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -22,7 +23,7 @@ export class LeadController {
 
   @Post()
   @RequirePermissions(SystemPermissions.CRM_WRITE)
-  @RequirePermissions(SystemPermissions.CRM_WRITE)
+  @Audit({ entity: 'Lead', action: 'CREATE' })
   async createLead(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateLeadDto,
@@ -62,7 +63,7 @@ export class LeadController {
 
   @Patch(':id')
   @RequirePermissions(SystemPermissions.CRM_WRITE)
-  @RequirePermissions(SystemPermissions.CRM_WRITE)
+  @Audit({ entity: 'Lead', action: 'UPDATE' })
   async updateLead(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

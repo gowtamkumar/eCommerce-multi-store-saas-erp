@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Post, Query, Res, Logger, UseGuards } from '@nestjs/common'
@@ -22,6 +23,7 @@ export class PaymentActionController {
   @Post('init')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @RequireFeature('orders')
+  @Audit({ entity: 'Payment', action: 'INIT' })
   async init(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: InitPaymentDto,

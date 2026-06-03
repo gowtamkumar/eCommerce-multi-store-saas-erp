@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
@@ -27,6 +28,7 @@ export class AdminAuthController {
 
   // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/login')
+  @Audit({ entity: 'Auth', action: 'LOGIN' })
   async login(
     @RequestContext() ctx: RequestContextDto,
     @Body() loginCredentialDto: LoginCredentialDto,
@@ -61,6 +63,7 @@ export class AdminAuthController {
   }
 
   @Post('/login-impersonated')
+  @Audit({ entity: 'Auth', action: 'IMPERSONATE_LOGIN' })
   async loginImpersonated(
     @RequestContext() ctx: RequestContextDto,
     @Body('impersonateToken') impersonateToken: string,
@@ -119,6 +122,7 @@ export class AdminAuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('/logout')
+  @Audit({ entity: 'Auth', action: 'LOGOUT' })
   async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

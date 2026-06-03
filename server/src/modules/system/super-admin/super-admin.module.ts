@@ -1,4 +1,5 @@
 import { TrafficInterceptor } from '@/common/interceptors/traffic.interceptor'
+import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
 import { ProductModule } from '@/modules/admin/catalog/product/product.module'
 import { PageModule } from '@/modules/admin/content/page/page.module'
 import { UserModule } from '@/modules/admin/core/user/user.module'
@@ -22,6 +23,7 @@ import { TrafficService } from './traffic.service'
     SubscriptionPlanModule,
     AddonCatalogModule,
     AuthModule,
+    AuditLogModule,
   ],
   controllers: [SuperAdminController],
   providers: [

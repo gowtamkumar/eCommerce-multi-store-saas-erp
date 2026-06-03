@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
@@ -38,6 +39,7 @@ export class PosController {
 
   @Post('register')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  @Audit({ entity: 'PosRegister', action: 'CREATE' })
   async createRegister(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePosRegisterDto,
@@ -88,6 +90,7 @@ export class PosController {
 
   @Patch('register/:id')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  @Audit({ entity: 'PosRegister', action: 'UPDATE' })
   async updateRegister(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -108,6 +111,7 @@ export class PosController {
 
   @Delete('register/:id')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  @Audit({ entity: 'PosRegister', action: 'DELETE' })
   async deleteRegister(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -127,6 +131,7 @@ export class PosController {
 
   @Post('shift/open')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  @Audit({ entity: 'PosShift', action: 'OPEN' })
   async openShift(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: OpenPosShiftDto,
@@ -158,6 +163,7 @@ export class PosController {
 
   @Post('shift/:id/close')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  @Audit({ entity: 'PosShift', action: 'CLOSE' })
   async closeShift(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -193,6 +199,7 @@ export class PosController {
 
   @Post('sync')
   @RequirePermissions(SystemPermissions.POS_SALE_CREATE)
+  @Audit({ entity: 'PosSale', action: 'SYNC' })
   async syncPosSale(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: SyncPosSaleDto,
@@ -209,6 +216,7 @@ export class PosController {
 
   @Post('shift/:id/drawer-transaction')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  @Audit({ entity: 'PosDrawerTransaction', action: 'CREATE' })
   async createDrawerTransaction(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,

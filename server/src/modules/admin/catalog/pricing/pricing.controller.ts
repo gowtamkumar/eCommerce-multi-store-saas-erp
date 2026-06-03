@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
@@ -19,6 +20,7 @@ export class PricingController {
 
   @Post('price-books')
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'PriceBook', action: 'CREATE' })
   async createPriceBook(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePriceBookDto,
@@ -48,6 +50,7 @@ export class PricingController {
 
   @Post('product-prices')
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'ProductPrice', action: 'CREATE' })
   async addProductPrice(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: AddProductPriceDto,
@@ -78,6 +81,7 @@ export class PricingController {
 
   @Delete('product-prices/:id')
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'ProductPrice', action: 'DELETE' })
   async deleteProductPrice(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -93,6 +97,7 @@ export class PricingController {
 
   @Patch('price-books/:id')
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'PriceBook', action: 'UPDATE' })
   async updatePriceBook(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -109,6 +114,7 @@ export class PricingController {
 
   @Delete('price-books/:id')
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'PriceBook', action: 'DELETE' })
   async deletePriceBook(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

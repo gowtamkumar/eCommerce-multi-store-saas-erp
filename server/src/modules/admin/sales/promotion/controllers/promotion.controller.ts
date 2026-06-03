@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -35,6 +36,7 @@ export class PromotionController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
+  @Audit({ entity: 'Promotion', action: 'CREATE' })
   async createPromotion(
     @RequestContext() ctx: RequestContextDto,
     @Body() createPromotionDto: CreatePromotionDto,
@@ -136,6 +138,7 @@ export class PromotionController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
+  @Audit({ entity: 'Promotion', action: 'UPDATE' })
   async updatePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -154,6 +157,7 @@ export class PromotionController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
+  @Audit({ entity: 'Promotion', action: 'DELETE' })
   async removePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

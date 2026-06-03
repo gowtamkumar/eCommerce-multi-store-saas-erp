@@ -11,6 +11,7 @@ import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
+import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InitPaymentDto } from '../dto/payment.dto'
 import { PaymentEntity } from '../entities/payment.entity'
@@ -27,6 +28,7 @@ export class PaymentService {
     private invoiceService: InvoiceService,
     private mailService: MailService,
     private readonly cacheService: CacheService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async initPayment(dto: InitPaymentDto, ctx: RequestContextDto): Promise<{ gatewayUrl: string }> {
@@ -153,6 +155,19 @@ export class PaymentService {
       this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
       this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
     ])
+
+    await this.auditLogService.log({ tenantId: order.tenantId, userId: order.userId } as RequestContextDto, {
+      action: 'PAYMENT_SUCCESS',
+      entity: 'Payment',
+      entityId: payment.id,
+      newValue: {
+        orderId: order.id,
+        transactionId: tran_id,
+        amount: order.totalAmount,
+        currency: order.currency,
+        status: PaymentStatus.COMPLETED,
+      },
+    })
     return { success: true }
   }
 
@@ -187,6 +202,19 @@ export class PaymentService {
       this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
       this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
     ])
+
+    await this.auditLogService.log({ tenantId: order.tenantId, userId: order.userId } as RequestContextDto, {
+      action: 'PAYMENT_FAILED',
+      entity: 'Payment',
+      entityId: payment.id,
+      newValue: {
+        orderId: order.id,
+        transactionId: tran_id,
+        amount: order.totalAmount,
+        currency: order.currency,
+        status: PaymentStatus.FAILED,
+      },
+    })
     return { success: false }
   }
 
@@ -224,6 +252,19 @@ export class PaymentService {
       this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
       this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
     ])
+
+    await this.auditLogService.log({ tenantId: order.tenantId, userId: order.userId } as RequestContextDto, {
+      action: 'PAYMENT_CANCELLED',
+      entity: 'Payment',
+      entityId: payment.id,
+      newValue: {
+        orderId: order.id,
+        transactionId: tran_id,
+        amount: order.totalAmount,
+        currency: order.currency,
+        status: PaymentStatus.PENDING,
+      },
+    })
     return { cancelled: true }
   }
 

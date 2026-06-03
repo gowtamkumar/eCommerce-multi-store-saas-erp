@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
@@ -35,6 +36,7 @@ export class ExpenseController {
 
   @Post()
   @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
+  @Audit({ entity: 'Expense', action: 'CREATE' })
   async createExpense(
     @Body() createExpenseDto: CreateExpenseDto,
     @RequestContext() ctx: RequestContextDto,
@@ -91,6 +93,7 @@ export class ExpenseController {
 
   @Patch(':id')
   @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
+  @Audit({ entity: 'Expense', action: 'UPDATE' })
   async updateExpense(
     @Param('id') id: string,
     @Body() updateExpenseDto: UpdateExpenseDto,
@@ -108,6 +111,7 @@ export class ExpenseController {
 
   @Post(':id/approve')
   @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
+  @Audit({ entity: 'Expense', action: 'APPROVE' })
   async approveExpense(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -123,6 +127,7 @@ export class ExpenseController {
 
   @Post(':id/reject')
   @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
+  @Audit({ entity: 'Expense', action: 'REJECT' })
   async rejectExpense(
     @Param('id') id: string,
     @Body() body: { reason?: string },
@@ -139,6 +144,7 @@ export class ExpenseController {
 
   @Delete(':id')
   @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
+  @Audit({ entity: 'Expense', action: 'DELETE' })
   async removeExpense(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

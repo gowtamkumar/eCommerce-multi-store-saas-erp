@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common'
@@ -48,6 +49,7 @@ export class FulfillmentController {
 
   @Post(':id/start')
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @Audit({ entity: 'Fulfillment', action: 'START_PICKING' })
   async startPicking(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -63,6 +65,7 @@ export class FulfillmentController {
 
   @Post(':id/pick')
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @Audit({ entity: 'Fulfillment', action: 'PICK' })
   async pickItems(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -80,6 +83,7 @@ export class FulfillmentController {
 
   @Post(':id/pack')
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @Audit({ entity: 'Fulfillment', action: 'PACK' })
   async completePacking(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -95,6 +99,7 @@ export class FulfillmentController {
 
   @Post(':id/ship')
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @Audit({ entity: 'Fulfillment', action: 'SHIP' })
   async shipOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

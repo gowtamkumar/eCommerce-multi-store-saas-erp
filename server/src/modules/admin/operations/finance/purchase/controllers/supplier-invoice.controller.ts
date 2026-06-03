@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, Query } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { SupplierInvoiceService } from '../services/supplier-invoice.service'
 import {
   CreateSupplierInvoiceDto,
@@ -26,6 +27,7 @@ export class SupplierInvoiceController {
 
   @Post()
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'SupplierInvoice', action: 'CREATE' })
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateSupplierInvoiceDto,
@@ -71,6 +73,7 @@ export class SupplierInvoiceController {
 
   @Post('batch-payment')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'SupplierInvoice', action: 'BATCH_PAYMENT' })
   async runBatchPayment(
     @RequestContext() ctx: RequestContextDto,
     @Body()
@@ -107,6 +110,7 @@ export class SupplierInvoiceController {
 
   @Post(':id/payments')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'SupplierInvoice', action: 'PAYMENT' })
   async pay(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -123,6 +127,7 @@ export class SupplierInvoiceController {
 
   @Patch(':id/status')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'SupplierInvoice', action: 'STATUS_CHANGE' })
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

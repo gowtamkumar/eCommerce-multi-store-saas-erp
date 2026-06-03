@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -36,7 +37,7 @@ export class SupplierController {
 
   @Post()
   @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
-  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @Audit({ entity: 'Supplier', action: 'CREATE' })
   async createSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateSupplierDto,
@@ -87,7 +88,7 @@ export class SupplierController {
 
   @Patch(':id')
   @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
-  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @Audit({ entity: 'Supplier', action: 'UPDATE' })
   async updateSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -105,7 +106,7 @@ export class SupplierController {
 
   @Delete(':id')
   @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
-  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @Audit({ entity: 'Supplier', action: 'DELETE' })
   async removeSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

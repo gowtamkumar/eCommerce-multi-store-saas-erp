@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards } from '@nestjs/common'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
@@ -44,6 +45,7 @@ export class LoyaltyController {
   @Put('marketing/loyalty/config')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @Audit({ entity: 'LoyaltyConfig', action: 'UPDATE' })
   async updateConfig(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateLoyaltyConfigDto,
@@ -84,6 +86,7 @@ export class LoyaltyController {
   @Post('marketing/loyalty/credit')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @Audit({ entity: 'LoyaltyPoints', action: 'MANUAL_CREDIT' })
   async manualCredit(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: ManualPointsAdjustmentDto,
@@ -114,6 +117,7 @@ export class LoyaltyController {
   @Post('marketing/loyalty/debit')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @Audit({ entity: 'LoyaltyPoints', action: 'MANUAL_DEBIT' })
   async manualDebit(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: ManualPointsAdjustmentDto,
@@ -207,6 +211,7 @@ export class LoyaltyController {
   @Post('marketing/loyalty/rules')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @Audit({ entity: 'LoyaltyRule', action: 'CREATE' })
   async createLoyaltyRule(
     @Body() body: LoyaltyRuleDto,
     @RequestContext() ctx: RequestContextDto,
@@ -223,6 +228,7 @@ export class LoyaltyController {
   @Put('marketing/loyalty/rules/:id')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @Audit({ entity: 'LoyaltyRule', action: 'UPDATE' })
   async updateLoyaltyRule(
     @Param('id') id: string,
     @Body() body: LoyaltyRuleDto,
@@ -262,6 +268,7 @@ export class LoyaltyController {
   @Delete('marketing/loyalty/rules/:id')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @Audit({ entity: 'LoyaltyRule', action: 'DELETE' })
   async deleteLoyaltyRule(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

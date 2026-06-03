@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
@@ -39,6 +40,7 @@ export class PageController {
   constructor(private readonly pageService: PageService) {}
 
   @Post()
+  @Audit({ entity: 'Page', action: 'CREATE' })
   async createPage(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePageDto,
@@ -84,6 +86,7 @@ export class PageController {
   }
 
   @Patch(':id')
+  @Audit({ entity: 'Page', action: 'UPDATE' })
   async updatePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -100,6 +103,7 @@ export class PageController {
   }
 
   @Delete(':id')
+  @Audit({ entity: 'Page', action: 'DELETE' })
   async removePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -124,6 +128,7 @@ export class PageController {
   }
 
   @Post(':id/revisions/:revisionId/restore')
+  @Audit({ entity: 'Page', action: 'RESTORE_REVISION' })
   async restoreRevision(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,

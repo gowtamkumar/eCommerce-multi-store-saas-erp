@@ -3,6 +3,7 @@ import { ArService } from '../services/ar.service'
 import { DunningService } from '../services/dunning.service'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -50,6 +51,7 @@ export class ArController {
 
   @Post('payment')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'CustomerPayment', action: 'RECORD' })
   async recordPayment(
     @Body()
     body: {
@@ -88,6 +90,7 @@ export class ArController {
 
   @Post('dunning/rules')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'DunningRule', action: 'CREATE' })
   async createDunningRule(
     @Body() body: any,
     @RequestContext() ctx: RequestContextDto,
@@ -103,6 +106,7 @@ export class ArController {
 
   @Put('dunning/rules/:id')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'DunningRule', action: 'UPDATE' })
   async updateDunningRule(
     @Param('id') id: string,
     @Body() body: any,
@@ -119,6 +123,7 @@ export class ArController {
 
   @Delete('dunning/rules/:id')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  @Audit({ entity: 'DunningRule', action: 'DELETE' })
   async deleteDunningRule(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

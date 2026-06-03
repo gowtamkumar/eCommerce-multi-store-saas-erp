@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -35,7 +36,7 @@ export class InvoiceController {
 
   @Post()
   @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
-  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @Audit({ entity: 'Invoice', action: 'CREATE' })
   async createInvoice(
     @Body() createInvoiceDto: CreateInvoiceDto,
     @RequestContext() ctx: RequestContextDto,
@@ -87,7 +88,7 @@ export class InvoiceController {
 
   @Patch(':id')
   @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
-  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @Audit({ entity: 'Invoice', action: 'UPDATE' })
   async updateInvoice(
     @Param('id') id: string,
     @Body() updateInvoiceDto: UpdateInvoiceDto,
@@ -105,7 +106,7 @@ export class InvoiceController {
 
   @Delete(':id')
   @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
-  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @Audit({ entity: 'Invoice', action: 'DELETE' })
   async removeInvoice(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

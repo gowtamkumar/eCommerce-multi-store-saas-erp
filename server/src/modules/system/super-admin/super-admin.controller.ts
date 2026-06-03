@@ -1,3 +1,4 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -13,6 +14,7 @@ import { FilterUserDto } from '@/modules/admin/core/user/dtos'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
+import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import {
   Body,
@@ -53,6 +55,7 @@ export class SuperAdminController {
     private readonly addonCatalogService: AddonCatalogService,
     private readonly cacheService: CacheService,
     private readonly authService: AuthService,
+    private readonly auditLogService: AuditLogService,
   ) { }
 
   @Post('/setup')
@@ -450,10 +453,19 @@ export class SuperAdminController {
   @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/status')
   async updateTenantStatus(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body('status') status: TenantStatus,
   ): Promise<BaseApiSuccessResponse<any>> {
     const tenant = await this.tenantService.updateTenantStatus(id, status as any)
+    await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
+      userId: ctx.userId,
+      actorName: ctx.user?.username,
+      action: 'TENANT_STATUS_CHANGE',
+      entity: 'Tenant',
+      entityId: id,
+      newValue: { status },
+    } as any)
     return {
       success: true,
       statusCode: 200,
@@ -466,10 +478,19 @@ export class SuperAdminController {
   @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/plan')
   async updateTenantPlan(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body('planId') planId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     await this.tenantService.updateTenantPlan(id, planId)
+    await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
+      userId: ctx.userId,
+      actorName: ctx.user?.username,
+      action: 'TENANT_PLAN_CHANGE',
+      entity: 'Tenant',
+      entityId: id,
+      newValue: { planId },
+    } as any)
     return {
       success: true,
       statusCode: 200,
@@ -506,6 +527,7 @@ export class SuperAdminController {
   @Post('/impersonate/:userId')
   @HttpCode(200)
   async impersonate(
+    @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<{ impersonateToken: string; redirectUrl: string }>> {
     this.logger.log(`Super Admin initiating impersonation for user ${sanitizeLog(userId)}`)
@@ -518,6 +540,18 @@ export class SuperAdminController {
 
     // 2. Generate impersonation token
     const impersonateToken = await this.authService.createImpersonateToken(user.id)
+
+    // Audit the impersonation against the target user's tenant for traceability.
+    if (user.tenantId) {
+      await this.auditLogService.log({ tenantId: user.tenantId, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
+        userId: ctx.userId,
+        actorName: ctx.user?.username,
+        action: 'IMPERSONATE_START',
+        entity: 'User',
+        entityId: user.id,
+        newValue: { targetUserId: user.id, targetUsername: user.username },
+      } as any)
+    }
 
     // 3. Construct redirect URL
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
@@ -560,6 +594,7 @@ export class SuperAdminController {
   @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/features')
   async updateTenantFeatureOverride(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() body: { featureSlug: string; overrideValue: boolean | null },
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -568,6 +603,14 @@ export class SuperAdminController {
       body.featureSlug,
       body.overrideValue,
     )
+    await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
+      userId: ctx.userId,
+      actorName: ctx.user?.username,
+      action: 'TENANT_FEATURE_OVERRIDE',
+      entity: 'Tenant',
+      entityId: id,
+      newValue: { featureSlug: body.featureSlug, overrideValue: body.overrideValue },
+    } as any)
     return {
       success: true,
       statusCode: 200,

@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, Logger } from '@nestjs/common'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
@@ -24,6 +25,7 @@ export class StockTransferController {
 
   @Post()
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'StockTransfer', action: 'CREATE' })
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateStockTransferDocDto,
@@ -80,6 +82,7 @@ export class StockTransferController {
 
   @Put(':id')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'StockTransfer', action: 'UPDATE' })
   async update(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -99,6 +102,7 @@ export class StockTransferController {
 
   @Post(':id/approve')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'StockTransfer', action: 'APPROVE' })
   async approve(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -117,6 +121,7 @@ export class StockTransferController {
 
   @Post(':id/ship')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'StockTransfer', action: 'SHIP' })
   async ship(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -133,6 +138,7 @@ export class StockTransferController {
 
   @Post(':id/receive')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'StockTransfer', action: 'RECEIVE' })
   async receive(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -152,6 +158,7 @@ export class StockTransferController {
 
   @Post(':id/cancel')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'StockTransfer', action: 'CANCEL' })
   async cancel(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, Query } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { DebitNoteService } from '../services/debit-note.service'
 import { CreateDebitNoteDto, UpdateDebitNoteStatusDto } from '../dto/debit-note.dto'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -22,6 +23,7 @@ export class DebitNoteController {
 
   @Post()
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'DebitNote', action: 'CREATE' })
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateDebitNoteDto,
@@ -68,6 +70,7 @@ export class DebitNoteController {
 
   @Patch(':id/status')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'DebitNote', action: 'STATUS_CHANGE' })
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

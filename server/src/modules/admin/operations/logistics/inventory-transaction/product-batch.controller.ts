@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, Logger } from '@nestjs/common'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
@@ -22,6 +23,7 @@ export class ProductBatchController {
 
   @Post()
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'ProductBatch', action: 'CREATE' })
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateProductBatchDto,
@@ -76,6 +78,7 @@ export class ProductBatchController {
 
   @Put(':id')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'ProductBatch', action: 'UPDATE' })
   async update(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -93,6 +96,7 @@ export class ProductBatchController {
 
   @Post('sweep-expired')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'ProductBatch', action: 'SWEEP_EXPIRED' })
   async sweepExpired(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {

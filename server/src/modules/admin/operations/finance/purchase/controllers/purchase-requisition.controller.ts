@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { PurchaseRequisitionService } from '../services/purchase-requisition.service'
 import {
   CreatePurchaseRequisitionDto,
@@ -26,6 +27,7 @@ export class PurchaseRequisitionController {
 
   @Post()
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'PurchaseRequisition', action: 'CREATE' })
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePurchaseRequisitionDto,
@@ -72,6 +74,7 @@ export class PurchaseRequisitionController {
 
   @Patch(':id/status')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'PurchaseRequisition', action: 'STATUS_CHANGE' })
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -88,6 +91,7 @@ export class PurchaseRequisitionController {
 
   @Post(':id/convert')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'PurchaseRequisition', action: 'CONVERT_TO_PO' })
   async convert(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -104,6 +108,7 @@ export class PurchaseRequisitionController {
 
   @Delete(':id')
   @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @Audit({ entity: 'PurchaseRequisition', action: 'DELETE' })
   async remove(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

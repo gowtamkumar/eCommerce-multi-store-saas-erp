@@ -13,6 +13,7 @@ import {
 import { Throttle } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RegisterCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -28,6 +29,7 @@ export class AuthController {
 
   // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/register')
+  @Audit({ entity: 'Auth', action: 'REGISTER' })
   async register(
     @RequestContext() ctx: RequestContextDto,
     @Body() registerCredentialDto: RegisterCredentialDto,
@@ -85,6 +87,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('/logout')
+  @Audit({ entity: 'Auth', action: 'LOGOUT' })
   async logout(
     @RequestContext() ctx: RequestContextDto,
     @Res({ passthrough: true }) res: Response,
@@ -116,6 +119,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('/sessions/other')
+  @Audit({ entity: 'Session', action: 'REVOKE_OTHERS' })
   async revokeOtherSessions(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {
@@ -130,6 +134,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('/sessions/:id')
+  @Audit({ entity: 'Session', action: 'REVOKE' })
   async revokeSession(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') sessionId: string,
@@ -173,6 +178,7 @@ export class AuthController {
   }
 
   @Post('/reset-password')
+  @Audit({ entity: 'Auth', action: 'PASSWORD_RESET' })
   async resetPassword(
     @Body() body: { token: string; password: string },
   ): Promise<BaseApiSuccessResponse<null>> {
@@ -187,6 +193,7 @@ export class AuthController {
   }
 
   @Post('/accept-invitation')
+  @Audit({ entity: 'Auth', action: 'ACCEPT_INVITATION' })
   async acceptInvitation(@Body() body: any): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`acceptInvitation called.`)
     const data = await this.authService.acceptInvitation(body)

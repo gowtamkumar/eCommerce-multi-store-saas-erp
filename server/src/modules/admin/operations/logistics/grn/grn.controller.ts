@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
@@ -20,7 +21,7 @@ export class GrnController {
 
   @Post()
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
-  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'Grn', action: 'CREATE' })
   async create(
     @Body() dto: CreateGrnDto,
     @RequestContext() ctx: RequestContextDto,
@@ -69,7 +70,7 @@ export class GrnController {
 
   @Patch(':id/verify')
   @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
-  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @Audit({ entity: 'Grn', action: 'VERIFY' })
   async verify(
     @Param('id') id: string,
     @Body() dto: VerifyGrnDto,
