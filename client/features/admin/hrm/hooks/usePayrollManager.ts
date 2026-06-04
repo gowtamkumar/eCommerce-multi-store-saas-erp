@@ -41,14 +41,6 @@ export interface PayrollEmployee {
   user?: { name: string };
 }
 
-export const STATUS_STYLES: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-600',
-  PENDING_APPROVAL: 'bg-amber-50 text-amber-700',
-  APPROVED: 'bg-blue-50 text-blue-700',
-  PAID: 'bg-emerald-50 text-emerald-700',
-  CANCELLED: 'bg-rose-50 text-rose-700',
-};
-
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;
 

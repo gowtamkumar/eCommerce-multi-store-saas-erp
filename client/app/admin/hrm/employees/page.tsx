@@ -15,12 +15,10 @@ export default function EmployeesPage() {
     isDetailsOpen,
     setIsDetailsOpen,
     selectedEmployee,
-    setSelectedEmployee,
     employees,
     departments,
     designations,
     branches,
-    warehouses,
     users,
     searchQuery,
     setSearchQuery,
@@ -55,7 +53,6 @@ export default function EmployeesPage() {
         departments={departments}
         designations={designations}
         branches={branches}
-        warehouses={warehouses}
         users={users}
         employees={employees}
       />

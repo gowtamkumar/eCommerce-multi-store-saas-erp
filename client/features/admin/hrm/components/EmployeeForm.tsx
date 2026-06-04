@@ -1,28 +1,32 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Briefcase, Building2, Calendar, DollarSign, FileText,
   Loader2, MapPin, Phone, Plus, Save, ShieldCheck, Trash2, User, X
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import { ContractType, Employee, EmployeeStatus } from '../type';
+import {
+  ContractType,
+  Employee,
+  EmployeeLookupOption,
+  EmployeeManagerOption,
+  EmployeeSubmitPayload,
+  EmployeeUserOption,
+  EmployeeStatus,
+} from '../types/employee';
+import { useEmployeeFormWizard } from '../hooks/useEmployeeFormWizard';
 
 interface EmployeeFormProps {
   employee?: Employee | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: EmployeeSubmitPayload) => void;
   loading: boolean;
-  departments?: { id: string; name: string }[];
-  designations?: { id: string; name: string }[];
-  branches?: { id: string; name: string }[];
-  warehouses?: { id: string; name: string }[];
-  users?: { id: string; name: string; email: string }[];
-  employees?: { id: string; user?: { name: string } }[]; // for manager picker
+  departments?: EmployeeLookupOption[];
+  designations?: EmployeeLookupOption[];
+  branches?: EmployeeLookupOption[];
+  users?: EmployeeUserOption[];
+  employees?: EmployeeManagerOption[];
 }
 
 const INPUT_CLS = 'w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400';
@@ -31,100 +35,32 @@ const LABEL_CLS = 'block text-[10px] font-black text-slate-400 uppercase trackin
 export default function EmployeeForm({
   employee, isOpen, onClose, onSubmit, loading,
   departments = [], designations = [], branches = [],
-  warehouses = [], users = [], employees = [],
+  users = [], employees = [],
 }: EmployeeFormProps) {
-  const [activeStep, setActiveStep] = useState(1);
-  const [formData, setFormData] = useState<any>(employee || {
-    userId: '',
-    departmentId: '',
-    designationId: '',
-    managerId: '',
-    branchId: '',
-    status: EmployeeStatus.ACTIVE,
-    contractType: ContractType.FULL_TIME,
-    joiningDate: new Date().toISOString().split('T')[0],
-    exitDate: '',
-    salaryConfig: { basicSalary: 0, allowances: [], deductions: [] },
-    personalDetails: {
-      gender: 'MALE', bloodGroup: 'A+',
-      nationalId: '', passportNo: '', address: '', dob: '',
-      emergencyContact: { name: '', relationship: '', phone: '' },
-    },
-    documents: [],
-  });
-
-  // Local helper for document state inside the form wizard
-  const [newDocType, setNewDocType] = useState('');
-  const [newDocUrl, setNewDocUrl] = useState('');
-  const [newDocExpiry, setNewDocExpiry] = useState('');
-  const [uploadingFile, setUploadingFile] = useState(false);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    void Promise.resolve().then(() => {
-      setActiveStep(1);
-      setNewDocType('');
-      setNewDocUrl('');
-      setNewDocExpiry('');
-      if (employee) {
-        setFormData({
-          userId: employee.userId || '',
-          departmentId: employee.departmentId || '',
-          designationId: employee.designationId || '',
-          managerId: employee.managerId || '',
-          branchId: employee.branchId || '',
-          status: employee.status || EmployeeStatus.ACTIVE,
-          contractType: employee.contractType || ContractType.FULL_TIME,
-          joiningDate: typeof employee.joiningDate === 'string'
-            ? employee.joiningDate.split('T')[0]
-            : new Date().toISOString().split('T')[0],
-          exitDate: typeof employee.exitDate === 'string'
-            ? employee.exitDate.split('T')[0]
-            : '',
-          salaryConfig: {
-            basicSalary: employee.salaryConfig?.basicSalary || 0,
-            allowances: employee.salaryConfig?.allowances || [],
-            deductions: employee.salaryConfig?.deductions || [],
-          },
-          personalDetails: {
-            gender: employee.personalDetails?.gender || 'MALE',
-            bloodGroup: employee.personalDetails?.bloodGroup || 'A+',
-            nationalId: employee.personalDetails?.nationalId || '',
-            passportNo: employee.personalDetails?.passportNo || '',
-            address: employee.personalDetails?.address || '',
-            dob: typeof employee.personalDetails?.dob === 'string'
-              ? employee.personalDetails.dob.split('T')[0]
-              : '',
-            emergencyContact: {
-              name: employee.personalDetails?.emergencyContact?.name || '',
-              relationship: employee.personalDetails?.emergencyContact?.relationship || '',
-              phone: employee.personalDetails?.emergencyContact?.phone || '',
-            },
-          },
-          documents: employee.documents || [],
-        });
-      } else {
-        setFormData({
-          userId: '',
-          departmentId: '',
-          designationId: '',
-          managerId: '',
-          branchId: '',
-          status: EmployeeStatus.ACTIVE,
-          contractType: ContractType.FULL_TIME,
-          joiningDate: new Date().toISOString().split('T')[0],
-          exitDate: '',
-          salaryConfig: { basicSalary: 0, allowances: [], deductions: [] },
-          personalDetails: {
-            gender: 'MALE', bloodGroup: 'A+',
-            nationalId: '', passportNo: '', address: '', dob: '',
-            emergencyContact: { name: '', relationship: '', phone: '' },
-          },
-          documents: [],
-        });
-      }
-    });
-  }, [employee, isOpen]);
+  const {
+    activeStep,
+    setActiveStep,
+    formData,
+    newDocType,
+    setNewDocType,
+    newDocUrl,
+    setNewDocUrl,
+    newDocExpiry,
+    setNewDocExpiry,
+    uploadingFile,
+    progressPercent,
+    setField,
+    setPersonalDetail,
+    setEmergencyContact,
+    setSalaryConfig,
+    addAllowance,
+    removeAllowance,
+    changeAllowance,
+    handleFileUpload,
+    addLocalDocument,
+    removeLocalDocument,
+    handleSubmit,
+  } = useEmployeeFormWizard({ employee, isOpen, onSubmit });
 
   const steps = [
     { id: 1, label: 'Account',    icon: User },
@@ -134,131 +70,6 @@ export default function EmployeeForm({
     { id: 5, label: 'Payroll',    icon: DollarSign },
     { id: 6, label: 'Documents',  icon: FileText },
   ];
-
-  const set = (field: string, value: any) =>
-    setFormData((p: any) => ({ ...p, [field]: value }));
-
-  const setPD = (field: string, value: any) =>
-    setFormData((p: any) => ({ ...p, personalDetails: { ...p.personalDetails, [field]: value } }));
-
-  const setEC = (field: string, value: any) =>
-    setFormData((p: any) => ({
-      ...p,
-      personalDetails: {
-        ...p.personalDetails,
-        emergencyContact: { ...p.personalDetails?.emergencyContact, [field]: value },
-      },
-    }));
-
-  const setSC = (field: string, value: any) =>
-    setFormData((p: any) => ({ ...p, salaryConfig: { ...p.salaryConfig, [field]: value } }));
-
-  const addAllowance = () =>
-    setSC('allowances', [...(formData.salaryConfig.allowances || []), { type: '', amount: 0 }]);
-
-  const removeAllowance = (i: number) => {
-    const arr = [...formData.salaryConfig.allowances]; arr.splice(i, 1);
-    setSC('allowances', arr);
-  };
-
-  const changeAllowance = (i: number, field: string, value: any) => {
-    const arr = [...formData.salaryConfig.allowances];
-    arr[i] = { ...arr[i], [field]: value };
-    setSC('allowances', arr);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    setUploadingFile(true);
-    const loadingToast = toast.loading('Uploading secure document...');
-    try {
-      // Step 1: Request presigned upload URL from API
-      const presignedRes = await fetchAPI('/admin/media/presigned-url', {
-        method: 'POST',
-        body: JSON.stringify({
-          filename: file.name,
-          mimetype: file.type,
-          size: file.size,
-        }),
-      });
-
-      if (presignedRes.success && presignedRes.data?.uploadUrl) {
-        const { uploadUrl, downloadUrl } = presignedRes.data;
-
-        // Step 2: Upload direct file binary to storage server via PUT
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error('Failed to upload file to target bucket');
-        }
-
-        setNewDocUrl(downloadUrl);
-        toast.success('Document uploaded to cloud storage!');
-      } else {
-        toast.error('Could not open secure upload stream');
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error('Error uploading document file');
-    } finally {
-      toast.dismiss(loadingToast);
-      setUploadingFile(false);
-    }
-  };
-
-  // Add document to the local form list
-  const addLocalDocument = () => {
-    if (!newDocType || !newDocUrl) {
-      toast.error('Please choose a document type and upload/link a file first');
-      return;
-    }
-    const newDoc = {
-      documentType: newDocType,
-      fileUrl: newDocUrl,
-      expiryDate: newDocExpiry || undefined,
-    };
-    setFormData((p: any) => ({
-      ...p,
-      documents: [...(p.documents || []), newDoc]
-    }));
-    setNewDocType('');
-    setNewDocUrl('');
-    setNewDocExpiry('');
-  };
-
-  const removeLocalDocument = (index: number) => {
-    setFormData((p: any) => {
-      const arr = [...(p.documents || [])];
-      arr.splice(index, 1);
-      return { ...p, documents: arr };
-    });
-  };
-
-  const handleSubmit = () => {
-    const payload: any = {
-      userId: formData.userId || undefined,
-      departmentId: formData.departmentId || undefined,
-      designationId: formData.designationId || undefined,
-      managerId: formData.managerId || undefined,
-      branchId: formData.branchId || undefined,
-      status: formData.status,
-      contractType: formData.contractType,
-      joiningDate: formData.joiningDate,
-      exitDate: formData.exitDate || undefined,
-      salaryConfig: formData.salaryConfig?.basicSalary > 0 ? formData.salaryConfig : undefined,
-      personalDetails: formData.personalDetails?.gender ? formData.personalDetails : undefined,
-      documents: formData.documents && formData.documents.length > 0 ? formData.documents : undefined,
-    };
-    Object.keys(payload).forEach(k => (payload[k] === '' || payload[k] === undefined) && delete payload[k]);
-    onSubmit(payload);
-  };
 
   return (
     <AnimatePresence>
@@ -289,7 +100,7 @@ export default function EmployeeForm({
               <div className="mt-auto pt-6">
                 <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="h-full bg-indigo-600 rounded-full transition-all"
-                    style={{ width: `${(activeStep / steps.length) * 100}%` }} />
+                    style={{ width: `${progressPercent}%` }} />
                 </div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">
                   Step {activeStep} of {steps.length}
@@ -310,7 +121,7 @@ export default function EmployeeForm({
                         <label className={LABEL_CLS}>Link User Account *</label>
                         <div className="relative">
                           <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                          <select value={formData.userId || ''} onChange={e => set('userId', e.target.value)}
+                          <select value={formData.userId || ''} onChange={e => setField('userId', e.target.value)}
                             className={`${INPUT_CLS} pl-11 appearance-none`}>
                             <option value="">Select existing user account</option>
                             {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
@@ -324,7 +135,7 @@ export default function EmployeeForm({
                         <label className={LABEL_CLS}>Reporting Manager</label>
                         <div className="relative">
                           <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                          <select value={formData.managerId || ''} onChange={e => set('managerId', e.target.value)}
+                          <select value={formData.managerId || ''} onChange={e => setField('managerId', e.target.value)}
                             className={`${INPUT_CLS} pl-11 appearance-none`}>
                             <option value="">No direct manager (top-level)</option>
                             {employees.filter(e => e.id !== employee?.id).map(e => (
@@ -345,7 +156,7 @@ export default function EmployeeForm({
                           <label className={LABEL_CLS}>Department</label>
                           <div className="relative">
                             <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                            <select value={formData.departmentId || ''} onChange={e => set('departmentId', e.target.value)}
+                            <select value={formData.departmentId || ''} onChange={e => setField('departmentId', e.target.value)}
                               className={`${INPUT_CLS} pl-11 appearance-none`}>
                               <option value="">Select Department</option>
                               {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -356,7 +167,7 @@ export default function EmployeeForm({
                           <label className={LABEL_CLS}>Designation / Job Title</label>
                           <div className="relative">
                             <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                            <select value={formData.designationId || ''} onChange={e => set('designationId', e.target.value)}
+                            <select value={formData.designationId || ''} onChange={e => setField('designationId', e.target.value)}
                               className={`${INPUT_CLS} pl-11 appearance-none`}>
                               <option value="">Select Designation</option>
                               {designations.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -365,7 +176,7 @@ export default function EmployeeForm({
                         </div>
                         <div>
                           <label className={LABEL_CLS}>Employment Status</label>
-                          <select value={formData.status} onChange={e => set('status', e.target.value)}
+                          <select value={formData.status} onChange={e => setField('status', e.target.value as EmployeeStatus)}
                             className={`${INPUT_CLS} appearance-none`}>
                             <option value={EmployeeStatus.ACTIVE}>Active</option>
                             <option value={EmployeeStatus.PROBATION}>Probation</option>
@@ -376,7 +187,7 @@ export default function EmployeeForm({
                         </div>
                         <div>
                           <label className={LABEL_CLS}>Contract Type</label>
-                          <select value={formData.contractType} onChange={e => set('contractType', e.target.value)}
+                          <select value={formData.contractType} onChange={e => setField('contractType', e.target.value as ContractType)}
                             className={`${INPUT_CLS} appearance-none`}>
                             <option value={ContractType.FULL_TIME}>Full Time</option>
                             <option value={ContractType.PART_TIME}>Part Time</option>
@@ -388,7 +199,7 @@ export default function EmployeeForm({
                           <label className={LABEL_CLS}>Joining Date *</label>
                           <div className="relative">
                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                            <input type="date" value={formData.joiningDate || ''} onChange={e => set('joiningDate', e.target.value)}
+                            <input type="date" value={formData.joiningDate || ''} onChange={e => setField('joiningDate', e.target.value)}
                               className={`${INPUT_CLS} pl-11`} />
                           </div>
                         </div>
@@ -396,7 +207,7 @@ export default function EmployeeForm({
                           <label className={LABEL_CLS}>Contract End / Exit Date</label>
                           <div className="relative">
                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                            <input type="date" value={formData.exitDate || ''} onChange={e => set('exitDate', e.target.value)}
+                            <input type="date" value={formData.exitDate || ''} onChange={e => setField('exitDate', e.target.value)}
                               className={`${INPUT_CLS} pl-11`} placeholder="Leave blank if permanent" />
                           </div>
                           <p className="text-[10px] text-slate-400 font-bold mt-1.5 pl-1 italic">For fixed-term or probation end dates.</p>
@@ -405,7 +216,7 @@ export default function EmployeeForm({
                           <label className={LABEL_CLS}>Assigned Branch / Location</label>
                           <div className="relative">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
-                            <select value={formData.branchId || ''} onChange={e => set('branchId', e.target.value)}
+                            <select value={formData.branchId || ''} onChange={e => setField('branchId', e.target.value)}
                               className={`${INPUT_CLS} pl-11 appearance-none`}>
                               <option value="">Remote / Unassigned</option>
                               {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -424,12 +235,12 @@ export default function EmployeeForm({
                         <div>
                           <label className={LABEL_CLS}>Date of Birth</label>
                           <input type="date" value={formData.personalDetails?.dob || ''}
-                            onChange={e => setPD('dob', e.target.value)} className={INPUT_CLS} />
+                            onChange={e => setPersonalDetail('dob', e.target.value)} className={INPUT_CLS} />
                         </div>
                         <div>
                           <label className={LABEL_CLS}>Gender</label>
                           <select value={formData.personalDetails?.gender || 'MALE'}
-                            onChange={e => setPD('gender', e.target.value)} className={`${INPUT_CLS} appearance-none`}>
+                            onChange={e => setPersonalDetail('gender', e.target.value)} className={`${INPUT_CLS} appearance-none`}>
                             <option value="MALE">Male</option>
                             <option value="FEMALE">Female</option>
                             <option value="OTHER">Other / Prefer not to say</option>
@@ -438,19 +249,19 @@ export default function EmployeeForm({
                         <div>
                           <label className={LABEL_CLS}>National ID Number</label>
                           <input type="text" value={formData.personalDetails?.nationalId || ''}
-                            onChange={e => setPD('nationalId', e.target.value)}
+                            onChange={e => setPersonalDetail('nationalId', e.target.value)}
                             placeholder="NID / SSN" className={INPUT_CLS} />
                         </div>
                         <div>
                           <label className={LABEL_CLS}>Passport Number</label>
                           <input type="text" value={formData.personalDetails?.passportNo || ''}
-                            onChange={e => setPD('passportNo', e.target.value)}
+                            onChange={e => setPersonalDetail('passportNo', e.target.value)}
                             placeholder="Passport No." className={INPUT_CLS} />
                         </div>
                         <div>
                           <label className={LABEL_CLS}>Blood Group</label>
                           <select value={formData.personalDetails?.bloodGroup || 'A+'}
-                            onChange={e => setPD('bloodGroup', e.target.value)} className={`${INPUT_CLS} appearance-none`}>
+                            onChange={e => setPersonalDetail('bloodGroup', e.target.value)} className={`${INPUT_CLS} appearance-none`}>
                             {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(bg => (
                               <option key={bg} value={bg}>{bg}</option>
                             ))}
@@ -459,7 +270,7 @@ export default function EmployeeForm({
                         <div className="md:col-span-2">
                           <label className={LABEL_CLS}>Home Address</label>
                           <textarea value={formData.personalDetails?.address || ''}
-                            onChange={e => setPD('address', e.target.value)} rows={2}
+                            onChange={e => setPersonalDetail('address', e.target.value)} rows={2}
                             placeholder="Full residential address"
                             className={`${INPUT_CLS} resize-none`} />
                         </div>
@@ -483,13 +294,13 @@ export default function EmployeeForm({
                         <div>
                           <label className={LABEL_CLS}>Contact Full Name</label>
                           <input type="text" value={formData.personalDetails?.emergencyContact?.name || ''}
-                            onChange={e => setEC('name', e.target.value)}
+                            onChange={e => setEmergencyContact('name', e.target.value)}
                             placeholder="e.g. Jane Doe" className={INPUT_CLS} />
                         </div>
                         <div>
                           <label className={LABEL_CLS}>Relationship</label>
                           <select value={formData.personalDetails?.emergencyContact?.relationship || ''}
-                            onChange={e => setEC('relationship', e.target.value)} className={`${INPUT_CLS} appearance-none`}>
+                            onChange={e => setEmergencyContact('relationship', e.target.value)} className={`${INPUT_CLS} appearance-none`}>
                             <option value="">Select Relationship</option>
                             <option value="Spouse">Spouse</option>
                             <option value="Parent">Parent</option>
@@ -504,7 +315,7 @@ export default function EmployeeForm({
                           <div className="relative">
                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
                             <input type="tel" value={formData.personalDetails?.emergencyContact?.phone || ''}
-                              onChange={e => setEC('phone', e.target.value)}
+                              onChange={e => setEmergencyContact('phone', e.target.value)}
                               placeholder="+1 555 000 0000" className={`${INPUT_CLS} pl-11`} />
                           </div>
                         </div>
@@ -526,7 +337,7 @@ export default function EmployeeForm({
                           <div className="relative">
                             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 pointer-events-none" />
                             <input type="number" value={formData.salaryConfig?.basicSalary || 0}
-                              onChange={e => setSC('basicSalary', parseFloat(e.target.value) || 0)}
+                              onChange={e => setSalaryConfig('basicSalary', parseFloat(e.target.value) || 0)}
                               placeholder="0.00" className={`${INPUT_CLS} pl-11 font-black`} />
                           </div>
                         </div>
@@ -538,7 +349,7 @@ export default function EmployeeForm({
                               <Plus className="w-3 h-3" /> Add
                             </button>
                           </div>
-                          {(formData.salaryConfig?.allowances || []).map((a: any, i: number) => (
+                          {(formData.salaryConfig?.allowances || []).map((a, i) => (
                             <div key={i} className="flex gap-3 items-end">
                               <input type="text" value={a.type} placeholder="Type (e.g. Transport)"
                                 onChange={e => changeAllowance(i, 'type', e.target.value)}
@@ -631,7 +442,7 @@ export default function EmployeeForm({
                           </div>
                         ) : (
                           <div className="space-y-2 max-h-56 overflow-y-auto">
-                            {formData.documents.map((doc: any, index: number) => (
+                            {formData.documents.map((doc, index) => (
                               <div key={index} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700">
                                 <div className="flex items-center gap-3">
                                   <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">

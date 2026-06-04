@@ -64,7 +64,7 @@ function PayrollHistoryRow({ batch, onViewSlips, onApprove }: PayrollHistoryRowP
         </div>
         <div>
           <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic leading-none mb-1">{batch.name}</h3>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{batch.period} • {new Date(batch.createdAt).toLocaleDateString()}</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{batch.period} - {new Date(batch.createdAt).toLocaleDateString()}</p>
         </div>
       </div>
       <div className="flex items-center gap-12 ml-auto">

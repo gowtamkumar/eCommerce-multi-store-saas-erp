@@ -4,7 +4,12 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import { createEmployee, getDepartments, getDesignations, getEmployees, updateEmployee } from '@/services/hrm';
 import { getBranches, getWarehouses } from '@/services/organization';
 import { getUsers } from '@/services/user';
-import { Employee } from '../type';
+import {
+  Employee,
+  EmployeeLookupOption,
+  EmployeeSubmitPayload,
+  EmployeeUserOption,
+} from '../types/employee';
 
 export function useEmployeeDirectory() {
   const [loading, setLoading] = useState(true);
@@ -13,11 +18,11 @@ export function useEmployeeDirectory() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
-  const [designations, setDesignations] = useState<{ id: string; name: string }[]>([]);
-  const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
-  const [warehouses, setWarehouses] = useState<{ id: string; name: string }[]>([]);
-  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [departments, setDepartments] = useState<EmployeeLookupOption[]>([]);
+  const [designations, setDesignations] = useState<EmployeeLookupOption[]>([]);
+  const [branches, setBranches] = useState<EmployeeLookupOption[]>([]);
+  const [warehouses, setWarehouses] = useState<EmployeeLookupOption[]>([]);
+  const [users, setUsers] = useState<EmployeeUserOption[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchEmployees = useCallback(async () => {
@@ -48,7 +53,7 @@ export function useEmployeeDirectory() {
     void fetchEmployees();
   }, [fetchEmployees]);
 
-  const handleSubmit = useCallback(async (data: any) => {
+  const handleSubmit = useCallback(async (data: EmployeeSubmitPayload) => {
     try {
       setSubmitting(true);
       if (selectedEmployee?.id) {

@@ -2,31 +2,16 @@
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { createDesignation, deleteDesignation, getDepartments, getDesignations, updateDesignation } from '@/services/hrm';
-
-interface Designation {
-  id: string;
-  name: string;
-  grade?: string;
-  salaryBand?: string;
-  description?: string;
-  departmentId: string;
-  department?: { name: string };
-  employeeCount?: number;
-}
-
-interface Department {
-  id: string;
-  name: string;
-}
+import type { Designation, DesignationDepartment, DesignationFormData } from '../types/designation';
 
 export function useDesignationsManager() {
   const [designations, setDesignations] = useState<Designation[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<DesignationDepartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', grade: '', salaryBand: '', description: '', departmentId: '' });
+  const [formData, setFormData] = useState<DesignationFormData>({ name: '', grade: '', salaryBand: '', description: '', departmentId: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -140,4 +125,4 @@ export function useDesignationsManager() {
     fetchData
   };
 }
-export type { Designation };
+export type { Designation } from '../types/designation';

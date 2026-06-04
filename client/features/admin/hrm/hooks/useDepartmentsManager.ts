@@ -2,15 +2,7 @@
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { createDepartment, deleteDepartment, getDepartments, updateDepartment } from '@/services/hrm';
-
-interface Department {
-  id: string;
-  name: string;
-  code?: string;
-  parentDepartmentId?: string;
-  description?: string;
-  employeeCount?: number;
-}
+import type { Department, DepartmentFormData } from '../types/department';
 
 export function useDepartmentsManager() {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -18,7 +10,7 @@ export function useDepartmentsManager() {
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', code: '', description: '' });
+  const [formData, setFormData] = useState<DepartmentFormData>({ name: '', code: '', description: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -118,4 +110,4 @@ export function useDepartmentsManager() {
     fetchData
   };
 }
-export type { Department };
+export type { Department } from '../types/department';

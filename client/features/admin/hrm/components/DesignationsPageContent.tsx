@@ -1,21 +1,10 @@
 'use client';
 
-import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Briefcase,
-  CheckCircle2,
-  Edit2,
-  Loader2,
-  Plus,
-  Save,
-  Search,
-  Trash2,
-  TrendingUp,
-  Users,
-  X
-} from 'lucide-react';
+import { Briefcase, CheckCircle2, Loader2, Plus, Search } from 'lucide-react';
 import { useDesignationsManager } from '../hooks/useDesignationsManager';
+import DesignationCard from './designations/DesignationCard';
+import DesignationFormModal from './designations/DesignationFormModal';
 
 export default function DesignationsPageContent() {
   const {
@@ -80,79 +69,16 @@ export default function DesignationsPageContent() {
         />
       </div>
 
-      <AnimatePresence>
-        {showForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(false)} className="absolute inset-0" />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-8 border border-slate-150 dark:border-slate-700 overflow-hidden"
-            >
-              <button onClick={() => setShowForm(false)} className="absolute top-6 right-6 p-2 text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">
-                <X className="w-5 h-5" />
-              </button>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic mb-8">
-                {editingId ? 'Edit' : 'New'} <span className="text-indigo-600">Designation</span>
-              </h2>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Designation Title *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Senior Executive, Manager, Lead"
-                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Department *</label>
-                  <select
-                    value={formData.departmentId}
-                    onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10"
-                  >
-                    <option value="">Select Department</option>
-                    {departments.map(dept => (
-                      <option key={dept.id} value={dept.id}>{dept.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Grade Level</label>
-                  <input
-                    type="text"
-                    value={formData.grade || ''}
-                    onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                    placeholder="e.g. L1, L2, Executive, Senior"
-                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Salary Band</label>
-                  <input
-                    type="text"
-                    value={formData.salaryBand || ''}
-                    onChange={(e) => setFormData({ ...formData, salaryBand: e.target.value })}
-                    placeholder="e.g. $30k-$50k"
-                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10"
-                  />
-                </div>
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting || !formData.name?.trim() || !formData.departmentId}
-                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {editingId ? 'Update Designation' : 'Create Designation'}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <DesignationFormModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        isEditing={!!editingId}
+        submitting={submitting}
+        formData={formData}
+        setFormData={setFormData}
+        departments={departments}
+        onSubmit={handleSubmit}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {loading ? (
@@ -160,38 +86,13 @@ export default function DesignationsPageContent() {
             <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
           </div>
         ) : filtered.map((des, i) => (
-          <motion.div
+          <DesignationCard
             key={des.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            whileHover={{ y: -4 }}
-            className="group bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all"
-          >
-            <div className="flex items-start justify-between mb-6">
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-2xl">
-                <Briefcase className="w-8 h-8 text-amber-600" />
-              </div>
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => handleEdit(des)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all">
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button onClick={() => handleDelete(des.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic mb-1">{des.name}</h3>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-              Department: <span className="text-indigo-600">{des.department?.name || 'N/A'}</span>
-            </p>
-            {des.grade && <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Grade: {des.grade}</p>}
-            {des.salaryBand && <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-3"><TrendingUp className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />{des.salaryBand}</p>}
-            <div className="flex items-center gap-2 pt-4 border-t border-slate-50 dark:border-slate-700">
-              <Users className="w-4 h-4 text-slate-400" />
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{des.employeeCount || 0} Employees</span>
-            </div>
-          </motion.div>
+            designation={des}
+            index={i}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ))}
         {!loading && filtered.length === 0 && (
           <div className="col-span-full flex flex-col items-center py-24 text-slate-400">
