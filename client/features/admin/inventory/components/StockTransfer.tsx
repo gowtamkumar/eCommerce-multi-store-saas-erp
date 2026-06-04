@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
+import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowLeftRight,
@@ -18,290 +18,64 @@ import {
     Warehouse,
     X
 } from 'lucide-react';
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import toast from 'react-hot-toast';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { useStockTransfer, StockTransferDoc } from '../hooks/useStockTransfer';
 
-interface TransferLine {
-    productId: string;
-    productName: string;
-    variantId?: string;
-    variantLabel?: string;
-    quantityRequested: number;
-    quantityReceived?: number;
-}
-
-interface StockTransferDoc {
-    id: string;
-    transferNumber: string;
-    sourceWarehouseId: string;
-    sourceWarehouse?: { name: string; code: string };
-    destinationWarehouseId: string;
-    destinationWarehouse?: { name: string; code: string };
-    status: 'DRAFT' | 'APPROVED' | 'IN_TRANSIT' | 'RECEIVED' | 'CANCELLED';
-    remarks: string | null;
-    createdAt: string;
-    user?: { username: string };
-    items?: Array<{
-        id: string;
-        productId: string;
-        product?: { name: string; images?: string[] };
-        variantId?: string;
-        variant?: { combination: Record<string, string> };
-        quantityRequested: number;
-        quantityReceived: number;
-    }>;
-}
+const getStatusStyle = (status: string) => {
+    switch (status) {
+        case 'DRAFT': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+        case 'APPROVED': return 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300';
+        case 'IN_TRANSIT': return 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300';
+        case 'RECEIVED': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300';
+        case 'CANCELLED': return 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300';
+        default: return 'bg-slate-100 text-slate-700';
+    }
+};
 
 export default function StockTransfer() {
-    const [warehouses, setWarehouses] = useState<any[]>([]);
-    const [products, setProducts] = useState<any[]>([]);
-    const [transfers, setTransfers] = useState<StockTransferDoc[]>([]);
-    const [totalTransfers, setTotalTransfers] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-
-    // List navigation & filters
-    const [activeTab, setActiveTab] = useState<'LIST' | 'NEW'>('LIST');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // Creation form state
-    const [sourceId, setSourceId] = useState('');
-    const [destId, setDestId] = useState('');
-    const [remarks, setRemarks] = useState('');
-    const [newLines, setNewLines] = useState<TransferLine[]>([]);
-
-    // Detail modal state
-    const [selectedTransfer, setSelectedTransfer] = useState<StockTransferDoc | null>(null);
-    const [detailsLoading, setDetailsLoading] = useState(false);
-
-    // Receive modal/form state
-    const [receiveOpen, setReceiveOpen] = useState(false);
-    const [receiveQtys, setReceiveQtys] = useState<Record<string, number>>({});
-
-    // Product picker state
-    const [pickerOpen, setPickerOpen] = useState(false);
-    const [pickerSearch, setPickerSearch] = useState('');
-
-    useEffect(() => {
-        loadBaseData();
-    }, []);
-
-    useEffect(() => {
-        if (activeTab === 'LIST') {
-            loadTransfers();
-        }
-    }, [activeTab, currentPage, statusFilter, searchQuery]);
-
-    const loadBaseData = async () => {
-        setLoading(true);
-        try {
-            const [wRes, pRes] = await Promise.all([
-                fetchAPI('/system/warehouses'),
-                fetchAPI('/products?limit=100&status=active'),
-            ]);
-            if (wRes.success) setWarehouses(wRes.data || []);
-            if (pRes.success) setProducts(pRes.data?.products || pRes.data || []);
-        } catch {
-            toast.error('Failed to load warehouses or products');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadTransfers = async () => {
-        try {
-            const params = new URLSearchParams();
-            params.set('page', String(currentPage));
-            params.set('limit', '10');
-            if (statusFilter) params.set('status', statusFilter);
-            if (searchQuery.trim()) params.set('q', searchQuery.trim());
-            const res = await fetchAPI(`/stock-transfers?${params.toString()}`);
-            if (res.success) {
-                setTransfers(res.data?.items || []);
-                setTotalTransfers(res.data?.total || 0);
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Failed to load stock transfers');
-        }
-    };
-
-    const loadDetail = async (id: string) => {
-        setDetailsLoading(true);
-        try {
-            const res = await fetchAPI(`/stock-transfers/${id}`);
-            if (res.success) {
-                setSelectedTransfer(res.data);
-                // Initialize receive quantities mapping
-                const qtys: Record<string, number> = {};
-                res.data.items?.forEach((item: any) => {
-                    qtys[item.id] = Number(item.quantityRequested);
-                });
-                setReceiveQtys(qtys);
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Failed to fetch details');
-        } finally {
-            setDetailsLoading(false);
-        }
-    };
-
-    const addLine = (product: any, variant?: any) => {
-        const exists = newLines.find(
-            l => l.productId === product.id && l.variantId === (variant?.id || undefined)
-        );
-        if (exists) {
-            toast('This product/variant is already in the transfer list.');
-            return;
-        }
-        setNewLines(prev => [
-            ...prev,
-            {
-                productId: product.id,
-                productName: product.name,
-                variantId: variant?.id,
-                variantLabel: variant
-                    ? Object.entries(variant.combination || {}).map(([k, v]) => `${k}: ${v}`).join(' / ')
-                    : undefined,
-                quantityRequested: 1,
-            },
-        ]);
-        setPickerOpen(false);
-        setPickerSearch('');
-    };
-
-    const updateQty = (idx: number, val: number) => {
-        setNewLines(prev => prev.map((l, i) => i === idx ? { ...l, quantityRequested: Math.max(1, val) } : l));
-    };
-
-    const removeLine = (idx: number) => {
-        setNewLines(prev => prev.filter((_, i) => i !== idx));
-    };
-
-    const handleCreateTransfer = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!sourceId || !destId) { toast.error('Select source and destination warehouses'); return; }
-        if (sourceId === destId) { toast.error('Source and destination must differ'); return; }
-        if (newLines.length === 0) { toast.error('Add at least one product line'); return; }
-
-        setSubmitting(true);
-        try {
-            const res = await fetchAPI('/stock-transfers', {
-                method: 'POST',
-                body: JSON.stringify({
-                    sourceWarehouseId: sourceId,
-                    destinationWarehouseId: destId,
-                    remarks: remarks || undefined,
-                    items: newLines.map(l => ({
-                        productId: l.productId,
-                        variantId: l.variantId || undefined,
-                        quantityRequested: l.quantityRequested,
-                    })),
-                }),
-            });
-
-            if (res.success) {
-                toast.success('Stock transfer document created successfully');
-                setNewLines([]);
-                setSourceId('');
-                setDestId('');
-                setRemarks('');
-                setActiveTab('LIST');
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Creation failed');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleApprove = async (id: string) => {
-        try {
-            const res = await fetchAPI(`/stock-transfers/${id}/approve`, { method: 'POST' });
-            if (res.success) {
-                toast.success('Stock transfer document approved');
-                loadDetail(id);
-                loadTransfers();
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Approval failed');
-        }
-    };
-
-    const handleShip = async (id: string) => {
-        try {
-            const res = await fetchAPI(`/stock-transfers/${id}/ship`, { method: 'POST' });
-            if (res.success) {
-                toast.success('Stock transfer dispatched & stock deducted from origin');
-                loadDetail(id);
-                loadTransfers();
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Dispatch failed');
-        }
-    };
-
-    const handleReceive = async (id: string) => {
-        try {
-            const items = Object.entries(receiveQtys).map(([itemId, quantityReceived]) => ({
-                itemId,
-                quantityReceived,
-            }));
-
-            const res = await fetchAPI(`/stock-transfers/${id}/receive`, {
-                method: 'POST',
-                body: JSON.stringify({ items }),
-            });
-
-            if (res.success) {
-                toast.success('Stock transfer received & stock added to destination');
-                setReceiveOpen(false);
-                loadDetail(id);
-                loadTransfers();
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Receipt failed');
-        }
-    };
-
-    const handleCancel = async (id: string) => {
-        if (!confirm('Are you sure you want to cancel this stock transfer? This will reverse any stock deductions if already in transit.')) {
-            return;
-        }
-        try {
-            const res = await fetchAPI(`/stock-transfers/${id}/cancel`, { method: 'POST' });
-            if (res.success) {
-                toast.success('Stock transfer cancelled successfully');
-                loadDetail(id);
-                loadTransfers();
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Cancellation failed');
-        }
-    };
-
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
-            case 'APPROVED': return 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300';
-            case 'IN_TRANSIT': return 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300';
-            case 'RECEIVED': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300';
-            case 'CANCELLED': return 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300';
-            default: return 'bg-slate-100 text-slate-700';
-        }
-    };
-
-    const filteredProducts = products.filter(p =>
-        p.name?.toLowerCase().includes(pickerSearch.toLowerCase()) ||
-        p.slug?.toLowerCase().includes(pickerSearch.toLowerCase())
-    );
-
-    const filteredTransfers = transfers.filter(t =>
-        t.transferNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (t.remarks && t.remarks.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const {
+        warehouses,
+        transfers,
+        totalTransfers,
+        loading,
+        submitting,
+        activeTab,
+        setActiveTab,
+        searchQuery,
+        setSearchQuery,
+        statusFilter,
+        setStatusFilter,
+        currentPage,
+        setCurrentPage,
+        sourceId,
+        setSourceId,
+        destId,
+        setDestId,
+        remarks,
+        setRemarks,
+        newLines,
+        selectedTransfer,
+        setSelectedTransfer,
+        detailsLoading,
+        receiveOpen,
+        setReceiveOpen,
+        receiveQtys,
+        setReceiveQtys,
+        pickerOpen,
+        setPickerOpen,
+        pickerSearch,
+        setPickerSearch,
+        filteredProducts,
+        loadDetail,
+        addLine,
+        updateQty,
+        removeLine,
+        handleCreateTransfer,
+        handleApprove,
+        handleShip,
+        handleReceive,
+        handleCancel,
+    } = useStockTransfer();
 
     const columns = useMemo<DataTableColumn<StockTransferDoc>[]>(() => [
         {
@@ -374,14 +148,14 @@ export default function StockTransfer() {
                 </button>
             ),
         },
-    ], []);
+    ], [loadDetail]);
 
     const dataTablePagination = useMemo(() => ({
         page: currentPage,
         total: totalTransfers,
         totalPages: Math.ceil(totalTransfers / 10) || 1,
         onPageChange: (p: number) => setCurrentPage(p),
-    }), [currentPage, totalTransfers]);
+    }), [currentPage, totalTransfers, setCurrentPage]);
 
     const dataTablePaginationSummary = useMemo(() => (
         <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden sm:block">
@@ -460,7 +234,7 @@ export default function StockTransfer() {
                     </div>
 
                     <DataTable
-                        data={filteredTransfers}
+                        data={transfers}
                         columns={columns}
                         getRowKey={(item) => item.id}
                         loading={loading}

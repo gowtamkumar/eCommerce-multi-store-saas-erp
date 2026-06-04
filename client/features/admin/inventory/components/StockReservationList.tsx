@@ -1,212 +1,43 @@
 'use client';
 
-import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Filter, Calendar, ChevronRight, Loader2,
     Info, ArrowUpRight, CheckCircle2, BookmarkCheck, RefreshCw,
     XCircle, Clock, AlertTriangle, FileText, Lock, Layers
 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { fetchAPI } from '@/services/api';
-
-type ReservationStatus = 'ACTIVE' | 'FULFILLED' | 'RELEASED' | 'EXPIRED';
-
-interface AtpVariant {
-    id: string;
-    sku?: string;
-    stock?: number;
-    combination?: Record<string, string>;
-}
-
-interface AtpProduct {
-    id: string;
-    name: string;
-    slug?: string;
-    stock?: number;
-    images?: string[];
-    variants?: AtpVariant[];
-}
-
-interface StockReservation {
-    id: string;
-    productId: string;
-    product?: {
-        id: string;
-        name: string;
-        images?: string[];
-        slug?: string;
-    };
-    variantId: string | null;
-    variant?: {
-        id: string;
-        sku: string;
-        combination: Record<string, string>;
-    } | null;
-    warehouseId: string | null;
-    warehouse?: {
-        id: string;
-        name: string;
-        code: string;
-    } | null;
-    orderId: string | null;
-    reservedQty: number;
-    fulfilledQty: number;
-    releasedQty: number;
-    status: ReservationStatus;
-    expiresAt: string | null;
-    reservedAt: string;
-    releasedAt: string | null;
-    notes: string | null;
-}
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { useStockReservations, StockReservation, ReservationStatus } from '../hooks/useStockReservations';
 
 export default function StockReservationList() {
-    const [reservations, setReservations] = useState<StockReservation[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [searchQuery, setSearchQuery] = useState<string>('');
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-    });
+    const {
+        reservations,
+        loading,
+        statusFilter,
+        setStatusFilter,
+        searchQuery,
+        setSearchQuery,
+        pagination,
+        handlePageChange,
+        atpProducts,
+        atpSearchQuery,
+        setAtpSearchQuery,
+        selectedAtpProduct,
+        selectedAtpVariant,
+        atpPhysicalBalance,
+        setAtpPhysicalBalance,
+        calculatingAtp,
+        atpResult,
+        showProductDropdown,
+        setShowProductDropdown,
+        handleCalculateAtp,
+        handleResetAtp,
+        handleSelectAtpProduct,
+        handleSelectAtpVariant,
+        fetchReservations,
+    } = useStockReservations();
 
-    // ATP Calculator State
-    const [atpProducts, setAtpProducts] = useState<AtpProduct[]>([]);
-    const [atpSearchQuery, setAtpSearchQuery] = useState('');
-    const [selectedAtpProduct, setSelectedAtpProduct] = useState<AtpProduct | null>(null);
-    const [selectedAtpVariant, setSelectedAtpVariant] = useState<AtpVariant | null>(null);
-    const [atpPhysicalBalance, setAtpPhysicalBalance] = useState<number>(0);
-    const [calculatingAtp, setCalculatingAtp] = useState(false);
-    const [atpResult, setAtpResult] = useState<{
-        productId: string;
-        variantId: string | null;
-        physicalBalance: number;
-        openReserved: number;
-        atp: number;
-    } | null>(null);
-    const [showProductDropdown, setShowProductDropdown] = useState(false);
-
-    // Fetch Reservations
-    const fetchReservations = useCallback(async (page: number, status: string) => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '10',
-                ...(status !== 'all' && { status })
-            });
-
-            const res = await fetchAPI(`/admin/inventory/reservations?${params}`);
-            if (res.success) {
-                setReservations(res.data.items || []);
-                setPagination({
-                    page: page,
-                    limit: 10,
-                    total: res.data.total,
-                    totalPages: Math.ceil(res.data.total / 10)
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch reservations', error);
-            toast.error('Failed to load stock reservations');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // Initial load and filter change
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            void fetchReservations(1, statusFilter);
-        }, 0);
-
-        return () => window.clearTimeout(timer);
-    }, [statusFilter, fetchReservations]);
-
-    // Fetch products for ATP tool
-    useEffect(() => {
-        const loadAtpProducts = async () => {
-            try {
-                const res = await fetchAPI('/products?limit=100');
-                if (res.success) {
-                    setAtpProducts(res.data.products || []);
-                }
-            } catch (error) {
-                console.error('Failed to fetch ATP products', error);
-            }
-        };
-        loadAtpProducts();
-    }, []);
-
-    // Handle Page change
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.totalPages) {
-            fetchReservations(newPage, statusFilter);
-        }
-    };
-
-    // Client-side search filtering across loaded items
-    const filteredReservations = useMemo(() => {
-        if (!searchQuery) return reservations;
-        const query = searchQuery.toLowerCase();
-        return reservations.filter(r => {
-            const matchesProduct = r.product?.name?.toLowerCase().includes(query) || false;
-            const matchesSku = r.variant?.sku?.toLowerCase().includes(query) || false;
-            const matchesOrderId = r.orderId?.toLowerCase().includes(query) || false;
-            const matchesNotes = r.notes?.toLowerCase().includes(query) || false;
-            return matchesProduct || matchesSku || matchesOrderId || matchesNotes;
-        });
-    }, [reservations, searchQuery]);
-
-    // Filter products list for ATP dropdown
-    const filteredAtpProducts = useMemo(() => {
-        if (!atpSearchQuery) return atpProducts;
-        return atpProducts.filter(p =>
-            p.name.toLowerCase().includes(atpSearchQuery.toLowerCase()) ||
-            p.slug?.toLowerCase().includes(atpSearchQuery.toLowerCase())
-        );
-    }, [atpProducts, atpSearchQuery]);
-
-    // Check ATP Action
-    const handleCalculateAtp = async () => {
-        if (!selectedAtpProduct) {
-            toast.error('Please select a product first');
-            return;
-        }
-        setCalculatingAtp(true);
-        try {
-            const params = new URLSearchParams({
-                productId: selectedAtpProduct.id,
-                ...(selectedAtpVariant && { variantId: selectedAtpVariant.id }),
-                physicalBalance: atpPhysicalBalance.toString()
-            });
-
-            const res = await fetchAPI(`/admin/inventory/reservations/atp?${params}`);
-            if (res) {
-                setAtpResult(res);
-                toast.success('ATP calculated successfully');
-            }
-        } catch (error) {
-            console.error('Failed to calculate ATP', error);
-            toast.error('Error fetching Available-to-Promise data');
-        } finally {
-            setCalculatingAtp(false);
-        }
-    };
-
-    // Reset ATP tool
-    const handleResetAtp = () => {
-        setSelectedAtpProduct(null);
-        setSelectedAtpVariant(null);
-        setAtpSearchQuery('');
-        setAtpPhysicalBalance(0);
-        setAtpResult(null);
-    };
-
-    // Render Status Badge
     const renderStatusBadge = useCallback((status: ReservationStatus) => {
         switch (status) {
             case 'ACTIVE':
@@ -250,7 +81,6 @@ export default function StockReservationList() {
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-600">
                         {reservation.product?.images?.[0] ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={reservation.product.images[0]} alt="" className="w-full h-full object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center">
@@ -426,7 +256,7 @@ export default function StockReservationList() {
                 </div>
 
                 <DataTable
-                    data={filteredReservations}
+                    data={reservations}
                     columns={columns}
                     getRowKey={(reservation) => reservation.id}
                     loading={loading}
@@ -462,7 +292,6 @@ export default function StockReservationList() {
             {/* Right side: ATP (Available to Promise) Calculator */}
             <div className="xl:col-span-1 space-y-6">
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm space-y-6 relative overflow-hidden">
-                    {/* Visual decor */}
                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/5 dark:bg-brand-400/5 rounded-bl-full pointer-events-none" />
 
                     <div>
@@ -489,10 +318,6 @@ export default function StockReservationList() {
                                     value={selectedAtpProduct ? selectedAtpProduct.name : atpSearchQuery}
                                     onChange={(e) => {
                                         setAtpSearchQuery(e.target.value);
-                                        if (selectedAtpProduct) {
-                                            setSelectedAtpProduct(null);
-                                            setSelectedAtpVariant(null);
-                                        }
                                         setShowProductDropdown(true);
                                     }}
                                     onFocus={() => setShowProductDropdown(true)}
@@ -511,18 +336,14 @@ export default function StockReservationList() {
                             {/* Dropdown menu */}
                             {showProductDropdown && !selectedAtpProduct && atpSearchQuery && (
                                 <div className="absolute z-20 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl divide-y divide-slate-100 dark:divide-slate-750">
-                                    {filteredAtpProducts.length === 0 ? (
+                                    {atpProducts.length === 0 ? (
                                         <div className="p-3 text-xs text-slate-400 italic text-center">No products match</div>
                                     ) : (
-                                        filteredAtpProducts.map(p => (
+                                        atpProducts.map(p => (
                                             <button
                                                 key={p.id}
                                                 type="button"
-                                                onClick={() => {
-                                                    setSelectedAtpProduct(p);
-                                                    setShowProductDropdown(false);
-                                                    setAtpSearchQuery('');
-                                                }}
+                                                onClick={() => handleSelectAtpProduct(p)}
                                                 className="w-full flex items-center gap-2 p-2.5 hover:bg-slate-50 dark:hover:bg-slate-900/50 text-left transition-colors"
                                             >
                                                 <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 shrink-0 overflow-hidden">
@@ -550,7 +371,7 @@ export default function StockReservationList() {
                                         <button
                                             key={v.id}
                                             type="button"
-                                            onClick={() => setSelectedAtpVariant(selectedAtpVariant?.id === v.id ? null : v)}
+                                            onClick={() => handleSelectAtpVariant(v)}
                                             className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-black transition-all ${selectedAtpVariant?.id === v.id
                                                 ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900'
                                                 : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30'

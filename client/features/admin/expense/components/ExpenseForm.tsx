@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
+import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Calendar,
@@ -14,9 +14,8 @@ import {
     Tag,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 import { EXPENSE_CATEGORIES, type ExpenseFormProps } from '../types';
+import { useExpenseForm } from '../hooks/useExpenseForm';
 
 const RECURRENCE_OPTIONS = [
     { value: 'NONE', label: 'One-time' },
@@ -34,74 +33,12 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }: ExpenseFormProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '',
-        amount: '',
-        category: 'OTHER',
-        expenseDate: new Date().toISOString().split('T')[0],
-        referenceNumber: '',
-        description: '',
-        attachmentUrl: '',
-        recurrence: 'NONE',
-        status: 'APPROVED',
-    });
-
-    useEffect(() => {
-        if (initialData) {
-            setFormData({
-                title: initialData.title,
-                amount: initialData.amount.toString(),
-                category: initialData.category,
-                expenseDate: initialData.expenseDate.split('T')[0],
-                referenceNumber: initialData.referenceNumber || '',
-                description: initialData.description || '',
-                attachmentUrl: (initialData as any).attachmentUrl || '',
-                recurrence: (initialData as any).recurrence || 'NONE',
-                status: (initialData as any).status || 'APPROVED',
-            });
-        } else {
-            setFormData({
-                title: '',
-                amount: '',
-                category: 'OTHER',
-                expenseDate: new Date().toISOString().split('T')[0],
-                referenceNumber: '',
-                description: '',
-                attachmentUrl: '',
-                recurrence: 'NONE',
-                status: 'APPROVED',
-            });
-        }
-    }, [initialData, isOpen]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-
-        const payload: Record<string, any> = {
-            ...formData,
-            amount: parseFloat(formData.amount),
-        };
-        if (!payload.attachmentUrl) delete payload.attachmentUrl;
-
-        try {
-            const url = initialData ? `/expenses/${initialData.id}` : '/expenses';
-            const method = initialData ? 'PATCH' : 'POST';
-
-            await fetchAPI(url, {
-                method,
-                body: JSON.stringify(payload),
-            });
-
-            toast.success(`Expense ${initialData ? 'updated' : 'recorded'} successfully`);
-            onSuccess();
-        } catch (error) {
-            toast.error('Failed to save expense');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    const {
+        isSubmitting,
+        formData,
+        setFormData,
+        handleSubmit,
+    } = useExpenseForm(isOpen, initialData, onClose, onSuccess);
 
     if (!isOpen) return null;
 

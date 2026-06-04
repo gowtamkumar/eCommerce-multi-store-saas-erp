@@ -1,11 +1,15 @@
-'use client';
+import TeamDashboard from '@/features/admin/team/components/TeamDashboard';
+import { Metadata } from 'next';
 
-import TeamList from '@/features/admin/team/components/TeamList';
+export const metadata: Metadata = {
+    title: 'Team Management | Admin Dashboard',
+    description: 'Define roles and manage staff credentials for your e-commerce ecosystem.',
+};
 
 export default function TeamPage() {
     return (
-        <div className="space-y-6">
-            <TeamList />
+        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+            <TeamDashboard />
         </div>
     );
 }

@@ -1,60 +1,22 @@
 'use client';
 
-import { useSettings } from '@/hooks/SettingsContext';
-import { fetchAPI } from '@/services/api';
 import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
+import React from 'react';
 import CourierIntegrations from './CourierIntegrations';
 import CourierActivityList from './CourierActivityList';
+import { useCouriers } from '../hooks/useCouriers';
 
 export default function Couriers() {
-    const { settings } = useSettings();
-    const [orders, setOrders] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const fetchTrackedOrders = useCallback(async () => {
-        try {
-            setLoading(true);
-            // Fetch orders that likely have courier interactions
-            const res = await fetchAPI('/orders?limit=100');
-            if (res.success && res.data) {
-                const tracked = res.data.orders.filter((o: any) => o.trackingId || o.courierStatus);
-                setOrders(tracked);
-            }
-        } catch (error) {
-            console.error('Failed to fetch tracked orders', error);
-            toast.error('Failed to load courier activity');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchTrackedOrders();
-    }, [fetchTrackedOrders]);
-
-    const isPathaoConnected = useMemo(() => 
-        !!(settings?.pathaoCourier?.pathaoClientId && settings?.pathaoCourier?.pathaoStoreId),
-    [settings?.pathaoCourier]);
-
-    const isSteadfastConnected = useMemo(() => 
-        !!(settings?.steadfastCourier?.apiKey),
-    [settings?.steadfastCourier]);
-
-    const filteredOrders = useMemo(() => 
-        orders.filter(o =>
-            o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            o.trackingId?.toLowerCase().includes(searchQuery.toLowerCase())
-        ),
-    [orders, searchQuery]);
-
-    const handleSearchChange = useCallback((query: string) => {
-        setSearchQuery(query);
-    }, []);
+    const {
+        settings,
+        orders,
+        loading,
+        searchQuery,
+        isPathaoConnected,
+        isSteadfastConnected,
+        handleSearchChange,
+    } = useCouriers();
 
     return (
         <div className="space-y-12 pb-20">
@@ -85,7 +47,7 @@ export default function Couriers() {
             {/* Tracking Activity */}
             <section>
                 <CourierActivityList 
-                    orders={filteredOrders}
+                    orders={orders}
                     loading={loading}
                     searchQuery={searchQuery}
                     onSearchChange={handleSearchChange}

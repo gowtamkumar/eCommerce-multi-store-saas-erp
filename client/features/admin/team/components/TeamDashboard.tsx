@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import {
     Users,
@@ -16,7 +16,7 @@ import TeamStatsGrid from './TeamStatsGrid';
 import MemberTable from './MemberTable';
 import InvitationTable from './InvitationTable';
 import ManageAccessModal from './ManageAccessModal';
-import { TeamMember, Invitation } from '../type';
+import { useTeamDashboard } from '../hooks/useTeamDashboard';
 
 const roleIcons: Record<UserRole, React.ReactElement> = {
     [UserRole.ADMIN]: <Crown className="w-3.5 h-3.5 text-amber-500" />,
@@ -30,87 +30,36 @@ const roleIcons: Record<UserRole, React.ReactElement> = {
 };
 
 const roleColors: Record<UserRole, string> = {
-    [UserRole.ADMIN]: 'bg-amber-100/50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/50',
-    [UserRole.OPERATOR]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
+    [UserRole.ADMIN]: 'bg-amber-100/50 text-amber-700 dark:bg-amber-955/30 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/50',
+    [UserRole.OPERATOR]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-955/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
     [UserRole.USER]: 'bg-slate-100/50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400 border-slate-200/50 dark:border-slate-700/50',
-    [UserRole.SUPER_ADMIN]: 'bg-indigo-100/50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-900/50',
-    [UserRole.STORE_MANAGER]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
+    [UserRole.SUPER_ADMIN]: 'bg-indigo-100/50 text-indigo-700 dark:bg-indigo-955/30 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-900/50',
+    [UserRole.STORE_MANAGER]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-955/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
     [UserRole.SUPPORT]: 'bg-slate-100/50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400 border-slate-200/50 dark:border-slate-700/50',
-    [UserRole.MARKETING]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
+    [UserRole.MARKETING]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-955/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
     [UserRole.EMPLOYEE]: 'bg-slate-100/50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400 border-slate-200/50 dark:border-slate-700/50',
 };
 
-export default function TeamList() {
-    const [members, setMembers] = useState<TeamMember[]>([]);
-    const [invitations, setInvitations] = useState<Invitation[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'members' | 'invitations'>('members');
-
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const { fetchAPI } = await import('@/services/api');
-            const res = await fetchAPI('/users/team');
-            if (res?.data) {
-                setMembers(res.data.members ?? []);
-                setInvitations(res.data.pendingInvitations ?? []);
-            }
-        } catch (err) {
-            console.error('Failed to fetch team data', err);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    const handleRevokeInvitation = useCallback(async (invitationId: string) => {
-        try {
-            const { fetchAPI } = await import('@/services/api');
-            await fetchAPI(`/users/team/invitations/${invitationId}`, { method: 'DELETE' });
-            fetchData();
-        } catch (err) {
-            console.error('Failed to revoke invitation', err);
-        }
-    }, [fetchData]);
-
-    const handleRoleChange = useCallback(async (memberId: string, role: UserRole) => {
-        try {
-            const { fetchAPI } = await import('@/services/api');
-            await fetchAPI(`/users/team/members/${memberId}/role`, {
-                method: 'PATCH',
-                body: JSON.stringify({ role }),
-            });
-            setActiveDropdown(null);
-            fetchData();
-        } catch (err) {
-            console.error('Failed to update role', err);
-        }
-    }, [fetchData]);
-
-    const handleRemoveMember = useCallback(async (memberId: string) => {
-        if (!confirm('Are you sure you want to remove this team member?')) return;
-        try {
-            const { fetchAPI } = await import('@/services/api');
-            await fetchAPI(`/users/team/members/${memberId}`, { method: 'DELETE' });
-            fetchData();
-        } catch (err) {
-            console.error('Failed to remove member', err);
-        }
-    }, [fetchData]);
-
-    const getInitials = useCallback((name: string) =>
-        name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2), []);
-
-    const memberStats = useMemo(() => ({
-        total: members.length,
-        pending: invitations.length
-    }), [members.length, invitations.length]);
+export default function TeamDashboard() {
+    const {
+        members,
+        invitations,
+        loading,
+        showInviteModal,
+        setShowInviteModal,
+        editingMember,
+        setEditingMember,
+        activeDropdown,
+        setActiveDropdown,
+        activeTab,
+        setActiveTab,
+        fetchData,
+        handleRevokeInvitation,
+        handleRoleChange,
+        handleRemoveMember,
+        getInitials,
+        memberStats,
+    } = useTeamDashboard();
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -130,7 +79,7 @@ export default function TeamList() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={fetchData}
-                        className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 transition-all hover:scale-110 active:rotate-180 duration-500 shadow-sm"
+                        className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-555 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-slate-800 transition-all hover:scale-110 active:rotate-180 duration-500 shadow-sm"
                         title="Refresh List"
                     >
                         <RefreshCcw className="w-5 h-5" />

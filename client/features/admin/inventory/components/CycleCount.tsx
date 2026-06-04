@@ -1,6 +1,4 @@
 'use client';
-
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ClipboardList,
@@ -16,225 +14,36 @@ import {
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react';
-import { fetchAPI } from '@/services/api';
-import toast from 'react-hot-toast';
-
-interface CountLine {
-    productId: string;
-    productName: string;
-    variantId?: string;
-    variantLabel?: string;
-    liveStock: number | null; // null = loading
-    countedQty: number;
-    delta: number | null;
-}
-
-const PICKER_PAGE_SIZE = 20;
-const PICKER_DEBOUNCE_MS = 300;
+import { useCycleCount } from '../hooks/useCycleCount';
 
 export default function CycleCount() {
-    const [warehouses, setWarehouses] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [result, setResult] = useState<{ processed: number; adjustments: number } | null>(null);
-
-    const [warehouseId, setWarehouseId] = useState('');
-    const [countRef, setCountRef] = useState(`COUNT-${Date.now().toString().slice(-6)}`);
-    const [lines, setLines] = useState<CountLine[]>([]);
-
-    // Product picker — server-side search + pagination
-    const [pickerOpen, setPickerOpen] = useState(false);
-    const [pickerSearch, setPickerSearch] = useState('');
-    const [pickerProducts, setPickerProducts] = useState<any[]>([]);
-    const [pickerLoading, setPickerLoading] = useState(false);
-    const [pickerPage, setPickerPage] = useState(1);
-    const [pickerTotalPages, setPickerTotalPages] = useState(1);
-    const [pickerTotal, setPickerTotal] = useState(0);
-    // Track in-flight requests so a slow response can't overwrite a newer one
-    const pickerReqIdRef = useRef(0);
-    const pickerDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    useEffect(() => {
-        (async () => {
-            setLoading(true);
-            try {
-                const wRes = await fetchAPI('/system/warehouses');
-                if (wRes.success) {
-                    setWarehouses(wRes.data || []);
-                    if ((wRes.data || []).length > 0) setWarehouseId(wRes.data[0].id);
-                }
-            } catch {
-                toast.error('Failed to load warehouses');
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
-
-    const fetchPickerPage = useCallback(async (page: number, q: string) => {
-        const reqId = ++pickerReqIdRef.current;
-        setPickerLoading(true);
-        try {
-            const params = new URLSearchParams({
-                page: String(page),
-                limit: String(PICKER_PAGE_SIZE),
-                status: 'active',
-            });
-            if (q.trim()) params.set('q', q.trim());
-            const res = await fetchAPI(`/products?${params.toString()}`);
-            // Drop the response if a newer request has started.
-            if (reqId !== pickerReqIdRef.current) return;
-            if (res?.success) {
-                setPickerProducts(res.data?.products || res.data || []);
-                setPickerTotalPages(res.data?.totalPages ?? 1);
-                setPickerTotal(res.data?.total ?? 0);
-            } else {
-                setPickerProducts([]);
-                setPickerTotalPages(1);
-                setPickerTotal(0);
-            }
-        } catch {
-            if (reqId === pickerReqIdRef.current) {
-                setPickerProducts([]);
-                toast.error('Product search failed');
-            }
-        } finally {
-            if (reqId === pickerReqIdRef.current) setPickerLoading(false);
-        }
-    }, []);
-
-    // Debounced search: each keystroke restarts a 300 ms timer; only the
-    // final query actually hits the server.
-    useEffect(() => {
-        if (!pickerOpen) return;
-        if (pickerDebounceRef.current) clearTimeout(pickerDebounceRef.current);
-        pickerDebounceRef.current = setTimeout(() => {
-            setPickerPage(1);
-            fetchPickerPage(1, pickerSearch);
-        }, PICKER_DEBOUNCE_MS);
-        return () => {
-            if (pickerDebounceRef.current) clearTimeout(pickerDebounceRef.current);
-        };
-    }, [pickerSearch, pickerOpen, fetchPickerPage]);
-
-    // Reload when paging (no debounce needed).
-    useEffect(() => {
-        if (!pickerOpen) return;
-        fetchPickerPage(pickerPage, pickerSearch);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pickerPage]);
-
-    const openPicker = () => {
-        setPickerSearch('');
-        setPickerPage(1);
-        setPickerOpen(true);
-        fetchPickerPage(1, '');
-    };
-
-    const getProductStockSummary = async (productId: string, variantId?: string): Promise<number> => {
-        try {
-            const query = warehouseId ? `?warehouseId=${warehouseId}` : '';
-            const res = await fetchAPI(`/inventory-ledger/stock-summary${query}`);
-            if (res.success) {
-                const summaryItem = (res.data || []).find((s: any) => {
-                    if (variantId) {
-                        return s.id === productId && s.variants?.some((v: any) => v.id === variantId);
-                    }
-                    return s.id === productId;
-                });
-                if (summaryItem) {
-                    if (variantId) {
-                        const v = summaryItem.variants?.find((v: any) => v.id === variantId);
-                        return v?.stock ?? 0;
-                    }
-                    return summaryItem.stock ?? 0;
-                }
-            }
-        } catch { /* ignore */ }
-        return 0;
-    };
-
-    const addLine = async (product: any, variant?: any) => {
-        const exists = lines.find(
-            l => l.productId === product.id && l.variantId === (variant?.id || undefined)
-        );
-        if (exists) { toast('Already added.'); return; }
-
-        const newLine: CountLine = {
-            productId: product.id,
-            productName: product.name,
-            variantId: variant?.id,
-            variantLabel: variant
-                ? Object.entries(variant.combination || {}).map(([k, v]) => `${k}: ${v}`).join(' / ')
-                : undefined,
-            liveStock: null,
-            countedQty: 0,
-            delta: null,
-        };
-
-        setLines(prev => [...prev, newLine]);
-        setPickerOpen(false);
-
-        // Fetch live stock async
-        const live = await getProductStockSummary(product.id, variant?.id);
-        setLines(prev => prev.map(l =>
-            l.productId === product.id && l.variantId === (variant?.id || undefined)
-                ? { ...l, liveStock: live, delta: newLine.countedQty - live }
-                : l
-        ));
-    };
-
-    const updateCounted = (idx: number, val: number) => {
-        setLines(prev => prev.map((l, i) => {
-            if (i !== idx) return l;
-            const counted = Math.max(0, val);
-            const delta = l.liveStock !== null ? counted - l.liveStock : null;
-            return { ...l, countedQty: counted, delta };
-        }));
-    };
-
-    const removeLine = (idx: number) => {
-        setLines(prev => prev.filter((_, i) => i !== idx));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!warehouseId) { toast.error('Select a warehouse'); return; }
-        if (lines.length === 0) { toast.error('Add at least one product line'); return; }
-
-        setSubmitting(true);
-        try {
-            const res = await fetchAPI('/inventory-ledger/cycle-count', {
-                method: 'POST',
-                body: JSON.stringify({
-                    countRef,
-                    warehouseId,
-                    lines: lines.map(l => ({
-                        productId: l.productId,
-                        variantId: l.variantId || undefined,
-                        countedQty: l.countedQty,
-                    })),
-                }),
-            });
-
-            if (res.success) {
-                setResult({
-                    processed: res.data.processed,
-                    adjustments: res.data.adjustments?.length ?? 0,
-                });
-                toast.success(`Cycle count complete — ${res.data.adjustments?.length ?? 0} adjustments posted`);
-                // Reset for next count
-                setLines([]);
-                setCountRef(`COUNT-${Date.now().toString().slice(-6)}`);
-            }
-        } catch (err: any) {
-            toast.error(err?.message || 'Cycle count failed');
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const hasDifferences = lines.some(l => l.delta !== null && l.delta !== 0);
+    const {
+        warehouses,
+        loading,
+        submitting,
+        result,
+        warehouseId,
+        setWarehouseId,
+        countRef,
+        setCountRef,
+        lines,
+        pickerOpen,
+        setPickerOpen,
+        pickerSearch,
+        setPickerSearch,
+        pickerProducts,
+        pickerLoading,
+        pickerPage,
+        setPickerPage,
+        pickerTotalPages,
+        pickerTotal,
+        openPicker,
+        addLine,
+        updateCounted,
+        removeLine,
+        handleSubmit,
+        hasDifferences,
+    } = useCycleCount();
 
     if (loading) {
         return (
@@ -270,7 +79,7 @@ export default function CycleCount() {
                         <div>
                             <p className="font-bold text-emerald-800 dark:text-emerald-300">Cycle Count Completed</p>
                             <p className="text-sm text-emerald-700 dark:text-emerald-400 mt-1">
-                                Processed <span className="font-black">{result.processed}</span> lines. Posted <span className="font-black">{result.adjustments}</span> adjustment{result.adjustments !== 1 ? 's' : ''} to the inventory ledger.
+                                Process <span className="font-black">{result.processed}</span> lines. Posted <span className="font-black">{result.adjustments}</span> adjustment{result.adjustments !== 1 ? 's' : ''} to the inventory ledger.
                             </p>
                         </div>
                     </motion.div>
@@ -300,7 +109,6 @@ export default function CycleCount() {
                                     value={warehouseId}
                                     onChange={e => {
                                         setWarehouseId(e.target.value);
-                                        setLines([]);
                                     }}
                                     required
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm outline-none font-bold appearance-none"

@@ -1,39 +1,10 @@
 'use client';
 
+import React, { useMemo } from 'react';
+import { Plus, Search, Package, ArrowUpCircle, ArrowDownCircle, Filter } from 'lucide-react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
-import { useDebounce } from '@/hooks/useDebounce';
-import { fetchAPI } from '@/services/api';
-import { 
-    Plus, Search, Package, ArrowUpCircle, ArrowDownCircle, 
-    Filter
-} from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
 import StockAdjustmentModal from './StockAdjustmentModal';
-
-type WarehouseOption = {
-    id: string;
-    name: string;
-};
-
-type InventoryTransaction = {
-    id: string;
-    createdAt: string;
-    type: string;
-    quantity: number;
-    balanceAfter: number;
-    referenceType?: string;
-    referenceId?: string;
-    product?: {
-        name?: string;
-    };
-    variant?: {
-        combination?: Record<string, string>;
-    };
-    warehouse?: {
-        name?: string;
-    };
-};
+import { useInventoryList, InventoryTransaction } from '../hooks/useInventoryList';
 
 const typeLabels: Record<string, string> = {
     PURCHASE: 'Purchase',
@@ -52,79 +23,23 @@ const isPositiveTransaction = (transaction: InventoryTransaction) => (
 );
 
 export default function InventoryList() {
-    const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [typeFilter, setTypeFilter] = useState('');
-    const [warehouseFilter, setWarehouseFilter] = useState('');
-    const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
-    const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-    });
-
-    const debouncedSearch = useDebounce(searchQuery, 500);
-
-    const fetchWarehouses = useCallback(async () => {
-        try {
-            const res = await fetchAPI('/system/warehouses');
-            if (res.success) setWarehouses(res.data || []);
-        } catch (error) {
-            console.error('Failed to fetch warehouses', error);
-        }
-    }, []);
-
-    const fetchTransactions = useCallback(async (page: number, search: string, type: string, warehouseId: string) => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '10',
-                ...(search && { q: search }),
-                ...(type && { type }),
-                ...(warehouseId && { warehouseId })
-            });
-
-            const res = await fetchAPI(`/inventory-ledger?${params}`);
-            if (res.success) {
-                setTransactions(res.data.items);
-                setPagination({
-                    page: res.data.page,
-                    limit: res.data.limit,
-                    total: res.data.total,
-                    totalPages: res.data.totalPages
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch transactions', error);
-            toast.error('Failed to load inventory transactions');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        const timeout = window.setTimeout(() => {
-            void fetchWarehouses();
-        }, 0);
-        return () => window.clearTimeout(timeout);
-    }, [fetchWarehouses]);
-
-    useEffect(() => {
-        const timeout = window.setTimeout(() => {
-            void fetchTransactions(1, debouncedSearch, typeFilter, warehouseFilter);
-        }, 0);
-        return () => window.clearTimeout(timeout);
-    }, [debouncedSearch, typeFilter, warehouseFilter, fetchTransactions]);
-
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.totalPages) {
-            fetchTransactions(newPage, debouncedSearch, typeFilter, warehouseFilter);
-        }
-    };
+    const {
+        transactions,
+        loading,
+        searchQuery,
+        setSearchQuery,
+        typeFilter,
+        setTypeFilter,
+        warehouseFilter,
+        setWarehouseFilter,
+        warehouses,
+        isAdjustmentModalOpen,
+        pagination,
+        handlePageChange,
+        handleOpenAdjustmentModal,
+        handleCloseAdjustmentModal,
+        handleRefresh,
+    } = useInventoryList();
 
     const columns = useMemo<DataTableColumn<InventoryTransaction>[]>(() => [
         {
@@ -219,7 +134,7 @@ export default function InventoryList() {
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Track stock movements across all products</p>
                 </div>
                 <button
-                    onClick={() => setIsAdjustmentModalOpen(true)}
+                    onClick={handleOpenAdjustmentModal}
                     className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium flex items-center gap-2 transition-colors shadow-lg shadow-brand-500/20"
                 >
                     <Plus className="w-5 h-5" />
@@ -227,10 +142,10 @@ export default function InventoryList() {
                 </button>
             </div>
 
-            <StockAdjustmentModal 
+            <StockAdjustmentModal
                 isOpen={isAdjustmentModalOpen}
-                onClose={() => setIsAdjustmentModalOpen(false)}
-                onSuccess={() => fetchTransactions(1, debouncedSearch, typeFilter, warehouseFilter)}
+                onClose={handleCloseAdjustmentModal}
+                onSuccess={handleRefresh}
             />
 
             {/* Filters Bar */}

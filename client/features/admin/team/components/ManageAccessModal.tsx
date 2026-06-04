@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2, ShieldAlert, X, ShieldCheck, ShieldBan, Trash2, Plus } from 'lucide-react';
 import { TeamMember } from '../type';
-import { RoleScopeType } from '@/app/admin/roles/page';
+import { RoleScopeType } from '@/features/admin/role/types';
 
 interface ManageAccessModalProps {
     member: TeamMember;

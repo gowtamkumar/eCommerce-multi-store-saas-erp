@@ -1,149 +1,45 @@
 'use client';
 
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
+import React, { useMemo } from 'react';
 import {
   Package, Search, AlertTriangle, XCircle, CheckCircle, Calendar, Plus, X,
   Edit2, Loader2, Clock, Save, ClipboardList, ShieldAlert
 } from 'lucide-react';
-import { fetchAPI } from '@/services/api';
+import { useBatchRegistry, ProductBatch, BatchStatus } from '../hooks/useBatchRegistry';
+import { useCreateBatch } from '../hooks/useCreateBatch';
+import { useEditBatch } from '../hooks/useEditBatch';
 
-type BatchStatus = 'ACTIVE' | 'EXPIRED' | 'HOLD' | 'DELETED';
-
-interface ProductVariant {
-  id: string;
-  sku?: string;
-  combination?: Record<string, string>;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  images?: string[];
-  stock: number;
-  price: number;
-  variants?: ProductVariant[];
-}
-
-interface ProductBatch {
-  id: string;
-  batchNumber: string;
-  manufactureDate: string | null;
-  expiryDate: string;
-  initialQuantity: number;
-  currentQuantity: number;
-  status: BatchStatus;
-  productId: string;
-  variantId: string | null;
-  product: {
-    name: string;
-    images?: string[];
-  };
-  variant?: {
-    id?: string;
-    combination?: Record<string, string>;
-    sku?: string;
-  } | null;
-  createdAt: string;
-}
+const getDaysRemaining = (expiryDateStr: string) => {
+  const diffTime = new Date(expiryDateStr).getTime() - new Date().getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
 
 export default function BatchRegistry() {
-  const [batches, setBatches] = useState<ProductBatch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [expiringSoonFilter, setExpiringSoonFilter] = useState(false);
-
-  // Pagination states
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-
-  // Modal states
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<ProductBatch | null>(null);
-
-  // Sweep loading state
-  const [sweeping, setSweeping] = useState(false);
-
-  const fetchBatches = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '15',
-        q: searchQuery,
-      });
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
-      }
-      if (expiringSoonFilter) {
-        params.append('expiringSoon', 'true');
-      }
-
-      const res = await fetchAPI(`/product-batches?${params.toString()}`);
-      if (res.success) {
-        setBatches(res.data.items || []);
-        setTotalPages(res.data.totalPages || 1);
-        setTotalItems(res.data.total || 0);
-      }
-    } catch (error) {
-      console.error('Failed to fetch batches', error);
-      toast.error('Failed to load product batches.');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, searchQuery, statusFilter, expiringSoonFilter]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchBatches();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [fetchBatches]);
-
-  const handleSweepExpired = async () => {
-    setSweeping(true);
-    try {
-      const res = await fetchAPI('/product-batches/sweep-expired', { method: 'POST' });
-      if (res.success) {
-        toast.success(`Sweep complete. ${res.data.affected} batches marked as expired.`);
-        fetchBatches();
-      }
-    } catch {
-      toast.error('Failed to perform expired batch sweep.');
-    } finally {
-      setSweeping(false);
-    }
-  };
-
-  // Memoized stats computed client-side for immediate user feedback
-  const stats = useMemo(() => {
-    const total = totalItems;
-    const active = batches.filter(b => b.status === 'ACTIVE').length;
-    const expired = batches.filter(b => b.status === 'EXPIRED').length;
-
-    // Check expiring soon within 30 days
-    const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
-
-    const nearExpiry = batches.filter(b => {
-      const expDate = new Date(b.expiryDate);
-      return b.status === 'ACTIVE' && expDate <= thirtyDaysFromNow && expDate > now;
-    }).length;
-
-    return { total, active, expired, nearExpiry };
-  }, [batches, totalItems]);
-
-  const getDaysRemaining = (expiryDateStr: string) => {
-    const diffTime = new Date(expiryDateStr).getTime() - new Date().getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
+  const {
+    batches,
+    loading,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    expiringSoonFilter,
+    setExpiringSoonFilter,
+    page,
+    setPage,
+    totalPages,
+    totalItems,
+    isCreateModalOpen,
+    setIsCreateModalOpen,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    selectedBatch,
+    setSelectedBatch,
+    sweeping,
+    fetchBatches,
+    handleSweepExpired,
+    stats,
+  } = useBatchRegistry();
 
   const columns = useMemo<DataTableColumn<ProductBatch>[]>(() => [
     {
@@ -253,7 +149,7 @@ export default function BatchRegistry() {
         </button>
       ),
     },
-  ], []);
+  ], [setSelectedBatch, setIsEditModalOpen]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -413,7 +309,7 @@ export default function BatchRegistry() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
           setIsCreateModalOpen(false);
-          fetchBatches();
+          void fetchBatches();
         }}
       />
 
@@ -428,7 +324,7 @@ export default function BatchRegistry() {
         onSuccess={() => {
           setIsEditModalOpen(false);
           setSelectedBatch(null);
-          fetchBatches();
+          void fetchBatches();
         }}
       />
     </div>
@@ -436,85 +332,30 @@ export default function BatchRegistry() {
 }
 
 function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) {
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const {
+    loading,
+    searchQuery,
+    setSearchQuery,
+    products,
+    selectedProduct,
+    setSelectedProduct,
+    selectedVariant,
+    setSelectedVariant,
+    batchNumber,
+    setBatchNumber,
+    manufactureDate,
+    setManufactureDate,
+    expiryDate,
+    setExpiryDate,
+    initialQuantity,
+    setInitialQuantity,
+    handleSubmit,
+    resetForm,
+  } = useCreateBatch(isOpen, onSuccess);
 
-  // Form Fields
-  const [batchNumber, setBatchNumber] = useState('');
-  const [manufactureDate, setManufactureDate] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [initialQuantity, setInitialQuantity] = useState<number>(0);
-
-  const fetchProducts = useCallback(async () => {
-    try {
-      const res = await fetchAPI('/products?limit=50');
-      if (res.success) {
-        setProducts(res.data.products || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch products', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const timer = window.setTimeout(() => {
-      void fetchProducts();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [fetchProducts, isOpen]);
-
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.slug.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProduct) return toast.error('Select a product first.');
-    if (!batchNumber) return toast.error('Batch number is required.');
-    if (!expiryDate) return toast.error('Expiry date is required.');
-    if (initialQuantity < 0) return toast.error('Initial quantity cannot be negative.');
-
-    setLoading(true);
-    try {
-      const res = await fetchAPI('/product-batches', {
-        method: 'POST',
-        body: JSON.stringify({
-          productId: selectedProduct.id,
-          variantId: selectedVariant?.id || null,
-          batchNumber,
-          manufactureDate: manufactureDate || undefined,
-          expiryDate,
-          initialQuantity: Number(initialQuantity),
-        }),
-      });
-
-      if (res.success) {
-        toast.success('Batch registered successfully');
-        resetForm();
-        onSuccess();
-      }
-    } catch {
-      toast.error('Failed to register batch.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setSelectedProduct(null);
-    setSelectedVariant(null);
-    setBatchNumber('');
-    setManufactureDate('');
-    setExpiryDate('');
-    setInitialQuantity(0);
-    setSearchQuery('');
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -533,7 +374,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               <p className="text-xs text-slate-500 font-medium">Record a new manufacturing run & expiry</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg">
+          <button onClick={handleClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg">
             <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
@@ -553,7 +394,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 />
               </div>
               <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2">
-                {filteredProducts.map(p => (
+                {products.map(p => (
                   <button
                     key={p.id}
                     type="button"
@@ -663,7 +504,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
 
         {/* Footer */}
         <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
-          <button onClick={onClose} className="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all border border-slate-200 dark:border-slate-700">
+          <button onClick={handleClose} className="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all border border-slate-200 dark:border-slate-700">
             Cancel
           </button>
           <button
@@ -682,51 +523,18 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
 }
 
 function EditBatchModal({ isOpen, batch, onClose, onSuccess }: { isOpen: boolean; batch: ProductBatch | null; onClose: () => void; onSuccess: () => void }) {
-  const [loading, setLoading] = useState(false);
-  const [batchNumber, setBatchNumber] = useState('');
-  const [manufactureDate, setManufactureDate] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [status, setStatus] = useState<BatchStatus>('ACTIVE');
-
-  useEffect(() => {
-    if (!batch) return;
-
-    const timer = window.setTimeout(() => {
-      setBatchNumber(batch.batchNumber);
-      setManufactureDate(batch.manufactureDate ? batch.manufactureDate.split('T')[0] : '');
-      setExpiryDate(batch.expiryDate.split('T')[0]);
-      setStatus(batch.status);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [batch]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!batch) return;
-
-    setLoading(true);
-    try {
-      const res = await fetchAPI(`/product-batches/${batch.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          batchNumber,
-          manufactureDate: manufactureDate || null,
-          expiryDate,
-          status,
-        }),
-      });
-
-      if (res.success) {
-        toast.success('Batch updated successfully');
-        onSuccess();
-      }
-    } catch {
-      toast.error('Failed to update batch.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    loading,
+    batchNumber,
+    setBatchNumber,
+    manufactureDate,
+    setManufactureDate,
+    expiryDate,
+    setExpiryDate,
+    status,
+    setStatus,
+    handleSubmit,
+  } = useEditBatch(batch, onSuccess);
 
   if (!isOpen || !batch) return null;
 
