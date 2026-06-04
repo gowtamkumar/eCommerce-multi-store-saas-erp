@@ -6,7 +6,7 @@ import { FileEntity } from '../entities/file.entity'
 import { FileRepository } from '../file.repository'
 import { MinioService } from './minio.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
-import { DataSource } from 'typeorm'
+import { DataSource, ILike } from 'typeorm'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 
@@ -91,16 +91,21 @@ export class FilesService {
 
   async getFiles(filterFile: FilterFileDto, tenantId: string): Promise<any> {
     this.logger.log(`${this.getFiles.name} Service Called`)
-    const { filename, originalname, page = 1, limit = 20 } = filterFile
+    const { filename, originalname, q, page = 1, limit = 20 } = filterFile
 
-    const newQuery: any = { tenantId }
+    // Free-text search matches the human-friendly originalname as well as the
+    // stored filename (which is prefixed with a unique id), using partial match.
+    const search = q ?? filename ?? originalname
 
-    if (filename) newQuery.filename = filename
-    if (originalname) newQuery.originalname = originalname
+    let where: any = { tenantId }
+    if (search) {
+      where = [
+        { tenantId, originalname: ILike(`%${search}%`) },
+        { tenantId, filename: ILike(`%${search}%`) },
+      ]
+    }
 
-    // If a query explicitly wants all (e.g. limit=0 or undefined historically but we enforce defaults now)
-    // Actually, we enforce pagination for scalability
-    const [items, total] = await this.fileRepository.findPaginatedByTenant(newQuery, page, limit)
+    const [items, total] = await this.fileRepository.findPaginatedByTenant(where, page, limit)
 
     return {
       items,

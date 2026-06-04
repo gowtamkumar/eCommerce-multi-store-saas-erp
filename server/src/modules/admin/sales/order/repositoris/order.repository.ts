@@ -69,7 +69,7 @@ export class OrderRepository {
     tenantId: string,
   ): Promise<{ orders: OrderEntity[]; total: number }> {
     // this.logger.log(`${this.findAllOrders.name} Service Called`)
-    const { page, limit, search, status, orderSource, paymentStatus } = filterDto
+    const { page, limit, search, status, orderSource, paymentStatus, sortBy, sortOrder } = filterDto
 
     const skip = (page - 1) * limit
 
@@ -93,13 +93,24 @@ export class OrderRepository {
 
     if (search) {
       queryBuilder.andWhere(
-        '(order.customerName ILIKE :search OR order.customerEmail ILIKE :search OR order.customerPhone ILIKE :search OR CAST(order.id AS TEXT) ILIKE :search)',
+        '(order.customerName ILIKE :search OR order.customerEmail ILIKE :search OR order.customerPhone ILIKE :search OR CAST(order.id AS TEXT) ILIKE :search OR product.name ILIKE :search)',
         { search: `%${search}%` },
       )
     }
 
+    // Whitelist sort columns to avoid SQL injection via the sort param.
+    const sortableColumns: Record<string, string> = {
+      createdAt: 'order.createdAt',
+      totalAmount: 'order.totalAmount',
+      status: 'order.status',
+      paymentStatus: 'order.paymentStatus',
+      customerName: 'order.customerName',
+    }
+    const sortColumn = sortableColumns[sortBy as string] || 'order.createdAt'
+    const sortDirection = sortOrder === 'ASC' ? 'ASC' : 'DESC'
+
     const [orders, total] = await queryBuilder
-      .orderBy('order.createdAt', 'DESC')
+      .orderBy(sortColumn, sortDirection)
       .skip(skip)
       .take(limit)
       .getManyAndCount()

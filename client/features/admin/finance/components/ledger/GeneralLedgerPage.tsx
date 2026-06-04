@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 interface LedgerEntry {
     id: string;
@@ -297,6 +298,283 @@ export function GeneralLedgerPage() {
 
     const totalInvPages = Math.ceil(invTotal / INV_LIMIT);
 
+    // Flatten parent journal entries and nested lines
+    const glTableData = useMemo(() => {
+        const result: any[] = [];
+        filteredGlEntries.forEach(journal => {
+            const isExpanded = expandedJournals.includes(journal.id);
+            result.push({
+                ...journal,
+                isParent: true,
+                isExpanded,
+            });
+            if (isExpanded) {
+                journal.lines?.forEach((line) => {
+                    result.push({
+                        ...line,
+                        isLine: true,
+                        parentId: journal.id,
+                    });
+                });
+            }
+        });
+        return result;
+    }, [filteredGlEntries, expandedJournals]);
+
+    const getRowClassName = useCallback((row: any) => {
+        if (row.isLine) {
+            return 'bg-slate-50/40 dark:bg-slate-900/10 border-l-4 border-indigo-500/50 hover:bg-slate-100/50 dark:hover:bg-slate-900/30';
+        }
+        return 'font-semibold cursor-pointer';
+    }, []);
+
+    const handleRowClick = useCallback((row: any) => {
+        if (row.isLine) return;
+        toggleExpand(row.id);
+    }, [expandedJournals]);
+
+    const glColumns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'chevron',
+            header: '',
+            className: 'w-12 text-center',
+            cell: (row) => {
+                if (row.isLine) return null;
+                return row.isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-slate-400 mx-auto" />
+                ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400 mx-auto" />
+                );
+            }
+        },
+        {
+            key: 'date',
+            header: 'Date',
+            cell: (row) => {
+                if (row.isLine) {
+                    return <span className="font-mono text-xs text-indigo-600 dark:text-indigo-400">{row.account?.code}</span>;
+                }
+                return (
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                        {new Date(row.date || (row as any).createdAt).toLocaleDateString()}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'type',
+            header: 'Journal Type',
+            cell: (row) => {
+                if (row.isLine) {
+                    return <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{row.account?.name}</span>;
+                }
+                return (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
+                        {row.type}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'description',
+            header: 'Description',
+            cell: (row) => {
+                if (row.isLine) {
+                    return row.side === 'DEBIT' ? (
+                        <span className="font-mono text-emerald-600 font-bold text-xs">{formatPrice(row.amount)}</span>
+                    ) : null;
+                }
+                return (
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        {row.description}
+                        {row.isReversal && (
+                            <span className="ml-2 px-2 py-0.5 bg-rose-50 text-rose-600 dark:bg-rose-950/20 rounded text-[9px] font-bold">REVERSAL</span>
+                        )}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'reference',
+            header: 'Reference',
+            cell: (row) => {
+                if (row.isLine) {
+                    return row.side === 'CREDIT' ? (
+                        <span className="font-mono text-indigo-600 font-bold text-xs">{formatPrice(row.amount)}</span>
+                    ) : null;
+                }
+                return (
+                    <span className="text-xs text-slate-400 font-mono">
+                        {row.referenceType ? `${row.referenceType}: ${row.referenceId}` : '—'}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'total',
+            header: 'Debit/Credit Total',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (row) => {
+                if (row.isLine) {
+                    return (
+                        <span className="font-mono text-slate-450 dark:text-slate-400 text-xs">
+                            {formatPrice(row.balanceAfter)}
+                        </span>
+                    );
+                }
+                return (
+                    <span className="font-black text-slate-955 dark:text-white font-mono text-sm">
+                        {formatPrice(row.totalAmount)}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => {
+                if (row.isLine) return null;
+                return (
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${row.isReversal ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                        POSTED
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'actions',
+            header: '',
+            className: 'w-16 text-right',
+            cell: (row) => {
+                if (row.isLine) return null;
+                if (!row.isReversal && !row.reversedJournalEntryId) {
+                    return (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleReverseJournal(row.id);
+                            }}
+                            title="Post reversing entry to void transaction"
+                            className="p-1.5 rounded-lg border border-slate-200 hover:border-rose-200 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors inline-block"
+                        >
+                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                        </button>
+                    );
+                }
+                return null;
+            }
+        }
+    ], [formatPrice]);
+
+    const invColumns = useMemo<DataTableColumn<LedgerEntry>[]>(() => [
+        {
+            key: 'date',
+            header: 'Date',
+            cell: (entry) => (
+                <span className="text-xs text-slate-400 whitespace-nowrap">
+                    {new Date(entry.createdAt).toLocaleString()}
+                </span>
+            )
+        },
+        {
+            key: 'product',
+            header: 'Product',
+            cell: (entry) => (
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[140px] block" title={entry.product?.name}>
+                    {entry.product?.name || "—"}
+                </span>
+            )
+        },
+        {
+            key: 'type',
+            header: 'Type',
+            cell: (entry) => {
+                const color = INV_TYPE_COLORS[entry.type] || "slate";
+                const isIn = entry.quantity > 0;
+                const Icon = isIn ? ArrowUpCircle : ArrowDownCircle;
+                return (
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-${color}-50 text-${color}-700 dark:bg-${color}-900/20 dark:text-${color}-400`}>
+                        <Icon className="w-3 h-3" />
+                        {INV_TYPE_LABELS[entry.type] || entry.type}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'qty',
+            header: 'Qty',
+            cell: (entry) => {
+                const isIn = entry.quantity > 0;
+                return (
+                    <span className={`text-sm font-black ${isIn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                        {isIn ? "+" : ""}{entry.quantity}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'unitCost',
+            header: 'Unit Cost',
+            cell: (entry) => (
+                <span className="text-sm text-slate-600 dark:text-slate-300">
+                    {entry.unitCost ? formatPrice(entry.unitCost) : "—"}
+                </span>
+            )
+        },
+        {
+            key: 'cogs',
+            header: 'COGS',
+            cell: (entry) => (
+                <span className="text-sm text-amber-600 dark:text-amber-400 font-semibold">
+                    {entry.cogsAmount ? formatPrice(entry.cogsAmount) : "—"}
+                </span>
+            )
+        },
+        {
+            key: 'balance',
+            header: 'Balance',
+            cell: (entry) => (
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200 font-mono">
+                    {entry.balanceAfter}
+                </span>
+            )
+        },
+        {
+            key: 'warehouse',
+            header: 'Warehouse',
+            cell: (entry) => (
+                <span className="text-xs text-slate-400 whitespace-nowrap">
+                    {entry.warehouse?.name || "—"}
+                </span>
+            )
+        },
+        {
+            key: 'reference',
+            header: 'Reference',
+            cell: (entry) => (
+                <span className="text-xs text-slate-400 font-mono truncate max-w-[100px] block" title={entry.referenceId}>
+                    {entry.referenceId || "—"}
+                </span>
+            )
+        }
+    ], [formatPrice]);
+
+    const invPagination = useMemo(() => ({
+        page: invPage,
+        total: invTotal,
+        totalPages: totalInvPages,
+        onPageChange: (page: number) => setInvPage(page),
+    }), [invPage, invTotal, totalInvPages]);
+
+    const invPaginationSummary = useMemo(() => (
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
+            {invTotal} movements total
+        </p>
+    ), [invTotal]);
+
     return (
         <div className="space-y-6 pb-12">
             {/* Header */}
@@ -359,127 +637,18 @@ export function GeneralLedgerPage() {
                         />
                     </div>
 
-                    {/* Financial Journals Table */}
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                                    <tr>
-                                        <th className="px-6 py-4 w-12"></th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Date</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Journal Type</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Description</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reference</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Debit/Credit Total</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Status</th>
-                                        <th className="px-6 py-4 w-16"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {glLoading ? (
-                                        <tr>
-                                            <td colSpan={8} className="px-6 py-12 text-center">
-                                                <Loader2 className="w-6 h-6 animate-spin text-brand-500 mx-auto" />
-                                            </td>
-                                        </tr>
-                                    ) : filteredGlEntries.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={8} className="px-6 py-16 text-center text-slate-400 font-semibold">
-                                                No financial journal transactions found.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        filteredGlEntries.map((journal) => {
-                                            const isExpanded = expandedJournals.includes(journal.id);
-                                            return (
-                                                <React.Fragment key={journal.id}>
-                                                    <tr
-                                                        onClick={() => toggleExpand(journal.id)}
-                                                        className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 cursor-pointer transition-colors"
-                                                    >
-                                                        <td className="px-6 py-4 text-center">
-                                                            {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400">
-                                                            {new Date(journal.date || (journal as any).createdAt).toLocaleDateString()}
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
-                                                                {journal.type}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                                                            {journal.description}
-                                                            {journal.isReversal && (
-                                                                <span className="ml-2 px-2 py-0.5 bg-rose-50 text-rose-600 dark:bg-rose-950/20 rounded text-[9px] font-bold">REVERSAL</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-xs text-slate-400 font-mono">
-                                                            {journal.referenceType ? `${journal.referenceType}: ${journal.referenceId}` : '—'}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right font-black text-slate-950 dark:text-white font-mono text-sm">
-                                                            {formatPrice(journal.totalAmount)}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-center">
-                                                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${journal.isReversal ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                                                POSTED
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right">
-                                                            {!journal.isReversal && !journal.reversedJournalEntryId && (
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleReverseJournal(journal.id);
-                                                                    }}
-                                                                    title="Post reversing entry to void transaction"
-                                                                    className="p-1.5 rounded-lg border border-slate-200 hover:border-rose-200 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
-                                                                >
-                                                                    <ArrowRightLeft className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-
-                                                    {/* Expansion details displaying journal lines */}
-                                                    {isExpanded && (
-                                                        <tr className="bg-slate-50/50 dark:bg-slate-900/10">
-                                                            <td colSpan={8} className="px-8 py-4 border-l-4 border-indigo-500">
-                                                                <div className="space-y-2">
-                                                                    <div className="grid grid-cols-12 text-[10px] font-black uppercase text-slate-400 tracking-wider pb-2 border-b border-slate-100 dark:border-slate-800">
-                                                                        <div className="col-span-2">Account Code</div>
-                                                                        <div className="col-span-5">Account Name</div>
-                                                                        <div className="col-span-2 text-right">Debits</div>
-                                                                        <div className="col-span-2 text-right">Credits</div>
-                                                                        <div className="col-span-1 text-right">Balance After</div>
-                                                                    </div>
-                                                                    {journal.lines?.map((line) => (
-                                                                        <div key={line.id} className="grid grid-cols-12 text-xs font-semibold text-slate-600 dark:text-slate-300 py-1.5 border-b border-slate-100/50 dark:border-slate-850">
-                                                                            <div className="col-span-2 font-mono">{line.account?.code}</div>
-                                                                            <div className="col-span-5">{line.account?.name}</div>
-                                                                            <div className="col-span-2 text-right font-mono text-emerald-600">
-                                                                                {line.side === 'DEBIT' ? formatPrice(line.amount) : ''}
-                                                                            </div>
-                                                                            <div className="col-span-2 text-right font-mono text-indigo-600">
-                                                                                {line.side === 'CREDIT' ? formatPrice(line.amount) : ''}
-                                                                            </div>
-                                                                            <div className="col-span-1 text-right font-mono text-slate-400">
-                                                                                {formatPrice(line.balanceAfter)}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </React.Fragment>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DataTable
+                        data={glTableData}
+                        columns={glColumns}
+                        getRowKey={(row) => row.id}
+                        loading={glLoading}
+                        loadingLabel="Loading journal entries..."
+                        emptyLabel="No financial journal transactions found."
+                        rowClassName={getRowClassName}
+                        onRowClick={handleRowClick}
+                        minWidthClassName="min-w-[1000px]"
+                        containerClassName="rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+                    />
                 </>
             ) : (
                 <>
@@ -508,98 +677,23 @@ export function GeneralLedgerPage() {
                         </div>
                     </div>
 
-                    {/* Inventory Table (Original layout) */}
-                    <div className="bg-white dark:bg-slate-805 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-                        {invLoading ? (
-                            <div className="flex items-center justify-center py-20">
-                                <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-                            </div>
-                        ) : invEntries.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                    <DataTable
+                        data={invEntries}
+                        columns={invColumns}
+                        getRowKey={(entry) => entry.id}
+                        loading={invLoading}
+                        loadingLabel="Loading inventory movements..."
+                        emptyLabel={
+                            <div className="flex flex-col items-center justify-center py-8 text-slate-400">
                                 <BookOpen className="w-12 h-12 mb-3 opacity-30" />
                                 <p className="font-bold">No inventory movements found</p>
                             </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-slate-100 dark:border-slate-800">
-                                            {["Date", "Product", "Type", "Qty", "Unit Cost", "COGS", "Balance", "Warehouse", "Reference"].map(h => (
-                                                <th key={h} className="px-5 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{h}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {invEntries.map((entry, i) => {
-                                            const color = INV_TYPE_COLORS[entry.type] || "slate";
-                                            const isIn = entry.quantity > 0;
-                                            return (
-                                                <tr
-                                                    key={entry.id}
-                                                    className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
-                                                >
-                                                    <td className="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">{new Date(entry.createdAt).toLocaleString()}</td>
-                                                    <td className="px-5 py-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[140px]">
-                                                                {entry.product?.name || "—"}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-5 py-4">
-                                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-${color}-50 text-${color}-700 dark:bg-${color}-900/20 dark:text-${color}-400`}>
-                                                            {isIn ? <ArrowUpCircle className="w-3 h-3" /> : <ArrowDownCircle className="w-3 h-3" />}
-                                                            {INV_TYPE_LABELS[entry.type] || entry.type}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-5 py-4">
-                                                        <span className={`text-sm font-black ${isIn ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                                                            {isIn ? "+" : ""}{entry.quantity}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">
-                                                        {entry.unitCost ? formatPrice(entry.unitCost) : "—"}
-                                                    </td>
-                                                    <td className="px-5 py-4 text-sm text-amber-600 dark:text-amber-400 font-semibold">
-                                                        {entry.cogsAmount ? formatPrice(entry.cogsAmount) : "—"}
-                                                    </td>
-                                                    <td className="px-5 py-4 text-sm font-bold text-slate-700 dark:text-slate-200 font-mono">
-                                                        {entry.balanceAfter}
-                                                    </td>
-                                                    <td className="px-5 py-4 text-xs text-slate-400">
-                                                        {entry.warehouse?.name || "—"}
-                                                    </td>
-                                                    <td className="px-5 py-4 text-xs text-slate-400 font-mono truncate max-w-[100px]">
-                                                        {entry.referenceId || "—"}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-
-                        {/* Inventory Pagination */}
-                        {totalInvPages > 1 && (
-                            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800">
-                                <p className="text-sm text-slate-400">{invTotal} movements total</p>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => setInvPage(p => Math.max(1, p - 1))} disabled={invPage === 1}
-                                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 disabled:opacity-40 transition-all">
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </button>
-                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 px-2">
-                                        {invPage} / {totalInvPages}
-                                    </span>
-                                    <button onClick={() => setInvPage(p => Math.min(totalInvPages, p + 1))} disabled={invPage === totalInvPages}
-                                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 disabled:opacity-40 transition-all">
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        }
+                        pagination={invPagination}
+                        paginationSummary={invPaginationSummary}
+                        minWidthClassName="min-w-[1000px]"
+                        containerClassName="rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden"
+                    />
                 </>
             )}
 

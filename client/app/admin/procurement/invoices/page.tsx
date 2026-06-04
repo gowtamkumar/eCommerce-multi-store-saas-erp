@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import {
   FileText,
   Plus,
@@ -154,6 +155,81 @@ export default function SupplierInvoicePage() {
     );
   }, [invoices, searchQuery]);
 
+  const columns = useMemo<DataTableColumn<Invoice>[]>(() => [
+    {
+      key: 'invoiceNumber',
+      header: 'Invoice ID',
+      cell: (inv) => (
+        <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{inv.invoiceNumber}</span>
+      ),
+    },
+    {
+      key: 'supplier',
+      header: 'Supplier',
+      cell: (inv) => (
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{inv.supplier?.name || 'Unknown'}</span>
+      ),
+    },
+    {
+      key: 'purchaseOrder',
+      header: 'PO Ref',
+      cell: (inv) => (
+        <span className="font-mono text-xs text-slate-500">
+          {inv.purchaseOrder?.referenceNumber || 'Unlinked'}
+        </span>
+      ),
+    },
+    {
+      key: 'totalAmount',
+      header: 'Total Amount',
+      cell: (inv) => (
+        <>
+          <span className="text-xs font-black text-slate-900 dark:text-white font-mono">${inv.totalAmount}</span>
+          <span className="text-[10px] text-slate-400 block font-semibold mt-0.5">Paid: ${inv.paidAmount}</span>
+        </>
+      ),
+    },
+    {
+      key: 'matchStatus',
+      header: '3-Way Match',
+      cell: (inv) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+          inv.matchStatus === 'MATCHED'
+            ? 'bg-emerald-100 text-emerald-600'
+            : inv.matchStatus === 'DISCREPANCY'
+            ? 'bg-rose-100 text-rose-600'
+            : 'bg-amber-100 text-amber-600'
+        }`}>
+          {inv.matchStatus}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (inv) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+          inv.status === 'PAID'
+            ? 'bg-emerald-100 text-emerald-600'
+            : inv.status === 'DISCREPANCY'
+            ? 'bg-rose-100 text-rose-600'
+            : 'bg-slate-100 text-slate-600'
+        }`}>
+          {inv.status}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Action',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      cell: () => (
+        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors inline-block" />
+      ),
+    },
+  ], []);
+
   const handleAddItem = () => {
     if (!selectedProductId || !unitPrice) {
       toast.error('Select product and enter unit price');
@@ -287,78 +363,22 @@ export default function SupplierInvoicePage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-24">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-        </div>
-      ) : (
-        /* Invoice Table */
-        <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-700/30">
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice ID</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PO Ref</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Amount</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">3-Way Match</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                {filteredInvoices.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    onClick={() => setSelectedInvoice(inv)}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors group cursor-pointer"
-                  >
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{inv.invoiceNumber}</span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{inv.supplier?.name || 'Unknown'}</span>
-                    </td>
-                    <td className="px-8 py-5 font-mono text-xs text-slate-500">
-                      {inv.purchaseOrder?.referenceNumber || 'Unlinked'}
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-black text-slate-900 dark:text-white font-mono">${inv.totalAmount}</span>
-                      <span className="text-[10px] text-slate-400 block font-semibold mt-0.5">Paid: ${inv.paidAmount}</span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        inv.matchStatus === 'MATCHED'
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : inv.matchStatus === 'DISCREPANCY'
-                          ? 'bg-rose-100 text-rose-600'
-                          : 'bg-amber-100 text-amber-600'
-                      }`}>
-                        {inv.matchStatus}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        inv.status === 'PAID'
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : inv.status === 'DISCREPANCY'
-                          ? 'bg-rose-100 text-rose-600'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {inv.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors inline-block" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <DataTable
+        data={filteredInvoices}
+        columns={columns}
+        getRowKey={(inv) => inv.id}
+        loading={loading}
+        loadingLabel="Auditing ledger transactions..."
+        emptyLabel={
+          <div className="flex flex-col items-center gap-2 py-6 opacity-40">
+            <FileText className="w-12 h-12 text-slate-300 dark:text-slate-700" />
+            <p className="text-sm font-bold text-slate-400 italic uppercase">No supplier invoices found</p>
           </div>
-        </div>
-      )}
+        }
+        containerClassName="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
+        minWidthClassName="min-w-[1000px]"
+        onRowClick={(inv) => setSelectedInvoice(inv)}
+      />
 
       {/* Invoice Detail Drawer */}
       <AnimatePresence>

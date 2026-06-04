@@ -5,11 +5,15 @@ import { OrderStatus } from '@/lib/enums/order-status.enum';
 import { fetchAPI } from '@/services/api';
 import { handleCreatePathaoOrder, handleCreateSteadfastOrder, handleManualDispatch, updateOrderStatus } from '@/lib/utils';
 import type { Order } from '@/types/order';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import CourierModal from './CourierModal';
 import OrderList from './OrderList';
-import type { OrderListPagination } from '../type';
+import type { OrderListPagination, OrderSortOrder } from '../type';
+
+// Cap export at 100 pages (10k rows) so a runaway tenant can't lock the browser.
+const EXPORT_PAGE_LIMIT = 100;
+const EXPORT_MAX_PAGES = 100;
 
 export default function Order() {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -20,12 +24,21 @@ export default function Order() {
     const [selectedCourier, setSelectedCourier] = useState<{ [orderId: string]: string }>({});
     const [showCourierModal, setShowCourierModal] = useState(false);
     const [pendingCourierOrder, setPendingCourierOrder] = useState<{ order: Order; courier: string } | null>(null);
-    
+
     // Premium Filter States
     const [statusFilter, setStatusFilter] = useState('');
     const [sourceFilter, setSourceFilter] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('');
 
+    // Sorting
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [sortOrder, setSortOrder] = useState<OrderSortOrder>('DESC');
+
+    // Bulk selection
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkUpdating, setBulkUpdating] = useState(false);
+
+    const [pageSize, setPageSize] = useState(10);
     const [pagination, setPagination] = useState<OrderListPagination>({
         total: 0,
         page: 1,
@@ -35,52 +48,154 @@ export default function Order() {
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 
-    const fetchOrders = async (
-        page: number, 
-        search: string, 
-        status = statusFilter, 
-        source = sourceFilter, 
-        payment = paymentFilter
-    ) => {
+    // Guards against out-of-order responses overwriting fresher data.
+    const requestIdRef = useRef(0);
+    const abortRef = useRef<AbortController | null>(null);
+
+    const buildQuery = useCallback((page: number, limit: number) => {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            search: debouncedSearch,
+            isAdmin: 'true',
+            sortBy,
+            sortOrder,
+        });
+        if (statusFilter) params.append('status', statusFilter);
+        if (sourceFilter) params.append('orderSource', sourceFilter);
+        if (paymentFilter) params.append('paymentStatus', paymentFilter);
+        return params;
+    }, [debouncedSearch, sortBy, sortOrder, statusFilter, sourceFilter, paymentFilter]);
+
+    const fetchOrders = useCallback(async (page: number) => {
+        const requestId = ++requestIdRef.current;
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+
         setLoading(true);
         try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: pagination.limit.toString(),
-                search: search,
-                isAdmin: 'true'
-            });
-            if (status) params.append('status', status);
-            if (source) params.append('orderSource', source);
-            if (payment) params.append('paymentStatus', payment);
+            const params = buildQuery(page, pageSize);
+            const res = await fetchAPI(`/orders?${params}`, { signal: controller.signal });
 
-            const res = await fetchAPI(`/orders?${params}`);
+            // Ignore responses that have been superseded by a newer request.
+            if (requestId !== requestIdRef.current) return;
 
-            if (res.data?.orders) {
+            if (res?.data?.orders) {
                 setOrders(res.data.orders);
                 setPagination(res.data.pagination);
-            } else if (res.success && Array.isArray(res.data)) {
-                // Fallback for different API response structure
+            } else if (res?.success && Array.isArray(res.data)) {
                 setOrders(res.data);
                 if (res.pagination) {
                     setPagination(res.pagination);
                 }
             }
         } catch (error) {
+            if ((error as Error)?.name === 'AbortError') return;
+            if (requestId !== requestIdRef.current) return;
             console.error('Failed to fetch orders', error);
             toast.error('Failed to load orders');
         } finally {
-            setLoading(false);
+            if (requestId === requestIdRef.current) {
+                setLoading(false);
+            }
         }
-    };
+    }, [buildQuery, pageSize]);
 
+    // Any change to search / filters / sort / page size resets to page 1.
+    // Deferred to a macrotask to avoid cascading renders from synchronous setState.
     useEffect(() => {
-        fetchOrders(1, debouncedSearch);
-    }, [debouncedSearch]);
+        const timer = window.setTimeout(() => {
+            setSelectedIds(new Set());
+            void fetchOrders(1);
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [fetchOrders]);
+
+    // Abort any in-flight request on unmount.
+    useEffect(() => () => abortRef.current?.abort(), []);
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
-            fetchOrders(newPage, debouncedSearch);
+            setSelectedIds(new Set());
+            fetchOrders(newPage);
+        }
+    };
+
+    const handleSortChange = (sortKey: string) => {
+        if (sortBy === sortKey) {
+            setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'));
+        } else {
+            setSortBy(sortKey);
+            setSortOrder('DESC');
+        }
+    };
+
+    const handleClearFilters = () => {
+        setStatusFilter('');
+        setSourceFilter('');
+        setPaymentFilter('');
+        setSearchQuery('');
+    };
+
+    // --- Bulk selection ---
+    const handleToggleRow = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const handleToggleAll = (rows: Order[]) => {
+        setSelectedIds((prev) => {
+            const allSelected = rows.length > 0 && rows.every((row) => prev.has(row.id));
+            const next = new Set(prev);
+            if (allSelected) {
+                rows.forEach((row) => next.delete(row.id));
+            } else {
+                rows.forEach((row) => next.add(row.id));
+            }
+            return next;
+        });
+    };
+
+    const handleClearSelection = () => setSelectedIds(new Set());
+
+    const handleBulkStatusChange = async (newStatus: string) => {
+        if (selectedIds.size === 0) return;
+        const ids = Array.from(selectedIds);
+        setBulkUpdating(true);
+        const toastId = toast.loading(`Updating ${ids.length} order(s)...`);
+        try {
+            const results = await Promise.allSettled(
+                ids.map((id) => updateOrderStatus(id, { status: newStatus })),
+            );
+            const succeeded = results.filter(
+                (r) => r.status === 'fulfilled' && r.value?.success,
+            ).length;
+            const failed = ids.length - succeeded;
+
+            if (succeeded > 0) {
+                const updated = new Set(ids);
+                setOrders((prev) =>
+                    prev.map((o) => (updated.has(o.id) ? { ...o, status: newStatus as OrderStatus } : o)),
+                );
+            }
+
+            if (failed === 0) {
+                toast.success(`Updated ${succeeded} order(s)`, { id: toastId });
+            } else {
+                toast.error(`${succeeded} updated, ${failed} failed`, { id: toastId });
+            }
+        } finally {
+            setBulkUpdating(false);
+            handleClearSelection();
         }
     };
 
@@ -109,7 +224,7 @@ export default function Order() {
             }
             // Refresh logic if needed, or local state update as done above for MANUAL
             if (courier !== CourierType.IN_STORE) {
-                fetchOrders(pagination.page, debouncedSearch);
+                fetchOrders(pagination.page);
             }
         } catch (error) {
             console.error('Courier order creation failed', error);
@@ -150,35 +265,37 @@ export default function Order() {
         }
     };
 
-    // Premium Excel/CSV spreadsheet exporter
+    const escapeCsv = (value: string) => value.replace(/"/g, '""');
+
+    // Premium Excel/CSV spreadsheet exporter — pages through the full result set
+    // (the API caps `limit` at 100, so a single big request would be rejected).
     const handleExportCSV = async () => {
         const toastId = toast.loading('Preparing CSV spreadsheet...');
         try {
-            const params = new URLSearchParams({
-                page: '1',
-                limit: '1000',
-                search: debouncedSearch,
-                isAdmin: 'true'
-            });
-            if (statusFilter) params.append('status', statusFilter);
-            if (sourceFilter) params.append('orderSource', sourceFilter);
-            if (paymentFilter) params.append('paymentStatus', paymentFilter);
+            const collected: Order[] = [];
+            let page = 1;
+            let totalPages = 1;
 
-            const res = await fetchAPI(`/orders?${params}`);
-            const dataToExport = res.data?.orders || res.data || [];
+            do {
+                const params = buildQuery(page, EXPORT_PAGE_LIMIT);
+                const res = await fetchAPI(`/orders?${params}`);
+                const batch: Order[] = res?.data?.orders || (Array.isArray(res?.data) ? res.data : []);
+                collected.push(...batch);
+                totalPages = res?.data?.pagination?.totalPages || 1;
+                page += 1;
+            } while (page <= totalPages && page <= EXPORT_MAX_PAGES);
 
-            if (!Array.isArray(dataToExport) || dataToExport.length === 0) {
+            if (collected.length === 0) {
                 toast.error('No orders found with current filters', { id: toastId });
                 return;
             }
 
-            // CSV Columns Header
             let csv = '\ufeffOrder ID,Customer Name,Customer Email,Customer Phone,Sales Channel,Total Amount,Payment Method,Payment Status,Fulfillment Status,Created Date\n';
 
-            dataToExport.forEach((o: any) => {
-                const cleanName = (o.customerName || '').replace(/"/g, '""');
-                const cleanEmail = (o.customerEmail || '').replace(/"/g, '""');
-                const cleanPhone = (o.customerPhone || '').replace(/"/g, '""');
+            collected.forEach((o) => {
+                const cleanName = escapeCsv(o.customerName || '');
+                const cleanEmail = escapeCsv(o.customerEmail || '');
+                const cleanPhone = escapeCsv(o.customerPhone || '');
                 const channel = o.orderSource || 'website';
                 const total = o.totalAmount || 0;
                 const method = o.paymentMethod || 'N/A';
@@ -189,7 +306,6 @@ export default function Order() {
                 csv += `"${o.id}","${cleanName}","${cleanEmail}","${cleanPhone}","${channel}",${total},"${method}","${payStatus}","${fulfillStatus}","${created}"\n`;
             });
 
-            // Browser download trigger
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -199,8 +315,9 @@ export default function Order() {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
 
-            toast.success('Spreadsheet exported successfully!', { id: toastId });
+            toast.success(`Exported ${collected.length} orders!`, { id: toastId });
         } catch (error) {
             console.error('Export failed', error);
             toast.error('Failed to export orders to CSV', { id: toastId });
@@ -214,24 +331,16 @@ export default function Order() {
                 loading={loading}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                
-                // Pass filter properties
+
+                // Filters (effect handles refetch — no stale closures)
                 statusFilter={statusFilter}
-                onStatusFilterChange={(val: string) => {
-                    setStatusFilter(val);
-                    fetchOrders(1, debouncedSearch, val, sourceFilter, paymentFilter);
-                }}
+                onStatusFilterChange={setStatusFilter}
                 sourceFilter={sourceFilter}
-                onSourceFilterChange={(val: string) => {
-                    setSourceFilter(val);
-                    fetchOrders(1, debouncedSearch, statusFilter, val, paymentFilter);
-                }}
+                onSourceFilterChange={setSourceFilter}
                 paymentFilter={paymentFilter}
-                onPaymentFilterChange={(val: string) => {
-                    setPaymentFilter(val);
-                    fetchOrders(1, debouncedSearch, statusFilter, sourceFilter, val);
-                }}
-                
+                onPaymentFilterChange={setPaymentFilter}
+                onClearFilters={handleClearFilters}
+
                 onExportCSV={handleExportCSV}
                 pagination={pagination}
                 onPageChange={handlePageChange}
@@ -239,6 +348,23 @@ export default function Order() {
                 onCourierSelect={handleCourierSelect}
                 selectedCourier={selectedCourier}
                 isCreatingCourierOrder={isCreatingCourierOrder}
+
+                // Sorting
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
+
+                // Bulk selection
+                selectedIds={selectedIds}
+                onToggleRow={handleToggleRow}
+                onToggleAll={handleToggleAll}
+                onClearSelection={handleClearSelection}
+                onBulkStatusChange={handleBulkStatusChange}
+                bulkUpdating={bulkUpdating}
+
+                // Page size
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
             />
 
             <CourierModal

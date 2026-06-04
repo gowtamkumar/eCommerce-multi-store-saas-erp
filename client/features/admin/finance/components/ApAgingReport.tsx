@@ -1,13 +1,14 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import {
     AlertTriangle, CheckCircle2, CreditCard, DollarSign, Loader2,
     RefreshCw, Search, TrendingDown, FileText, Play, Plus, Clock, Mail, CheckSquare, Square
 } from 'lucide-react';
 import { useSettings } from '@/hooks/SettingsContext';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 function AgingBadge({ days, amount }: { days: string; amount: number }) {
     const { formatPrice } = useSettings();
@@ -172,6 +173,150 @@ export default function ApAgingReport() {
         inv.supplier?.name?.toLowerCase().includes(search.toLowerCase())
     );
 
+    const agingColumns = useMemo<DataTableColumn<ApAgingRow>[]>(() => [
+        {
+            key: 'supplierName',
+            header: 'Supplier Name',
+            cell: (row) => (
+                <div>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">{row.supplierName}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{row.email || row.phone || 'No contact'}</p>
+                </div>
+            ),
+        },
+        {
+            key: 'totalOutstanding',
+            header: 'Outstanding',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (row) => (
+                <span className="font-black text-slate-900 dark:text-white text-sm font-mono">
+                    {formatPrice(row.totalOutstanding)}
+                </span>
+            ),
+        },
+        {
+            key: 'current',
+            header: 'Not Yet Due',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="Current" amount={row.aging.current} />,
+        },
+        {
+            key: '1-30',
+            header: '1–30 Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="1-30" amount={row.aging['1-30']} />,
+        },
+        {
+            key: '31-60',
+            header: '31–60 Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="31-60" amount={row.aging['31-60']} />,
+        },
+        {
+            key: '61-90',
+            header: '61–90 Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="61-90" amount={row.aging['61-90']} />,
+        },
+        {
+            key: '90+',
+            header: '90+ Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="90+" amount={row.aging['90+']} />,
+        },
+    ], [formatPrice]);
+
+    const invoiceColumns = useMemo<DataTableColumn<UnpaidInvoice>[]>(() => [
+        {
+            key: 'select',
+            header: '',
+            className: 'w-12 text-center',
+            cell: (inv) => {
+                const isSelected = selectedInvoiceIds.includes(inv.id);
+                return (
+                    <button type="button" className="text-slate-400 hover:text-brand-600 inline-block">
+                        {isSelected ? (
+                            <CheckSquare className="w-5 h-5 text-brand-600" />
+                        ) : (
+                            <Square className="w-5 h-5" />
+                        )}
+                    </button>
+                );
+            },
+        },
+        {
+            key: 'invoiceNumber',
+            header: 'Invoice Ref',
+            cell: (inv) => (
+                <div>
+                    <span className="font-black text-slate-900 dark:text-white text-sm">
+                        {inv.invoiceNumber}
+                    </span>
+                    <span className="block text-[9px] text-slate-400 font-medium mt-0.5">
+                        Bill Date: {new Date(inv.invoiceDate).toLocaleDateString()}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            key: 'supplier',
+            header: 'Supplier',
+            cell: (inv) => (
+                <span className="font-bold text-slate-700 dark:text-slate-300 text-sm">
+                    {inv.supplier?.name}
+                </span>
+            ),
+        },
+        {
+            key: 'dueDate',
+            header: 'Due Date',
+            cell: (inv) => (
+                <span className="text-slate-500 dark:text-slate-400 font-semibold text-xs">
+                    {new Date(inv.dueDate).toLocaleDateString()}
+                </span>
+            ),
+        },
+        {
+            key: 'outstanding',
+            header: 'Outstanding',
+            headerClassName: 'text-right',
+            className: 'text-right font-mono font-black text-slate-900 dark:text-white text-sm',
+            cell: (inv) => {
+                const outstanding = Number(inv.totalAmount) - Number(inv.paidAmount || 0);
+                return formatPrice(outstanding);
+            },
+        },
+        {
+            key: 'matchStatus',
+            header: 'Match Status',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (inv) => {
+                const isMatched = inv.matchStatus === 'MATCHED';
+                return (
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${isMatched ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/20'}`}>
+                        {inv.matchStatus}
+                    </span>
+                );
+            },
+        },
+    ], [selectedInvoiceIds, formatPrice]);
+
+    const handleInvoiceRowClick = (inv: UnpaidInvoice) => {
+        handleSelectInvoice(inv.id);
+    };
+
+    const getInvoiceRowClassName = (inv: UnpaidInvoice) => {
+        const isSelected = selectedInvoiceIds.includes(inv.id);
+        return isSelected ? 'bg-brand-50/30 dark:bg-brand-950/10' : '';
+    };
+
     const totalOutstanding = agingData.reduce((s, r) => s + Number(r.totalOutstanding), 0);
     const totalOverdue = agingData.reduce((s, r) => s + r.aging['1-30'] + r.aging['31-60'] + r.aging['61-90'] + r.aging['90+'], 0);
     const unpaidCount = unpaidInvoices.length;
@@ -272,64 +417,22 @@ export default function ApAgingReport() {
                     </div>
 
                     {/* Aging Table */}
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                                    <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier Name</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Outstanding</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Not Yet Due</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">1–30 Days</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">31–60 Days</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">61–90 Days</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">90+ Days</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {loading ? (
-                                        <tr>
-                                            <td colSpan={7} className="px-6 py-12 text-center">
-                                                <div className="flex justify-center items-center gap-2 text-slate-500">
-                                                    <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
-                                                    <span className="font-bold text-xs uppercase tracking-wider">Loading aging ledger...</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : filteredAging.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} className="px-6 py-16 text-center">
-                                                <div className="flex flex-col items-center gap-3 text-slate-400">
-                                                    <FileText className="w-12 h-12 opacity-30" />
-                                                    <p className="font-black text-sm uppercase tracking-widest text-slate-400">No outstanding AP</p>
-                                                    <p className="text-xs text-slate-500 font-medium">All supplier balances are paid and settled</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        filteredAging.map((row) => (
-                                            <tr key={row.supplierId} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{row.supplierName}</p>
-                                                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{row.email || row.phone || 'No contact'}</p>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <span className="font-black text-slate-900 dark:text-white text-sm font-mono">
-                                                        {formatPrice(row.totalOutstanding)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-center"><AgingBadge days="Current" amount={row.aging.current} /></td>
-                                                <td className="px-6 py-4 text-center"><AgingBadge days="1-30" amount={row.aging['1-30']} /></td>
-                                                <td className="px-6 py-4 text-center"><AgingBadge days="31-60" amount={row.aging['31-60']} /></td>
-                                                <td className="px-6 py-4 text-center"><AgingBadge days="61-90" amount={row.aging['61-90']} /></td>
-                                                <td className="px-6 py-4 text-center"><AgingBadge days="90+" amount={row.aging['90+']} /></td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DataTable
+                        data={filteredAging}
+                        columns={agingColumns}
+                        getRowKey={(row) => row.supplierId}
+                        loading={loading}
+                        loadingLabel="Loading aging ledger..."
+                        emptyLabel={
+                            <div className="flex flex-col items-center gap-3 text-slate-400 py-4">
+                                <FileText className="w-12 h-12 opacity-30" />
+                                <p className="font-black text-sm uppercase tracking-widest text-slate-400">No outstanding AP</p>
+                                <p className="text-xs text-slate-500 font-medium">All supplier balances are paid and settled</p>
+                            </div>
+                        }
+                        minWidthClassName="min-w-[900px]"
+                        containerClassName="rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+                    />
                 </>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -356,79 +459,17 @@ export default function ApAgingReport() {
                             )}
                         </div>
 
-                        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                                        <tr>
-                                            <th className="px-6 py-4 w-12"></th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Invoice Ref</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Due Date</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Outstanding</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Match Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                        {loading && unpaidInvoices.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={6} className="px-6 py-12 text-center">
-                                                    <Loader2 className="w-6 h-6 animate-spin text-brand-500 mx-auto" />
-                                                </td>
-                                            </tr>
-                                        ) : filteredInvoices.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={6} className="px-6 py-16 text-center text-slate-400 font-medium">
-                                                    No outstanding invoices to pay.
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            filteredInvoices.map((inv) => {
-                                                const outstanding = Number(inv.totalAmount) - Number(inv.paidAmount || 0);
-                                                const isSelected = selectedInvoiceIds.includes(inv.id);
-                                                const isMatched = inv.matchStatus === 'MATCHED';
-                                                
-                                                return (
-                                                    <tr 
-                                                        key={inv.id} 
-                                                        className={`hover:bg-slate-50/30 dark:hover:bg-slate-700/10 cursor-pointer transition-colors ${isSelected ? 'bg-brand-50/30 dark:bg-brand-950/10' : ''}`}
-                                                        onClick={() => handleSelectInvoice(inv.id)}
-                                                    >
-                                                        <td className="px-6 py-4 text-center">
-                                                            <button type="button" className="text-slate-400 hover:text-brand-600">
-                                                                {isSelected ? (
-                                                                    <CheckSquare className="w-5 h-5 text-brand-600" />
-                                                                ) : (
-                                                                    <Square className="w-5 h-5" />
-                                                                )}
-                                                            </button>
-                                                        </td>
-                                                        <td className="px-6 py-4 font-black text-slate-900 dark:text-white text-sm">
-                                                            {inv.invoiceNumber}
-                                                            <span className="block text-[9px] text-slate-400 font-medium mt-0.5">Bill Date: {new Date(inv.invoiceDate).toLocaleDateString()}</span>
-                                                        </td>
-                                                        <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300 text-sm">
-                                                            {inv.supplier?.name}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-semibold text-xs">
-                                                            {new Date(inv.dueDate).toLocaleDateString()}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right font-black text-slate-900 dark:text-white font-mono text-sm">
-                                                            {formatPrice(outstanding)}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-center">
-                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${isMatched ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/20'}`}>
-                                                                {inv.matchStatus}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <DataTable
+                            data={filteredInvoices}
+                            columns={invoiceColumns}
+                            getRowKey={(inv) => inv.id}
+                            loading={loading}
+                            emptyLabel="No outstanding invoices to pay."
+                            onRowClick={handleInvoiceRowClick}
+                            rowClassName={getInvoiceRowClassName}
+                            minWidthClassName="min-w-[700px]"
+                            containerClassName="rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+                        />
                     </div>
 
                     {/* Batch Actions Form */}

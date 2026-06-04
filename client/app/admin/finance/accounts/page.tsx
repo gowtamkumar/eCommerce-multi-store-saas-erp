@@ -19,6 +19,7 @@ import {
   deleteAccount,
   initializeAccounting
 } from '@/services/accounting';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 interface Account {
   id: string;
@@ -126,6 +127,105 @@ export default function ChartOfAccountsPage() {
     );
   }, [accounts, searchQuery]);
 
+  const columns = useMemo<DataTableColumn<Account>[]>(() => [
+    {
+      key: 'code',
+      header: 'Account Code',
+      cell: (acc) => (
+        <span className="text-xs font-black text-slate-900 dark:text-white font-mono bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
+          {acc.code}
+        </span>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Account Name',
+      cell: (acc) => (
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          {acc.name}
+        </span>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Classification',
+      cell: (acc) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+          acc.type === 'ASSET'
+            ? 'bg-emerald-100 text-emerald-600'
+            : acc.type === 'LIABILITY'
+            ? 'bg-rose-100 text-rose-600'
+            : acc.type === 'REVENUE'
+            ? 'bg-indigo-100 text-indigo-600'
+            : 'bg-slate-100 text-slate-600'
+        }`}>
+          {acc.type}
+        </span>
+      ),
+    },
+    {
+      key: 'category',
+      header: 'Category',
+      cell: (acc) => (
+        <span className="text-xs text-slate-500 font-semibold">
+          {acc.category}
+        </span>
+      ),
+    },
+    {
+      key: 'balance',
+      header: 'Current Balance',
+      cell: (acc) => (
+        <span className="text-xs font-black font-mono text-slate-900 dark:text-white">
+          ${Number(acc.balance).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      key: 'isSystem',
+      header: 'Type',
+      cell: (acc) => acc.isSystem ? (
+        <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+          System Locked
+        </span>
+      ) : (
+        <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+          Custom
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      cell: (acc) => !acc.isSystem ? (
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => {
+              setSelectedAccount(acc);
+              setName(acc.name);
+              setType(acc.type);
+              setCategory(acc.category);
+              setEditOpen(true);
+            }}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors inline-block"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          {Number(acc.balance) === 0 && (
+            <button
+              onClick={() => handleDelete(acc.id)}
+              className="p-2 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors inline-block"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      ) : null,
+    },
+  ], []);
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
       {/* Header */}
@@ -167,104 +267,15 @@ export default function ChartOfAccountsPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-24">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-700/30">
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Code</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Name</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Classification</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Balance</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
-                  <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                {filteredAccounts.map((acc) => (
-                  <tr
-                    key={acc.id}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors group"
-                  >
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-black text-slate-900 dark:text-white font-mono bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
-                        {acc.code}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{acc.name}</span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        acc.type === 'ASSET'
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : acc.type === 'LIABILITY'
-                          ? 'bg-rose-100 text-rose-600'
-                          : acc.type === 'REVENUE'
-                          ? 'bg-indigo-100 text-indigo-600'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {acc.type}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-xs text-slate-500 font-semibold">{acc.category}</span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-black font-mono text-slate-900 dark:text-white">
-                        ${Number(acc.balance).toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      {acc.isSystem ? (
-                        <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                          System Locked
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
-                          Custom
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      {!acc.isSystem && (
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedAccount(acc);
-                              setName(acc.name);
-                              setType(acc.type);
-                              setCategory(acc.category);
-                              setEditOpen(true);
-                            }}
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          {Number(acc.balance) === 0 && (
-                            <button
-                              onClick={() => handleDelete(acc.id)}
-                              className="p-2 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <DataTable
+        data={filteredAccounts}
+        columns={columns}
+        getRowKey={(acc) => acc.id}
+        loading={loading}
+        emptyLabel="No Chart of Accounts matches the search filters."
+        minWidthClassName="min-w-[1000px]"
+        containerClassName="rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+      />
 
       {/* Create Account Modal */}
       <AnimatePresence>

@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useEffect, useState, useMemo } from 'react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Award,
@@ -74,6 +75,9 @@ function ScoreStars({ score }: { score: number }) {
     </div>
   );
 }
+
+const empName = (e: PerformanceReview['employee']) =>
+  e?.user?.name || e?.user?.username || 'Unknown Employee';
 
 export default function PerformancePage() {
   const [reviews, setReviews] = useState<PerformanceReview[]>([]);
@@ -173,8 +177,92 @@ export default function PerformancePage() {
     }
   };
 
-  const empName = (e: PerformanceReview['employee']) =>
-    e?.user?.name || e?.user?.username || 'Unknown Employee';
+  const columns = useMemo<DataTableColumn<PerformanceReview>[]>(() => [
+    {
+      key: 'employee',
+      header: 'Employee',
+      cell: (review) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+            <User className="w-4 h-4 text-indigo-600" />
+          </div>
+          <span className="text-xs font-black text-slate-900 dark:text-white">
+            {empName(review.employee)}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'department',
+      header: 'Department',
+      cell: (review) => (
+        <span className="text-xs text-slate-500 font-semibold">
+          {review.employee?.department?.name || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'reviewPeriod',
+      header: 'Review Period',
+      cell: (review) => (
+        <span className="text-xs font-black font-mono text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-100 dark:border-slate-700">
+          {review.reviewPeriod}
+        </span>
+      ),
+    },
+    {
+      key: 'score',
+      header: 'Score',
+      cell: (review) => {
+        const scoreNum = Number(review.score);
+        const scoreMeta = SCORE_LABELS[Math.round(scoreNum)] || SCORE_LABELS[3];
+        return (
+          <span className={`text-sm font-black ${scoreMeta.color}`}>
+            {scoreNum.toFixed(1)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'rating',
+      header: 'Rating',
+      cell: (review) => {
+        const scoreNum = Number(review.score);
+        const scoreMeta = SCORE_LABELS[Math.round(scoreNum)] || SCORE_LABELS[3];
+        return (
+          <div className="space-y-1">
+            <ScoreStars score={scoreNum} />
+            <span className={`text-[9px] font-black uppercase tracking-wide ${scoreMeta.color}`}>
+              {scoreMeta.label}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'reviewer',
+      header: 'Reviewer',
+      cell: (review) => (
+        <span className="text-xs text-slate-500 font-semibold">
+          {review.reviewer?.user?.name ||
+            review.reviewer?.user?.username ||
+            'Self / System'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (review) => (
+        <button
+          onClick={() => setSelectedReview(review)}
+          className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline"
+        >
+          View KPIs
+        </button>
+      ),
+    },
+  ], [setSelectedReview]);
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
@@ -254,103 +342,26 @@ export default function PerformancePage() {
       </div>
 
       {/* Reviews Table */}
-      {loading ? (
-        <div className="flex justify-center py-24">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="p-16 text-center bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700">
-          <Award className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-4" />
-          <p className="text-xs text-slate-400 font-black uppercase tracking-widest">
-            No Performance Reviews Yet
-          </p>
-          <p className="text-xs text-slate-400 mt-1">
-            Click &ldquo;New Review&rdquo; to submit the first appraisal
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-700/30">
-                  {['Employee', 'Department', 'Review Period', 'Score', 'Rating', 'Reviewer', 'Actions'].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                {filtered.map((review) => {
-                  const scoreNum = Number(review.score);
-                  const scoreMeta = SCORE_LABELS[Math.round(scoreNum)] || SCORE_LABELS[3];
-                  return (
-                    <tr
-                      key={review.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                            <User className="w-4 h-4 text-indigo-600" />
-                          </div>
-                          <span className="text-xs font-black text-slate-900 dark:text-white">
-                            {empName(review.employee)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs text-slate-500 font-semibold">
-                          {review.employee?.department?.name || '—'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-black font-mono text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-100 dark:border-slate-700">
-                          {review.reviewPeriod}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-sm font-black ${scoreMeta.color}`}>
-                          {scoreNum.toFixed(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <ScoreStars score={scoreNum} />
-                          <span className={`text-[9px] font-black uppercase tracking-wide ${scoreMeta.color}`}>
-                            {scoreMeta.label}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs text-slate-500 font-semibold">
-                          {review.reviewer?.user?.name ||
-                            review.reviewer?.user?.username ||
-                            'Self / System'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => setSelectedReview(review)}
-                          className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline"
-                        >
-                          View KPIs
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      <DataTable
+        data={filtered}
+        columns={columns}
+        getRowKey={(review) => review.id}
+        loading={loading}
+        loadingLabel="Loading performance reviews..."
+        emptyLabel={
+          <div className="flex flex-col items-center gap-2">
+            <Award className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-2" />
+            <p className="text-xs text-slate-400 font-black uppercase tracking-widest">
+              No Performance Reviews Yet
+            </p>
+            <p className="text-xs text-slate-400 mt-1 text-center">
+              Click &ldquo;New Review&rdquo; to submit the first appraisal
+            </p>
           </div>
-        </div>
-      )}
+        }
+        containerClassName="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+        minWidthClassName="min-w-[1000px]"
+      />
 
       {/* KPI Detail Modal */}
       <AnimatePresence>

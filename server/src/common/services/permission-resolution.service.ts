@@ -3,7 +3,7 @@ import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/use
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
 import { OverrideEffect } from '@/common/enums/override-effect.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { CORE_FEATURE_SLUGS, isCoreFeature } from '@/common/constants/feature-mapping'
+import { CORE_FEATURE_SLUGS, isCoreFeature, getPlanFeature } from '@/common/constants/feature-mapping'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Injectable, Logger } from '@nestjs/common'
@@ -67,17 +67,28 @@ export class PermissionResolutionService {
    * Checks overrides first, then plan fallback.
    */
   async isFeatureEnabledForTenant(tenantId: string, featureSlug: string): Promise<boolean> {
-    const override = await this.tenantFeatureRepo.findOne({
+    const planFeature = getPlanFeature(featureSlug)
+
+    // Check specific sub-feature override first (e.g. "accounting")
+    const overrideSpec = await this.tenantFeatureRepo.findOne({
       where: { tenantId, featureSlug },
     })
-
-    if (override !== null) {
-      return override.isEnabled
+    if (overrideSpec !== null) {
+      return overrideSpec.isEnabled
     }
 
-    // Core features (account/self-management) are always enabled regardless of
-    // plan tier, so every tenant can manage their own team, roles, and settings.
-    if (isCoreFeature(featureSlug)) {
+    // Check parent plan feature override next (e.g. "finance")
+    if (planFeature !== featureSlug) {
+      const overridePlan = await this.tenantFeatureRepo.findOne({
+        where: { tenantId, featureSlug: planFeature },
+      })
+      if (overridePlan !== null) {
+        return overridePlan.isEnabled
+      }
+    }
+
+    // Core features check
+    if (isCoreFeature(featureSlug) || isCoreFeature(planFeature)) {
       return true
     }
 
@@ -89,7 +100,7 @@ export class PermissionResolutionService {
     if (!tenant) return false
 
     const planFeatures = tenant.subscriptionPlan?.features ?? []
-    return planFeatures.includes(featureSlug)
+    return planFeatures.includes(planFeature) || planFeatures.includes(featureSlug)
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -218,7 +229,8 @@ export class PermissionResolutionService {
     // Only include permissions whose feature is enabled for this tenant
     const permissions = Array.from(permSet).filter((p) => {
       const feat = p.split(':')[0]
-      return featuresEnabledSet.has(feat)
+      const planFeat = getPlanFeature(feat)
+      return featuresEnabledSet.has(feat) || featuresEnabledSet.has(planFeat)
     })
 
     const manifest: PermissionManifest = {

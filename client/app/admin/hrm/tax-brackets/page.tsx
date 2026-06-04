@@ -1,5 +1,6 @@
 'use client';
 
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { createTaxBracket, deleteTaxBracket, getTaxBrackets } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calculator, CheckCircle2, Loader2, Plus, Receipt, Trash2, TrendingUp, X } from 'lucide-react';
@@ -58,6 +59,56 @@ export default function TaxBracketsPage() {
     if (brackets.length === 0) return 0;
     return brackets.reduce((sum, bracket) => sum + Number(bracket.rate || 0), 0) / brackets.length;
   }, [brackets]);
+
+  const columns = useMemo<DataTableColumn<TaxBracket>[]>(() => [
+    {
+      key: 'range',
+      header: 'Range',
+      cell: (bracket) => (
+        <>
+          <p className="text-sm font-black text-slate-900 dark:text-white">
+            {Number(bracket.minAmount).toLocaleString()} – {bracket.maxAmount === null ? 'No limit' : Number(bracket.maxAmount).toLocaleString()}
+          </p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Fiscal year {bracket.fiscalYear}</p>
+        </>
+      ),
+    },
+    {
+      key: 'rate',
+      header: 'Rate',
+      cell: (bracket) => (
+        <span className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-widest">
+          {(Number(bracket.rate) * 100).toFixed(2)}%
+        </span>
+      ),
+    },
+    {
+      key: 'flatTax',
+      header: 'Flat Tax',
+      className: 'text-sm font-black text-slate-900 dark:text-white',
+      cell: (bracket) => Number(bracket.flatTax || 0).toLocaleString(),
+    },
+    {
+      key: 'order',
+      header: 'Order',
+      className: 'text-sm font-black text-slate-500',
+      cell: (bracket) => bracket.sortOrder,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      cell: (bracket) => (
+        <button
+          onClick={() => handleDelete(bracket.id)}
+          className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      ),
+    },
+  ], [brackets]);
 
   const handleCreate = async () => {
     if (formData.rate < 0 || formData.rate > 1) {
@@ -178,70 +229,22 @@ export default function TaxBracketsPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
-        <div className="p-8 border-b border-slate-50 dark:border-slate-700 flex justify-between items-center">
-          <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Tax Slabs</h2>
-          {loading && <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />}
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
-              <tr>
-                <th className="px-8 py-6">Range</th>
-                <th className="px-8 py-6">Rate</th>
-                <th className="px-8 py-6">Flat Tax</th>
-                <th className="px-8 py-6">Order</th>
-                <th className="px-8 py-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-8 py-24 text-center">
-                    <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto" />
-                  </td>
-                </tr>
-              ) : brackets.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-8 py-24 text-center">
-                    <Receipt className="w-12 h-12 text-slate-200 mx-auto" />
-                    <p className="text-sm font-bold text-slate-400 mt-2 italic uppercase">No tax brackets configured</p>
-                  </td>
-                </tr>
-              ) : brackets.map((bracket) => (
-                <tr key={bracket.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-all">
-                  <td className="px-8 py-6">
-                    <p className="text-sm font-black text-slate-900 dark:text-white">
-                      {Number(bracket.minAmount).toLocaleString()} - {bracket.maxAmount === null ? 'No limit' : Number(bracket.maxAmount).toLocaleString()}
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Fiscal year {bracket.fiscalYear}</p>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                      {(Number(bracket.rate) * 100).toFixed(2)}%
-                    </span>
-                  </td>
-                  <td className="px-8 py-6 text-sm font-black text-slate-900 dark:text-white">
-                    {Number(bracket.flatTax || 0).toLocaleString()}
-                  </td>
-                  <td className="px-8 py-6 text-sm font-black text-slate-500">
-                    {bracket.sortOrder}
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <button
-                      onClick={() => handleDelete(bracket.id)}
-                      className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        data={brackets}
+        columns={columns}
+        getRowKey={(bracket) => bracket.id}
+        loading={loading}
+        loadingLabel="Loading tax brackets..."
+        emptyLabel={
+          <div className="flex flex-col items-center gap-2">
+            <Receipt className="w-12 h-12 text-slate-200" />
+            <p className="text-sm font-bold text-slate-400 italic uppercase">No tax brackets configured</p>
+          </div>
+        }
+        containerClassName="rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700"
+        rowClassName="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-all group"
+        minWidthClassName="min-w-[640px]"
+      />
 
       <AnimatePresence>
         {showForm && (

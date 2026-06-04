@@ -4,72 +4,10 @@ import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import { ShoppingBag, Save, Loader2, Plus, Trash2, Package, Search, ChevronLeft, Truck, FileText } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, memo, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-
-// Memoized Item Row to prevent form re-renders on price/qty updates
-const PurchaseOrderItemRow = memo(({
-    item,
-    index,
-    onUpdate,
-    onRemove,
-    formatPrice
-}: {
-    item: any,
-    index: number,
-    onUpdate: (index: number, field: string, value: any) => void,
-    onRemove: (index: number) => void,
-    formatPrice: (p: number) => string
-}) => {
-    return (
-        <tr className="group animate-in fade-in duration-300">
-            <td className="py-5">
-                <div className="font-bold text-slate-900 dark:text-white leading-tight">{item.name}</div>
-                {item.variantLabel && (
-                    <div className="text-[10px] text-brand-600 dark:text-brand-400 mt-1 uppercase tracking-widest font-black">{item.variantLabel}</div>
-                )}
-                <div className="text-[10px] text-slate-400 font-mono mt-1 opacity-70">SKU: {item.sku}</div>
-            </td>
-            <td className="py-5">
-                <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => onUpdate(index, 'quantity', e.target.value)}
-                    className="w-20 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-2 text-center focus:ring-2 focus:ring-brand-500 outline-none font-bold text-sm"
-                />
-            </td>
-            <td className="py-5">
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.unitPrice}
-                        onChange={(e) => onUpdate(index, 'unitPrice', e.target.value)}
-                        className="w-32 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-6 pr-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none font-mono text-sm font-bold"
-                    />
-                </div>
-            </td>
-            <td className="py-5 text-right font-black text-slate-900 dark:text-white font-mono">
-                {formatPrice(item.quantity * item.unitPrice)}
-            </td>
-            <td className="py-5 text-right">
-                <button
-                    type="button"
-                    onClick={() => onRemove(index)}
-                    className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-red-100"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
-            </td>
-        </tr>
-    );
-});
-
-PurchaseOrderItemRow.displayName = 'PurchaseOrderItemRow';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 export default function PurchaseOrderForm() {
     const router = useRouter();
@@ -164,6 +102,83 @@ export default function PurchaseOrderForm() {
             return { ...prev, items: newItems };
         });
     }, []);
+
+    const columns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'product',
+            header: 'Inventory Entity',
+            cell: (item) => (
+                <>
+                    <div className="font-bold text-slate-900 dark:text-white leading-tight">{item.name}</div>
+                    {item.variantLabel && (
+                        <div className="text-[10px] text-brand-600 dark:text-brand-400 mt-1 uppercase tracking-widest font-black">{item.variantLabel}</div>
+                    )}
+                    <div className="text-[10px] text-slate-400 font-mono mt-1 opacity-70">SKU: {item.sku}</div>
+                </>
+            ),
+        },
+        {
+            key: 'quantity',
+            header: 'Volume',
+            className: 'w-24',
+            cell: (item) => {
+                const idx = formData.items.findIndex(x => x.productId === item.productId && x.variantId === item.variantId);
+                return (
+                    <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
+                        className="w-20 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-2 text-center focus:ring-2 focus:ring-brand-500 outline-none font-bold text-sm"
+                    />
+                );
+            },
+        },
+        {
+            key: 'unitPrice',
+            header: 'Acquisition Price',
+            className: 'w-32',
+            cell: (item) => {
+                const idx = formData.items.findIndex(x => x.productId === item.productId && x.variantId === item.variantId);
+                return (
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.unitPrice}
+                            onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)}
+                            className="w-32 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-6 pr-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none font-mono text-sm font-bold"
+                        />
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'subtotal',
+            header: 'Subtotal',
+            className: 'text-right font-black text-slate-900 dark:text-white font-mono',
+            cell: (item) => formatPrice(item.quantity * item.unitPrice),
+        },
+        {
+            key: 'actions',
+            header: '',
+            className: 'text-right w-10',
+            cell: (item) => {
+                const idx = formData.items.findIndex(x => x.productId === item.productId && x.variantId === item.variantId);
+                return (
+                    <button
+                        type="button"
+                        onClick={() => removeItem(idx)}
+                        className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-100"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                );
+            },
+        },
+    ], [formData.items, updateItem, removeItem, formatPrice]);
 
     const totalAmount = useMemo(() =>
         formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
@@ -316,42 +331,22 @@ export default function PurchaseOrderForm() {
                         </div>
 
                         {/* Items Table */}
-                        <div className="overflow-x-auto min-h-[300px]">
-                            <table className="w-full">
-                                <thead className="text-left border-b border-slate-50 dark:border-slate-700">
-                                    <tr>
-                                        <th className="pb-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Inventory Entity</th>
-                                        <th className="pb-5 text-[10px] font-black uppercase tracking-widest text-slate-400 w-24">Volume</th>
-                                        <th className="pb-5 text-[10px] font-black uppercase tracking-widest text-slate-400 w-32">Acquisition Price</th>
-                                        <th className="pb-5 text-[10px] font-black uppercase tracking-widest text-slate-400 w-32 text-right">Subtotal</th>
-                                        <th className="pb-5 w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                                    {formData.items.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5} className="py-24 text-center">
-                                                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-900/50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                                    <ShoppingBag className="w-6 h-6 text-slate-200" strokeWidth={1} />
-                                                </div>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] italic">No line items added to specification</p>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        formData.items.map((item, idx) => (
-                                            <PurchaseOrderItemRow
-                                                key={`${item.productId}-${item.variantId || 'base'}`}
-                                                item={item}
-                                                index={idx}
-                                                onUpdate={updateItem}
-                                                onRemove={removeItem}
-                                                formatPrice={formatPrice}
-                                            />
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            data={formData.items}
+                            columns={columns}
+                            getRowKey={(item) => `${item.productId}-${item.variantId || 'base'}`}
+                            loading={false}
+                            emptyLabel={
+                                <div className="py-24 text-center">
+                                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-900/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <ShoppingBag className="w-6 h-6 text-slate-200" strokeWidth={1} />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] italic">No line items added to specification</p>
+                                </div>
+                            }
+                            containerClassName="shadow-none border-none rounded-none"
+                            minWidthClassName="min-w-[600px]"
+                        />
 
                         {formData.items.length > 0 && (
                             <div className="mt-10 pt-10 border-t border-slate-100 dark:border-slate-700 flex justify-end">

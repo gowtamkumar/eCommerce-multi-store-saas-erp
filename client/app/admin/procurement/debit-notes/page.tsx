@@ -27,7 +27,7 @@ import {
 } from '@/services/procurement';
 import { Supplier } from '@/features/admin/supplier/types';
 import { PurchaseOrder } from '@/features/admin/purchase/types';
-import Pagination from '@/components/shared/Pagination';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 
 interface DebitNote {
@@ -114,6 +114,72 @@ export default function DebitNotePage() {
     );
   }, [debitNotes, searchQuery]);
 
+  const columns = useMemo<DataTableColumn<DebitNote>[]>(() => [
+    {
+      key: 'debitNoteNumber',
+      header: 'Note ID',
+      cell: (note) => (
+        <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{note.debitNoteNumber}</span>
+      ),
+    },
+    {
+      key: 'supplier',
+      header: 'Supplier',
+      cell: (note) => (
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{note.supplier?.name || 'Unknown'}</span>
+      ),
+    },
+    {
+      key: 'purchaseOrder',
+      header: 'PO Ref',
+      cell: (note) => (
+        <span className="font-mono text-xs text-slate-500">
+          {note.purchaseOrder?.referenceNumber || 'Unlinked'}
+        </span>
+      ),
+    },
+    {
+      key: 'amount',
+      header: 'Adjustment Amount',
+      cell: (note) => (
+        <span className="font-mono text-xs font-black text-indigo-600">
+          ${note.amount}
+        </span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Issue Date',
+      cell: (note) => (
+        <span className="text-xs text-slate-500">
+          {note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (note) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+          note.status === 'APPROVED'
+            ? 'bg-emerald-100 text-emerald-600'
+            : 'bg-slate-100 text-slate-600'
+        }`}>
+          {note.status}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Action',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      cell: () => (
+        <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors inline-block" />
+      ),
+    },
+  ], []);
+
   const handleCreateDebitNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSupplierId || !selectedPoId || !amount || !reason) {
@@ -188,81 +254,33 @@ export default function DebitNotePage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-24">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-        </div>
-      ) : (
-        /* Debit Notes Table */
-        <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-700/30">
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Note ID</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PO Ref</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Adjustment Amount</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Issue Date</th>
-                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                {filteredDebitNotes.map((note) => (
-                  <tr
-                    key={note.id}
-                    onClick={() => setSelectedNote(note)}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors group cursor-pointer"
-                  >
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{note.debitNoteNumber}</span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{note.supplier?.name || 'Unknown'}</span>
-                    </td>
-                    <td className="px-8 py-5 font-mono text-xs text-slate-500">
-                      {note.purchaseOrder?.referenceNumber || 'Unlinked'}
-                    </td>
-                    <td className="px-8 py-5 font-mono text-xs font-black text-indigo-600">
-                      ${note.amount}
-                    </td>
-                    <td className="px-8 py-5 text-xs text-slate-500">
-                      {note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'N/A'}
-                    </td>
-                    <td className="px-8 py-5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        note.status === 'APPROVED'
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {note.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors inline-block" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <DataTable
+        data={filteredDebitNotes}
+        columns={columns}
+        getRowKey={(note) => note.id}
+        loading={loading}
+        loadingLabel="Syncing ledger logs..."
+        emptyLabel={
+          <div className="flex flex-col items-center gap-2 py-6 opacity-40">
+            <Receipt className="w-12 h-12 text-slate-300 dark:text-slate-700" />
+            <p className="text-sm font-bold text-slate-400 italic uppercase">No debit notes found</p>
           </div>
-          {/* Pagination */}
-          {!loading && pagination.totalPages > 1 && (
-            <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center sm:text-left">
-                Page {pagination.page} of {pagination.totalPages}
-              </p>
-              <Pagination
-                currentPage={pagination.page}
-                totalPages={pagination.totalPages}
-                onPageChange={(p) => fetchDebitNotes(p)}
-                loading={loading}
-              />
-            </div>
-          )}
-        </div>
-      )}
+        }
+        containerClassName="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
+        minWidthClassName="min-w-[1000px]"
+        onRowClick={(note) => setSelectedNote(note)}
+        pagination={{
+          page: pagination.page,
+          total: pagination.total,
+          totalPages: pagination.totalPages,
+          onPageChange: (p) => fetchDebitNotes(p),
+        }}
+        paginationSummary={
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center sm:text-left">
+            Page {pagination.page} of {pagination.totalPages}
+          </p>
+        }
+      />
 
       {/* Debit Note Detail Drawer */}
       <AnimatePresence>

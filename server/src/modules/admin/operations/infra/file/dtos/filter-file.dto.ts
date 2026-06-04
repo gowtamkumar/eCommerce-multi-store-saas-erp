@@ -9,4 +9,7 @@ export class FilterFileDto extends PaginationDto {
   @IsOptional()
   @IsString()
   filename?: string
+
+  // Free-text search (`q`) is inherited from PaginationDto and applied
+  // across originalname + filename (partial match) in the service.
 }

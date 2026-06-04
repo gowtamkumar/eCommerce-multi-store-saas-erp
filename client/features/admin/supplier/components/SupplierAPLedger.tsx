@@ -9,48 +9,65 @@ import {
     Wallet
 } from 'lucide-react';
 import Link from 'next/link';
-import { memo } from 'react';
+import { useMemo } from 'react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
-const LedgerRow = memo(({ entry, formatPrice }: { entry: any, formatPrice: (p: number) => string }) => {
-    const isCredit = Number(entry.credit) > 0;
-
-    return (
-        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-            <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
-                {new Date(entry.createdAt).toLocaleDateString()}
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${isCredit ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600'}`}>
-                        {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                    </div>
-                    <div>
-                        <span className="text-slate-900 dark:text-white font-bold block tracking-tight uppercase text-xs">{entry.referenceType}</span>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-tight">{entry.remarks || 'Standard Transaction'}</span>
-                    </div>
-                </div>
-            </td>
-            <td className="px-6 py-4 text-right font-mono font-bold text-rose-600 dark:text-rose-400">
-                {Number(entry.credit) > 0 ? `+ ${formatPrice(entry.credit)}` : '-'}
-            </td>
-            <td className="px-6 py-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                {Number(entry.debit) > 0 ? `- ${formatPrice(entry.debit)}` : '-'}
-            </td>
-            <td className="px-6 py-4 text-right">
-                <span className="px-4 py-2 bg-slate-100 dark:bg-slate-900 rounded-xl font-mono font-black text-slate-900 dark:text-white text-sm shadow-inner">
-                    {formatPrice(entry.balanceAfter)}
-                </span>
-            </td>
-        </tr>
-    );
-});
-
-LedgerRow.displayName = 'LedgerRow';
-
-export default function SupplierAPLedger({ supplier, ledgerEntries = [], loading = false, pagination = { page: 1, totalPages: 1 } }: any) {
+export default function SupplierAPLedger({ supplier, ledgerEntries = [], loading = false, pagination = { page: 1, totalPages: 1 }, onPageChange }: any) {
     const { formatPrice } = useSettings();
 
     const outstandingBalance = ledgerEntries[0]?.balanceAfter || 0;
+
+    const columns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'date',
+            header: 'Date',
+            className: 'text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono',
+            cell: (entry) => new Date(entry.createdAt).toLocaleDateString(),
+        },
+        {
+            key: 'reference',
+            header: 'Reference',
+            cell: (entry) => {
+                const isCredit = Number(entry.credit) > 0;
+                return (
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${isCredit ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600'}`}>
+                            {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                        </div>
+                        <div>
+                            <span className="text-slate-900 dark:text-white font-bold block tracking-tight uppercase text-xs">{entry.referenceType}</span>
+                            <span className="text-[10px] text-slate-400 uppercase tracking-tight">{entry.remarks || 'Standard Transaction'}</span>
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'payable',
+            header: 'Payable (+)',
+            headerClassName: 'text-right text-rose-500',
+            className: 'text-right font-mono font-bold text-rose-600 dark:text-rose-400',
+            cell: (entry) => Number(entry.credit) > 0 ? `+ ${formatPrice(entry.credit)}` : '-',
+        },
+        {
+            key: 'payment',
+            header: 'Payment (-)',
+            headerClassName: 'text-right text-emerald-500',
+            className: 'text-right font-mono font-bold text-emerald-600 dark:text-emerald-400',
+            cell: (entry) => Number(entry.debit) > 0 ? `- ${formatPrice(entry.debit)}` : '-',
+        },
+        {
+            key: 'balance',
+            header: 'Net Balance',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (entry) => (
+                <span className="px-4 py-2 bg-slate-100 dark:bg-slate-900 rounded-xl font-mono font-black text-slate-900 dark:text-white text-sm shadow-inner">
+                    {formatPrice(entry.balanceAfter)}
+                </span>
+            ),
+        },
+    ], [formatPrice]);
 
     return (
         <div className="space-y-6">
@@ -91,44 +108,26 @@ export default function SupplierAPLedger({ supplier, ledgerEntries = [], loading
                         Audit Trail
                     </h3>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Date</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reference</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right text-rose-500">Payable (+)</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right text-emerald-500">Payment (-)</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Net Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>
-                                        <td colSpan={5} className="px-6 py-8">
-                                            <div className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-2xl" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : ledgerEntries.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="py-24 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                                        No transactions recorded yet
-                                    </td>
-                                </tr>
-                            ) : (
-                                ledgerEntries.map((entry: any) => (
-                                    <LedgerRow
-                                        key={entry.id}
-                                        entry={entry}
-                                        formatPrice={formatPrice}
-                                    />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable
+                    data={ledgerEntries}
+                    columns={columns}
+                    getRowKey={(entry) => entry.id}
+                    loading={loading && ledgerEntries.length === 0}
+                    loadingLabel="Loading ledger entries..."
+                    emptyLabel={
+                        <div className="py-24 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                            No transactions recorded yet
+                        </div>
+                    }
+                    containerClassName="shadow-none border-none rounded-none"
+                    minWidthClassName="min-w-[700px]"
+                    pagination={pagination && pagination.totalPages > 1 ? {
+                        page: pagination.page,
+                        total: pagination.totalPages * 20, // approximated
+                        totalPages: pagination.totalPages,
+                        onPageChange,
+                    } : undefined}
+                />
             </div>
         </div>
     );

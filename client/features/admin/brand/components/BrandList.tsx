@@ -1,22 +1,77 @@
 'use client';
 
-import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
-import { Edit, Globe, Image as ImageIcon, Plus, Search, Trash2, Package } from 'lucide-react';
+import DataTable, { DataTableColumn, DataTableSortOrder } from '@/components/shared/DataTable';
+import { Edit, Globe, Image as ImageIcon, Plus, Search, Trash2, Package, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { Brand, BrandListProps } from '../type';
 
+type BrandSortKey = 'name' | 'slug' | 'products';
+
+const PAGE_SIZE = 10;
+
 export default function BrandList({ brands, loading, onEdit, onDelete, onAdd }: BrandListProps) {
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [sortBy, setSortBy] = useState<BrandSortKey>('name');
+    const [sortOrder, setSortOrder] = useState<DataTableSortOrder>('ASC');
+    const [page, setPage] = useState<number>(1);
 
-    const filteredBrands = brands.filter(b =>
-        b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        b.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    const handleSortChange = (key: string) => {
+        const sortKey = key as BrandSortKey;
+        if (sortBy === sortKey) {
+            setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'));
+        } else {
+            setSortBy(sortKey);
+            setSortOrder('ASC');
+        }
+        setPage(1);
+    };
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        setPage(1);
+    };
+
+    const visibleBrands = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        const filtered = query
+            ? brands.filter(
+                  (b) =>
+                      b.name.toLowerCase().includes(query) ||
+                      b.slug.toLowerCase().includes(query)
+              )
+            : brands;
+
+        const direction = sortOrder === 'ASC' ? 1 : -1;
+        return [...filtered].sort((a, b) => {
+            switch (sortBy) {
+                case 'products':
+                    return ((a.productCount || 0) - (b.productCount || 0)) * direction;
+                case 'slug':
+                    return a.slug.localeCompare(b.slug) * direction;
+                case 'name':
+                default:
+                    return a.name.localeCompare(b.name) * direction;
+            }
+        });
+    }, [brands, searchQuery, sortBy, sortOrder]);
+
+    const totalPages = Math.max(1, Math.ceil(visibleBrands.length / PAGE_SIZE));
+    // Clamp during render so a shrinking result set never lands on an empty page.
+    const currentPage = Math.min(page, totalPages);
+
+    const paginatedBrands = useMemo(
+        () => visibleBrands.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+        [visibleBrands, currentPage]
     );
+
+    const rangeStart = visibleBrands.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const rangeEnd = Math.min(currentPage * PAGE_SIZE, visibleBrands.length);
 
     const columns = useMemo<DataTableColumn<Brand>[]>(() => [
         {
             key: 'brand',
             header: 'Brand',
+            sortKey: 'name',
             cell: (brand) => (
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-xl overflow-hidden shadow-inner">
@@ -32,6 +87,7 @@ export default function BrandList({ brands, loading, onEdit, onDelete, onAdd }: 
         {
             key: 'slug',
             header: 'Slug',
+            sortKey: 'slug',
             className: 'font-mono text-xs text-slate-500',
             cell: (brand) => `/${brand.slug}`,
         },
@@ -50,11 +106,27 @@ export default function BrandList({ brands, loading, onEdit, onDelete, onAdd }: 
         {
             key: 'products',
             header: 'Products',
+            sortKey: 'products',
             cell: (brand) => (
                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                     <Package className="w-4 h-4" />
                     <span className="text-sm font-medium">{brand.productCount || 0}</span>
                 </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (brand) => (
+                brand.isActive === false ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                        Inactive
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Active
+                    </span>
+                )
             ),
         },
         {
@@ -97,24 +169,49 @@ export default function BrandList({ brands, loading, onEdit, onDelete, onAdd }: 
                 </button>
             </div>
 
-            <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input
-                    type="text"
-                    placeholder="Search brands..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <input
+                        type="text"
+                        placeholder="Search brands..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="w-full pl-12 pr-10 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => handleSearchChange('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+                <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {visibleBrands.length} {visibleBrands.length === 1 ? 'brand' : 'brands'}
+                </span>
             </div>
 
             <DataTable
-                data={filteredBrands}
+                data={paginatedBrands}
                 columns={columns}
                 getRowKey={(brand) => brand.id || brand.slug}
                 loading={loading}
                 loadingLabel="Loading brands..."
                 emptyLabel="No brands found."
+                sort={{ sortBy, sortOrder, onSortChange: handleSortChange }}
+                pagination={{
+                    page: currentPage,
+                    total: visibleBrands.length,
+                    totalPages,
+                    onPageChange: setPage,
+                }}
+                paginationSummary={
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
+                        Showing {rangeStart}-{rangeEnd} of {visibleBrands.length}
+                    </p>
+                }
             />
         </div>
     );

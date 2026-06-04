@@ -2,6 +2,7 @@
 
 import { approveLeave, getEmployees, getLeaveRequests, requestLeave, rejectLeave } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import {
   Calendar,
   CheckCircle2,
@@ -17,7 +18,7 @@ import {
   ThumbsDown,
   ChevronRight
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 enum LeaveStatus {
   PENDING = 'PENDING',
@@ -157,6 +158,109 @@ export default function LeaveManagementPage() {
     r.reason.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const columns = useMemo<DataTableColumn<LeaveRequest>[]>(() => [
+    {
+      key: 'employee',
+      header: 'Employee',
+      cell: (request) => (
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-black italic">
+            {request.employee?.user?.name?.charAt(0)}
+          </div>
+          <div>
+            <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-sm">
+              {request.employee?.user?.name}
+            </p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+              {request.employee?.department?.name}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'leaveType',
+      header: 'Leave Details',
+      cell: (request) => (
+        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-lg">
+          {request.leaveType}
+        </span>
+      ),
+    },
+    {
+      key: 'duration',
+      header: 'Duration',
+      cell: (request) => (
+        <>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3 h-3 text-indigo-500" />
+            <span className="text-sm font-black text-slate-900 dark:text-white italic">
+              {request.totalDays} Days
+            </span>
+          </div>
+          <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+            {new Date(request.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' })} → {new Date(request.endDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'reason',
+      header: 'Reason',
+      cell: (request) => (
+        <p className="text-xs font-bold text-slate-600 dark:text-slate-400 italic max-w-[200px] truncate" title={request.reason}>
+          &ldquo;{request.reason}&rdquo;
+        </p>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (request) => (
+        <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${request.status === LeaveStatus.APPROVED ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+            request.status === LeaveStatus.REJECTED ? 'bg-rose-50 text-rose-700 border-rose-100' :
+              'bg-amber-50 text-amber-700 border-amber-100'
+          }`}>
+          {request.status}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      cell: (request) => {
+        if (request.status === LeaveStatus.PENDING) {
+          return (
+            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => setShowApproveModal(request.id)}
+                className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all"
+                title="Approve"
+              >
+                <ThumbsUp className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowRejectModal(request.id)}
+                className="p-3 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all"
+                title="Reject"
+              >
+                <ThumbsDown className="w-4 h-4" />
+              </button>
+            </div>
+          );
+        }
+        return (
+          <div className="flex flex-col items-end">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Decision By</p>
+            <p className="text-[11px] font-bold text-slate-900 dark:text-white italic">{request.approvedBy?.user?.name || 'System'}</p>
+          </div>
+        );
+      },
+    },
+  ], [setShowApproveModal, setShowRejectModal]);
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
       {/* Header */}
@@ -218,121 +322,21 @@ export default function LeaveManagementPage() {
             </button>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
-                  <tr>
-                    <th className="px-8 py-6">Employee</th>
-                    <th className="px-8 py-6">Leave Details</th>
-                    <th className="px-8 py-6">Duration</th>
-                    <th className="px-8 py-6">Reason</th>
-                    <th className="px-8 py-6">Status</th>
-                    <th className="px-8 py-6 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={6} className="px-8 py-24 text-center">
-                        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mx-auto" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-400 mt-4">Analyzing Requests...</p>
-                      </td>
-                    </tr>
-                  ) : filteredRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-8 py-24 text-center">
-                        <AlertCircle className="w-12 h-12 text-slate-200 mx-auto" />
-                        <p className="text-sm font-bold text-slate-400 mt-2 italic uppercase">No leave applications found</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    <AnimatePresence>
-                      {filteredRequests.map((request, i) => (
-                        <motion.tr
-                          key={request.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-all"
-                        >
-                          <td className="px-8 py-6">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-black italic">
-                                {request.employee?.user?.name?.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-sm">
-                                  {request.employee?.user?.name}
-                                </p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                  {request.employee?.department?.name}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-8 py-6">
-                            <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-lg">
-                              {request.leaveType}
-                            </span>
-                          </td>
-                          <td className="px-8 py-6">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-3 h-3 text-indigo-500" />
-                              <span className="text-sm font-black text-slate-900 dark:text-white italic">
-                                {request.totalDays} Days
-                              </span>
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
-                              {new Date(request.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' })} → {new Date(request.endDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                            </p>
-                          </td>
-                          <td className="px-8 py-6">
-                            <p className="text-xs font-bold text-slate-600 dark:text-slate-400 italic max-w-[200px] truncate" title={request.reason}>
-                              &ldquo;{request.reason}&rdquo;
-                            </p>
-                          </td>
-                          <td className="px-8 py-6">
-                            <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${request.status === LeaveStatus.APPROVED ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                request.status === LeaveStatus.REJECTED ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                                  'bg-amber-50 text-amber-700 border-amber-100'
-                              }`}>
-                              {request.status}
-                            </span>
-                          </td>
-                          <td className="px-8 py-6 text-right">
-                            {request.status === LeaveStatus.PENDING ? (
-                              <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={() => setShowApproveModal(request.id)}
-                                  className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all"
-                                  title="Approve"
-                                >
-                                  <ThumbsUp className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => setShowRejectModal(request.id)}
-                                  className="p-3 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all"
-                                  title="Reject"
-                                >
-                                  <ThumbsDown className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-end">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Decision By</p>
-                                <p className="text-[11px] font-bold text-slate-900 dark:text-white italic">{request.approvedBy?.user?.name || 'System'}</p>
-                              </div>
-                            )}
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </AnimatePresence>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <DataTable
+            data={filteredRequests}
+            columns={columns}
+            getRowKey={(request) => request.id}
+            loading={loading}
+            loadingLabel="Analyzing Requests..."
+            emptyLabel={
+              <div className="py-12 text-center opacity-40 flex flex-col items-center">
+                <AlertCircle className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-2" />
+                <p className="text-sm font-bold text-slate-400 italic uppercase">No leave requests found</p>
+              </div>
+            }
+            containerClassName="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden"
+            minWidthClassName="min-w-[1000px]"
+          />
         </div>
       </div>
 

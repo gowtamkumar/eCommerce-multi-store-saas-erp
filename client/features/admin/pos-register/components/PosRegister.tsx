@@ -1,47 +1,105 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Monitor, 
-    Plus, 
-    Trash2, 
-    Edit2, 
-    X, 
-    Loader2, 
-    Check, 
-    ShieldAlert, 
+import {
+    Monitor,
+    Plus,
+    Trash2,
+    Edit2,
+    X,
+    Loader2,
+    Check,
+    ShieldAlert,
     Building2,
     History,
-    Calendar,
-    DollarSign,
-    Users,
-    Clock,
     AlertCircle,
+    Download,
     Info
 } from 'lucide-react';
 import { fetchAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/shared/ConfirmModal';
-import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import DataTable, { DataTableColumn, DataTableSortOrder } from '@/components/shared/DataTable';
+
+type ShiftStatus = 'OPEN' | 'CLOSED';
+
+interface Branch {
+    id: string;
+    name: string;
+}
+
+interface PosRegisterTerminal {
+    id: string;
+    name: string;
+    branchId?: string;
+    status?: string;
+    branch?: Branch;
+}
+
+interface ShiftUser {
+    id?: string;
+    username?: string;
+    email?: string;
+}
+
+interface Shift {
+    id: string;
+    userId: string;
+    user?: ShiftUser;
+    register?: { id?: string; name?: string };
+    openingTime: string;
+    closingTime: string | null;
+    openingBalance: number | string;
+    closingBalance: number | string | null;
+    expectedClosingBalance: number | string;
+    difference: number | string | null;
+    cashSales: number | string;
+    cardSales?: number | string;
+    mobileSales?: number | string;
+    cashIn?: number | string;
+    cashOut?: number | string;
+    status: ShiftStatus;
+    remarks?: string;
+}
+
+type ShiftSortKey =
+    | 'cashier'
+    | 'terminal'
+    | 'openingTime'
+    | 'closingTime'
+    | 'expected'
+    | 'actual'
+    | 'variance'
+    | 'status';
+
+const SHIFT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+const cashierLabel = (shift: Shift) =>
+    shift.user?.username || shift.user?.email || shift.userId.substring(0, 8);
 
 export default function PosRegisters() {
     const [activeTab, setActiveTab] = useState<'registers' | 'shifts'>('registers');
-    const [registers, setRegisters] = useState<any[]>([]);
-    const [branches, setBranches] = useState<any[]>([]);
+    const [registers, setRegisters] = useState<PosRegisterTerminal[]>([]);
+    const [branches, setBranches] = useState<Branch[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingRegister, setEditingRegister] = useState<any>(null);
+    const [editingRegister, setEditingRegister] = useState<PosRegisterTerminal | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Shift History State
-    const [shifts, setShifts] = useState<any[]>([]);
+    const [shifts, setShifts] = useState<Shift[]>([]);
     const [loadingShifts, setLoadingShifts] = useState(false);
-    const [selectedShift, setSelectedShift] = useState<any>(null);
+    const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
     const [shiftSearchQuery, setShiftSearchQuery] = useState('');
     const [shiftStatusFilter, setShiftStatusFilter] = useState<'ALL' | 'OPEN' | 'CLOSED'>('ALL');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [exporting, setExporting] = useState(false);
+
+    // Shift sorting (client-side; the audit list is loaded in full)
+    const [sortBy, setSortBy] = useState<ShiftSortKey>('openingTime');
+    const [sortOrder, setSortOrder] = useState<DataTableSortOrder>('DESC');
 
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
@@ -56,16 +114,7 @@ export default function PosRegisters() {
         status: 'ACTIVE'
     });
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    // Reset pagination page whenever filters or search terms change
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [shiftSearchQuery, shiftStatusFilter, activeTab]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             setLoading(true);
             const [regRes, branchRes] = await Promise.all([
@@ -84,9 +133,9 @@ export default function PosRegisters() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const loadShifts = async () => {
+    const loadShifts = useCallback(async () => {
         try {
             setLoadingShifts(true);
             const res = await fetchAPI('/pos/shift');
@@ -99,7 +148,15 @@ export default function PosRegisters() {
         } finally {
             setLoadingShifts(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            void loadData();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [loadData]);
 
     const resetForm = () => {
         setFormData({
@@ -119,7 +176,7 @@ export default function PosRegisters() {
         setIsModalOpen(true);
     };
 
-    const openEditModal = (reg: any) => {
+    const openEditModal = (reg: PosRegisterTerminal) => {
         setEditingRegister(reg);
         setFormData({
             name: reg.name,
@@ -150,9 +207,10 @@ export default function PosRegisters() {
                 resetForm();
                 loadData();
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving register', error);
-            toast.error(error.message || 'Error saving POS Register Terminal');
+            const message = error instanceof Error ? error.message : 'Error saving POS Register Terminal';
+            toast.error(message);
         }
     };
 
@@ -176,75 +234,162 @@ export default function PosRegisters() {
         });
     };
 
-    const filteredRegisters = registers.filter(reg => 
+    const filteredRegisters = registers.filter(reg =>
         reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (reg.branch?.name && reg.branch.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    const filteredShifts = shifts.filter(shift => {
-        const matchesSearch = 
+    const filteredShifts = useMemo(() => shifts.filter(shift => {
+        const matchesSearch =
             (shift.user?.username || '').toLowerCase().includes(shiftSearchQuery.toLowerCase()) ||
             (shift.user?.email || '').toLowerCase().includes(shiftSearchQuery.toLowerCase()) ||
             (shift.register?.name || '').toLowerCase().includes(shiftSearchQuery.toLowerCase());
-        
-        const matchesStatus = 
-            shiftStatusFilter === 'ALL' || 
+
+        const matchesStatus =
+            shiftStatusFilter === 'ALL' ||
             shift.status === shiftStatusFilter;
 
         return matchesSearch && matchesStatus;
-    });
+    }), [shifts, shiftSearchQuery, shiftStatusFilter]);
+
+    const sortedShifts = useMemo(() => {
+        const toNum = (value: number | string | null | undefined) => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+        const getValue = (shift: Shift): number | string => {
+            switch (sortBy) {
+                case 'cashier': return cashierLabel(shift).toLowerCase();
+                case 'terminal': return (shift.register?.name || '').toLowerCase();
+                case 'openingTime': return new Date(shift.openingTime).getTime();
+                case 'closingTime': return shift.closingTime ? new Date(shift.closingTime).getTime() : 0;
+                case 'expected': return toNum(shift.expectedClosingBalance);
+                case 'actual': return shift.closingBalance !== null ? toNum(shift.closingBalance) : Number.NEGATIVE_INFINITY;
+                case 'variance': return shift.status === 'CLOSED' ? toNum(shift.difference) : Number.NEGATIVE_INFINITY;
+                case 'status': return shift.status;
+                default: return 0;
+            }
+        };
+        return [...filteredShifts].sort((a, b) => {
+            const av = getValue(a);
+            const bv = getValue(b);
+            const cmp =
+                typeof av === 'string' && typeof bv === 'string'
+                    ? av.localeCompare(bv)
+                    : (av as number) - (bv as number);
+            return sortOrder === 'ASC' ? cmp : -cmp;
+        });
+    }, [filteredShifts, sortBy, sortOrder]);
 
     // Client-side pagination logic
-    const totalPages = Math.ceil(filteredShifts.length / itemsPerPage);
-    const paginatedShifts = filteredShifts.slice(
+    const totalPages = Math.max(1, Math.ceil(sortedShifts.length / itemsPerPage));
+    const paginatedShifts = sortedShifts.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
 
-    const shiftColumns = useMemo<DataTableColumn<any>[]>(() => [
+    const handleShiftSort = (key: string) => {
+        const sortKey = key as ShiftSortKey;
+        if (sortBy === sortKey) {
+            setSortOrder(prev => (prev === 'ASC' ? 'DESC' : 'ASC'));
+        } else {
+            setSortBy(sortKey);
+            setSortOrder('DESC');
+        }
+        setCurrentPage(1);
+    };
+
+    const handleExportShifts = () => {
+        if (sortedShifts.length === 0) {
+            toast.error('No shift audits to export');
+            return;
+        }
+        setExporting(true);
+        try {
+            const esc = (value: string) => value.replace(/"/g, '""');
+            let csv =
+                '\ufeffCashier,Terminal,Opened At,Closed At,Opening Balance,Cash Sales,Card Sales,Mobile Sales,Expected,Audited Actual,Variance,Status,Remarks\n';
+
+            sortedShifts.forEach((s) => {
+                const opened = new Date(s.openingTime).toLocaleString();
+                const closed = s.closingTime ? new Date(s.closingTime).toLocaleString() : '';
+                const actual = s.closingBalance !== null ? Number(s.closingBalance).toFixed(2) : '';
+                const variance =
+                    s.status === 'CLOSED' && s.difference !== null ? Number(s.difference).toFixed(2) : '';
+
+                csv += `"${esc(cashierLabel(s))}","${esc(s.register?.name || 'N/A')}","${opened}","${closed}",${Number(s.openingBalance).toFixed(2)},${Number(s.cashSales).toFixed(2)},${Number(s.cardSales || 0).toFixed(2)},${Number(s.mobileSales || 0).toFixed(2)},${Number(s.expectedClosingBalance).toFixed(2)},"${actual}","${variance}","${s.status}","${esc(s.remarks || '')}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `shift_audits_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast.success(`Exported ${sortedShifts.length} shift audits`);
+        } catch (error) {
+            console.error('Failed to export shift audits', error);
+            toast.error('Failed to export shift audits');
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const shiftColumns = useMemo<DataTableColumn<Shift>[]>(() => [
         {
             key: 'user',
             header: 'Cashier',
-            className: 'p-4 font-bold text-slate-800 dark:text-slate-200',
-            cell: (shift) => shift.user?.username || shift.user?.email || shift.userId.substring(0, 8),
+            sortKey: 'cashier',
+            className: 'font-bold text-slate-800 dark:text-slate-200',
+            cell: (shift) => cashierLabel(shift),
         },
         {
             key: 'register',
             header: 'Terminal',
-            className: 'p-4 font-semibold text-slate-600 dark:text-slate-300',
+            sortKey: 'terminal',
+            className: 'font-semibold text-slate-600 dark:text-slate-300',
             cell: (shift) => shift.register?.name || 'N/A',
         },
         {
             key: 'openingTime',
             header: 'Opened At',
-            className: 'p-4 text-xs text-slate-500 dark:text-slate-400 font-medium',
+            sortKey: 'openingTime',
+            className: 'text-xs text-slate-500 dark:text-slate-400 font-medium',
             cell: (shift) => new Date(shift.openingTime).toLocaleString(),
         },
         {
             key: 'closingTime',
             header: 'Closed At',
-            className: 'p-4 text-xs text-slate-500 dark:text-slate-400 font-medium',
+            sortKey: 'closingTime',
+            className: 'text-xs text-slate-500 dark:text-slate-400 font-medium',
             cell: (shift) => shift.closingTime ? new Date(shift.closingTime).toLocaleString() : '-',
         },
         {
             key: 'expectedClosingBalance',
             header: 'Expected',
+            sortKey: 'expected',
             headerClassName: 'text-right',
-            className: 'p-4 text-right font-semibold text-slate-700 dark:text-slate-355',
+            className: 'text-right font-semibold text-slate-700 dark:text-slate-355',
             cell: (shift) => `$${Number(shift.expectedClosingBalance).toFixed(2)}`,
         },
         {
             key: 'closingBalance',
             header: 'Audited Actual',
+            sortKey: 'actual',
             headerClassName: 'text-right',
-            className: 'p-4 text-right font-extrabold text-slate-800 dark:text-slate-200',
+            className: 'text-right font-extrabold text-slate-800 dark:text-slate-200',
             cell: (shift) => shift.closingBalance !== null ? `$${Number(shift.closingBalance).toFixed(2)}` : '-',
         },
         {
             key: 'variance',
             header: 'Variance',
+            sortKey: 'variance',
             headerClassName: 'text-right',
-            className: 'p-4 text-right font-black',
+            className: 'text-right font-black',
             cell: (shift) => {
                 const variance = shift.difference !== null ? Number(shift.difference) : 0;
                 if (shift.status !== 'CLOSED') {
@@ -262,8 +407,9 @@ export default function PosRegisters() {
         {
             key: 'status',
             header: 'Status',
+            sortKey: 'status',
             headerClassName: 'text-center',
-            className: 'p-4 text-center',
+            className: 'text-center',
             cell: (shift) => (
                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${
                     shift.status === 'OPEN'
@@ -278,7 +424,7 @@ export default function PosRegisters() {
             key: 'actions',
             header: 'Actions',
             headerClassName: 'text-center',
-            className: 'p-4 text-center',
+            className: 'text-center',
             cell: (shift) => (
                 <button
                     type="button"
@@ -300,11 +446,32 @@ export default function PosRegisters() {
         onPageChange: (p: number) => setCurrentPage(p),
     }), [currentPage, filteredShifts.length, totalPages]);
 
-    const dataTablePaginationSummary = useMemo(() => (
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Page <span className="text-slate-900 dark:text-white px-1">{currentPage}</span> of <span className="text-slate-900 dark:text-white px-1">{totalPages}</span>
-        </p>
-    ), [currentPage, totalPages]);
+    const dataTablePaginationSummary = useMemo(() => {
+        const start = sortedShifts.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, sortedShifts.length);
+        return (
+            <div className="flex items-center gap-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hidden sm:block">
+                    Showing <span className="text-slate-900 dark:text-white px-1">{start}–{end}</span> of <span className="text-slate-900 dark:text-white px-1">{sortedShifts.length}</span>
+                </p>
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rows</span>
+                    <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                        className="px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer outline-none"
+                    >
+                        {SHIFT_PAGE_SIZE_OPTIONS.map((size) => (
+                            <option key={size} value={size}>{size}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+        );
+    }, [currentPage, itemsPerPage, sortedShifts.length]);
 
     if (loading) {
         return (
@@ -356,6 +523,7 @@ export default function PosRegisters() {
                     type="button"
                     onClick={() => {
                         setActiveTab('shifts');
+                        setCurrentPage(1);
                         loadShifts();
                     }}
                     className={`pb-2 text-sm font-bold transition-all border-b-2 px-2 ${
@@ -457,7 +625,10 @@ export default function PosRegisters() {
                             <input
                                 type="text"
                                 value={shiftSearchQuery}
-                                onChange={(e) => setShiftSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setShiftSearchQuery(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                                 placeholder="Search by Cashier, Terminal name..."
                                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm"
                             />
@@ -465,7 +636,10 @@ export default function PosRegisters() {
                         <div className="w-full md:w-48">
                             <select
                                 value={shiftStatusFilter}
-                                onChange={(e) => setShiftStatusFilter(e.target.value as any)}
+                                onChange={(e) => {
+                                    setShiftStatusFilter(e.target.value as 'ALL' | 'OPEN' | 'CLOSED');
+                                    setCurrentPage(1);
+                                }}
                                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm font-bold"
                             >
                                 <option value="ALL">All Shift Statuses</option>
@@ -473,6 +647,15 @@ export default function PosRegisters() {
                                 <option value="CLOSED">Audited & Closed</option>
                             </select>
                         </div>
+                        <button
+                            type="button"
+                            onClick={handleExportShifts}
+                            disabled={exporting || sortedShifts.length === 0}
+                            className="w-full md:w-auto px-4 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Export CSV
+                        </button>
                     </div>
 
                     <DataTable
@@ -484,6 +667,7 @@ export default function PosRegisters() {
                         emptyLabel="No cashier shift audits recorded."
                         containerClassName="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden"
                         minWidthClassName="min-w-[1000px]"
+                        sort={{ sortBy, sortOrder, onSortChange: handleShiftSort }}
                         pagination={dataTablePagination}
                         paginationSummary={dataTablePaginationSummary}
                     />
@@ -615,7 +799,7 @@ export default function PosRegisters() {
                                     <div className="space-y-2">
                                         <label className="block text-xs font-bold text-slate-400 uppercase">Audit Remarks</label>
                                         <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl text-xs text-slate-700 dark:text-slate-350 font-medium italic">
-                                            "{selectedShift.remarks}"
+                                            &ldquo;{selectedShift.remarks}&rdquo;
                                         </div>
                                     </div>
                                 )}

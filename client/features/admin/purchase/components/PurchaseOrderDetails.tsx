@@ -1,5 +1,7 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
+import React, { useMemo } from 'react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
 import { fetchAPI } from '@/services/api';
 import { ArrowLeft, Calendar, CheckCircle, CreditCard, FileText, History, Landmark, Package, Plus, Truck, Warehouse, Building2, XCircle } from 'lucide-react';
@@ -125,6 +127,50 @@ export default function PurchaseOrderDetails() {
 
     const balance = Number(order.totalAmount || 0) - Number(order.paidAmount || 0);
 
+    const columns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'product',
+            header: 'Product',
+            cell: (item) => (
+                <>
+                    <div className="font-black text-slate-900 dark:text-white text-base group-hover:text-brand-600 transition-colors">
+                        {item.product?.name || 'Unknown Product'}
+                    </div>
+                    {item.variant && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            {Object.entries(item.variant.combination || {}).map(([k, v]: [string, any]) => (
+                                <span key={k} className="text-[10px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 px-2 py-1 rounded-lg text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
+                                    {k}: {v}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    <div className="text-[10px] text-slate-400 font-mono mt-2 bg-slate-50 dark:bg-slate-900/50 w-fit px-2 py-0.5 rounded border border-slate-100 dark:border-slate-800">
+                        SKU: {item.variant?.sku || item.product?.slug}
+                    </div>
+                </>
+            ),
+        },
+        {
+            key: 'quantity',
+            header: 'Quantity',
+            className: 'text-center font-black text-slate-600 dark:text-slate-300 text-lg',
+            cell: (item) => item.quantity,
+        },
+        {
+            key: 'unitPrice',
+            header: 'Unit Price',
+            className: 'text-right font-mono text-slate-500 dark:text-slate-400 font-bold',
+            cell: (item) => formatPrice(Number(item.unitPrice) || 0),
+        },
+        {
+            key: 'subtotal',
+            header: 'Subtotal',
+            className: 'text-right font-black text-slate-900 dark:text-white font-mono text-lg',
+            cell: (item) => formatPrice(Number(item.quantity || 0) * Number(item.unitPrice || 0)),
+        },
+    ], [formatPrice]);
+
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-32 px-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700">
@@ -166,46 +212,15 @@ export default function PurchaseOrderDetails() {
                             </h3>
                             <span className="bg-slate-100 dark:bg-slate-900 px-4 py-1.5 rounded-full text-xs font-bold text-slate-500">{order.items?.length || 0} Items</span>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50/50 dark:bg-slate-900/50">
-                                    <tr>
-                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Product</th>
-                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Quantity</th>
-                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Unit Price</th>
-                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
-                                    {order.items?.map((item: any) => (
-                                        <tr key={item.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-all duration-300">
-                                            <td className="px-8 py-6">
-                                                <div className="font-black text-slate-900 dark:text-white text-base group-hover:text-brand-600 transition-colors">{item.product?.name || 'Unknown Product'}</div>
-                                                {item.variant && (
-                                                    <div className="flex flex-wrap gap-1.5 mt-2">
-                                                        {Object.entries(item.variant.combination || {}).map(([k, v]: [string, any]) => (
-                                                            <span key={k} className="text-[10px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 px-2 py-1 rounded-lg text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
-                                                                {k}: {v}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                <div className="text-[10px] text-slate-400 font-mono mt-2 bg-slate-50 dark:bg-slate-900/50 w-fit px-2 py-0.5 rounded border border-slate-100 dark:border-slate-800">SKU: {item.variant?.sku || item.product?.slug}</div>
-                                            </td>
-                                            <td className="px-8 py-6 text-center font-black text-slate-600 dark:text-slate-300 text-lg">
-                                                {item.quantity}
-                                            </td>
-                                            <td className="px-8 py-6 text-right font-mono text-slate-500 dark:text-slate-400 font-bold">
-                                                {formatPrice(Number(item.unitPrice) || 0)}
-                                            </td>
-                                            <td className="px-8 py-6 text-right font-black text-slate-900 dark:text-white font-mono text-lg">
-                                                {formatPrice(Number(item.quantity || 0) * Number(item.unitPrice || 0))}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            data={order.items || []}
+                            columns={columns}
+                            getRowKey={(item) => item.id}
+                            loading={false}
+                            emptyLabel="No items in this order"
+                            containerClassName="shadow-none border-none rounded-none"
+                            minWidthClassName="min-w-[600px]"
+                        />
                         <div className="p-10 bg-slate-50/80 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
                             <div className="flex flex-col md:flex-row justify-end items-end gap-12">
                                 <div className="text-right">

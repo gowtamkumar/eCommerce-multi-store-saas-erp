@@ -1,8 +1,10 @@
 'use client';
 
 import Pagination from '@/components/shared/Pagination';
-import { Loader2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { ReactNode } from 'react';
+
+export type DataTableSortOrder = 'ASC' | 'DESC';
 
 export type DataTableColumn<T> = {
     key: string;
@@ -10,6 +12,8 @@ export type DataTableColumn<T> = {
     cell: (row: T) => ReactNode;
     className?: string;
     headerClassName?: string;
+    /** When set, the column header becomes a sort toggle keyed by this value. */
+    sortKey?: string;
 };
 
 export type DataTablePagination = {
@@ -17,6 +21,18 @@ export type DataTablePagination = {
     total: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+};
+
+export type DataTableSort = {
+    sortBy?: string;
+    sortOrder: DataTableSortOrder;
+    onSortChange: (sortKey: string) => void;
+};
+
+export type DataTableSelection<T> = {
+    selectedKeys: Set<string>;
+    onToggleRow: (key: string, row: T) => void;
+    onToggleAll: (rows: T[]) => void;
 };
 
 type DataTableProps<T> = {
@@ -33,6 +49,8 @@ type DataTableProps<T> = {
     pagination?: DataTablePagination;
     paginationSummary?: ReactNode;
     tableWrapperClassName?: string;
+    sort?: DataTableSort;
+    selection?: DataTableSelection<T>;
 };
 
 export default function DataTable<T>({
@@ -49,17 +67,38 @@ export default function DataTable<T>({
     pagination,
     paginationSummary,
     tableWrapperClassName = '',
+    sort,
+    selection,
 }: DataTableProps<T>) {
-    const colSpan = Math.max(columns.length, 1);
+    const colSpan = Math.max(columns.length, 1) + (selection ? 1 : 0);
+
+    const allSelected =
+        !!selection && data.length > 0 && data.every((row) => selection.selectedKeys.has(getRowKey(row)));
+    const someSelected =
+        !!selection && !allSelected && data.some((row) => selection.selectedKeys.has(getRowKey(row)));
 
     const getResolvedRowClassName = (row: T) => {
         const customClassName = typeof rowClassName === 'function' ? rowClassName(row) : rowClassName;
+        const isSelected = selection?.selectedKeys.has(getRowKey(row));
         return [
             'group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors',
+            isSelected ? 'bg-brand-50/50 dark:bg-brand-900/10' : '',
             customClassName,
         ]
             .filter(Boolean)
             .join(' ');
+    };
+
+    const renderSortIndicator = (sortKey: string) => {
+        if (!sort) return null;
+        if (sort.sortBy !== sortKey) {
+            return <ChevronsUpDown className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />;
+        }
+        return sort.sortOrder === 'ASC' ? (
+            <ArrowUp className="w-3.5 h-3.5 text-brand-500" />
+        ) : (
+            <ArrowDown className="w-3.5 h-3.5 text-brand-500" />
+        );
     };
 
     return (
@@ -68,14 +107,42 @@ export default function DataTable<T>({
                 <table className={`w-full text-left ${minWidthClassName}`}>
                     <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
                         <tr>
-                            {columns.map((column) => (
-                                <th
-                                    key={column.key}
-                                    className={`px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 ${column.headerClassName || ''}`}
-                                >
-                                    {column.header}
+                            {selection && (
+                                <th className="px-6 py-4 w-12">
+                                    <input
+                                        type="checkbox"
+                                        aria-label="Select all rows"
+                                        checked={allSelected}
+                                        ref={(el) => {
+                                            if (el) el.indeterminate = someSelected;
+                                        }}
+                                        onChange={() => selection.onToggleAll(data)}
+                                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                                    />
                                 </th>
-                            ))}
+                            )}
+                            {columns.map((column) => {
+                                const isSortable = !!sort && !!column.sortKey;
+                                return (
+                                    <th
+                                        key={column.key}
+                                        className={`px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 ${column.headerClassName || ''}`}
+                                    >
+                                        {isSortable ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => sort!.onSortChange(column.sortKey!)}
+                                                className="inline-flex items-center gap-1.5 hover:text-brand-600 dark:hover:text-brand-400 transition-colors uppercase tracking-widest"
+                                            >
+                                                {column.header}
+                                                {renderSortIndicator(column.sortKey!)}
+                                            </button>
+                                        ) : (
+                                            column.header
+                                        )}
+                                    </th>
+                                );
+                            })}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -95,19 +162,33 @@ export default function DataTable<T>({
                                 </td>
                             </tr>
                         ) : (
-                            data.map((row) => (
-                                <tr
-                                    key={getRowKey(row)}
-                                    onClick={onRowClick ? () => onRowClick(row) : undefined}
-                                    className={`${getResolvedRowClassName(row)} ${onRowClick ? 'cursor-pointer' : ''}`}
-                                >
-                                    {columns.map((column) => (
-                                        <td key={column.key} className={`px-6 py-4 ${column.className || ''}`}>
-                                            {column.cell(row)}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))
+                            data.map((row) => {
+                                const rowKey = getRowKey(row);
+                                return (
+                                    <tr
+                                        key={rowKey}
+                                        onClick={onRowClick ? () => onRowClick(row) : undefined}
+                                        className={`${getResolvedRowClassName(row)} ${onRowClick ? 'cursor-pointer' : ''}`}
+                                    >
+                                        {selection && (
+                                            <td className="px-6 py-4 w-12" onClick={(e) => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    aria-label="Select row"
+                                                    checked={selection.selectedKeys.has(rowKey)}
+                                                    onChange={() => selection.onToggleRow(rowKey, row)}
+                                                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                                                />
+                                            </td>
+                                        )}
+                                        {columns.map((column) => (
+                                            <td key={column.key} className={`px-6 py-4 ${column.className || ''}`}>
+                                                {column.cell(row)}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

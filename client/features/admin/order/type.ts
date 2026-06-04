@@ -1,13 +1,15 @@
 import { OrderStatus } from "@/lib/enums/order-status.enum";
 import { PaymentStatus } from "@/lib/enums/payment-status.enum";
 import { Order, OrderItem } from "@/types/order";
-import { Product } from '@/types/product';
+import { Product, ProductVariant } from '@/types/product';
 export interface OrderListPagination {
     total: number;
     page: number;
     limit: number;
     totalPages: number;
 }
+
+export type OrderSortOrder = 'ASC' | 'DESC';
 
 export interface OrderListProps {
     orders: Order[];
@@ -20,6 +22,7 @@ export interface OrderListProps {
     onSourceFilterChange?: (value: string) => void;
     paymentFilter?: string;
     onPaymentFilterChange?: (value: string) => void;
+    onClearFilters?: () => void;
     onExportCSV?: () => void;
     pagination: OrderListPagination;
     onPageChange: (page: number) => void;
@@ -27,6 +30,23 @@ export interface OrderListProps {
     onCourierSelect: (order: Order, courier: string) => void;
     selectedCourier: { [orderId: string]: string };
     isCreatingCourierOrder: (orderId: string) => boolean;
+
+    // Sorting
+    sortBy: string;
+    sortOrder: OrderSortOrder;
+    onSortChange: (sortKey: string) => void;
+
+    // Bulk selection
+    selectedIds: Set<string>;
+    onToggleRow: (id: string) => void;
+    onToggleAll: (rows: Order[]) => void;
+    onClearSelection: () => void;
+    onBulkStatusChange: (newStatus: string) => void;
+    bulkUpdating: boolean;
+
+    // Page size
+    pageSize: number;
+    onPageSizeChange: (size: number) => void;
 }
 
 export interface CourierModalProps {
@@ -42,7 +62,7 @@ export type { Order, OrderItem };
 
 export interface SelectedItem {
     product: Product;
-    variant?: any;
+    variant?: ProductVariant;
     quantity: number;
     unitPrice: number;
     discountAmount: number;

@@ -1,18 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { fetchAPI } from '@/services/api';
 import { Product } from '@/types/product';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import ProductList from './ProductList';
+import { useDebounce } from '@/hooks/useDebounce';
+import type { ProductPagination, ProductSortField, ProductSortOrder } from './types';
+
+const PAGE_SIZE = 10;
+
+const getSortParam = (sortBy?: ProductSortField, sortOrder?: ProductSortOrder) => {
+    if (sortBy === 'name') return sortOrder === 'DESC' ? 'name-desc' : 'name-asc';
+    if (sortBy === 'price') return sortOrder === 'DESC' ? 'price-high' : 'price-low';
+    return 'newest';
+};
 
 export default function ProductDashboard() {
     const [products, setProducts] = useState<Product[]>([]);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 400);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [sortBy, setSortBy] = useState<ProductSortField | undefined>(undefined);
+    const [sortOrder, setSortOrder] = useState<ProductSortOrder>('ASC');
+    const [pagination, setPagination] = useState<ProductPagination>({
+        total: 0,
+        page: 1,
+        limit: PAGE_SIZE,
+        totalPages: 1,
+    });
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
@@ -22,40 +41,72 @@ export default function ProductDashboard() {
     });
 
     const router = useRouter();
+    const requestIdRef = useRef(0);
 
-    const fetchProducts = async () => {
+    const fetchProducts = useCallback(async (page = pagination.page) => {
+        const requestId = ++requestIdRef.current;
         setLoading(true);
         try {
-            const res = await fetchAPI('/products');
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: PAGE_SIZE.toString(),
+                sort: getSortParam(sortBy, sortOrder),
+            });
+            if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+            if (statusFilter !== 'all') params.set('status', statusFilter);
+
+            const res = await fetchAPI(`/products?${params}`);
+            if (requestId !== requestIdRef.current) return;
+
             if (res.success && res.data) {
                 setProducts(res.data);
-                setFilteredProducts(res.data);
+                const nextPagination = res.pagination || {
+                    total: res.data.length,
+                    page,
+                    limit: PAGE_SIZE,
+                    totalPages: 1,
+                };
+                setPagination(nextPagination);
             }
         } catch (error) {
+            if (requestId !== requestIdRef.current) return;
             console.error('Failed to fetch products', error);
             toast.error('Failed to load products');
         } finally {
-            setLoading(false);
+            if (requestId === requestIdRef.current) setLoading(false);
         }
+    }, [debouncedSearch, pagination.page, sortBy, sortOrder, statusFilter]);
+
+    useEffect(() => {
+        const t = setTimeout(() => {
+            void fetchProducts(pagination.page);
+        }, 0);
+        return () => clearTimeout(t);
+    }, [fetchProducts, pagination.page]);
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        setPagination(prev => ({ ...prev, page: 1 }));
     };
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
+    const handleStatusFilterChange = (value: string) => {
+        setStatusFilter(value);
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
 
-    useEffect(() => {
-        if (searchQuery.trim() === '') {
-            setFilteredProducts(products);
+    const handleSortChange = (value: ProductSortField) => {
+        if (sortBy === value) {
+            setSortOrder(prev => prev === 'ASC' ? 'DESC' : 'ASC');
         } else {
-            const query = searchQuery.toLowerCase();
-            const filtered = products.filter(product =>
-                product.name.toLowerCase().includes(query) ||
-                (product.description && product.description.toLowerCase().includes(query)) ||
-                product.slug.toLowerCase().includes(query)
-            );
-            setFilteredProducts(filtered);
+            setSortBy(value);
+            setSortOrder('ASC');
         }
-    }, [searchQuery, products]);
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
+
+    const handlePageChange = (page: number) => {
+        setPagination(prev => ({ ...prev, page }));
+    };
 
     const handleDelete = (id: string) => {
         setConfirmModal({
@@ -67,12 +118,16 @@ export default function ProductDashboard() {
                 try {
                     const res = await fetchAPI(`/products/${id}`, { method: 'DELETE' });
                     if (res.success) {
-                        setProducts(prev => prev.filter(p => p.id !== id));
                         toast.success('Product deleted successfully');
+                        const nextPage = products.length === 1 && pagination.page > 1
+                            ? pagination.page - 1
+                            : pagination.page;
+                        setPagination(prev => ({ ...prev, page: nextPage }));
+                        void fetchProducts(nextPage);
                     } else {
                         toast.error(res.error || 'Error deleting product');
                     }
-                } catch (error) {
+                } catch {
                     toast.error('Error deleting product');
                 }
             },
@@ -87,14 +142,12 @@ export default function ProductDashboard() {
             });
 
             if (res.success) {
-                setProducts(prev => prev.map(p =>
-                    p.id === id ? { ...p, status: newStatus as 'active' | 'inactive' } : p
-                ));
                 toast.success('Product status updated');
+                void fetchProducts(pagination.page);
             } else {
                 toast.error(res.error || 'Error updating product status');
             }
-        } catch (error) {
+        } catch {
             toast.error('Error updating product status');
         }
     };
@@ -288,10 +341,17 @@ export default function ProductDashboard() {
     return (
         <>
             <ProductList
-                products={filteredProducts}
+                products={products}
                 loading={loading}
                 searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
+                onSearchChange={handleSearchChange}
+                statusFilter={statusFilter}
+                onStatusFilterChange={handleStatusFilterChange}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
+                pagination={pagination}
+                onPageChange={handlePageChange}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusUpdate}
                 onLandingPage={handleLandingPage}

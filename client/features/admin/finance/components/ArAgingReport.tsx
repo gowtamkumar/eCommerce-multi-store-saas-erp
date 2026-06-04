@@ -1,13 +1,14 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import type { ArAgingRow } from '@/features/admin/customer/type';
 import {
     AlertTriangle, CheckCircle2, CreditCard, DollarSign, Loader2,
     RefreshCw, Search, TrendingDown, X, FileText, Play, Plus, Trash2, Edit2, Clock, Mail
 } from 'lucide-react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 function AgingBadge({ days, amount }: { days: string; amount: number }) {
     const colorMap: Record<string, string> = {
@@ -445,6 +446,208 @@ export default function ArAgingPage() {
     const totalOverdue = rows.reduce((s, r) => s + r.aging['1-30'] + r.aging['31-60'] + r.aging['61-90'] + r.aging['90+'], 0);
     const holdCount = rows.filter(r => r.creditHold).length;
 
+    const agingColumns = useMemo<DataTableColumn<ArAgingRow>[]>(() => [
+        {
+            key: 'customer',
+            header: 'Customer / Company',
+            cell: (row) => (
+                <div>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">{row.customerName}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{row.companyName || row.customerEmail}</p>
+                    {row.creditHold && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
+                            <AlertTriangle className="w-2.5 h-2.5" /> Credit Hold
+                        </span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: 'outstanding',
+            header: 'Outstanding',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (row) => {
+                const utilization = row.creditLimit > 0 ? (row.totalOutstanding / row.creditLimit) * 100 : 0;
+                return (
+                    <div>
+                        <p className="font-black text-slate-900 dark:text-white text-sm font-mono">
+                            ${Number(row.totalOutstanding).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                        {row.creditLimit > 0 && (
+                            <div className="mt-1">
+                                <div className="w-20 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full ml-auto overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all ${utilization >= 90 ? 'bg-rose-500' : utilization >= 70 ? 'bg-orange-400' : 'bg-emerald-500'}`}
+                                        style={{ width: `${Math.min(utilization, 100)}%` }}
+                                    />
+                                </div>
+                                <p className="text-[10px] text-slate-400 text-right mt-0.5">{utilization.toFixed(0)}% of ${Number(row.creditLimit).toLocaleString()}</p>
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'current',
+            header: 'Current',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="Current" amount={row.aging.current} />,
+        },
+        {
+            key: '1-30',
+            header: '1–30 Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="1-30" amount={row.aging['1-30']} />,
+        },
+        {
+            key: '31-60',
+            header: '31–60 Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="31-60" amount={row.aging['31-60']} />,
+        },
+        {
+            key: '61-90',
+            header: '61–90 Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="61-90" amount={row.aging['61-90']} />,
+        },
+        {
+            key: '90+',
+            header: '90+ Days',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => <AgingBadge days="90+" amount={row.aging['90+']} />,
+        },
+        {
+            key: 'creditLimit',
+            header: 'Credit Limit',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (row) => row.creditLimit > 0
+                ? <span className="text-sm font-bold text-indigo-755 dark:text-indigo-400 font-mono">${Number(row.creditLimit).toLocaleString()}</span>
+                : <span className="text-slate-400 text-sm">—</span>,
+        },
+        {
+            key: 'action',
+            header: 'Action',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (row) => (
+                <button
+                    onClick={() => setPayingCustomer(row)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm ml-auto inline-flex"
+                >
+                    <DollarSign className="w-3.5 h-3.5" />
+                    Pay
+                </button>
+            ),
+        },
+    ], []);
+
+    const logColumns = useMemo<DataTableColumn<DunningLog>[]>(() => [
+        {
+            key: 'triggeredDate',
+            header: 'Triggered Date',
+            cell: (log) => (
+                <span className="text-slate-500 font-mono text-xs">
+                    {new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString()}
+                </span>
+            ),
+        },
+        {
+            key: 'customer',
+            header: 'Customer',
+            cell: (log) => (
+                <span className="font-semibold text-slate-900 dark:text-white">
+                    {log.customer?.name || 'N/A'}
+                    {log.customer?.companyName && <span className="block text-xs font-normal text-slate-400">{log.customer.companyName}</span>}
+                </span>
+            ),
+        },
+        {
+            key: 'ruleLevel',
+            header: 'Rule Level',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (log) => (
+                <span className="inline-block px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                    Level {log.dunningRule?.dunningLevel || 'N/A'}
+                </span>
+            ),
+        },
+        {
+            key: 'actionTaken',
+            header: 'Action Taken',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (log) => {
+                const actionColors = {
+                    EMAIL: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
+                    CREDIT_HOLD: 'bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
+                    EMAIL_AND_HOLD: 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400'
+                };
+                return (
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${actionColors[log.actionTaken] || ''}`}>
+                        {log.actionTaken}
+                    </span>
+                );
+            },
+        },
+        {
+            key: 'recipientEmail',
+            header: 'Recipient Email',
+            cell: (log) => (
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                    {log.recipientEmail}
+                </span>
+            ),
+        },
+        {
+            key: 'daysOverdue',
+            header: 'Days Overdue',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (log) => (
+                <span className="font-black font-mono text-slate-700 dark:text-slate-300">
+                    {log.triggeredDaysOverdue} days
+                </span>
+            ),
+        },
+        {
+            key: 'amountOverdue',
+            header: 'Amount Overdue',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (log) => (
+                <span className="font-black font-mono text-indigo-600 dark:text-indigo-400">
+                    ${Number(log.triggeredAmountOverdue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </span>
+            ),
+        },
+        {
+            key: 'viewEmail',
+            header: 'View Email',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (log) => log.emailSubject ? (
+                <button
+                    onClick={() => setSelectedLog(log)}
+                    className="px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold transition-all inline-block"
+                >
+                    Details
+                </button>
+            ) : (
+                <span className="text-slate-400 text-xs">—</span>
+            ),
+        },
+    ], []);
+
     return (
         <div className="space-y-6 pb-10">
             {/* Page Header */}
@@ -555,101 +758,22 @@ export default function ArAgingPage() {
                         />
                     </div>
 
-                    {/* Aging Table */}
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                    <tr>
-                                        <th className="px-6 py-4">Customer / Company</th>
-                                        <th className="px-6 py-4 text-right">Outstanding</th>
-                                        <th className="px-6 py-4 text-center">Current</th>
-                                        <th className="px-6 py-4 text-center">1–30 Days</th>
-                                        <th className="px-6 py-4 text-center">31–60 Days</th>
-                                        <th className="px-6 py-4 text-center">61–90 Days</th>
-                                        <th className="px-6 py-4 text-center">90+ Days</th>
-                                        <th className="px-6 py-4 text-center">Credit Limit</th>
-                                        <th className="px-6 py-4 text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {loading ? (
-                                        <tr>
-                                            <td colSpan={9} className="px-6 py-12 text-center">
-                                                <div className="flex justify-center items-center gap-2 text-slate-500">
-                                                    <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
-                                                    Loading aging report...
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : filtered.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={9} className="px-6 py-12 text-center">
-                                                <div className="flex flex-col items-center gap-3 text-slate-400">
-                                                    <FileText className="w-10 h-10 opacity-40" />
-                                                    <p className="text-sm font-medium">No outstanding AR balances found</p>
-                                                    <p className="text-xs">All B2B accounts are fully settled</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        filtered.map((row) => {
-                                            const utilization = row.creditLimit > 0 ? (row.totalOutstanding / row.creditLimit) * 100 : 0;
-                                            return (
-                                                <tr key={row.customerId} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors group">
-                                                    <td className="px-6 py-4">
-                                                        <p className="font-bold text-slate-900 dark:text-white text-sm">{row.customerName}</p>
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{row.companyName || row.customerEmail}</p>
-                                                        {row.creditHold && (
-                                                            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
-                                                                <AlertTriangle className="w-2.5 h-2.5" /> Credit Hold
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <p className="font-black text-slate-900 dark:text-white text-sm font-mono">
-                                                            ${Number(row.totalOutstanding).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                        </p>
-                                                        {row.creditLimit > 0 && (
-                                                            <div className="mt-1">
-                                                                <div className="w-20 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full ml-auto overflow-hidden">
-                                                                    <div
-                                                                        className={`h-full rounded-full transition-all ${utilization >= 90 ? 'bg-rose-500' : utilization >= 70 ? 'bg-orange-400' : 'bg-emerald-500'}`}
-                                                                        style={{ width: `${Math.min(utilization, 100)}%` }}
-                                                                    />
-                                                                </div>
-                                                                <p className="text-[10px] text-slate-400 text-right mt-0.5">{utilization.toFixed(0)}% of ${Number(row.creditLimit).toLocaleString()}</p>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center"><AgingBadge days="Current" amount={row.aging.current} /></td>
-                                                    <td className="px-6 py-4 text-center"><AgingBadge days="1-30" amount={row.aging['1-30']} /></td>
-                                                    <td className="px-6 py-4 text-center"><AgingBadge days="31-60" amount={row.aging['31-60']} /></td>
-                                                    <td className="px-6 py-4 text-center"><AgingBadge days="61-90" amount={row.aging['61-90']} /></td>
-                                                    <td className="px-6 py-4 text-center"><AgingBadge days="90+" amount={row.aging['90+']} /></td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        {row.creditLimit > 0
-                                                            ? <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400 font-mono">${Number(row.creditLimit).toLocaleString()}</span>
-                                                            : <span className="text-slate-400 text-sm">—</span>
-                                                        }
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right">
-                                                        <button
-                                                            onClick={() => setPayingCustomer(row)}
-                                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm ml-auto"
-                                                        >
-                                                            <DollarSign className="w-3.5 h-3.5" />
-                                                            Pay
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DataTable
+                        data={filtered}
+                        columns={agingColumns}
+                        getRowKey={(row) => row.customerId}
+                        loading={loading}
+                        loadingLabel="Loading aging report..."
+                        emptyLabel={
+                            <div className="flex flex-col items-center gap-3 text-slate-400 py-4">
+                                <FileText className="w-10 h-10 opacity-40" />
+                                <p className="text-sm font-medium">No outstanding AR balances found</p>
+                                <p className="text-xs">All B2B accounts are fully settled</p>
+                            </div>
+                        }
+                        minWidthClassName="min-w-[1100px]"
+                        containerClassName="rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+                    />
                 </>
             )}
 
@@ -751,85 +875,15 @@ export default function ArAgingPage() {
                         <p className="text-sm text-slate-500 dark:text-slate-400">Audit trail of sent notices and auto-hold enforcement events</p>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse text-sm">
-                                <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
-                                    <tr>
-                                        <th className="px-6 py-4">Triggered Date</th>
-                                        <th className="px-6 py-4">Customer</th>
-                                        <th className="px-6 py-4 text-center">Rule Level</th>
-                                        <th className="px-6 py-4 text-center">Action Taken</th>
-                                        <th className="px-6 py-4">Recipient Email</th>
-                                        <th className="px-6 py-4 text-right">Days Overdue</th>
-                                        <th className="px-6 py-4 text-right">Amount Overdue</th>
-                                        <th className="px-6 py-4 text-center">View Email</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {loading ? (
-                                        <tr>
-                                            <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
-                                                <div className="flex justify-center items-center gap-2">
-                                                    <Loader2 className="w-5 h-5 animate-spin" /> Loading logs...
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : logs.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
-                                                No dunning events recorded yet.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        logs.map((log) => {
-                                            const actionColors = {
-                                                EMAIL: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
-                                                CREDIT_HOLD: 'bg-rose-100 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
-                                                EMAIL_AND_HOLD: 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400'
-                                            };
-                                            return (
-                                                <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
-                                                    <td className="px-6 py-4 text-slate-500 font-mono text-xs">
-                                                        {new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString()}
-                                                    </td>
-                                                    <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
-                                                        {log.customer?.name || 'N/A'}
-                                                        {log.customer?.companyName && <span className="block text-xs font-normal text-slate-400">{log.customer.companyName}</span>}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <span className="inline-block px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-bold">
-                                                            Level {log.dunningRule?.dunningLevel || 'N/A'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase ${actionColors[log.actionTaken] || ''}`}>
-                                                            {log.actionTaken}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{log.recipientEmail}</td>
-                                                    <td className="px-6 py-4 text-right font-black font-mono text-slate-700 dark:text-slate-300">{log.triggeredDaysOverdue} days</td>
-                                                    <td className="px-6 py-4 text-right font-black font-mono text-indigo-600 dark:text-indigo-400">${Number(log.triggeredAmountOverdue).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        {log.emailSubject ? (
-                                                            <button
-                                                                onClick={() => setSelectedLog(log)}
-                                                                className="px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold transition-all"
-                                                            >
-                                                                Details
-                                                            </button>
-                                                        ) : (
-                                                            <span className="text-slate-400 text-xs">—</span>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <DataTable
+                        data={logs}
+                        columns={logColumns}
+                        getRowKey={(log) => log.id}
+                        loading={loading}
+                        emptyLabel="No dunning events recorded yet."
+                        minWidthClassName="min-w-[1000px]"
+                        containerClassName="rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+                    />
                 </div>
             )}
 

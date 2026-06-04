@@ -4,11 +4,45 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
 import dayjs from 'dayjs';
 import { Download, X } from 'lucide-react';
-import React from 'react';
+import React, { useMemo } from 'react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 export default function InvoiceDetailsModal({ invoice, onClose }: any) {
     const { formatPrice } = useSettings();
     const { downloadInvoice } = useDownloadInvoice();
+
+    const columns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'item',
+            header: 'Item',
+            cell: (item) => (
+                <>
+                    <p className="font-medium text-slate-900 dark:text-white">{item.product?.name || 'Unknown Product'}</p>
+                    {item.variantId && <p className="text-xs text-slate-500">Variant ID: {item.variantId.substring(0, 8)}</p>}
+                </>
+            ),
+        },
+        {
+            key: 'quantity',
+            header: 'Qty',
+            className: 'text-center text-slate-700 dark:text-slate-300',
+            cell: (item) => item.quantity,
+        },
+        {
+            key: 'price',
+            header: 'Price',
+            headerClassName: 'text-right',
+            className: 'text-right text-slate-700 dark:text-slate-300',
+            cell: (item) => formatPrice(item.price),
+        },
+        {
+            key: 'total',
+            header: 'Total',
+            headerClassName: 'text-right',
+            className: 'text-right font-medium text-slate-900 dark:text-white',
+            cell: (item) => formatPrice(item.price * item.quantity),
+        },
+    ], [formatPrice]);
 
     if (!invoice) return null;
 
@@ -124,68 +158,39 @@ export default function InvoiceDetailsModal({ invoice, onClose }: any) {
                         </div>
                         <div>
                             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Order Information</h3>
-                            <table className="w-full text-sm">
-                                <tbody>
-                                    <tr>
-                                        <td className="py-1 text-slate-500">Order ID:</td>
-                                        <td className="py-1 text-slate-900 dark:text-white font-medium text-right uppercase">#{invoice.orderId.substring(0, 8)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="py-1 text-slate-500">Order Date:</td>
-                                        <td className="py-1 text-slate-900 dark:text-white font-medium text-right">{dayjs(order?.createdAt).format('MMM D, YYYY')}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="py-1 text-slate-500">Payment Method:</td>
-                                        <td className="py-1 text-slate-900 dark:text-white font-medium text-right uppercase">{order?.paymentMethod || 'N/A'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="py-1 text-slate-500">Payment Status:</td>
-                                        <td className="py-1 text-slate-900 dark:text-white font-medium text-right uppercase">{order?.paymentStatus || 'N/A'}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div className="w-full text-sm space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Order ID:</span>
+                                    <span className="text-slate-900 dark:text-white font-medium uppercase">#{invoice.orderId.substring(0, 8)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Order Date:</span>
+                                    <span className="text-slate-900 dark:text-white font-medium">{dayjs(order?.createdAt).format('MMM D, YYYY')}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Payment Method:</span>
+                                    <span className="text-slate-900 dark:text-white font-medium uppercase">{order?.paymentMethod || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Payment Status:</span>
+                                    <span className="text-slate-900 dark:text-white font-medium uppercase">{order?.paymentStatus || 'N/A'}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     {/* Items Table */}
                     <div>
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Invoice Items</h3>
-                        <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-sm">
-                                    <tr>
-                                        <th className="p-4 font-medium text-slate-500 dark:text-slate-400">Item</th>
-                                        <th className="p-4 font-medium text-slate-500 dark:text-slate-400 text-center">Qty</th>
-                                        <th className="p-4 font-medium text-slate-500 dark:text-slate-400 text-right">Price</th>
-                                        <th className="p-4 font-medium text-slate-500 dark:text-slate-400 text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                    {order?.items?.map((item: any, i: number) => (
-                                        <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                            <td className="p-4">
-                                                <p className="font-medium text-slate-900 dark:text-white">{item.product?.name || 'Unknown Product'}</p>
-                                                {item.variantId && <p className="text-xs text-slate-500">Variant ID: {item.variantId.substring(0, 8)}</p>}
-                                            </td>
-                                            <td className="p-4 text-center text-slate-700 dark:text-slate-300">
-                                                {item.quantity}
-                                            </td>
-                                            <td className="p-4 text-right text-slate-700 dark:text-slate-300">
-                                                {formatPrice(item.price)}
-                                            </td>
-                                            <td className="p-4 text-right font-medium text-slate-900 dark:text-white">
-                                                {formatPrice(item.price * item.quantity)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {(!order?.items || order.items.length === 0) && (
-                                        <tr>
-                                            <td colSpan={4} className="p-6 text-center text-slate-500">No items found for this order.</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            data={order?.items || []}
+                            columns={columns}
+                            getRowKey={(item) => item.id || `${item.productId || 'item'}-${item.variantId || 'base'}`}
+                            loading={false}
+                            emptyLabel="No items found for this order."
+                            containerClassName="shadow-none border border-slate-200 dark:border-slate-700 rounded-xl"
+                            minWidthClassName="min-w-[500px]"
+                        />
                     </div>
 
                     {/* Totals */}

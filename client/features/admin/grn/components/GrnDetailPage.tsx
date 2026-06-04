@@ -16,6 +16,8 @@ import {
     User
 } from 'lucide-react';
 import Link from 'next/link';
+import React, { useMemo } from 'react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { getGrnStatusBadge } from './GrnListPage';
 import { GrnData, GrnItem } from '@/features/admin/grn/types';
 
@@ -33,6 +35,52 @@ export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }:
     if (!grn) return null;
 
     const totalCost = grn.items?.reduce((sum: number, item: GrnItem) => sum + (Number(item.receivedQty) * Number(item.unitCost)), 0) || 0;
+
+    const columns = useMemo<DataTableColumn<GrnItem>[]>(() => [
+        {
+            key: 'product',
+            header: 'Product',
+            cell: (item) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                        <Package className="w-5 h-5 text-slate-400" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                        <span className="text-slate-900 dark:text-white font-bold block text-sm">{item.product?.name}</span>
+                        <span className="text-[10px] text-slate-400 font-medium uppercase">{item.variant?.name || 'Standard'}</span>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'ordered',
+            header: 'Ordered',
+            className: 'text-center font-semibold text-slate-500',
+            cell: (item) => item.orderedQty,
+        },
+        {
+            key: 'received',
+            header: 'Received',
+            className: 'text-center',
+            cell: (item) => (
+                <span className="px-3 py-1 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-lg font-black text-sm">
+                    {item.receivedQty}
+                </span>
+            ),
+        },
+        {
+            key: 'unitCost',
+            header: 'Unit Cost',
+            className: 'text-right font-mono font-bold text-slate-600 dark:text-slate-400',
+            cell: (item) => formatPrice(item.unitCost),
+        },
+        {
+            key: 'total',
+            header: 'Total',
+            className: 'text-right font-mono font-black text-slate-900 dark:text-white',
+            cell: (item) => formatPrice(item.receivedQty * item.unitCost),
+        },
+    ], [formatPrice]);
 
     return (
         <div className="space-y-6">
@@ -91,50 +139,15 @@ export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }:
                                 {grn.items?.length || 0} ITEMS
                             </span>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                                    <tr>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Product</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">Ordered</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center text-brand-600">Received</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Unit Cost</th>
-                                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {grn.items?.map((item: GrnItem, idx: number) => (
-                                        <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                                                        <Package className="w-5 h-5 text-slate-400" strokeWidth={1.5} />
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-slate-900 dark:text-white font-bold block text-sm">{item.product?.name}</span>
-                                                        <span className="text-[10px] text-slate-400 font-medium uppercase">{item.variant?.name || 'Standard'}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center font-semibold text-slate-500">
-                                                {item.orderedQty}
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="px-3 py-1 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-lg font-black text-sm">
-                                                    {item.receivedQty}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-mono font-bold text-slate-600 dark:text-slate-400">
-                                                {formatPrice(item.unitCost)}
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-mono font-black text-slate-900 dark:text-white">
-                                                {formatPrice(item.receivedQty * item.unitCost)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            data={grn.items || []}
+                            columns={columns}
+                            getRowKey={(item) => `${item.product?.name || ''}-${item.variant?.name || ''}-${item.orderedQty}-${item.receivedQty}`}
+                            loading={false}
+                            emptyLabel="No items received"
+                            containerClassName="shadow-none border-none rounded-none"
+                            minWidthClassName="min-w-[600px]"
+                        />
                     </div>
 
                     <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">

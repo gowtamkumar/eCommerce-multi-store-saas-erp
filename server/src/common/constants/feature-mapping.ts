@@ -28,3 +28,28 @@ export function normalizeFeatures(features: string[]): string[] {
   if (!features || !Array.isArray(features)) return []
   return Array.from(new Set(features.map((f) => f.trim()).filter(Boolean)))
 }
+
+/**
+ * Maps permission prefixes (first part of "module:action" permission code)
+ * to their parent plan entitlement feature slug.
+ */
+export const PERMISSION_FEATURE_TO_PLAN_FEATURE: Record<string, string> = {
+  accounting: 'finance',
+  invoices: 'orders',
+  payments: 'orders',
+  crm: 'orders',
+  supplier: 'purchasing',
+  returns: 'orders',
+  coupons: 'marketing',
+  promotions: 'marketing',
+  fulfillment: 'logistics',
+  shipping: 'logistics',
+}
+
+/**
+ * Resolves the parent subscription plan feature slug for a given permission sub-feature slug.
+ */
+export function getPlanFeature(featureSlug: string): string {
+  return PERMISSION_FEATURE_TO_PLAN_FEATURE[featureSlug] || featureSlug
+}
+

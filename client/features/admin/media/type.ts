@@ -7,3 +7,14 @@ export interface MediaItem {
     createdAt: string;
 }
 
+// Raw shape returned by GET /admin/media (file entity)
+export interface RawMediaFile {
+    id: string;
+    filename?: string;
+    originalname?: string;
+    path?: string;
+    mimetype?: string;
+    size?: number;
+    createdAt?: string;
+}
+

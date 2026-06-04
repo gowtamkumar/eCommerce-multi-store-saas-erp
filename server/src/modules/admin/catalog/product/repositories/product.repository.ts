@@ -23,6 +23,7 @@ export class ProductRepository {
     const query = this.repo
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.variants', 'variants')
       .where('product.tenantId = :tenantId', { tenantId })
 

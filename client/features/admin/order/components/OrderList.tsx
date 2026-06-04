@@ -6,10 +6,33 @@ import { CourierType } from '@/lib/enums/courier-type.enum';
 import { OrderStatus } from '@/lib/enums/order-status.enum';
 import { PaymentStatus } from '@/lib/enums/payment-status.enum';
 import { getOrderStatusStyles } from '@/lib/utils';
-import { Eye, Loader2, Search } from 'lucide-react';
+import { Eye, Loader2, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Order, OrderListProps } from '../type';
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+const SOURCE_LABELS: Record<string, string> = {
+    website: '🌐 Website Storefront',
+    pos: '🏪 POS Register',
+    manual: '✍️ Manual Admin',
+};
+
+const PAYMENT_LABELS: Record<string, string> = {
+    paid: '🟢 Paid',
+    pending: '🟡 Pending',
+    failed: '🔴 Failed',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+    [OrderStatus.PENDING]: '⌛ Pending',
+    [OrderStatus.PROCESSING]: '⚙️ Processing',
+    [OrderStatus.CONFIRMED]: '📝 Confirmed',
+    [OrderStatus.SHIPPED]: '🚚 Shipped',
+    [OrderStatus.COMPLETED]: '✅ Completed',
+    [OrderStatus.CANCELLED]: '❌ Cancelled',
+};
 
 export default function OrderList({
     orders,
@@ -24,6 +47,7 @@ export default function OrderList({
     onSourceFilterChange,
     paymentFilter = '',
     onPaymentFilterChange,
+    onClearFilters,
     onExportCSV,
 
     pagination,
@@ -31,9 +55,37 @@ export default function OrderList({
     onStatusChange,
     onCourierSelect,
     selectedCourier,
-    isCreatingCourierOrder
+    isCreatingCourierOrder,
+
+    // Sorting
+    sortBy,
+    sortOrder,
+    onSortChange,
+
+    // Bulk selection
+    selectedIds,
+    onToggleRow,
+    onToggleAll,
+    onClearSelection,
+    onBulkStatusChange,
+    bulkUpdating,
+
+    // Page size
+    pageSize,
+    onPageSizeChange,
 }: OrderListProps) {
     const { formatPrice } = useSettings();
+
+    const hasActiveFilters = Boolean(statusFilter || sourceFilter || paymentFilter || searchQuery);
+    const selectedCount = selectedIds.size;
+
+    const summaryRange = useMemo(() => {
+        if (pagination.total === 0) return null;
+        const start = (pagination.page - 1) * pagination.limit + 1;
+        const end = Math.min(pagination.page * pagination.limit, pagination.total);
+        return { start, end };
+    }, [pagination.limit, pagination.page, pagination.total]);
+
     const columns = useMemo<DataTableColumn<Order>[]>(() => [
         {
             key: 'order',
@@ -57,6 +109,7 @@ export default function OrderList({
         {
             key: 'customer',
             header: 'Customer',
+            sortKey: 'customerName',
             cell: (order) => (
                 <div className="flex flex-col">
                     <span className="text-sm font-bold text-slate-900 dark:text-white">{order.customerName}</span>
@@ -71,6 +124,7 @@ export default function OrderList({
         {
             key: 'total',
             header: 'Total',
+            sortKey: 'totalAmount',
             cell: (order) => (
                 <span className="text-sm font-black text-slate-900 dark:text-white">
                     {formatPrice(order.totalAmount || 0)}
@@ -80,8 +134,9 @@ export default function OrderList({
         {
             key: 'payment',
             header: 'Payment Status',
+            sortKey: 'paymentStatus',
             cell: (order) => (
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${order.paymentStatus === PaymentStatus.PAID
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${order.paymentStatus === PaymentStatus.PAID || order.paymentStatus === PaymentStatus.COMPLETED
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : order.paymentStatus === PaymentStatus.FAILED
                         ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
@@ -94,20 +149,31 @@ export default function OrderList({
         {
             key: 'date',
             header: 'Date',
+            sortKey: 'createdAt',
             className: 'text-xs font-medium text-slate-500',
-            cell: (order) => new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' }),
+            cell: (order) => (
+                <div className="flex flex-col">
+                    <span>{new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                    <span className="text-[10px] text-slate-400">
+                        {new Date(order.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                </div>
+            ),
         },
         {
             key: 'status',
             header: 'Status',
+            sortKey: 'status',
             cell: (order) => (
                 <select
                     value={order.status}
                     onChange={(e) => onStatusChange(order.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
                     className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider cursor-pointer outline-none border-transparent focus:ring-2 focus:ring-brand-500/20 transition-all ${getOrderStatusStyles(order.status)}`}
                 >
                     <option value={OrderStatus.PENDING}>Pending</option>
                     <option value={OrderStatus.PROCESSING}>Processing</option>
+                    <option value={OrderStatus.CONFIRMED}>Confirmed</option>
                     <option value={OrderStatus.SHIPPED}>Shipped</option>
                     <option value={OrderStatus.COMPLETED}>Completed</option>
                     <option value={OrderStatus.CANCELLED}>Cancelled</option>
@@ -133,11 +199,17 @@ export default function OrderList({
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-slate-400 hover:text-brand-600 transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
                                     >
                                         <Eye className="w-3.5 h-3.5" />
                                     </a>
                                 )}
                             </div>
+                            {order.trackingId && (
+                                <span className="font-mono text-[10px] text-slate-400 truncate max-w-[120px]" title={order.trackingId}>
+                                    {order.trackingId}
+                                </span>
+                            )}
                         </div>
                     );
                 }
@@ -147,6 +219,7 @@ export default function OrderList({
                         <select
                             value={selectedCourier[order.id] || ''}
                             onChange={(e) => onCourierSelect(order, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
                             disabled={courierBusy}
                             className="px-3 py-1.5 rounded-xl text-[10px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all disabled:opacity-60 disabled:cursor-wait"
                         >
@@ -170,6 +243,7 @@ export default function OrderList({
                     href={`/admin/orders/${order.id}`}
                     className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all inline-block"
                     title="View Order Details"
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <Eye className="w-4.5 h-4.5" />
                 </Link>
@@ -188,7 +262,7 @@ export default function OrderList({
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search orders..."
+                            placeholder="Search by customer, email, phone, ID, product..."
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
@@ -255,13 +329,77 @@ export default function OrderList({
                             <option value="">📦 All Fulfillment Statuses</option>
                             <option value={OrderStatus.PENDING}>⌛ Pending</option>
                             <option value={OrderStatus.PROCESSING}>⚙️ Processing</option>
+                            <option value={OrderStatus.CONFIRMED}>📝 Confirmed</option>
                             <option value={OrderStatus.SHIPPED}>🚚 Shipped</option>
                             <option value={OrderStatus.COMPLETED}>✅ Completed</option>
                             <option value={OrderStatus.CANCELLED}>❌ Cancelled</option>
                         </select>
                     </div>
                 </div>
+
+                {/* Active filter chips */}
+                {hasActiveFilters && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active:</span>
+                        {searchQuery && (
+                            <FilterChip label={`Search: "${searchQuery}"`} onClear={() => onSearchChange('')} />
+                        )}
+                        {sourceFilter && (
+                            <FilterChip label={SOURCE_LABELS[sourceFilter] || sourceFilter} onClear={() => onSourceFilterChange?.('')} />
+                        )}
+                        {paymentFilter && (
+                            <FilterChip label={PAYMENT_LABELS[paymentFilter] || paymentFilter} onClear={() => onPaymentFilterChange?.('')} />
+                        )}
+                        {statusFilter && (
+                            <FilterChip label={STATUS_LABELS[statusFilter] || statusFilter} onClear={() => onStatusFilterChange?.('')} />
+                        )}
+                        <button
+                            onClick={onClearFilters}
+                            className="ml-1 text-[11px] font-bold text-rose-500 hover:text-rose-600 underline underline-offset-2"
+                        >
+                            Clear all
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* Bulk action bar */}
+            {selectedCount > 0 && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/50 rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm font-bold text-brand-700 dark:text-brand-300">
+                        <span>{selectedCount} order{selectedCount > 1 ? 's' : ''} selected</span>
+                        <button
+                            onClick={onClearSelection}
+                            className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline underline-offset-2"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {bulkUpdating && <Loader2 className="w-4 h-4 animate-spin text-brand-500" />}
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Set status:</span>
+                        <select
+                            defaultValue=""
+                            disabled={bulkUpdating}
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    onBulkStatusChange(e.target.value);
+                                    e.target.value = '';
+                                }
+                            }}
+                            className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer hover:border-brand-500 outline-none transition-all disabled:opacity-60"
+                        >
+                            <option value="" disabled>Choose status…</option>
+                            <option value={OrderStatus.PENDING}>Pending</option>
+                            <option value={OrderStatus.PROCESSING}>Processing</option>
+                            <option value={OrderStatus.CONFIRMED}>Confirmed</option>
+                            <option value={OrderStatus.SHIPPED}>Shipped</option>
+                            <option value={OrderStatus.COMPLETED}>Completed</option>
+                            <option value={OrderStatus.CANCELLED}>Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+            )}
 
             <DataTable
                 data={orders}
@@ -269,15 +407,53 @@ export default function OrderList({
                 getRowKey={(order) => order.id}
                 loading={loading}
                 loadingLabel="Loading orders..."
-                emptyLabel={searchQuery ? 'No orders match your search query.' : 'No orders found in the system.'}
+                emptyLabel={hasActiveFilters ? 'No orders match your search query.' : 'No orders found in the system.'}
                 minWidthClassName="min-w-[1000px]"
+                sort={{ sortBy, sortOrder, onSortChange }}
+                selection={{
+                    selectedKeys: selectedIds,
+                    onToggleRow: (key) => onToggleRow(key),
+                    onToggleAll: (rows) => onToggleAll(rows),
+                }}
                 pagination={{
                     page: pagination.page,
                     total: pagination.total,
                     totalPages: pagination.totalPages,
                     onPageChange,
                 }}
+                paginationSummary={
+                    <div className="flex items-center gap-4">
+                        {summaryRange && (
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
+                                Showing {summaryRange.start}–{summaryRange.end} of {pagination.total}
+                            </p>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rows</span>
+                            <select
+                                value={pageSize}
+                                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                                className="px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer outline-none"
+                            >
+                                {PAGE_SIZE_OPTIONS.map((size) => (
+                                    <option key={size} value={size}>{size}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                }
             />
         </div>
+    );
+}
+
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) {
+    return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+            {label}
+            <button onClick={onClear} className="text-slate-400 hover:text-rose-500 transition-colors" title="Remove filter">
+                <X className="w-3 h-3" />
+            </button>
+        </span>
     );
 }

@@ -3,38 +3,17 @@ import { Pagination } from '@/features/admin/customer/type';
 import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';
-import { ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react';
-import { useEffect, useState, memo } from 'react';
+import { Search } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Payment } from '../type';
-
-// Memoized row — prevents full table repaint when parent state changes (e.g. search input)
-const PaymentRow = memo(({ payment, formatPrice }: { payment: Payment; formatPrice: (v: number) => string }) => (
-    <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-        <td className="px-6 py-4 text-slate-500 text-sm">{new Date(payment.createdAt).toLocaleDateString()}</td>
-        <td className="px-6 py-4 text-slate-500 font-mono text-xs">{payment.transactionId}</td>
-        <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{payment.order?.customerName || 'Unknown'}</td>
-        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{formatPrice(payment.amount || 0)}</td>
-        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 capitalize">{payment.method}</td>
-        <td className="px-6 py-4">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                payment.status === 'completed' || payment.status === 'SUCCESS'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-            }`}>
-                {payment.status}
-            </span>
-        </td>
-    </tr>
-));
-PaymentRow.displayName = 'PaymentRow';
-
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 export default function PaymentsPage() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const { settings, formatPrice } = useSettings();
+    const { formatPrice } = useSettings();
     const [pagination, setPagination] = useState<Pagination>({
         total: 0,
         page: 1,
@@ -43,6 +22,52 @@ export default function PaymentsPage() {
     });
 
     const debouncedSearch = useDebounce(searchQuery, 500);
+
+    const columns = useMemo<DataTableColumn<Payment>[]>(() => [
+        {
+            key: 'date',
+            header: 'Date',
+            className: 'text-slate-500 text-sm whitespace-nowrap',
+            cell: (payment) => new Date(payment.createdAt).toLocaleDateString(),
+        },
+        {
+            key: 'transactionId',
+            header: 'Transaction ID',
+            className: 'text-slate-500 font-mono text-xs',
+            cell: (payment) => payment.transactionId,
+        },
+        {
+            key: 'customer',
+            header: 'Customer',
+            className: 'text-slate-900 dark:text-white font-medium',
+            cell: (payment) => payment.order?.customerName || 'Unknown',
+        },
+        {
+            key: 'amount',
+            header: 'Amount',
+            className: 'text-slate-600 dark:text-slate-300 font-medium',
+            cell: (payment) => formatPrice(payment.amount || 0),
+        },
+        {
+            key: 'method',
+            header: 'Method',
+            className: 'text-slate-600 dark:text-slate-300 capitalize',
+            cell: (payment) => payment.method,
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (payment) => (
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    payment.status === 'completed' || payment.status === 'SUCCESS'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                }`}>
+                    {payment.status}
+                </span>
+            ),
+        },
+    ], [formatPrice]);
 
     useEffect(() => {
         fetchPayments(1, debouncedSearch);
@@ -58,7 +83,6 @@ export default function PaymentsPage() {
             });
             const res = await fetchAPI(`/payments?${params}`);
 
-            // Backend now returns { items, total, page, limit, totalPages }
             if (res.success && res.data?.items) {
                 setPayments(res.data.items);
                 setPagination({
@@ -103,71 +127,25 @@ export default function PaymentsPage() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Date</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Transaction ID</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Customer</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Amount</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Method</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                            Loading payments...
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : payments.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                                        {searchQuery ? 'No payments match your search.' : 'No payments found.'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                payments.map((payment) => (
-                                    <PaymentRow key={payment.id} payment={payment} formatPrice={formatPrice} />
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-6">
-                    <button
-                        onClick={() => handlePageChange(pagination.page - 1)}
-                        disabled={pagination.page === 1 || loading}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                            Page {pagination.page} of {pagination.totalPages}
-                        </span>
-                    </div>
-
-                    <button
-                        onClick={() => handlePageChange(pagination.page + 1)}
-                        disabled={pagination.page === pagination.totalPages || loading}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </button>
-                </div>
-            )}
+            <DataTable
+                data={payments}
+                columns={columns}
+                getRowKey={(payment) => payment.id}
+                loading={loading}
+                loadingLabel="Loading payments..."
+                emptyLabel="No payments found matching your criteria."
+                pagination={{
+                    page: pagination.page,
+                    total: pagination.total,
+                    totalPages: pagination.totalPages,
+                    onPageChange: handlePageChange,
+                }}
+                paginationSummary={
+                    <p className="text-sm text-slate-500">
+                        Showing page <span className="font-medium">{pagination.page}</span> of <span className="font-medium">{pagination.totalPages}</span>
+                    </p>
+                }
+            />
         </div>
     );
 }
