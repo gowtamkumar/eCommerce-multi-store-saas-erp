@@ -1,211 +1,35 @@
 'use client';
+
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import ImageUploadField from '@/components/shared/ImageUploadField';
+import Pagination from '@/components/shared/Pagination';
 import { fetchAPI } from '@/services/api';
 import { Check, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
-import { Pagination as PaginationType } from '../../customer/type';
-import { MediaItem, RawMediaFile } from '../type';
-import Pagination from '@/components/shared/Pagination';
-
-
+import { useMediaDashboard } from '../hooks/useMediaDashboard';
+import { formatSize } from '../utils/mediaHelpers';
 
 export default function Media() {
-    const [media, setMedia] = useState<MediaItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [copiedId, setCopiedId] = useState<string | null>(null);
-    const [search, setSearch] = useState('');
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [bulkDeleting, setBulkDeleting] = useState(false);
-    const [pagination, setPagination] = useState<PaginationType>({
-        total: 0,
-        page: 1,
-        limit: 20,
-        totalPages: 1
-    });
-
-    const [confirmModal, setConfirmModal] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        onConfirm: () => { },
-        isDangerous: false,
-    });
-
-    const [debouncedSearch, setDebouncedSearch] = useState(search);
-    const requestIdRef = useRef(0);
-
-    const fetchMedia = useCallback(async (page: number, searchQuery: string) => {
-        const requestId = ++requestIdRef.current;
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '20'
-            });
-            if (searchQuery.trim()) params.set('q', searchQuery.trim());
-
-            const res = await fetchAPI(`/admin/media?${params}`);
-            if (requestId !== requestIdRef.current) return;
-
-            if (res.data && res.data.items) {
-                const mappedMedia: MediaItem[] = (res.data.items as RawMediaFile[]).map((f) => {
-                    // Extract timestamp from filename (timestamp_name.ext)
-                    let createdAt = new Date().toISOString();
-                    const parts = f.filename?.split('_');
-                    if (parts && parts.length > 1 && !isNaN(Number(parts[0]))) {
-                        createdAt = new Date(Number(parts[0])).toISOString();
-                    }
-                    return {
-                        _id: f.id,
-                        filename: f.originalname || f.filename || 'Untitled',
-                        url: f.path || '',
-                        mimetype: f.mimetype || '',
-                        size: f.size || 0,
-                        createdAt: f.createdAt || createdAt
-                    };
-                });
-
-                setMedia(mappedMedia);
-                setSelectedIds(new Set());
-                setPagination({
-                    total: res.data.total,
-                    page: res.data.page,
-                    limit: res.data.limit,
-                    totalPages: res.data.totalPages || 1
-                });
-            } else {
-                setMedia([]);
-                setSelectedIds(new Set());
-            }
-        } catch (error) {
-            if (requestId !== requestIdRef.current) return;
-            console.error('Error fetching media:', error);
-            toast.error('Failed to load media library');
-        } finally {
-            if (requestId === requestIdRef.current) setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    useEffect(() => {
-        const t = setTimeout(() => {
-            void fetchMedia(1, debouncedSearch);
-        }, 0);
-        return () => clearTimeout(t);
-    }, [debouncedSearch, fetchMedia]);
-
-    const refetchAfterDelete = (removedCount: number) => {
-        // Step back a page if we just emptied the current one.
-        if (media.length === removedCount && pagination.page > 1) {
-            fetchMedia(pagination.page - 1, debouncedSearch);
-        } else {
-            fetchMedia(pagination.page, debouncedSearch);
-        }
-    };
-
-    const handleDelete = (id: string) => {
-        setConfirmModal({
-            isOpen: true,
-            title: 'Delete Image',
-            message: 'Are you sure you want to delete this image? This action cannot be undone.',
-            isDangerous: true,
-            onConfirm: async () => {
-                try {
-                    await fetchAPI(`/admin/media/${id}`, { method: 'DELETE' });
-                    toast.success('Image deleted successfully');
-                    refetchAfterDelete(1);
-                } catch (error) {
-                    console.error('Error deleting:', error);
-                    toast.error('Error deleting image');
-                }
-            },
-        });
-    };
-
-    const handleBulkDelete = () => {
-        const ids = Array.from(selectedIds);
-        if (ids.length === 0) return;
-        setConfirmModal({
-            isOpen: true,
-            title: `Delete ${ids.length} image${ids.length > 1 ? 's' : ''}`,
-            message: `Are you sure you want to delete ${ids.length} selected image${ids.length > 1 ? 's' : ''}? This action cannot be undone.`,
-            isDangerous: true,
-            onConfirm: async () => {
-                setBulkDeleting(true);
-                try {
-                    const results = await Promise.allSettled(
-                        ids.map((id) => fetchAPI(`/admin/media/${id}`, { method: 'DELETE' }))
-                    );
-                    const failed = results.filter((r) => r.status === 'rejected').length;
-                    const succeeded = ids.length - failed;
-                    if (succeeded > 0) toast.success(`${succeeded} image${succeeded > 1 ? 's' : ''} deleted`);
-                    if (failed > 0) toast.error(`${failed} image${failed > 1 ? 's' : ''} failed to delete`);
-                    refetchAfterDelete(succeeded);
-                } catch (error) {
-                    console.error('Error during bulk delete:', error);
-                    toast.error('Bulk delete failed');
-                } finally {
-                    setBulkDeleting(false);
-                }
-            },
-        });
-    };
-
-    const toggleSelect = (id: string) => {
-        setSelectedIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
-    };
-
-    const toggleSelectAll = () => {
-        setSelectedIds((prev) =>
-            prev.size === media.length ? new Set() : new Set(media.map((m) => m._id))
-        );
-    };
-
-    const copyToClipboard = async (url: string, id: string) => {
-        try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(url);
-            } else {
-                // Fallback for insecure contexts / older browsers
-                const textarea = document.createElement('textarea');
-                textarea.value = url;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-            }
-            setCopiedId(id);
-            setTimeout(() => setCopiedId(null), 2000);
-        } catch (error) {
-            console.error('Copy failed:', error);
-            toast.error('Failed to copy URL');
-        }
-    };
-
-    const formatSize = (bytes: number) => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    };
-
-    const allSelected = media.length > 0 && selectedIds.size === media.length;
+    const {
+        media,
+        loading,
+        copiedId,
+        search,
+        setSearch,
+        selectedIds,
+        setSelectedIds,
+        bulkDeleting,
+        pagination,
+        confirmModal,
+        setConfirmModal,
+        debouncedSearch,
+        fetchMedia,
+        handleDelete,
+        handleBulkDelete,
+        toggleSelect,
+        toggleSelectAll,
+        handleCopyToClipboard,
+        allSelected,
+    } = useMediaDashboard();
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -352,7 +176,7 @@ export default function Media() {
                                     />
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3">
                                         <button
-                                            onClick={() => copyToClipboard(item.url, item._id)}
+                                            onClick={() => handleCopyToClipboard(item.url, item._id)}
                                             className="flex items-center gap-2 px-3 py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors transform translate-y-2 group-hover:translate-y-0"
                                         >
                                             {copiedId === item._id ? (

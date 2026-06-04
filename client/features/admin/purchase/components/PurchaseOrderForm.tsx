@@ -1,107 +1,28 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import { ShoppingBag, Save, Loader2, Plus, Trash2, Package, Search, ChevronLeft, Truck, FileText } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { usePurchaseOrderForm } from '../hooks/usePurchaseOrderForm';
 
 export default function PurchaseOrderForm() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const prefillProductId = searchParams?.get('productId');
     const { formatPrice } = useSettings();
-    const [loading, setLoading] = useState(false);
-    const [suppliers, setSuppliers] = useState<any[]>([]);
-    const [products, setProducts] = useState<any[]>([]);
-    const [searchProduct, setSearchProduct] = useState('');
-
-    const [formData, setFormData] = useState({
-        supplierId: '',
-        referenceNumber: `PO-${Date.now().toString().slice(-6)}`,
-        items: [] as any[]
-    });
-
-    useEffect(() => {
-        const loadInitialData = async () => {
-            try {
-                const [supRes, prodRes] = await Promise.all([
-                    fetchAPI('/suppliers'),
-                    fetchAPI('/products?limit=100')
-                ]);
-                const parsedSuppliers = Array.isArray(supRes)
-                    ? supRes
-                    : (Array.isArray(supRes?.data)
-                        ? supRes.data
-                        : (supRes?.data?.items || []));
-                setSuppliers(parsedSuppliers);
-                setProducts(prodRes?.data || []);
-            } catch (error) {
-                console.error('Data loading failed', error);
-            }
-        };
-        loadInitialData();
-    }, []);
-
-    const addItem = useCallback((product: any, variant?: any) => {
-        if (formData.items.find(item =>
-            variant ? (item.productId === product.id && item.variantId === variant.id) : (item.productId === product.id && !item.variantId)
-        )) {
-            toast.error('Item already added');
-            return;
-        }
-
-        const variantLabel = variant ? Object.entries(variant.combination).map(([k, v]) => `${k}: ${v}`).join(', ') : '';
-
-        setFormData(prev => ({
-            ...prev,
-            items: [...prev.items, {
-                productId: product.id,
-                variantId: variant?.id || null,
-                name: product.name,
-                variantLabel,
-                sku: variant?.sku || product.sku || product.slug,
-                quantity: 1,
-                unitPrice: variant?.price || product.price
-            }]
-        }));
-        setSearchProduct('');
-    }, [formData.items]);
-
-    // Handle pre-fill from URL
-    useEffect(() => {
-        if (prefillProductId && products.length > 0) {
-            const product = products.find(p => p.id === prefillProductId);
-            if (product && formData.items.length === 0) {
-                // If product has variants, don't auto-add, let user search it to pick variant. 
-                // Or if it's simple, add it.
-                if (!product.variants || product.variants.length === 0) {
-                    addItem(product);
-                } else {
-                    setSearchProduct(product.name);
-                }
-            }
-        }
-    }, [prefillProductId, products, addItem]);
-
-    const removeItem = useCallback((index: number) => {
-        setFormData(prev => {
-            const newItems = [...prev.items];
-            newItems.splice(index, 1);
-            return { ...prev, items: newItems };
-        });
-    }, []);
-
-    const updateItem = useCallback((index: number, field: string, value: any) => {
-        setFormData(prev => {
-            const newItems = [...prev.items];
-            newItems[index] = { ...newItems[index], [field]: value };
-            return { ...prev, items: newItems };
-        });
-    }, []);
+    const {
+        loading,
+        suppliers,
+        searchProduct,
+        setSearchProduct,
+        formData,
+        setFormData,
+        totalAmount,
+        filteredProductList,
+        addItem,
+        removeItem,
+        updateItem,
+        handleSubmit,
+    } = usePurchaseOrderForm();
 
     const columns = useMemo<DataTableColumn<any>[]>(() => [
         {
@@ -180,55 +101,15 @@ export default function PurchaseOrderForm() {
         },
     ], [formData.items, updateItem, removeItem, formatPrice]);
 
-    const totalAmount = useMemo(() =>
-        formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
-        [formData.items]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (formData.items.length === 0) {
-            toast.error('Add at least one item');
-            return;
-        }
-
-        setLoading(true);
-        try {
-            await fetchAPI('/purchase-orders', {
-                method: 'POST',
-                body: JSON.stringify({
-                    supplierId: formData.supplierId,
-                    referenceNumber: formData.referenceNumber,
-                    items: formData.items.map(item => ({
-                        productId: item.productId,
-                        variantId: item.variantId || null,
-                        quantity: parseInt(item.quantity),
-                        unitPrice: parseFloat(item.unitPrice)
-                    }))
-                })
-            });
-
-            toast.success('Purchase order created successfully');
-            router.push('/admin/procurement/purchases');
-        } catch (error) {
-            console.error('Error saving purchase order:', error);
-            toast.error('Failed to create purchase order');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const filteredProductList = useMemo(() =>
-        products.filter(p =>
-            p.name.toLowerCase().includes(searchProduct.toLowerCase()) &&
-            !formData.items.find(item => item.productId === p.id && !p.variants?.length)
-        ),
-        [products, searchProduct, formData.items]);
-
     return (
         <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-10 pb-32 pt-4 px-4">
+            {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
-                    <Link href="/admin/procurement/purchases" className="p-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-all shadow-sm border border-slate-100 dark:border-slate-700 group">
+                    <Link
+                        href="/admin/procurement/purchases"
+                        className="p-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-all shadow-sm border border-slate-100 dark:border-slate-700 group"
+                    >
                         <ChevronLeft className="w-6 h-6 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
                     </Link>
                     <div>
@@ -236,7 +117,6 @@ export default function PurchaseOrderForm() {
                         <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">Operational Procurement Phase</p>
                     </div>
                 </div>
-
                 <div className="flex items-center gap-3">
                     <button
                         type="submit"
@@ -244,13 +124,13 @@ export default function PurchaseOrderForm() {
                         className="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-2xl shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                        Finalize & Save Order
+                        Finalize &amp; Save Order
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* Main Order Details */}
+                {/* Main – Items */}
                 <div className="lg:col-span-3 space-y-8">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 flex items-center gap-3">
@@ -276,7 +156,7 @@ export default function PurchaseOrderForm() {
                                     {filteredProductList.length === 0 ? (
                                         <div className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No matches found</div>
                                     ) : (
-                                        filteredProductList.flatMap(p => {
+                                        filteredProductList.flatMap((p: any) => {
                                             if (p.variants && p.variants.length > 0) {
                                                 return p.variants.map((v: any) => (
                                                     <button
@@ -286,7 +166,12 @@ export default function PurchaseOrderForm() {
                                                         className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl transition-all text-left group"
                                                     >
                                                         <div className="w-12 h-12 bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
-                                                            {v.images?.[0] ? <img src={v.images[0]} alt="" className="w-full h-full object-cover" /> : (p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" /> : <Package className="w-6 h-6 text-slate-400" />)}
+                                                            {v.images?.[0]
+                                                                ? <img src={v.images[0]} alt="" className="w-full h-full object-cover" />
+                                                                : p.images?.[0]
+                                                                    ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                                                                    : <Package className="w-6 h-6 text-slate-400" />
+                                                            }
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="font-bold text-slate-900 dark:text-white text-sm">{p.name}</div>
@@ -305,7 +190,7 @@ export default function PurchaseOrderForm() {
                                                     </button>
                                                 ));
                                             }
-                                            return [
+                                            return [(
                                                 <button
                                                     key={p.id}
                                                     type="button"
@@ -313,7 +198,10 @@ export default function PurchaseOrderForm() {
                                                     className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-2xl transition-all text-left group"
                                                 >
                                                     <div className="w-12 h-12 bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
-                                                        {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" /> : <Package className="w-6 h-6 text-slate-400" />}
+                                                        {p.images?.[0]
+                                                            ? <img src={p.images[0]} alt="" className="w-full h-full object-cover" />
+                                                            : <Package className="w-6 h-6 text-slate-400" />
+                                                        }
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-slate-900 dark:text-white text-sm">{p.name}</div>
@@ -323,7 +211,7 @@ export default function PurchaseOrderForm() {
                                                         <Plus className="w-4 h-4 text-brand-500" />
                                                     </div>
                                                 </button>
-                                            ];
+                                            )];
                                         })
                                     )}
                                 </div>
@@ -359,9 +247,10 @@ export default function PurchaseOrderForm() {
                     </div>
                 </div>
 
-                {/* Sidebar Column */}
+                {/* Sidebar */}
                 <div className="space-y-8">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-8 space-y-8 sticky top-8">
+                        {/* Supplier */}
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
                                 <Truck className="w-3.5 h-3.5 text-brand-500" /> Fulfillment Source
@@ -373,12 +262,13 @@ export default function PurchaseOrderForm() {
                                 className="w-full px-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-bold text-sm cursor-pointer"
                             >
                                 <option value="">Select Supplier Entity</option>
-                                {suppliers.map(s => (
+                                {suppliers.map((s: any) => (
                                     <option key={s.id} value={s.id}>{s.name}</option>
                                 ))}
                             </select>
                         </div>
 
+                        {/* Reference Number */}
                         <div>
                             <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
                                 <FileText className="w-3.5 h-3.5 text-brand-500" /> Reference Identifier
@@ -392,11 +282,13 @@ export default function PurchaseOrderForm() {
                             />
                         </div>
 
+                        {/* Notice */}
                         <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
                             <div className="bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-800 p-5 rounded-2xl">
                                 <p className="text-[10px] text-brand-700 dark:text-brand-300 font-bold leading-relaxed uppercase tracking-wide">
                                     <strong className="block mb-1 text-xs">Lifecycle Protocol:</strong>
-                                    New records initialize in <span className="text-brand-900 dark:text-white">DRAFT</span> status. Inventory synchronization executes only upon transition to <span className="text-brand-900 dark:text-white">RECEIVED</span>.
+                                    New records initialize in <span className="text-brand-900 dark:text-white">DRAFT</span> status.
+                                    Inventory synchronization executes only upon transition to <span className="text-brand-900 dark:text-white">RECEIVED</span>.
                                 </p>
                             </div>
                         </div>

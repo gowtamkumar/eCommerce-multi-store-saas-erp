@@ -1,7 +1,6 @@
 "use client";
 
 import { useSettings } from "@/hooks/SettingsContext";
-import { fetchAPI } from "@/services/api";
 import { ReturnStatus } from "@/lib/enums/return-status.enum";
 import { RefundMethod, REFUND_METHOD_LABELS } from "@/lib/enums/refund-method.enum";
 import {
@@ -16,7 +15,6 @@ import {
     X,
     Check,
     MessageSquare,
-    History,
     AlertCircle,
     ChevronRight,
     ShoppingBag,
@@ -25,9 +23,9 @@ import {
     PackageCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { ReturnRequest } from "@/types/order";
+import { use } from "react";
+import { useReturnDetails } from "../hooks/useReturnDetails";
+import ReturnSlipPrint from "./ReturnSlipPrint";
 
 export default function ReturnDetailsPage({
     params,
@@ -35,82 +33,21 @@ export default function ReturnDetailsPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
-    const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [updating, setUpdating] = useState(false);
-    const [adminComment, setAdminComment] = useState("");
-    const [selectedRefundMethod, setSelectedRefundMethod] = useState<RefundMethod>(RefundMethod.STORE_CREDIT);
-    const [markingReceived, setMarkingReceived] = useState(false);
     const { settings, formatPrice } = useSettings();
 
-    useEffect(() => {
-        if (id) {
-            fetchReturn();
-        }
-    }, [id]);
-
-    const fetchReturn = async () => {
-        try {
-            const res = await fetchAPI(`/returns/${id}`);
-            const data = res.data;
-            if (data && data.id) {
-                setReturnRequest(data);
-            } else {
-                console.error("Return data missing or invalid:", res);
-            }
-        } catch (error) {
-            console.error("Failed to fetch return", error);
-            toast.error("Failed to load return details");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleStatusUpdate = async (status: string, comment?: string, refundMethod?: RefundMethod) => {
-        setUpdating(true);
-        try {
-            const res = await fetchAPI(`/returns/${id}/status`, {
-                method: "PATCH",
-                body: JSON.stringify({ status, comment: comment || adminComment || undefined, refundMethod }),
-            });
-
-            if (res.success || (res.data && res.data.id)) {
-                setReturnRequest(res.data || res);
-                setAdminComment("");
-                toast.success(`Return request ${status} successfully`);
-            } else {
-                toast.error(res.message || "Failed to update status");
-            }
-        } catch (error) {
-            console.error("Failed to update return status", error);
-            toast.error("An error occurred");
-        } finally {
-            setUpdating(false);
-        }
-    };
-
-    const handleMarkReceived = async () => {
-        setMarkingReceived(true);
-        try {
-            const res = await fetchAPI(`/returns/${id}/received`, { method: "PATCH" });
-            if (res.success || res.data?.id) {
-                setReturnRequest(res.data);
-                toast.success("Return items marked as received");
-            } else {
-                toast.error(res.message || "Failed to mark as received");
-            }
-        } catch (e) {
-            toast.error("An error occurred");
-        } finally {
-            setMarkingReceived(false);
-        }
-    };
-
-    const handleRefresh = async () => {
-        setLoading(true);
-        await fetchReturn();
-        toast.success("Data refreshed");
-    };
+    const {
+        returnRequest,
+        loading,
+        updating,
+        adminComment,
+        setAdminComment,
+        selectedRefundMethod,
+        setSelectedRefundMethod,
+        markingReceived,
+        handleStatusUpdate,
+        handleMarkReceived,
+        handleRefresh,
+    } = useReturnDetails(id);
 
     if (loading) {
         return (
@@ -155,82 +92,11 @@ export default function ReturnDetailsPage({
     return (
         <div className="max-w-full mx-auto space-y-8 pb-12">
             {/* Print-only Invoice/Return Slip */}
-            <div className="hidden print:block bg-white p-8 text-black">
-                <div className="flex justify-between items-start mb-12">
-                    <div>
-                        <h1 className="text-4xl font-bold text-slate-900 mb-2 uppercase tracking-tight">
-                            Return Slip
-                        </h1>
-                        <p className="text-slate-500 font-mono">
-                            #{returnRequest.id?.slice(-8)?.toUpperCase()}
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <h2 className="text-2xl font-bold text-brand-600">
-                            {settings?.brandName || "Store"}
-                        </h2>
-                        <p className="text-sm text-slate-500 max-w-[200px] ml-auto">
-                            {settings?.address}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-12 mb-12 border-t pt-8">
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Customer Info</h3>
-                        <p className="text-lg font-bold text-slate-900">{returnRequest.order?.customerName}</p>
-                        <p className="text-slate-600">{returnRequest.order?.customerEmail}</p>
-                        <p className="text-slate-600">{returnRequest.order?.customerPhone}</p>
-                    </div>
-                    <div className="text-right">
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Original Order</h3>
-                        <p className="text-lg font-bold text-slate-900 uppercase">#{returnRequest.order?.id?.slice(-8)}</p>
-                        <p className="text-slate-600">Status: {returnRequest.status.toUpperCase()}</p>
-                        <p className="text-slate-600">Date: {new Date(returnRequest.createdAt).toLocaleDateString()}</p>
-                    </div>
-                </div>
-
-                <table className="w-full mb-12 border-collapse">
-                    <thead>
-                        <tr className="border-b-2 border-slate-900 text-left">
-                            <th className="py-4 font-bold uppercase text-xs tracking-widest text-slate-900">Item</th>
-                            <th className="py-4 font-bold uppercase text-xs tracking-widest text-slate-900 text-center">Qty</th>
-                            <th className="py-4 font-bold uppercase text-xs tracking-widest text-slate-900 text-right">Refund Est.</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {returnRequest.items.map((returnItem: any, index: number) => {
-                            const orderItem = returnRequest.order?.items?.find(
-                                (oi: any) => oi.productId === returnItem.productId &&
-                                    (oi.variantId === returnItem.variantId || (!oi.variantId && !returnItem.variantId))
-                            );
-                            const unitPrice = orderItem ? (Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0)) : 0;
-                            return (
-                                <tr key={index} className="border-b border-slate-100">
-                                    <td className="py-6">
-                                        <p className="font-bold text-slate-900">{orderItem?.product?.name || "Product"}</p>
-                                        {orderItem?.variant?.sku && <p className="text-xs text-slate-500 uppercase">SKU: {orderItem.variant.sku}</p>}
-                                    </td>
-                                    <td className="py-6 text-center font-bold">{returnItem.quantity}</td>
-                                    <td className="py-6 text-right font-bold text-slate-900">{formatPrice(unitPrice * returnItem.quantity)}</td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-
-                <div className="flex justify-end pt-8 border-t-2 border-slate-900">
-                    <div className="text-right">
-                        <p className="text-sm font-bold text-slate-400 uppercase mb-1">Total Refund Estimate</p>
-                        <p className="text-4xl font-bold text-green-600">
-                            {formatPrice(returnRequest.items.reduce((total: number, item: any) => {
-                                const orderItem = returnRequest.order?.items?.find((oi: any) => oi.productId === item.productId && (oi.variantId === item.variantId || (!oi.variantId && !item.variantId)));
-                                return total + (orderItem ? (Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0)) * item.quantity : 0);
-                            }, 0))}
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <ReturnSlipPrint
+                returnRequest={returnRequest}
+                settings={settings}
+                formatPrice={formatPrice}
+            />
 
             {/* Header */}
             <div className="flex flex-col gap-4 print:hidden">
@@ -257,21 +123,21 @@ export default function ReturnDetailsPage({
                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusStyles(returnRequest.status || 'PENDING')}`}>
                                 {returnRequest.status}
                             </span>
-                            {(returnRequest as any).returnType && (
+                            {returnRequest.returnType && (
                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
                                     <ArrowRightLeft className="w-3 h-3" />
-                                    {(returnRequest as any).returnType}
+                                    {returnRequest.returnType}
                                 </span>
                             )}
-                            {(returnRequest as any).refundAmount != null && (
+                            {returnRequest.refundAmount != null && (
                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 flex items-center gap-1">
                                     <DollarSign className="w-3 h-3" />
-                                    Refund: {formatPrice(Number((returnRequest as any).refundAmount))}
+                                    Refund: {formatPrice(Number(returnRequest.refundAmount))}
                                 </span>
                             )}
-                            {(returnRequest as any).refundMethod && (
+                            {returnRequest.refundMethod && (
                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                                    {REFUND_METHOD_LABELS[(returnRequest as any).refundMethod as RefundMethod] ?? (returnRequest as any).refundMethod}
+                                    {REFUND_METHOD_LABELS[returnRequest.refundMethod as RefundMethod] ?? returnRequest.refundMethod}
                                 </span>
                             )}
                         </div>
@@ -282,7 +148,7 @@ export default function ReturnDetailsPage({
                             onClick={handleRefresh}
                             className="p-2 sm:px-4 sm:py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 transition-all flex items-center gap-2"
                         >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-4 h-4 ${updating || loading ? 'animate-spin' : ''}`} />
                             <span className="hidden sm:inline font-bold text-sm">Refresh</span>
                         </button>
                         <button

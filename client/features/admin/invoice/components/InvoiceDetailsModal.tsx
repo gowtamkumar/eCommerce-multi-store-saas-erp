@@ -6,12 +6,13 @@ import dayjs from 'dayjs';
 import { Download, X } from 'lucide-react';
 import React, { useMemo } from 'react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { InvoiceDetailsModalProps, InvoiceItem } from '../types';
 
-export default function InvoiceDetailsModal({ invoice, onClose }: any) {
+export default function InvoiceDetailsModal({ invoice, onClose }: InvoiceDetailsModalProps) {
     const { formatPrice } = useSettings();
     const { downloadInvoice } = useDownloadInvoice();
 
-    const columns = useMemo<DataTableColumn<any>[]>(() => [
+    const columns = useMemo<DataTableColumn<InvoiceItem>[]>(() => [
         {
             key: 'item',
             header: 'Item',
@@ -161,11 +162,11 @@ export default function InvoiceDetailsModal({ invoice, onClose }: any) {
                             <div className="w-full text-sm space-y-2">
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Order ID:</span>
-                                    <span className="text-slate-900 dark:text-white font-medium uppercase">#{invoice.orderId.substring(0, 8)}</span>
+                                    <span className="text-slate-900 dark:text-white font-medium uppercase">#{invoice.orderId ? invoice.orderId.substring(0, 8) : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Order Date:</span>
-                                    <span className="text-slate-900 dark:text-white font-medium">{dayjs(order?.createdAt).format('MMM D, YYYY')}</span>
+                                    <span className="text-slate-900 dark:text-white font-medium">{order?.createdAt ? dayjs(order.createdAt).format('MMM D, YYYY') : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Payment Method:</span>

@@ -33,3 +33,35 @@ export interface PurchaseOrderListProps {
     onReceive: (id: string) => void;
     isSearchLoading?: boolean;
 }
+
+export interface Warehouse {
+    id: string;
+    name: string;
+    code: string;
+}
+
+export interface Branch {
+    id: string;
+    name: string;
+    code: string;
+}
+
+export interface ReceiveProductsModalProps {
+    order: any;
+    warehouses: Warehouse[];
+    branches: Branch[];
+    onClose: () => void;
+    onConfirm: (warehouseId: string, branchId: string) => Promise<void>;
+}
+
+export interface RecordPaymentModalProps {
+    balance: number;
+    onClose: () => void;
+    onConfirm: (paymentData: {
+        amount: string;
+        paymentMethod: string;
+        note: string;
+        transactionId: string;
+    }) => Promise<void>;
+}
+

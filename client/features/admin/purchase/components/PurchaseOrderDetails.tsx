@@ -1,131 +1,35 @@
 'use client';
+
 import { useSettings } from '@/hooks/SettingsContext';
 import React, { useMemo } from 'react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
-import { fetchAPI } from '@/services/api';
-import { ArrowLeft, Calendar, CheckCircle, CreditCard, FileText, History, Landmark, Package, Plus, Truck, Warehouse, Building2, XCircle } from 'lucide-react';
+import {
+    ArrowLeft, Calendar, CreditCard, FileText,
+    History, Landmark, Package, Plus, Truck,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 import { getPaymentStatusBadge, getStatusBadge } from './comonfun';
+import { usePurchaseOrderDetails } from '../hooks/usePurchaseOrderDetails';
+import ReceiveProductsModal from './ReceiveProductsModal';
+import RecordPaymentModal from './RecordPaymentModal';
 
 export default function PurchaseOrderDetails() {
-    const { id } = useParams();
     const { formatPrice } = useSettings();
-    const [order, setOrder] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
-    const [warehouses, setWarehouses] = useState<any[]>([]);
-    const [branches, setBranches] = useState<any[]>([]);
-    const [receiveForm, setReceiveForm] = useState({ warehouseId: '', branchId: '' });
-    const [isReceiving, setIsReceiving] = useState(false);
-    const [paymentForm, setPaymentForm] = useState({
-        amount: '',
-        paymentMethod: 'Bank Transfer',
-        note: '',
-        transactionId: ''
-    });
-
-    useEffect(() => {
-        if (id) fetchOrder();
-    }, [id]);
-
-    const fetchOrder = async () => {
-        try {
-            const res = await fetchAPI(`/purchase-orders/${id}`);
-            setOrder(res.data || res);
-        } catch (error) {
-            console.error('Failed to fetch purchase order', error);
-            toast.error('Failed to load purchase order details');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const openReceiveModal = async () => {
-        try {
-            const [whRes, brRes] = await Promise.all([
-                fetchAPI('/system/warehouses'),
-                fetchAPI('/system/branches'),
-            ]);
-            const whs = Array.isArray(whRes.data) ? whRes.data : (whRes.data?.items || []);
-            const brs = Array.isArray(brRes.data) ? brRes.data : (brRes.data?.items || []);
-            setWarehouses(whs);
-            setBranches(brs);
-            setReceiveForm({
-                warehouseId: '',
-                branchId: '',
-            });
-            setIsReceiveModalOpen(true);
-        } catch {
-            toast.error('Could not load warehouses / branches');
-        }
-    };
-
-    const handleReceive = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsReceiving(true);
-        const toastId = toast.loading('Receiving order — updating stock & AP ledger...');
-        try {
-            await fetchAPI(`/purchase-orders/${id}/status`, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    status: PurchaseOrderStatus.RECEIVED,
-                    warehouseId: receiveForm.warehouseId || undefined,
-                    branchId: receiveForm.branchId || undefined,
-                })
-            });
-            toast.success('Order received! Stock updated & GRN created.', { id: toastId });
-            setIsReceiveModalOpen(false);
-            fetchOrder();
-        } catch (error: any) {
-            toast.error(error?.message || 'Failed to receive order', { id: toastId });
-        } finally {
-            setIsReceiving(false);
-        }
-    };
-
-    const handleRecordPayment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const toastId = toast.loading('Recording payment...');
-        try {
-            await fetchAPI(`/purchase-orders/${id}/payments`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    ...paymentForm,
-                    amount: Number(paymentForm.amount)
-                })
-            });
-            toast.success('Payment recorded successfully!', { id: toastId });
-            setIsPaymentModalOpen(false);
-            setPaymentForm({ amount: '', paymentMethod: 'Bank Transfer', note: '', transactionId: '' });
-            fetchOrder();
-        } catch (error) {
-            toast.error('Failed to record payment', { id: toastId });
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-            </div>
-        );
-    }
-
-    if (!order) {
-        return (
-            <div className="text-center py-20">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order not found</h2>
-                <Link href="/admin/procurement/purchases" className="text-brand-600 hover:underline mt-4 inline-block">Back to purchases</Link>
-            </div>
-        );
-    }
-
-    const balance = Number(order.totalAmount || 0) - Number(order.paidAmount || 0);
+    const {
+        order,
+        loading,
+        isPaymentModalOpen,
+        setIsPaymentModalOpen,
+        isReceiveModalOpen,
+        setIsReceiveModalOpen,
+        warehouses,
+        branches,
+        balance,
+        openReceiveModal,
+        handleReceive,
+        handleRecordPayment,
+    } = usePurchaseOrderDetails();
 
     const columns = useMemo<DataTableColumn<any>[]>(() => [
         {
@@ -171,11 +75,34 @@ export default function PurchaseOrderDetails() {
         },
     ], [formatPrice]);
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500" />
+            </div>
+        );
+    }
+
+    if (!order) {
+        return (
+            <div className="text-center py-20">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order not found</h2>
+                <Link href="/admin/procurement/purchases" className="text-brand-600 hover:underline mt-4 inline-block">
+                    Back to purchases
+                </Link>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-32 px-4">
+            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700">
                 <div className="flex items-center gap-6">
-                    <Link href="/admin/procurement/purchases" className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-brand-50 dark:hover:bg-brand-900/20 text-slate-400 hover:text-brand-600 rounded-2xl transition-all duration-300">
+                    <Link
+                        href="/admin/procurement/purchases"
+                        className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-brand-50 dark:hover:bg-brand-900/20 text-slate-400 hover:text-brand-600 rounded-2xl transition-all duration-300"
+                    >
                         <ArrowLeft className="w-6 h-6" />
                     </Link>
                     <div>
@@ -184,7 +111,8 @@ export default function PurchaseOrderDetails() {
                             {getStatusBadge(order.status)}
                         </div>
                         <p className="text-slate-500 text-sm mt-1.5 flex items-center gap-2 font-medium">
-                            <Calendar className="w-4 h-4 text-brand-500" /> {new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                            <Calendar className="w-4 h-4 text-brand-500" />
+                            {new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
                         </p>
                     </div>
                 </div>
@@ -202,7 +130,7 @@ export default function PurchaseOrderDetails() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* Left Column - 3/4 */}
+                {/* Left Column – 3/4 */}
                 <div className="lg:col-span-3 space-y-8">
                     {/* Items Table */}
                     <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden">
@@ -210,7 +138,9 @@ export default function PurchaseOrderDetails() {
                             <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
                                 <Package className="w-6 h-6 text-brand-500" /> Order Inventory
                             </h3>
-                            <span className="bg-slate-100 dark:bg-slate-900 px-4 py-1.5 rounded-full text-xs font-bold text-slate-500">{order.items?.length || 0} Items</span>
+                            <span className="bg-slate-100 dark:bg-slate-900 px-4 py-1.5 rounded-full text-xs font-bold text-slate-500">
+                                {order.items?.length || 0} Items
+                            </span>
                         </div>
                         <DataTable
                             data={order.items || []}
@@ -225,7 +155,9 @@ export default function PurchaseOrderDetails() {
                             <div className="flex flex-col md:flex-row justify-end items-end gap-12">
                                 <div className="text-right">
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Total Amount Payable</p>
-                                    <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter font-mono">{formatPrice(Number(order.totalAmount) || 0)}</p>
+                                    <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter font-mono">
+                                        {formatPrice(Number(order.totalAmount) || 0)}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -241,11 +173,12 @@ export default function PurchaseOrderDetails() {
                                 </h3>
                                 {getPaymentStatusBadge(order.paymentStatus)}
                             </div>
-
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Already Paid</p>
-                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{formatPrice(Number(order.paidAmount) || 0)}</p>
+                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                        {formatPrice(Number(order.paidAmount) || 0)}
+                                    </p>
                                 </div>
                                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance Due</p>
@@ -254,7 +187,6 @@ export default function PurchaseOrderDetails() {
                                     </p>
                                 </div>
                             </div>
-
                             {balance > 0 && order.status !== PurchaseOrderStatus.CANCELLED && (
                                 <button
                                     onClick={() => setIsPaymentModalOpen(true)}
@@ -271,18 +203,23 @@ export default function PurchaseOrderDetails() {
                             <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
                                 <History className="w-6 h-6 text-brand-500" /> Payment Log
                             </h3>
-
                             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                 {order.payments?.length > 0 ? (
                                     order.payments.map((payment: any) => (
                                         <div key={payment.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 space-y-2 group">
                                             <div className="flex justify-between items-center">
-                                                <span className="font-black text-slate-900 dark:text-white font-mono">{formatPrice(Number(payment.amount) || 0)}</span>
-                                                <span className="text-[10px] font-bold text-slate-400">{new Date(payment.paymentDate).toLocaleDateString()}</span>
+                                                <span className="font-black text-slate-900 dark:text-white font-mono">
+                                                    {formatPrice(Number(payment.amount) || 0)}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-400">
+                                                    {new Date(payment.paymentDate).toLocaleDateString()}
+                                                </span>
                                             </div>
                                             <div className="flex items-center gap-2 text-[10px]">
                                                 <CreditCard className="w-3 h-3 text-brand-500" />
-                                                <span className="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{payment.paymentMethod}</span>
+                                                <span className="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                                                    {payment.paymentMethod}
+                                                </span>
                                             </div>
                                             {payment.transactionId && (
                                                 <div className="text-[10px] text-slate-400 font-mono truncate bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-100 dark:border-slate-700">
@@ -302,7 +239,7 @@ export default function PurchaseOrderDetails() {
                     </div>
                 </div>
 
-                {/* Right Column - Supplier & Sidebar */}
+                {/* Right Column – Supplier & Sidebar */}
                 <div className="space-y-8">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 p-8 space-y-8">
                         <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 border-b border-slate-50 dark:border-slate-700 pb-6">
@@ -311,7 +248,9 @@ export default function PurchaseOrderDetails() {
                         <div className="space-y-6">
                             <div className="group">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Company Entity</p>
-                                <p className="text-slate-900 dark:text-white font-black text-lg group-hover:text-brand-600 transition-colors">{order.supplier?.name}</p>
+                                <p className="text-slate-900 dark:text-white font-black text-lg group-hover:text-brand-600 transition-colors">
+                                    {order.supplier?.name}
+                                </p>
                             </div>
                             {order.supplier?.contactName && (
                                 <div>
@@ -322,7 +261,9 @@ export default function PurchaseOrderDetails() {
                             {order.supplier?.email && (
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Direct Email</p>
-                                    <p className="text-brand-600 dark:text-brand-400 font-bold underline decoration-brand-200 underline-offset-4">{order.supplier.email}</p>
+                                    <p className="text-brand-600 dark:text-brand-400 font-bold underline decoration-brand-200 underline-offset-4">
+                                        {order.supplier.email}
+                                    </p>
                                 </div>
                             )}
                             {order.supplier?.phone && (
@@ -344,165 +285,31 @@ export default function PurchaseOrderDetails() {
                         <h4 className="font-black text-white flex items-center gap-3">
                             <FileText className="w-5 h-5 text-brand-400" /> Ledger Note
                         </h4>
-                        <p className="text-xs font-medium italic opacity-60 leading-relaxed">System-generated audit: This purchase order represents a significant inventory intake. Ensure all items are physically verified against the packing list upon arrival.</p>
+                        <p className="text-xs font-medium italic opacity-60 leading-relaxed">
+                            System-generated audit: This purchase order represents a significant inventory intake.
+                            Ensure all items are physically verified against the packing list upon arrival.
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Receive Products Modal */}
+            {/* Modals */}
             {isReceiveModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-in zoom-in-95 duration-300">
-                        <div className="p-8 bg-emerald-600 text-white flex items-center justify-between">
-                            <div>
-                                <h3 className="text-2xl font-black tracking-tight">Receive Products</h3>
-                                <p className="text-emerald-100 text-sm mt-1">Select destination — stock & AP ledger will update automatically</p>
-                            </div>
-                            <button onClick={() => setIsReceiveModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><XCircle className="w-6 h-6" /></button>
-                        </div>
-                        <form onSubmit={handleReceive} className="p-8 space-y-6">
-                            {/* Items Summary */}
-                            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 space-y-2 max-h-40 overflow-y-auto">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Items to Receive</p>
-                                {order.items?.map((item: any) => (
-                                    <div key={item.id} className="flex justify-between items-center text-sm">
-                                        <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[60%]">{item.product?.name || 'Product'}</span>
-                                        <span className="font-black text-slate-900 dark:text-white bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                                            Qty: {item.quantity}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Warehouse Select */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 flex items-center gap-2">
-                                    <Warehouse className="w-3 h-3" /> Destination Warehouse
-                                </label>
-                                <select
-                                    required
-                                    value={receiveForm.warehouseId}
-                                    onChange={e => setReceiveForm(f => ({ ...f, warehouseId: e.target.value }))}
-                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-emerald-500 outline-none font-semibold text-sm transition-all"
-                                >
-                                    <option value="" disabled>Select destination warehouse...</option>
-                                    {warehouses.map(w => <option key={w.id} value={w.id}>{w.name} ({w.code})</option>)}
-                                </select>
-                            </div>
-
-                            {/* Branch Select */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 flex items-center gap-2">
-                                    <Building2 className="w-3 h-3" /> Branch
-                                </label>
-                                <select
-                                    required
-                                    value={receiveForm.branchId}
-                                    onChange={e => setReceiveForm(f => ({ ...f, branchId: e.target.value }))}
-                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-emerald-500 outline-none font-semibold text-sm transition-all"
-                                >
-                                    <option value="" disabled>Select branch...</option>
-                                    {branches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.code})</option>)}
-                                </select>
-                            </div>
-
-                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-900/30">
-                                <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium leading-relaxed">
-                                    ✓ A verified GRN will be created automatically<br/>
-                                    ✓ Product stock levels will be incremented<br/>
-                                    ✓ Supplier AP ledger will be updated
-                                </p>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isReceiving}
-                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-2xl font-black transition-all shadow-xl shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3"
-                            >
-                                <CheckCircle className="w-5 h-5" />
-                                {isReceiving ? 'Processing...' : 'Confirm Receipt & Update Stock'}
-                            </button>
-                        </form>
-                    </div>
-                </div>
+                <ReceiveProductsModal
+                    order={order}
+                    warehouses={warehouses}
+                    branches={branches}
+                    onClose={() => setIsReceiveModalOpen(false)}
+                    onConfirm={handleReceive}
+                />
             )}
 
-            {/* Payment Modal */}
             {isPaymentModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-in zoom-in-95 duration-300">
-                        <div className="p-8 bg-slate-900 text-white flex items-center justify-between">
-                            <h3 className="text-2xl font-black tracking-tight">Record Payment</h3>
-                            <button onClick={() => setIsPaymentModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><XCircle className="w-6 h-6" /></button>
-                        </div>
-                        <form onSubmit={handleRecordPayment} className="p-8 space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Payment Amount</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-lg">৳</span>
-                                    <input
-                                        type="number"
-                                        required
-                                        max={balance}
-                                        value={paymentForm.amount}
-                                        onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                                        className="w-full pl-10 pr-6 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-brand-500 outline-none font-black text-xl transition-all"
-                                        placeholder="0.00"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setPaymentForm({ ...paymentForm, amount: balance.toString() })}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black bg-brand-100 text-brand-600 px-2 py-1 rounded-lg uppercase tracking-widest hover:bg-brand-600 hover:text-white transition-all"
-                                    >Full Pay</button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Method</label>
-                                    <select
-                                        value={paymentForm.paymentMethod}
-                                        onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-brand-500 outline-none font-bold text-sm transition-all"
-                                    >
-                                        <option>Bank Transfer</option>
-                                        <option>Cash</option>
-                                        <option>BKash / Mobile</option>
-                                        <option>Cheque</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Txn ID (Optional)</label>
-                                    <input
-                                        type="text"
-                                        value={paymentForm.transactionId}
-                                        onChange={(e) => setPaymentForm({ ...paymentForm, transactionId: e.target.value })}
-                                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-brand-500 outline-none font-bold text-sm transition-all"
-                                        placeholder="Ref No."
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Notes</label>
-                                <textarea
-                                    value={paymentForm.note}
-                                    onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
-                                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-brand-500 outline-none font-bold text-sm transition-all h-24 resize-none"
-                                    placeholder="Add payment details..."
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl font-black transition-all shadow-xl shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3"
-                            >
-                                <CheckCircle className="w-6 h-6" />
-                                Confirm Payment
-                            </button>
-                        </form>
-                    </div>
-                </div>
+                <RecordPaymentModal
+                    balance={balance}
+                    onClose={() => setIsPaymentModalOpen(false)}
+                    onConfirm={handleRecordPayment}
+                />
             )}
         </div>
     );

@@ -5,106 +5,24 @@ import { UserStatus } from '@/lib/enums/user-status.enum';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Eye, EyeOff, Loader2, Save, X, User as UserIcon, Mail, Phone,
-    Shield, ShieldCheck, Hash, Lock, Building2, CreditCard, FileText, AlertTriangle, DollarSign, Tag, BadgeDollarSign
+    Shield, ShieldCheck, Hash, Lock, Building2, AlertTriangle, DollarSign, Tag, BadgeDollarSign
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import type { CustomerFormProps } from '../type';
-import { fetchAPI } from '@/services/api';
+import { useCustomerForm } from '../hooks/useCustomerForm';
 
 export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }: CustomerFormProps) {
-    const [submitting, setSubmitting] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [activeTab, setActiveTab] = useState<'basic' | 'b2b'>('basic');
-    const [priceBooks, setPriceBooks] = useState<any[]>([]);
-    const [priceBooksLoading, setPriceBooksLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        username: '',
-        password: '',
-        phone: '',
-        role: UserRole.USER,
-        status: UserStatus.ACTIVE,
-        // B2B fields
-        companyName: '',
-        customerCode: '',
-        taxId: '',
-        creditLimit: 0,
-        creditHold: false,
-        priceBookCode: '',
-    });
-
-    useEffect(() => {
-        if (isOpen) {
-            loadPriceBooks();
-        }
-    }, [isOpen]);
-
-    const loadPriceBooks = async () => {
-        try {
-            setPriceBooksLoading(true);
-            const res = await fetchAPI('/pricing/price-books');
-            if (res.success) {
-                // Filter only active books
-                setPriceBooks(res.data || []);
-            }
-        } catch (err) {
-            console.error('Failed to load price books in CustomerForm', err);
-        } finally {
-            setSubmitting(false);
-            setPriceBooksLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (initialData) {
-            setFormData({
-                name: initialData.name || '',
-                email: initialData.email || '',
-                username: initialData.username || '',
-                password: '',
-                phone: initialData.phone || '',
-                role: (initialData.role as UserRole) || UserRole.USER,
-                status: (initialData.status as UserStatus) || UserStatus.ACTIVE,
-                companyName: initialData.companyName || '',
-                customerCode: initialData.customerCode || '',
-                taxId: initialData.taxId || '',
-                creditLimit: Number(initialData.creditLimit || 0),
-                creditHold: initialData.creditHold || false,
-                priceBookCode: (initialData as any).priceBookCode || '',
-            });
-        } else {
-            setFormData({
-                name: '',
-                email: '',
-                username: '',
-                password: '',
-                phone: '',
-                role: UserRole.USER,
-                status: UserStatus.ACTIVE,
-                companyName: '',
-                customerCode: '',
-                taxId: '',
-                creditLimit: 0,
-                creditHold: false,
-                priceBookCode: '',
-            });
-        }
-        setActiveTab('basic');
-    }, [initialData, isOpen]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSubmitting(true);
-        try {
-            await onSubmit(formData);
-            onClose();
-        } catch (error) {
-            console.error('Submit handling failed', error);
-        } finally {
-            setSubmitting(false);
-        }
-    };
+    const {
+        submitting,
+        showPassword,
+        setShowPassword,
+        activeTab,
+        setActiveTab,
+        priceBooks,
+        priceBooksLoading,
+        formData,
+        setFormData,
+        handleSubmit,
+    } = useCustomerForm({ isOpen, onClose, onSubmit, initialData });
 
     if (!isOpen) return null;
 
@@ -261,7 +179,7 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">User Role</label>
                                     <div className="relative">
-                                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                         <select
                                             value={formData.role}
                                             onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
@@ -324,7 +242,7 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
                                                 type="text"
                                                 value={formData.customerCode}
                                                 onChange={(e) => setFormData({ ...formData, customerCode: e.target.value.toUpperCase() })}
-                                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-mono"
+                                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all font-mono"
                                                 placeholder="e.g. ACME-001"
                                             />
                                         </div>
@@ -333,7 +251,7 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Tax ID / VAT Number</label>
                                         <div className="relative">
-                                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <input
                                                 type="text"
                                                 value={formData.taxId}

@@ -1,37 +1,13 @@
 'use client';
 
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
-import { useDebounce } from '@/hooks/useDebounce';
 import { useSettings } from '@/hooks/SettingsContext';
-import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
-import { fetchAPI } from '@/services/api';
 import dayjs from 'dayjs';
 import { Download, Eye, Filter, Receipt, Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
+import { useMemo } from 'react';
 import InvoiceDetailsModal from './InvoiceDetailsModal';
-
-type InvoiceStatus = 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED' | string;
-
-type Invoice = {
-    id: string;
-    invoiceNumber: string;
-    orderId?: string;
-    issueDate: string;
-    status: InvoiceStatus;
-    order?: {
-        customerName?: string;
-        totalAmount?: number;
-    };
-};
-
-type InvoiceResponse = {
-    items: Invoice[];
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-};
+import { useInvoicesDashboard } from '../hooks/useInvoicesDashboard';
+import { Invoice } from '../types';
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,75 +21,21 @@ const getStatusColor = (status: string) => {
 
 export default function InvoicesList() {
     const { formatPrice } = useSettings();
-    const { downloadInvoice } = useDownloadInvoice();
     
-    // State management
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-    });
-
-    const debouncedSearch = useDebounce(searchQuery, 500);
-
-    const fetchInvoices = useCallback(async (page: number, search: string, status: string) => {
-        setIsLoading(true);
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '10',
-                ...(search && { q: search }),
-                ...(status && { status })
-            });
-
-            const res = await fetchAPI(`/invoices?${params}`);
-            
-            if (res.success && res.data) {
-                const data = res.data as InvoiceResponse;
-                setInvoices(data.items);
-                setPagination({
-                    page: data.page,
-                    limit: data.limit,
-                    total: data.total,
-                    totalPages: data.totalPages
-                });
-            }
-        } catch {
-            toast.error('Failed to fetch invoices');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        const timeout = window.setTimeout(() => {
-            void fetchInvoices(1, debouncedSearch, statusFilter);
-        }, 0);
-        return () => window.clearTimeout(timeout);
-    }, [debouncedSearch, statusFilter, fetchInvoices]);
-
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.totalPages) {
-            fetchInvoices(newPage, debouncedSearch, statusFilter);
-        }
-    };
-
-    const handleDownload = useCallback((invoice: Invoice) => {
-        downloadInvoice({
-            ...invoice.order,
-            invoiceNumber: invoice.invoiceNumber
-        });
-    }, [downloadInvoice]);
-
-    const handleView = useCallback((invoice: Invoice) => {
-        setSelectedInvoice(invoice);
-    }, []);
+    const {
+        invoices,
+        isLoading,
+        selectedInvoice,
+        setSelectedInvoice,
+        searchQuery,
+        setSearchQuery,
+        statusFilter,
+        setStatusFilter,
+        pagination,
+        handlePageChange,
+        handleDownload,
+        handleView,
+    } = useInvoicesDashboard();
 
     const columns = useMemo<DataTableColumn<Invoice>[]>(() => [
         {

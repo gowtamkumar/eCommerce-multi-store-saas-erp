@@ -1,7 +1,27 @@
-import PaymentsPage from "@/features/storefront/payments/components/Payments";
+'use client';
 
-export default function page() {
+import React from 'react';
+import { usePaymentsDashboard } from '@/features/admin/payments/hooks/usePaymentsDashboard';
+import { PaymentsListPage } from '@/features/admin/payments/components/PaymentsListPage';
+
+export default function PaymentsPageShell() {
+  const {
+    payments,
+    loading,
+    searchQuery,
+    setSearchQuery,
+    pagination,
+    handlePageChange,
+  } = usePaymentsDashboard();
+
   return (
-    <PaymentsPage />
-  )
+    <PaymentsListPage
+      payments={payments}
+      loading={loading}
+      searchQuery={searchQuery}
+      onSearchQueryChange={setSearchQuery}
+      pagination={pagination}
+      onPageChange={handlePageChange}
+    />
+  );
 }

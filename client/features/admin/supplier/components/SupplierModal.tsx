@@ -1,111 +1,20 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
 import { Building, Loader2, Mail, MapPin, Phone, Save, User, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-
-interface SupplierModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSuccess: () => void;
-    supplier?: any; // If provided, we are in edit mode
-}
+import React from 'react';
+import { SupplierModalProps } from '../types';
+import { useSupplierModal } from '../hooks/useSupplierModal';
 
 export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: SupplierModalProps) {
-    const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState<any[]>([]);
-    const [formData, setFormData] = useState({
-        name: '',
-        code: '',
-        contactName: '',
-        email: '',
-        phone: '',
-        address: '',
-        category: '',
-        rating: 5,
-        leadTimeDays: 0,
-        isActive: true
-    });
-
-    useEffect(() => {
-        if (isOpen) {
-            const loadCategories = async () => {
-                try {
-                    const res = await fetchAPI('/categories');
-                    if (res && res.data) {
-                        setCategories(res.data);
-                    }
-                } catch (error) {
-                    console.error('Failed to load categories:', error);
-                }
-            };
-            loadCategories();
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (supplier) {
-            setFormData({
-                name: supplier.name || '',
-                code: supplier.code || '',
-                contactName: supplier.contactName || '',
-                email: supplier.email || '',
-                phone: supplier.phone || '',
-                address: supplier.address || '',
-                category: supplier.category?.id || supplier.categoryId || '',
-                rating: typeof supplier.rating === 'number' ? supplier.rating : Number(supplier.rating || 5),
-                leadTimeDays: typeof supplier.leadTimeDays === 'number' ? supplier.leadTimeDays : Number(supplier.leadTimeDays || 0),
-                isActive: typeof supplier.isActive === 'boolean' ? supplier.isActive : (supplier.isActive !== 'false' && supplier.isActive !== false)
-            });
-        } else {
-            setFormData({
-                name: '',
-                code: '',
-                contactName: '',
-                email: '',
-                phone: '',
-                address: '',
-                category: '',
-                rating: 5,
-                leadTimeDays: 0,
-                isActive: true
-            });
-        }
-    }, [supplier, isOpen]);
+    const {
+        loading,
+        categories,
+        formData,
+        setFormData,
+        handleSubmit,
+    } = useSupplierModal({ isOpen, onClose, onSuccess, supplier });
 
     if (!isOpen) return null;
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-
-        try {
-            const url = supplier ? `/suppliers/${supplier.id}` : '/suppliers';
-            const method = supplier ? 'PATCH' : 'POST';
-
-            const payload = {
-                ...formData,
-                rating: Number(formData.rating),
-                leadTimeDays: parseInt(String(formData.leadTimeDays), 10) || 0,
-                isActive: Boolean(formData.isActive)
-            };
-
-            await fetchAPI(url, {
-                method,
-                body: JSON.stringify(payload)
-            });
-
-            toast.success(`Supplier ${supplier ? 'updated' : 'created'} successfully`);
-            onSuccess();
-            onClose();
-        } catch (error) {
-            console.error('Error saving supplier:', error);
-            toast.error('Failed to save supplier');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -205,7 +114,7 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                                Category dd
+                                Category
                             </label>
                             <select
                                 value={formData.category}

@@ -23,3 +23,28 @@ export interface GrnData {
   receivedDate: string;
   createdAt: string;
 }
+
+export interface GrnPagination {
+  page: number;
+  totalPages: number;
+  total: number;
+}
+
+export interface GrnListPageProps {
+  grns?: GrnData[];
+  loading?: boolean;
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (value: string) => void;
+  pagination?: GrnPagination;
+  onPageChange?: (page: number) => void;
+}
+
+export interface GrnDetailPageProps {
+  grn: GrnData;
+  onVerify: () => void;
+  onReject: () => void;
+  isProcessing: boolean;
+}
+

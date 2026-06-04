@@ -37,3 +37,10 @@ export interface SupplierListProps {
     onDelete: (id: string) => void;
     isSearchLoading: boolean;
 }
+
+export interface SupplierModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    supplier?: Supplier;
+}

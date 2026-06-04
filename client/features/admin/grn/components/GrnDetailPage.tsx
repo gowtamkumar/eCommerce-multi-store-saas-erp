@@ -19,15 +19,8 @@ import Link from 'next/link';
 import React, { useMemo } from 'react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { getGrnStatusBadge } from './GrnListPage';
-import { GrnData, GrnItem } from '@/features/admin/grn/types';
+import { GrnData, GrnItem, GrnDetailPageProps } from '@/features/admin/grn/types';
 
-
-interface GrnDetailPageProps {
-    grn: GrnData;
-    onVerify: () => void;
-    onReject: () => void;
-    isProcessing: boolean;
-}
 
 export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }: GrnDetailPageProps) {
     const { formatPrice } = useSettings();

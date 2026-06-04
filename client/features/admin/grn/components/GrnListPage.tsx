@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { GrnData, GrnItem } from '@/features/admin/grn/types';
-
+import { GrnData, GrnItem, GrnListPageProps } from '@/features/admin/grn/types';
 
 export const getGrnStatusBadge = (status: GrnStatus) => {
     switch (status) {
@@ -44,20 +43,6 @@ export const getGrnStatusBadge = (status: GrnStatus) => {
     }
 };
 
-interface GrnListPageProps {
-    grns?: GrnData[];
-    loading?: boolean;
-    searchQuery?: string;
-    onSearchChange?: (value: string) => void;
-    statusFilter?: string;
-    onStatusFilterChange?: (value: string) => void;
-    pagination?: {
-        page: number;
-        totalPages: number;
-        total: number;
-    };
-    onPageChange?: (page: number) => void;
-}
 
 export default function GrnListPage({
     grns = [],
