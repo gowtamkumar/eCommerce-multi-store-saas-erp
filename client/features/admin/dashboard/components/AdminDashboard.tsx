@@ -2,11 +2,33 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
-import { Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CheckCircle2, Coins, History as HistoryIcon, Package, Plus, RefreshCw, ShoppingBag, Store, TrendingUp, Truck, Users, Wallet } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CheckCircle2, ChevronRight, Coins, History as HistoryIcon, Package, Plus, RefreshCw, ShoppingBag, Store, TrendingUp, Truck, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { DashboardStats } from '../types';
+
+type DashboardIcon = React.ComponentType<{ className?: string }>;
+
+type StatCardProps = {
+    label: string;
+    value: number;
+    subValue: string;
+    icon: DashboardIcon;
+    colorClass?: string;
+    bgClass: string;
+    loading: boolean;
+    isPrice?: boolean;
+    formatPrice?: (value: number) => string;
+    trend?: number | null;
+};
+
+type HealthItem = {
+    label: string;
+    val: number;
+    color: string;
+    pct: number;
+};
 
 // Small period-over-period trend badge
 const TrendBadge = React.memo(({ value }: { value: number | null | undefined }) => {
@@ -37,9 +59,9 @@ const StatCard = React.memo(({
     bgClass,
     loading,
     isPrice = false,
-    formatPrice,
+    formatPrice = (value) => String(value),
     trend,
-}: any) => (
+}: StatCardProps) => (
     <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-600 group">
         <div className="flex items-center justify-between mb-4">
             <div>
@@ -70,7 +92,15 @@ const StatCard = React.memo(({
 StatCard.displayName = 'StatCard';
 
 // Memoized Chart Widget
-const SalesChart = React.memo(({ data, loading, period }: any) => (
+const SalesChart = React.memo(({
+    data,
+    loading,
+    period,
+}: {
+    data: DashboardStats['salesData'];
+    loading: boolean;
+    period: 'day' | 'week' | 'month';
+}) => (
     <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
         <div className="flex items-center justify-between mb-8">
             <div>
@@ -145,6 +175,315 @@ const ORDER_STATUS_STYLES: Record<string, string> = {
     cancelled: 'bg-rose-100 text-rose-600',
 };
 
+type ActionCenterItem = {
+    label: string;
+    value: string | number;
+    detail: string;
+    href: string;
+    icon: DashboardIcon;
+    tone: 'rose' | 'amber' | 'blue' | 'emerald' | 'slate';
+};
+
+const ACTION_TONES: Record<ActionCenterItem['tone'], string> = {
+    rose: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-900/15 dark:text-rose-400 dark:border-rose-900/30',
+    amber: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/15 dark:text-amber-400 dark:border-amber-900/30',
+    blue: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/15 dark:text-blue-400 dark:border-blue-900/30',
+    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/15 dark:text-emerald-400 dark:border-emerald-900/30',
+    slate: 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-900/40 dark:text-slate-300 dark:border-slate-700',
+};
+
+const ActionCenter = React.memo(({
+    items,
+    loading,
+}: {
+    items: ActionCenterItem[];
+    loading: boolean;
+}) => (
+    <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                    <Activity className="w-6 h-6 text-brand-500" /> ERP Action Center
+                </h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                    Exceptions and work queues that need attention
+                </p>
+            </div>
+            <Link href="/admin/notifications" className="text-xs font-black text-brand-600 uppercase tracking-widest hover:underline">
+                Notifications
+            </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+            {loading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="h-32 rounded-3xl bg-slate-50 dark:bg-slate-900/30 animate-pulse" />
+                ))
+            ) : (
+                items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={`p-5 rounded-3xl border transition-all hover:-translate-y-0.5 hover:shadow-lg group ${ACTION_TONES[item.tone]}`}
+                        >
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="w-11 h-11 rounded-2xl bg-white/70 dark:bg-slate-950/20 flex items-center justify-center shadow-sm">
+                                    <Icon className="w-5 h-5" />
+                                </div>
+                                <ChevronRight className="w-4 h-4 opacity-50 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <div className="text-3xl font-black font-mono leading-none">{item.value}</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest mt-2">{item.label}</div>
+                            <p className="text-[11px] font-semibold opacity-70 mt-2 leading-snug">{item.detail}</p>
+                        </Link>
+                    );
+                })
+            )}
+        </div>
+    </div>
+));
+ActionCenter.displayName = 'ActionCenter';
+
+const FinanceSnapshot = React.memo(({
+    snapshot,
+    loading,
+    formatPrice,
+}: {
+    snapshot?: DashboardStats['financeSnapshot'];
+    loading: boolean;
+    formatPrice: (value: number) => string;
+}) => {
+    const items = [
+        {
+            label: 'Revenue',
+            value: formatPrice(snapshot?.revenue || 0),
+            hint: 'Selected period',
+            color: 'text-emerald-600',
+        },
+        {
+            label: 'Gross Profit',
+            value: formatPrice(snapshot?.grossProfit || 0),
+            hint: `COGS ${formatPrice(snapshot?.cogs || 0)}`,
+            color: (snapshot?.grossProfit || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600',
+        },
+        {
+            label: 'Operating Expenses',
+            value: formatPrice(snapshot?.operatingExpenses || 0),
+            hint: 'Period spend',
+            color: 'text-amber-600',
+        },
+        {
+            label: 'Net Profit',
+            value: formatPrice(snapshot?.netProfit || 0),
+            hint: `${(snapshot?.profitMargin || 0).toFixed(1)}% margin`,
+            color: (snapshot?.netProfit || 0) >= 0 ? 'text-brand-600' : 'text-rose-600',
+        },
+    ];
+
+    return (
+        <div className="bg-slate-950 dark:bg-slate-950 p-8 rounded-[40px] shadow-2xl border border-slate-800 overflow-hidden relative">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%)] pointer-events-none" />
+            <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div>
+                    <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                        <Wallet className="w-6 h-6 text-brand-400" /> Finance Cockpit
+                    </h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                        Profitability snapshot for the selected period
+                    </p>
+                </div>
+                <Link href="/admin/finance/profit-loss" className="text-xs font-black text-brand-300 uppercase tracking-widest hover:underline">
+                    Open P&L
+                </Link>
+            </div>
+            <div className="relative grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-8">
+                {loading ? (
+                    Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="h-28 rounded-3xl bg-white/5 animate-pulse" />
+                    ))
+                ) : (
+                    items.map((item) => (
+                        <div key={item.label} className="p-5 rounded-3xl bg-white/4 border border-white/10">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.label}</div>
+                            <div className={`text-2xl font-black font-mono mt-3 ${item.color}`}>{item.value}</div>
+                            <div className="text-[11px] font-semibold text-slate-500 mt-2">{item.hint}</div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+});
+FinanceSnapshot.displayName = 'FinanceSnapshot';
+
+const RevenueExpenseChart = React.memo(({
+    stats,
+    loading,
+}: {
+    stats: DashboardStats | null;
+    loading: boolean;
+}) => {
+    const totalExpenses = (stats?.financeSnapshot?.cogs || 0) + (stats?.financeSnapshot?.operatingExpenses || 0);
+    const data = [
+        { name: 'Revenue', amount: stats?.financeSnapshot?.revenue || 0 },
+        { name: 'COGS', amount: stats?.financeSnapshot?.cogs || 0 },
+        { name: 'Opex', amount: stats?.financeSnapshot?.operatingExpenses || 0 },
+        { name: 'Total Cost', amount: totalExpenses },
+        { name: 'Net', amount: stats?.financeSnapshot?.netProfit || 0 },
+    ];
+
+    return (
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                        <BarChart3 className="w-6 h-6 text-brand-500" /> Revenue vs Cost
+                    </h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                        Period profitability bridge
+                    </p>
+                </div>
+            </div>
+            <div className="h-[300px]">
+                {loading ? (
+                    <div className="w-full h-full bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-[32px]" />
+                ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: '#0f172a',
+                                    borderRadius: '20px',
+                                    border: 'none',
+                                    color: '#fff',
+                                    padding: '14px',
+                                }}
+                            />
+                            <Bar dataKey="amount" fill="#3b82f6" radius={[12, 12, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
+            </div>
+        </div>
+    );
+});
+RevenueExpenseChart.displayName = 'RevenueExpenseChart';
+
+const TopPerformers = React.memo(({
+    stats,
+    loading,
+    formatPrice,
+}: {
+    stats: DashboardStats | null;
+    loading: boolean;
+    formatPrice: (value: number) => string;
+}) => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                        <Package className="w-6 h-6 text-brand-500" /> Top Products
+                    </h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                        Best revenue drivers in this period
+                    </p>
+                </div>
+                <Link href="/admin/products" className="text-xs font-black text-brand-600 uppercase tracking-widest hover:underline">Products</Link>
+            </div>
+            <div className="space-y-4">
+                {loading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                        <div key={index} className="h-16 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-2xl" />
+                    ))
+                ) : stats?.topProducts?.length ? (
+                    stats.topProducts.map((product, index) => (
+                        <Link key={`${product.id}-${index}`} href={`/admin/products/${product.id}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group">
+                            <div className="flex items-center gap-4 min-w-0">
+                                <div className="w-8 text-center text-sm font-black text-slate-400 font-mono">#{index + 1}</div>
+                                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700 shrink-0">
+                                    {product.image ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <Package className="w-5 h-5 text-slate-300" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-black text-slate-900 dark:text-white text-sm truncate">{product.name}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{product.quantity} units sold</p>
+                                </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className="font-black text-slate-900 dark:text-white font-mono text-sm">{formatPrice(product.revenue)}</p>
+                                <p className="text-[9px] text-brand-500 font-black uppercase tracking-widest">Revenue</p>
+                            </div>
+                        </Link>
+                    ))
+                ) : (
+                    <div className="py-16 text-center bg-slate-50 dark:bg-slate-900/20 rounded-[32px] border border-dashed border-slate-200 dark:border-slate-800">
+                        <Package className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-4">No product sales yet</p>
+                    </div>
+                )}
+            </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                        <ShoppingBag className="w-6 h-6 text-brand-500" /> Top Customers
+                    </h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                        Highest value buyers in this period
+                    </p>
+                </div>
+                <Link href="/admin/customers" className="text-xs font-black text-brand-600 uppercase tracking-widest hover:underline">Customers</Link>
+            </div>
+            <div className="space-y-4">
+                {loading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                        <div key={index} className="h-16 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-2xl" />
+                    ))
+                ) : stats?.topCustomers?.length ? (
+                    stats.topCustomers.map((customer, index) => (
+                        <div key={`${customer.id}-${index}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-4 min-w-0">
+                                <div className="w-8 text-center text-sm font-black text-slate-400 font-mono">#{index + 1}</div>
+                                <div className="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center text-brand-600 dark:text-brand-400 font-black border border-brand-100 dark:border-brand-900/30 shrink-0">
+                                    {customer.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-black text-slate-900 dark:text-white text-sm truncate">{customer.name}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{customer.email || 'No email'} · {customer.orderCount} orders</p>
+                                </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <p className="font-black text-slate-900 dark:text-white font-mono text-sm">{formatPrice(customer.revenue)}</p>
+                                <p className="text-[9px] text-brand-500 font-black uppercase tracking-widest">Spend</p>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="py-16 text-center bg-slate-50 dark:bg-slate-900/20 rounded-[32px] border border-dashed border-slate-200 dark:border-slate-800">
+                        <ShoppingBag className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-4">No customer sales yet</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    </div>
+));
+TopPerformers.displayName = 'TopPerformers';
+
 export default function AdminDashboard() {
     const { formatPrice } = useSettings();
     const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
@@ -173,10 +512,13 @@ export default function AdminDashboard() {
     }, [period]);
 
     useEffect(() => {
-        fetchDashboardStats();
+        const t = setTimeout(() => {
+            void fetchDashboardStats();
+        }, 0);
+        return () => clearTimeout(t);
     }, [fetchDashboardStats]);
 
-    const healthItems = useMemo(() => {
+    const healthItems = useMemo<HealthItem[]>(() => {
         if (!stats) return [];
         const items = [
             { label: 'Users', val: stats.counts?.users || 0, color: 'bg-indigo-500' },
@@ -188,6 +530,58 @@ export default function AdminDashboard() {
         const max = Math.max(...items.map((i) => i.val), 1);
         return items.map((i) => ({ ...i, pct: Math.round((i.val / max) * 100) }));
     }, [stats]);
+
+    const actionItems = useMemo<ActionCenterItem[]>(() => {
+        const fulfillmentPending = stats?.fulfillment?.pending || 0;
+        const fulfillmentPicking = stats?.fulfillment?.picking || 0;
+        const lowStock = stats?.lowStockCount || 0;
+        const activeOrders = stats?.activeOrders || 0;
+        const payableDue = stats?.supplierStats?.totalAmountDue || 0;
+        const purchaseOrders = stats?.supplierStats?.totalPurchaseOrders || 0;
+
+        return [
+            {
+                label: 'Active Orders',
+                value: activeOrders,
+                detail: 'Orders waiting for confirmation, shipment, or completion.',
+                href: '/admin/orders',
+                icon: ShoppingBag,
+                tone: activeOrders > 0 ? 'blue' : 'slate',
+            },
+            {
+                label: 'Fulfillment Queue',
+                value: fulfillmentPending,
+                detail: `${fulfillmentPicking} currently in picking workflow.`,
+                href: '/admin/fulfillment',
+                icon: Truck,
+                tone: fulfillmentPending > 0 ? 'amber' : 'slate',
+            },
+            {
+                label: 'Low Stock',
+                value: lowStock,
+                detail: 'Items below reorder threshold and needing replenishment.',
+                href: '/admin/inventory',
+                icon: Package,
+                tone: lowStock > 0 ? 'rose' : 'emerald',
+            },
+            {
+                label: 'Payables Due',
+                value: formatPrice(payableDue),
+                detail: 'Supplier balance requiring payment follow-up.',
+                href: '/admin/finance/ap',
+                icon: Wallet,
+                tone: payableDue > 0 ? 'amber' : 'slate',
+            },
+            {
+                label: 'Purchase Orders',
+                value: purchaseOrders,
+                detail: 'Open procurement pipeline and receiving workflow.',
+                href: '/admin/procurement/purchases',
+                icon: HistoryIcon,
+                tone: purchaseOrders > 0 ? 'blue' : 'slate',
+            },
+        ];
+    }, [formatPrice, stats]);
 
     const periodLabel = period.charAt(0).toUpperCase() + period.slice(1);
 
@@ -285,8 +679,8 @@ export default function AdminDashboard() {
 
                 <StatCard
                     label="Fulfillment Status"
-                    value={(stats as any)?.fulfillment?.pending || 0}
-                    subValue={`${(stats as any)?.fulfillment?.picking || 0} tasks in progress`}
+                    value={stats?.fulfillment?.pending || 0}
+                    subValue={`${stats?.fulfillment?.picking || 0} tasks in progress`}
                     icon={Truck}
                     colorClass="text-brand-600"
                     bgClass="bg-brand-50 dark:bg-brand-900/20"
@@ -344,6 +738,13 @@ export default function AdminDashboard() {
                 />
             </div>
 
+            <ActionCenter items={actionItems} loading={loading} />
+            <FinanceSnapshot
+                snapshot={stats?.financeSnapshot}
+                loading={loading}
+                formatPrice={formatPrice}
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Sales Chart */}
                 <SalesChart data={stats?.salesData || []} loading={loading} period={period} />
@@ -353,7 +754,7 @@ export default function AdminDashboard() {
                     <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-xl border border-slate-100 dark:border-slate-700">
                         <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tighter italic">Platform Health</h3>
                         <div className="space-y-6">
-                            {healthItems.map((item: any) => (
+                            {healthItems.map((item) => (
                                 <div key={item.label}>
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
@@ -393,6 +794,9 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            <RevenueExpenseChart stats={stats} loading={loading} />
+            <TopPerformers stats={stats} loading={loading} formatPrice={formatPrice} />
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Recent Customer Orders */}
                 <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-700">
@@ -408,7 +812,7 @@ export default function AdminDashboard() {
                                 <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-2xl"></div>
                             ))
                         ) : stats?.recentOrders?.length ? (
-                            stats.recentOrders.map((o: any) => (
+                            stats.recentOrders.map((o) => (
                                 <Link key={o.id} href={`/admin/orders/${o.id}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:rotate-12 transition-transform">
@@ -450,7 +854,7 @@ export default function AdminDashboard() {
                                 <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-2xl"></div>
                             ))
                         ) : stats?.supplierStats?.recentPurchaseOrders?.length ? (
-                            stats.supplierStats.recentPurchaseOrders.map((po: any) => (
+                            stats.supplierStats.recentPurchaseOrders.map((po) => (
                                 <Link key={po.id} href={`/admin/procurement/purchases/${po.id}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:rotate-12 transition-transform">
@@ -491,7 +895,7 @@ export default function AdminDashboard() {
                             <div key={i} className="h-24 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-3xl"></div>
                         ))
                     ) : stats?.lowStockProducts?.length ? (
-                        stats.lowStockProducts.map((item: any) => (
+                        stats.lowStockProducts.map((item) => (
                             <Link key={item.id} href={`/admin/products/${item.id}`} className="flex items-center justify-between p-5 rounded-[32px] bg-rose-50/30 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-900/20 hover:border-rose-500/30 transition-all group">
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform shadow-sm">

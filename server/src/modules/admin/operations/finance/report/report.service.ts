@@ -90,6 +90,10 @@ export class ReportService {
           recentPurchaseOrders,
           recentOrders,
           prevPeriodSales,
+          periodCogs,
+          periodExpenses,
+          topProductsRaw,
+          topCustomersRaw,
         ] = await Promise.all([
           this.reportRepo.getDashboardStats(tenantId, startDate),
           this.reportRepo.getSalesChartData(tenantId, period),
@@ -99,6 +103,10 @@ export class ReportService {
           this.reportRepo.getRecentPurchaseOrders(tenantId, 5),
           this.reportRepo.getRecentOrders(tenantId, 5),
           this.reportRepo.getSalesSumInRange(tenantId, prevStartDate, startDate),
+          this.reportRepo.getCogsInRange(tenantId, startDate, now),
+          this.expenseService.findAllExpensesRaw(ctx, startDate, now),
+          this.reportRepo.getTopProducts(tenantId, startDate, 5),
+          this.reportRepo.getTopCustomers(tenantId, startDate, 5),
         ])
 
         const recentProducts = products.products || []
@@ -127,6 +135,13 @@ export class ReportService {
         // Average order value for the selected period.
         const periodOrdersValue = parseInt(stats.periodOrders, 10)
         const avgOrderValue = periodOrdersValue > 0 ? periodSalesValue / periodOrdersValue : 0
+        const operatingExpenses = (periodExpenses || []).reduce(
+          (sum: number, expense: any) => sum + (+expense.amount || 0),
+          0,
+        )
+        const grossProfit = periodSalesValue - periodCogs
+        const netProfit = grossProfit - operatingExpenses
+        const profitMargin = periodSalesValue > 0 ? (netProfit / periodSalesValue) * 100 : 0
 
         // Format chart data for UI (label granularity depends on period).
         const salesData = chartData.map((d: any) => {
@@ -148,6 +163,20 @@ export class ReportService {
             ? Object.values(p.variantCombination).join(' / ')
             : null,
         }))
+        const topProducts = topProductsRaw.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          image: p.images?.[0],
+          quantity: parseInt(p.quantity || '0', 10),
+          revenue: parseFloat(p.revenue || '0'),
+        }))
+        const topCustomers = topCustomersRaw.map((c: any) => ({
+          id: c.id,
+          name: c.name || 'Walk-in Customer',
+          email: c.email || null,
+          orderCount: parseInt(c.orderCount || '0', 10),
+          revenue: parseFloat(c.revenue || '0'),
+        }))
 
         return {
           totalSales: parseFloat(stats.totalSales),
@@ -162,7 +191,17 @@ export class ReportService {
           avgOrderValue,
           recentProducts,
           recentOrders,
+          topProducts,
+          topCustomers,
           lowStockProducts,
+          financeSnapshot: {
+            revenue: periodSalesValue,
+            cogs: periodCogs,
+            grossProfit,
+            operatingExpenses,
+            netProfit,
+            profitMargin,
+          },
           supplierStats: {
             totalSuppliers: parseInt(stats.totalSuppliers, 10),
             totalPurchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
@@ -182,8 +221,8 @@ export class ReportService {
           },
           lowStockCount: parseInt(stats.lowStockCount, 10),
           fulfillment: {
-            pending: stats.pendingFulfillment || 0,
-            picking: stats.pickingFulfillment || 0,
+            pending: parseInt(stats.pendingFulfillment || '0', 10),
+            picking: parseInt(stats.pickingFulfillment || '0', 10),
           },
         }
       },

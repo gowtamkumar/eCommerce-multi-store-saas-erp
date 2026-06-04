@@ -1,7 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Activity, Bell, CreditCard, Globe, Layers, LayoutDashboard, LogOut, Mail, Settings, ShieldAlert, ShieldCheck, Users, X, Zap } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { Activity, Bell, CreditCard, Globe, Layers, LayoutDashboard, Mail, Settings, ShieldAlert, ShieldCheck, Users, X, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMenuOpen: boolean; setIsMobileMenuOpen: (open: boolean) => void }) {
@@ -22,10 +21,7 @@ export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }:
     ];
 
 
-    const handleLogout = async () => {
-        await signOut({ redirect: false });
-        window.location.href = '/login';
-    };
+
     return (
         <motion.aside
             className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
@@ -64,15 +60,7 @@ export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }:
                 })}
             </nav>
 
-            <div className="p-4 border-t border-slate-800">
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/20 rounded-xl transition-all font-medium"
-                >
-                    <LogOut className="w-5 h-5" />
-                    Sign Out
-                </button>
-            </div>
+
         </motion.aside>
     );
 }

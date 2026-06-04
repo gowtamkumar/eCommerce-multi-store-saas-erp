@@ -35,13 +35,23 @@ const SORT_OPTIONS = [
   { value: 'name_asc', label: 'Name A-Z' },
 ];
 
+// Resolves a deep-link query value (e.g. ?status=suspended) to a valid filter
+// option, falling back to the "all" sentinel when absent or unrecognized.
+function resolveQueryOption(param: string, options: string[], fallback: string): string {
+  if (typeof window === 'undefined') return fallback;
+  const raw = new URLSearchParams(window.location.search).get(param);
+  if (!raw) return fallback;
+  const match = options.find((opt) => opt.toLowerCase() === raw.toLowerCase());
+  return match || fallback;
+}
+
 export default function TenantList({ initialTenants }: TenantListProps) {
   const [tenants, setTenants] = useState(initialTenants);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState('All Plans');
-  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [selectedPlan, setSelectedPlan] = useState(() => resolveQueryOption('plan', PLAN_OPTIONS, 'All Plans'));
+  const [selectedStatus, setSelectedStatus] = useState(() => resolveQueryOption('status', STATUS_OPTIONS, 'All Status'));
   const [selectedSort, setSelectedSort] = useState('created_desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState('');

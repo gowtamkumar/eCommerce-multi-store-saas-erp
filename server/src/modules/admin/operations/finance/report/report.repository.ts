@@ -198,6 +198,47 @@ export class ReportRepository {
     return this.dataSource.query(query, [tenantId, limit])
   }
 
+  async getTopProducts(tenantId: string, startDate: Date, limit: number = 5) {
+    const query = `
+      SELECT
+        oi.product_id as id,
+        COALESCE(p.name, oi.snapshot->>'name', 'Unknown Product') as name,
+        p.images,
+        COALESCE(SUM(oi.quantity), 0) as quantity,
+        COALESCE(SUM(oi.total_amount), 0) as revenue
+      FROM order_items oi
+      INNER JOIN orders o ON o.id = oi.order_id
+      LEFT JOIN products p ON p.id = oi.product_id
+      WHERE oi.tenant_id = $1
+        AND o.tenant_id = $1
+        AND o.created_at >= $2
+        AND o.status != $3
+      GROUP BY oi.product_id, p.name, p.images, oi.snapshot
+      ORDER BY revenue DESC
+      LIMIT $4
+    `
+    return this.dataSource.query(query, [tenantId, startDate, OrderStatus.CANCELLED, limit])
+  }
+
+  async getTopCustomers(tenantId: string, startDate: Date, limit: number = 5) {
+    const query = `
+      SELECT
+        COALESCE(NULLIF(customer_email, ''), customer_phone, customer_name) as id,
+        MAX(customer_name) as name,
+        MAX(customer_email) as email,
+        COUNT(*) as "orderCount",
+        COALESCE(SUM(total_amount), 0) as revenue
+      FROM orders
+      WHERE tenant_id = $1
+        AND created_at >= $2
+        AND status != $3
+      GROUP BY COALESCE(NULLIF(customer_email, ''), customer_phone, customer_name)
+      ORDER BY revenue DESC
+      LIMIT $4
+    `
+    return this.dataSource.query(query, [tenantId, startDate, OrderStatus.CANCELLED, limit])
+  }
+
   async getOrderCountInRange(tenantId: string, startDate: Date, endDate: Date): Promise<number> {
     const result = await this.dataSource.query(
       `SELECT COUNT(*) as count FROM orders WHERE tenant_id = $1 AND created_at >= $2 AND created_at <= $3`,
