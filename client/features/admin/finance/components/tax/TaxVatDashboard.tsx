@@ -14,6 +14,7 @@ import {
     initializeTaxRules, calculateTax, getTaxFiling
 } from '@/services/accounting';
 import { useSettings } from '@/hooks/SettingsContext';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 interface TaxRule {
     id: string;
@@ -163,6 +164,144 @@ export function TaxVatDashboard() {
             toast.error('Failed to delete rule');
         }
     };
+
+    const filingColumns = useMemo<DataTableColumn<FilingLog>[]>(() => [
+        {
+            key: 'date',
+            header: 'Date',
+            cell: (log) => (
+                <span className="text-xs font-bold text-slate-400">
+                    {new Date(log.date).toLocaleDateString()}
+                </span>
+            ),
+        },
+        {
+            key: 'type',
+            header: 'Type',
+            cell: (log) => (
+                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${log.type.startsWith('OUTPUT') ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>
+                    {log.type}
+                </span>
+            ),
+        },
+        {
+            key: 'narration',
+            header: 'Narration',
+            cell: (log) => (
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                    {log.description}
+                </span>
+            ),
+        },
+        {
+            key: 'taxableBase',
+            header: 'Taxable Base',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (log) => (
+                <span className="font-semibold font-mono text-xs text-slate-900 dark:text-white">
+                    {formatPrice(log.taxableBase)}
+                </span>
+            ),
+        },
+        {
+            key: 'taxRate',
+            header: 'VAT Rate',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (log) => (
+                <span className="font-bold text-xs text-slate-600 dark:text-slate-400">
+                    {log.taxRate}%
+                </span>
+            ),
+        },
+        {
+            key: 'taxAmount',
+            header: 'Tax Amount',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (log) => (
+                <span className="font-black font-mono text-xs text-indigo-600">
+                    {formatPrice(log.taxAmount)}
+                </span>
+            ),
+        },
+    ], [formatPrice]);
+
+    const ruleColumns = useMemo<DataTableColumn<TaxRule>[]>(() => [
+        {
+            key: 'name',
+            header: 'Jurisdiction Name',
+            cell: (rule) => (
+                <span className="text-xs font-black text-slate-900 dark:text-white">
+                    {rule.name}
+                </span>
+            ),
+        },
+        {
+            key: 'category',
+            header: 'Tax Category',
+            cell: (rule) => (
+                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-900 text-slate-500">
+                    {rule.category}
+                </span>
+            ),
+        },
+        {
+            key: 'country',
+            header: 'Country',
+            cell: (rule) => (
+                <span className="text-xs font-black text-slate-500">
+                    {rule.country}
+                </span>
+            ),
+        },
+        {
+            key: 'state',
+            header: 'State / Region',
+            cell: (rule) => (
+                <span className="text-xs font-semibold text-slate-400">
+                    {rule.state || 'National Standard'}
+                </span>
+            ),
+        },
+        {
+            key: 'rate',
+            header: 'Tax Rate',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (rule) => (
+                <span className="font-black font-mono text-sm text-indigo-650">
+                    {rule.rate}%
+                </span>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            headerClassName: 'text-center',
+            className: 'text-center',
+            cell: (rule) => rule.isSystem ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-indigo-50 text-indigo-600">Locked System</span>
+            ) : (
+                <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-slate-100 text-slate-500">Custom</span>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (rule) => !rule.isSystem ? (
+                <button
+                    onClick={() => handleDeleteRule(rule.id)}
+                    className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors inline-block"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            ) : null,
+        },
+    ], []);
 
     const handleSimulateCalculation = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -325,43 +464,15 @@ export function TaxVatDashboard() {
                                         <Download className="w-3.5 h-3.5" /> Export Filing Report
                                     </button>
                                 </div>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50/50 dark:bg-slate-900/50">
-                                            <tr>
-                                                <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Date</th>
-                                                <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Type</th>
-                                                <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400">Narration</th>
-                                                <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-right">Taxable Base</th>
-                                                <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-center">VAT Rate</th>
-                                                <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 text-right">Tax Amount</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                            {filing?.transactionLogs?.map((log, idx) => (
-                                                <tr key={idx} className="hover:bg-slate-50/20 dark:hover:bg-slate-700/10">
-                                                    <td className="px-6 py-4 text-xs font-bold text-slate-400">{new Date(log.date).toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${log.type.startsWith('OUTPUT') ? 'bg-indigo-50 text-indigo-600' : 'bg-amber-50 text-amber-600'}`}>
-                                                            {log.type}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-xs font-bold text-slate-700 dark:text-slate-200">{log.description}</td>
-                                                    <td className="px-6 py-4 text-right font-semibold font-mono text-xs text-slate-900 dark:text-white">{formatPrice(log.taxableBase)}</td>
-                                                    <td className="px-6 py-4 text-center font-bold text-xs text-slate-600 dark:text-slate-400">{log.taxRate}%</td>
-                                                    <td className="px-6 py-4 text-right font-black font-mono text-xs text-indigo-600">{formatPrice(log.taxAmount)}</td>
-                                                </tr>
-                                            ))}
-                                            {(!filing?.transactionLogs || filing.transactionLogs.length === 0) && (
-                                                <tr>
-                                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-semibold text-xs">
-                                                        No taxable general ledger postings located for this period.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <DataTable
+                                    data={filing?.transactionLogs || []}
+                                    columns={filingColumns}
+                                    getRowKey={(log) => log.voucherId + '-' + log.date}
+                                    loading={filingLoading}
+                                    emptyLabel="No taxable general ledger postings located for this period."
+                                    minWidthClassName="min-w-[800px]"
+                                    containerClassName="!bg-transparent !shadow-none !border-none !rounded-none !p-0"
+                                />
                             </div>
                         </>
                     )}
@@ -369,61 +480,15 @@ export function TaxVatDashboard() {
             )}
 
             {activeTab === 'rules' && (
-                <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                    {rulesLoading ? (
-                        <div className="flex justify-center py-20">
-                            <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50/50 dark:bg-slate-900/50">
-                                    <tr>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400">Jurisdiction Name</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400">Tax Category</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400">Country</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400">State / Region</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 text-right">Tax Rate</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-slate-400 text-center">Status</th>
-                                        <th className="px-8 py-4 text-right text-[10px] font-black uppercase text-slate-400">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {rules.map((rule) => (
-                                        <tr key={rule.id} className="hover:bg-slate-50/20 dark:hover:bg-slate-700/10">
-                                            <td className="px-8 py-4 text-xs font-black text-slate-900 dark:text-white">{rule.name}</td>
-                                            <td className="px-8 py-4">
-                                                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-900 text-slate-500">
-                                                    {rule.category}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-4 text-xs font-black text-slate-500">{rule.country}</td>
-                                            <td className="px-8 py-4 text-xs font-semibold text-slate-400">{rule.state || 'National Standard'}</td>
-                                            <td className="px-8 py-4 text-right font-black font-mono text-sm text-indigo-650">{rule.rate}%</td>
-                                            <td className="px-8 py-4 text-center">
-                                                {rule.isSystem ? (
-                                                    <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-indigo-50 text-indigo-600">Locked System</span>
-                                                ) : (
-                                                    <span className="px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-slate-100 text-slate-500">Custom</span>
-                                                )}
-                                            </td>
-                                            <td className="px-8 py-4 text-right">
-                                                {!rule.isSystem && (
-                                                    <button
-                                                        onClick={() => handleDeleteRule(rule.id)}
-                                                        className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                <DataTable
+                    data={rules}
+                    columns={ruleColumns}
+                    getRowKey={(rule) => rule.id}
+                    loading={rulesLoading}
+                    emptyLabel="No custom tax rules found."
+                    minWidthClassName="min-w-[800px]"
+                    containerClassName="rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+                />
             )}
 
             {activeTab === 'sandbox' && (

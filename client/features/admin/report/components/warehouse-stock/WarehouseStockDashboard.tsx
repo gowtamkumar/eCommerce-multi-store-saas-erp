@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useMemo, Fragment, memo } from 'react
 import toast from 'react-hot-toast';
 import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
-import { 
-    Warehouse, Search, Download, Package, AlertTriangle, 
+import {
+    Warehouse, Search, Download, Package, AlertTriangle,
     XCircle, CheckCircle, ChevronDown, ChevronRight, Loader2, DollarSign, Building2
 } from 'lucide-react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 // Memoized Summary Card component
 const SummaryCard = memo(({ title, value, icon: Icon, colorClass, borderClass }: any) => (
@@ -23,97 +24,7 @@ const SummaryCard = memo(({ title, value, icon: Icon, colorClass, borderClass }:
 ));
 SummaryCard.displayName = 'SummaryCard';
 
-// Memoized Product Row component
-const ProductRow = memo(({ product, isExpanded, onToggle, formatPrice }: any) => {
-    const stockStatus = (p: any) => {
-        if (p.outOfStock) return { label: 'Out of Stock', class: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400', Icon: XCircle, bar: 'bg-red-500', pct: 0 };
-        if (p.lowStock) return { label: 'Low Stock', class: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400', Icon: AlertTriangle, bar: 'bg-orange-500', pct: 20 };
-        return { label: 'In Stock', class: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400', Icon: CheckCircle, bar: 'bg-emerald-500', pct: Math.min(100, (p.stock / 50) * 100) };
-    };
 
-    const s = stockStatus(product);
-
-    return (
-        <tr
-            className={`group hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors ${product.hasVariants ? 'cursor-pointer' : ''}`}
-            onClick={() => product.hasVariants && onToggle(product.id)}
-        >
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-4">
-                    {product.hasVariants && (
-                        <div className="transition-transform group-hover:scale-110">
-                            {isExpanded
-                                ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                                : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                            }
-                        </div>
-                    )}
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600 transition-transform group-hover:scale-105">
-                        {product.images?.[0] ? (
-                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <Package className="w-5 h-5 text-slate-400" />
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <p className="font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{product.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5 font-bold uppercase tracking-widest">{formatPrice(product.price)}</p>
-                        {product.hasVariants && (
-                            <span className="inline-block mt-1 text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 bg-brand-50/50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-md border border-brand-100/50 dark:border-brand-900/30">
-                                {product.variants.length} variations
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
-                    {product.categoryName || '—'}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
-                    {product.supplierName || '—'}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3 min-w-[120px]">
-                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                        <div
-                            className={`h-full ${s.bar} rounded-full transition-all duration-700 ease-out`}
-                            style={{ width: `${s.pct}%` }}
-                        />
-                    </div>
-                    <span className="font-black text-slate-900 dark:text-white text-xs w-8 text-right font-mono" title="Physical Stock">{product.stock}</span>
-                </div>
-            </td>
-            <td className="px-6 py-4">
-                <span className="font-black text-amber-600 dark:text-amber-400 text-xs font-mono">
-                    {product.reservedStock || 0}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className={`font-black text-xs font-mono ${(product.stock - (product.reservedStock || 0)) <= (product.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
-                    {product.stock - (product.reservedStock || 0)}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className="font-black text-slate-900 dark:text-white font-mono text-sm underline decoration-slate-200 dark:decoration-slate-700 decoration-2 underline-offset-4">
-                    {formatPrice(product.stockValue)}
-                </span>
-            </td>
-            <td className="px-6 py-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-sm border ${s.class} border-current/10`}>
-                    <s.Icon className="w-3 h-3" />
-                    {s.label}
-                </span>
-            </td>
-        </tr>
-    );
-});
-ProductRow.displayName = 'ProductRow';
 
 export default function WarehouseStockDashboard() {
     const { formatPrice } = useSettings();
@@ -187,7 +98,7 @@ export default function WarehouseStockDashboard() {
             }
 
             // Fetch stock summaries in parallel
-            const fetchPromises = targetWarehouses.map(w => 
+            const fetchPromises = targetWarehouses.map(w =>
                 fetchAPI(`/inventory-ledger/stock-summary?warehouseId=${w.id}`)
                     .then(res => ({ warehouseId: w.id, data: res.success ? (res.data || []) : [] }))
                     .catch(() => ({ warehouseId: w.id, data: [] }))
@@ -321,12 +232,214 @@ export default function WarehouseStockDashboard() {
         };
     }, [filteredProducts]);
 
+    const tableData = useMemo(() => {
+        const data: any[] = [];
+        filteredProducts.forEach(p => {
+            data.push({ ...p, isParent: true });
+            if (p.hasVariants && expandedIds.has(p.id)) {
+                p.variants.forEach((v: any) => {
+                    data.push({ ...v, isVariant: true, parentProduct: p });
+                });
+            }
+        });
+        return data;
+    }, [filteredProducts, expandedIds]);
+
+    const getRowKey = useCallback((item: any) => {
+        if (item.isVariant) return `variant-${item.id}`;
+        return `product-${item.id}`;
+    }, []);
+
+    const getRowClassName = useCallback((item: any) => {
+        if (item.isVariant) {
+            return 'bg-slate-50/50 dark:bg-slate-900/30 transition-all';
+        }
+        return '';
+    }, []);
+
+    const handleRowClick = useCallback((item: any) => {
+        if (item.isVariant) return;
+        if (item.hasVariants) {
+            toggleExpand(item.id);
+        }
+    }, [toggleExpand]);
+
+    const columns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'product',
+            header: 'Product Line',
+            cell: (item) => {
+                if (item.isVariant) {
+                    return (
+                        <div className="flex items-center gap-4 pl-12">
+                            <div className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_10px_rgba(var(--brand-600),0.4)] flex-shrink-0" />
+                            <div>
+                                <p className="font-black text-slate-700 dark:text-slate-300 text-xs italic uppercase tracking-wider">
+                                    {Object.values(item.combination || {}).join(' / ')}
+                                </p>
+                                <p className="text-[9px] text-slate-400 font-mono font-black mt-0.5 uppercase tracking-tighter">SKU: {item.sku}</p>
+                            </div>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="flex items-center gap-4">
+                        {item.hasVariants && (
+                            <div className="transition-transform group-hover:scale-110">
+                                {expandedIds.has(item.id)
+                                    ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                    : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                }
+                            </div>
+                        )}
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600 transition-transform group-hover:scale-105">
+                            {item.images?.[0] ? (
+                                <img src={item.images[0]} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <Package className="w-5 h-5 text-slate-400" />
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <p className="font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{item.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5 font-bold uppercase tracking-widest">{formatPrice(item.price)}</p>
+                            {item.hasVariants && (
+                                <span className="inline-block mt-1 text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 bg-brand-50/50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-md border border-brand-100/50 dark:border-brand-900/30">
+                                    {item.variants.length} variations
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+        },
+        {
+            key: 'category',
+            header: 'Category',
+            cell: (item) => {
+                if (item.isVariant) return null;
+                return (
+                    <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
+                        {item.categoryName || '—'}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'supplier',
+            header: 'Supplier',
+            cell: (item) => {
+                if (item.isVariant) return null;
+                return (
+                    <span className="text-xs text-slate-600 dark:text-slate-400 font-black uppercase tracking-wider whitespace-nowrap">
+                        {item.supplierName || '—'}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'physical',
+            header: 'Physical',
+            cell: (item) => {
+                const stock = item.stock || 0;
+                const threshold = item.lowStockThreshold || 5;
+                const bar = item.isVariant
+                    ? (item.stock === 0 ? 'bg-red-500' : item.stock <= threshold ? 'bg-orange-500' : 'bg-emerald-500')
+                    : 'bg-emerald-500';
+                const pct = item.isVariant
+                    ? Math.min(100, (stock / 20) * 100)
+                    : (item.outOfStock ? 0 : item.lowStock ? 20 : Math.min(100, (stock / 50) * 100));
+
+                return (
+                    <div className="flex items-center gap-3 min-w-[120px]">
+                        <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full ${bar} rounded-full transition-all duration-700 ease-out`}
+                                style={{ width: `${pct}%` }}
+                            />
+                        </div>
+                        <span className={`font-black text-xs w-8 text-right font-mono ${item.isVariant ? (item.stock === 0 ? 'text-red-500' : item.stock <= threshold ? 'text-orange-500' : 'text-slate-500') : 'text-slate-900 dark:text-white'}`} title="Physical Stock">
+                            {stock}
+                        </span>
+                    </div>
+                );
+            }
+        },
+        {
+            key: 'reserved',
+            header: 'Reserved',
+            cell: (item) => (
+                <span className="font-black text-amber-600 dark:text-amber-400 text-xs font-mono">
+                    {item.reservedStock || 0}
+                </span>
+            )
+        },
+        {
+            key: 'available',
+            header: 'Available',
+            cell: (item) => {
+                const available = item.stock - (item.reservedStock || 0);
+                const threshold = item.lowStockThreshold || 5;
+                const isLow = available <= threshold;
+                return (
+                    <span className={`font-black text-xs font-mono ${isLow ? 'text-orange-500' : 'text-emerald-500'}`}>
+                        {available}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'assets',
+            header: 'Assets',
+            cell: (item) => {
+                const val = item.isVariant ? (item.stock * Number(item.price)) : item.stockValue;
+                return (
+                    <span className={`font-black font-mono ${item.isVariant ? 'text-xs text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white text-sm underline decoration-slate-200 dark:decoration-slate-700 decoration-2 underline-offset-4'}`}>
+                        {formatPrice(val)}
+                    </span>
+                );
+            }
+        },
+        {
+            key: 'health',
+            header: 'Health',
+            cell: (item) => {
+                if (item.isVariant) {
+                    const threshold = item.lowStockThreshold || 5;
+                    const status = item.stock === 0 ? 'Depleted' : item.stock <= threshold ? 'Critical' : 'Stable';
+                    const colorClass = item.stock === 0
+                        ? 'bg-red-50 text-red-500 border-red-100'
+                        : item.stock <= threshold ? 'bg-orange-50 text-orange-500 border-orange-100'
+                            : 'bg-emerald-50 text-emerald-500 border-emerald-100';
+                    return (
+                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${colorClass}`}>
+                            {status}
+                        </span>
+                    );
+                }
+                const label = item.outOfStock ? 'Out of Stock' : item.lowStock ? 'Low Stock' : 'In Stock';
+                const statusClass = item.outOfStock
+                    ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                    : item.lowStock ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+                        : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400';
+                const Icon = item.outOfStock ? XCircle : item.lowStock ? AlertTriangle : CheckCircle;
+                return (
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-tighter shadow-sm border ${statusClass} border-current/10`}>
+                        <Icon className="w-3 h-3" />
+                        {label}
+                    </span>
+                );
+            }
+        }
+    ], [expandedIds, formatPrice]);
+
     // Export to CSV functionality
     const handleExportCSV = () => {
         try {
             const branchName = selectedBranchId ? (branches.find(b => b.id === selectedBranchId)?.name || 'Branch') : 'Global';
             const warehouseName = selectedWarehouseId === 'all' ? 'All-Warehouses' : (warehouses.find(w => w.id === selectedWarehouseId)?.name || 'Warehouse');
-            
+
             let csvContent = 'Product,Category,Supplier,SKU,Variant,Stock,Reserved,Available,Unit Price,Asset Value,Status\n';
 
             filteredProducts.forEach(p => {
@@ -462,7 +575,7 @@ export default function WarehouseStockDashboard() {
                             className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all ${filter === f.key
                                 ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl shadow-slate-200 dark:shadow-none scale-105'
                                 : 'bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-brand-500 hover:text-brand-600'
-                            }`}
+                                }`}
                         >
                             {f.label}
                             <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black ${filter === f.key ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'}`}>
@@ -483,125 +596,42 @@ export default function WarehouseStockDashboard() {
                 </div>
             </div>
 
-            {/* Inventory Valuation Table */}
-            <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Product Line</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Category</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Physical</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reserved</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Available</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assets</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Health</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>
-                                        <td colSpan={8} className="px-6 py-10">
-                                            <div className="h-12 bg-slate-100 dark:bg-slate-700/30 animate-pulse rounded-2xl" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : filteredProducts.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="py-32 text-center">
-                                        <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
-                                            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
-                                                <Warehouse className="w-10 h-10 text-slate-200" strokeWidth={1} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">No stock found</p>
-                                                <p className="text-sm text-slate-500 font-medium">There are no matching items for the selected location or filters.</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredProducts.map(p => (
-                                    <Fragment key={p.id}>
-                                        <ProductRow
-                                            product={p}
-                                            isExpanded={expandedIds.has(p.id)}
-                                            onToggle={toggleExpand}
-                                            formatPrice={formatPrice}
-                                        />
-                                        {/* Variants */}
-                                        {p.hasVariants && expandedIds.has(p.id) && p.variants.map((v: any) => (
-                                            <tr key={v.id} className="bg-slate-50/50 dark:bg-slate-900/30 transition-all">
-                                                <td className="px-6 py-4 pl-24">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_10px_rgba(var(--brand-600),0.4)] flex-shrink-0" />
-                                                        <div>
-                                                            <p className="font-black text-slate-700 dark:text-slate-300 text-xs italic uppercase tracking-wider">
-                                                                {Object.entries(v.combination || {}).map(([k, val]) => `${val}`).join(' / ')}
-                                                            </p>
-                                                            <p className="text-[9px] text-slate-400 font-mono font-black mt-0.5 uppercase tracking-tighter">SKU: {v.sku}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4" />
-                                                <td className="px-6 py-4" />
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3 min-w-[120px]">
-                                                        <div className="flex-1 h-1 bg-slate-200 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                                                            <div
-                                                                className={`h-full rounded-full transition-all duration-1000 ${v.stock === 0 ? 'bg-red-500' : v.stock <= (v.lowStockThreshold || 5) ? 'bg-orange-500' : 'bg-emerald-500'}`}
-                                                                style={{ width: `${Math.min(100, (v.stock / 20) * 100)}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className={`font-black text-[10px] min-w-[20px] text-right font-mono ${v.stock === 0 ? 'text-red-500' : v.stock <= (v.lowStockThreshold || 5) ? 'text-orange-500' : 'text-slate-500'}`}>
-                                                            {v.stock}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 font-mono">
-                                                        {v.reservedStock || 0}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`text-[10px] font-black font-mono ${(v.stock - (v.reservedStock || 0)) <= (v.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
-                                                        {v.stock - (v.reservedStock || 0)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-xs font-black text-slate-500 dark:text-slate-400 font-mono">
-                                                        {formatPrice(v.stock * Number(v.price))}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${v.stock === 0 ? 'bg-red-50 text-red-500 border-red-100' : v.stock <= (v.lowStockThreshold || 5) ? 'bg-orange-50 text-orange-500 border-orange-100' : 'bg-emerald-50 text-emerald-500 border-emerald-100'}`}>
-                                                        {v.stock === 0 ? 'Depleted' : v.stock <= (v.lowStockThreshold || 5) ? 'Critical' : 'Stable'}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </Fragment>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Footer summary */}
-                {!loading && filteredProducts.length > 0 && (
-                    <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.15em]">
-                            Branch/Warehouse assets reconciled: <span className="text-slate-900 dark:text-white underline decoration-brand-500 decoration-2 underline-offset-4">{filteredProducts.length} items</span>
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Live data active</span>
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            {/* Inventory Valuation Table using DataTable */}
+            <DataTable
+                data={tableData}
+                columns={columns}
+                getRowKey={getRowKey}
+                loading={loading}
+                loadingLabel="Reconciling branch/warehouse assets..."
+                emptyLabel={
+                    <div className="flex flex-col items-center gap-4 max-w-xs mx-auto py-12">
+                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
+                            <Warehouse className="w-10 h-10 text-slate-200" strokeWidth={1} />
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">No stock found</p>
+                            <p className="text-sm text-slate-500 font-medium">There are no matching items for the selected location or filters.</p>
                         </div>
                     </div>
-                )}
-            </div>
+                }
+                rowClassName={getRowClassName}
+                onRowClick={handleRowClick}
+                minWidthClassName="min-w-[1000px]"
+                containerClassName="rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+            />
+
+            {/* Footer summary */}
+            {!loading && filteredProducts.length > 0 && (
+                <div className="flex items-center justify-between px-8 py-4 bg-slate-50/50 dark:bg-slate-900/40 border border-t-0 border-slate-100 dark:border-slate-700 rounded-[2.5rem] rounded-t-none -mt-6">
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.15em]">
+                        Branch/Warehouse assets reconciled: <span className="text-slate-900 dark:text-white underline decoration-brand-500 decoration-2 underline-offset-4">{filteredProducts.length} items</span>
+                    </p>
+                    <div className="flex items-center gap-4">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Live data active</span>
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

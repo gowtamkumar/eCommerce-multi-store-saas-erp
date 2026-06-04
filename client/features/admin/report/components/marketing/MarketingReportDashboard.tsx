@@ -9,6 +9,7 @@ import {
     CheckCircle2, XCircle, AlertCircle, Calendar, Users, BarChart3,
     Tag, Percent, Activity, Sparkles, RefreshCcw, Coins, ShieldAlert, Award
 } from 'lucide-react';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 // Memoized KPI Metric Card
 const MetricCard = memo(({ title, value, subtext, icon: Icon, colorClass, borderClass }: any) => (
@@ -210,6 +211,109 @@ export default function MarketingReportDashboard() {
         }
     };
 
+    const loyaltyColumns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'customerName',
+            header: 'Customer Name',
+            cell: (cust) => (
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {cust.customerName || cust.name}
+                </span>
+            ),
+        },
+        {
+            key: 'customerEmail',
+            header: 'Email',
+            cell: (cust) => (
+                <span className="text-slate-500">{cust.customerEmail || cust.email}</span>
+            ),
+        },
+        {
+            key: 'membershipTier',
+            header: 'Membership Tier',
+            cell: (cust) => (
+                <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 font-bold uppercase text-[9px] tracking-wider rounded">
+                    {cust.membershipTier || 'BRONZE'}
+                </span>
+            ),
+        },
+        {
+            key: 'pointsBalance',
+            header: 'Points Balance',
+            cell: (cust) => (
+                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                    {cust.loyaltyPointsBalance || 0} pts
+                </span>
+            ),
+        },
+    ], []);
+
+    const campaignColumns = useMemo<DataTableColumn<any>[]>(() => [
+        {
+            key: 'name',
+            header: 'Campaign',
+            cell: (c) => (
+                <span className="font-bold text-slate-800 dark:text-slate-200 max-w-[150px] truncate block" title={c.name}>
+                    {c.name}
+                </span>
+            ),
+        },
+        {
+            key: 'type',
+            header: 'Channel',
+            cell: (c) => (
+                <span className="capitalize font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                    {getChannelIcon(c.type)} {c.type}
+                </span>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            cell: (c) => getCampaignStatus(c.status),
+        },
+        {
+            key: 'reach',
+            header: 'Reach',
+            cell: (c) => (
+                <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
+                    {c.totalAudience || 0}
+                </span>
+            ),
+        },
+        {
+            key: 'success',
+            header: 'Success',
+            cell: (c) => (
+                <span className="font-mono text-emerald-600 font-semibold">
+                    {c.sentCount || 0}
+                </span>
+            ),
+        },
+        {
+            key: 'failures',
+            header: 'Failures',
+            cell: (c) => (
+                <span className="font-mono text-rose-500 font-semibold">
+                    {c.failedCount || 0}
+                </span>
+            ),
+        },
+        {
+            key: 'rate',
+            header: 'Rate',
+            cell: (c) => {
+                const total = (c.sentCount || 0) + (c.failedCount || 0);
+                const rate = total > 0 ? ((c.sentCount || 0) / total) * 100 : 100;
+                return (
+                    <span className="font-mono font-bold text-slate-900 dark:text-white">
+                        {rate.toFixed(1)}%
+                    </span>
+                );
+            },
+        },
+    ], []);
+
     const handleExportCSV = () => {
         try {
             let csvContent = 'TYPE,NAME/CODE,DETAILS,STATUS,REACH/LIMIT,SUCCESS/USED,FAILURES/UNUSED,SUCCESS RATE\n';
@@ -379,42 +483,15 @@ export default function MarketingReportDashboard() {
                         <Users className="w-4.5 h-4.5 text-blue-500" />
                         Top Customer Loyalty Rankings
                     </h3>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
-                                <tr>
-                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Customer Name</th>
-                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Email</th>
-                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Membership Tier</th>
-                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Points Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-xs">
-                                {loading ? (
-                                    Array.from({ length: 3 }).map((_, i) => (
-                                        <tr key={i}><td colSpan={4} className="px-4 py-4"><div className="h-5 bg-slate-100 dark:bg-slate-700/50 rounded animate-pulse" /></td></tr>
-                                    ))
-                                ) : topLoyalCustomers.length === 0 ? (
-                                    <tr><td colSpan={4} className="py-8 text-center text-slate-400">No customer point balance records found</td></tr>
-                                ) : (
-                                    topLoyalCustomers.map((cust, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/20">
-                                            <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200">{cust.customerName || cust.name}</td>
-                                            <td className="px-4 py-3 text-slate-500">{cust.customerEmail || cust.email}</td>
-                                            <td className="px-4 py-3">
-                                                <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 font-bold uppercase text-[9px] tracking-wider rounded">
-                                                    {cust.membershipTier || 'BRONZE'}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 font-mono font-bold text-slate-900 dark:text-white">
-                                                {cust.loyaltyPointsBalance || 0} pts
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        data={topLoyalCustomers}
+                        columns={loyaltyColumns}
+                        getRowKey={(cust) => cust.id || cust.customerEmail || cust.email || cust.customerName || cust.name}
+                        loading={loading}
+                        emptyLabel="No customer point balance records found"
+                        minWidthClassName="min-w-[600px]"
+                        containerClassName="!bg-transparent !shadow-none !border-none !rounded-none !p-0"
+                    />
                 </div>
             </div>
 
@@ -443,50 +520,15 @@ export default function MarketingReportDashboard() {
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
-                                    <tr>
-                                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-wider text-slate-400">Campaign</th>
-                                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-wider text-slate-400">Channel</th>
-                                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-wider text-slate-400">Status</th>
-                                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-wider text-slate-400">Reach</th>
-                                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-wider text-slate-400">Success</th>
-                                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-wider text-slate-400">Failures</th>
-                                        <th className="px-4 py-4 text-[9px] font-black uppercase tracking-wider text-slate-400">Rate</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {loading ? (
-                                        Array.from({ length: 4 }).map((_, i) => (
-                                            <tr key={i}>
-                                                <td colSpan={7} className="px-4 py-5"><div className="h-6 bg-slate-100 dark:bg-slate-700/50 rounded-lg animate-pulse" /></td>
-                                            </tr>
-                                        ))
-                                    ) : filteredCampaigns.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} className="py-12 text-center text-slate-400 text-xs font-semibold">No campaign data found</td>
-                                        </tr>
-                                    ) : (
-                                        filteredCampaigns.map(c => {
-                                            const total = (c.sentCount || 0) + (c.failedCount || 0);
-                                            const rate = total > 0 ? ((c.sentCount || 0) / total) * 100 : 100;
-                                            return (
-                                                <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/20 text-xs">
-                                                    <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200 max-w-[150px] truncate">{c.name}</td>
-                                                    <td className="px-4 py-3 capitalize font-semibold flex items-center gap-1.5">{getChannelIcon(c.type)} {c.type}</td>
-                                                    <td className="px-4 py-3">{getCampaignStatus(c.status)}</td>
-                                                    <td className="px-4 py-3 font-mono font-semibold">{c.totalAudience || 0}</td>
-                                                    <td className="px-4 py-3 font-mono text-emerald-600 font-semibold">{c.sentCount || 0}</td>
-                                                    <td className="px-4 py-3 font-mono text-rose-500 font-semibold">{c.failedCount || 0}</td>
-                                                    <td className="px-4 py-3 font-mono font-bold text-slate-900 dark:text-white">{rate.toFixed(1)}%</td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            data={filteredCampaigns}
+                            columns={campaignColumns}
+                            getRowKey={(c) => c.id || c.name}
+                            loading={loading}
+                            emptyLabel="No campaign data found"
+                            minWidthClassName="min-w-[700px]"
+                            containerClassName="!bg-transparent !shadow-none !border-none !rounded-none !p-0"
+                        />
                     </div>
                 </div>
 

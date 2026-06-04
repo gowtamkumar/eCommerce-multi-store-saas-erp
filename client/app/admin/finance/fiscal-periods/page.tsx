@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -19,6 +19,7 @@ import {
   createFiscalPeriod,
   updateFiscalPeriodStatus
 } from '@/services/accounting';
+import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 
 interface FiscalPeriod {
   id: string;
@@ -91,6 +92,75 @@ export default function FiscalPeriodPage() {
     }
   };
 
+  const columns = useMemo<DataTableColumn<FiscalPeriod>[]>(() => [
+    {
+      key: 'name',
+      header: 'Period Name',
+      cell: (fp) => (
+        <span className="font-bold text-slate-800 dark:text-slate-200">
+          {fp.name}
+        </span>
+      ),
+    },
+    {
+      key: 'startDate',
+      header: 'Start Date',
+      cell: (fp) => (
+        <span className="text-xs font-semibold text-slate-500">
+          {new Date(fp.startDate).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'endDate',
+      header: 'End Date',
+      cell: (fp) => (
+        <span className="text-xs font-semibold text-slate-500">
+          {new Date(fp.endDate).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (fp) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+          fp.status === 'OPEN'
+            ? 'bg-emerald-100 text-emerald-600'
+            : 'bg-rose-100 text-rose-600'
+        }`}>
+          {fp.status}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      headerClassName: 'text-right',
+      className: 'text-right',
+      cell: (fp) => (
+        <button
+          onClick={() => handleToggleStatus(fp.id, fp.status)}
+          className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 border transition-all inline-flex ${
+            fp.status === 'OPEN'
+              ? 'border-rose-100 text-rose-600 bg-rose-50/10 hover:bg-rose-600 hover:text-white'
+              : 'border-emerald-100 text-emerald-600 bg-emerald-50/10 hover:bg-emerald-600 hover:text-white'
+          }`}
+        >
+          {fp.status === 'OPEN' ? (
+            <>
+              <Lock className="w-3.5 h-3.5" /> Lock Period
+            </>
+          ) : (
+            <>
+              <Unlock className="w-3.5 h-3.5" /> Unlock Period
+            </>
+          )}
+        </button>
+      ),
+    },
+  ], []);
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
       {/* Header */}
@@ -124,72 +194,17 @@ export default function FiscalPeriodPage() {
           </p>
         </div>
 
-        {/* Right Side: Periods Grid List */}
-        <div className="lg:col-span-2 space-y-4">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-            </div>
-          ) : periods.length === 0 ? (
-            <div className="p-16 text-center bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700">
-              <p className="text-xs text-slate-400 font-black uppercase tracking-widest">No Fiscal Periods Defined Yet</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {periods.map((fp) => (
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  key={fp.id}
-                  className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                        {fp.name}
-                      </span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                        fp.status === 'OPEN'
-                          ? 'bg-emerald-100 text-emerald-600'
-                          : 'bg-rose-100 text-rose-600'
-                      }`}>
-                        {fp.status}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 mb-6">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Starts: {new Date(fp.startDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Ends: {new Date(fp.endDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleToggleStatus(fp.id, fp.status)}
-                    className={`w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 border transition-all ${
-                      fp.status === 'OPEN'
-                        ? 'border-rose-100 text-rose-600 bg-rose-50/10 hover:bg-rose-600 hover:text-white'
-                        : 'border-emerald-100 text-emerald-600 bg-emerald-50/10 hover:bg-emerald-600 hover:text-white'
-                    }`}
-                  >
-                    {fp.status === 'OPEN' ? (
-                      <>
-                        <Lock className="w-3.5 h-3.5" /> Lock Period
-                      </>
-                    ) : (
-                      <>
-                        <Unlock className="w-3.5 h-3.5" /> Unlock Period
-                      </>
-                    )}
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-          )}
+        {/* Right Side: Periods Table */}
+        <div className="lg:col-span-2">
+          <DataTable
+            data={periods}
+            columns={columns}
+            getRowKey={(fp) => fp.id}
+            loading={loading}
+            emptyLabel="No Fiscal Periods Defined Yet"
+            minWidthClassName="min-w-[600px]"
+            containerClassName="rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden"
+          />
         </div>
       </div>
 
