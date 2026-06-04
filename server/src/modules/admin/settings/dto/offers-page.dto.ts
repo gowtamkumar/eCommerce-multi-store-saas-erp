@@ -51,4 +51,34 @@ export class OffersPageSettingsDto {
   @IsString()
   @IsOptional()
   bannerTextColor?: string
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  bannerAlignment?: string
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  bannerOverlayOpacity?: number
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  countdownStyle?: string
+
+  @ApiProperty({ required: false })
+  @IsBoolean()
+  @IsOptional()
+  showCartButton?: boolean
+
+  @ApiProperty({ required: false })
+  @IsBoolean()
+  @IsOptional()
+  showOriginalPrice?: boolean
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  sortBy?: string
 }

@@ -8,6 +8,14 @@ export interface Page {
     createdAt: string;
 }
 
+export type PageStatusFilter = "all" | "draft" | "published";
+
+export interface PageDeleteTarget {
+    isOpen: boolean;
+    id: string;
+    isHomePage: boolean;
+}
+
 
 export interface ProductSliderProps {
     headline?: string;

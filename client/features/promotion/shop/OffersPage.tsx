@@ -135,28 +135,66 @@ function PromotionSection({ group }: { group: OfferGroup }) {
 }
 
 export default function OffersPage({ offerGroups, promotions, offersSettings: propSettings }: OffersPageProps) {
-    // Use SSR-provided settings if available; fall back to client context only when needed
-    // (e.g. when component is used outside of offers route)
-    console.log("offerGroups", offerGroups);
-    console.log("promotions", promotions);
-
     const { settings } = useSettings();
-    const offersSettings = propSettings ?? settings?.offersPage ?? {
-        bannerShow: true,
-        bannerHeadline: "Special Deals & Offers",
-        bannerSubheadline: "Save big on our hottest promotions — grab these deals before they're gone!",
-        showFilters: true,
-        productsPerRow: 5,
-    };
+    
+    // Resolve all settings with fallback values
+    const offersSettings = useMemo(() => {
+        const base = propSettings ?? settings?.offersPage ?? {};
+        return {
+            bannerShow: base.bannerShow !== false,
+            bannerHeadline: base.bannerHeadline || "Special Deals & Offers",
+            bannerSubheadline: base.bannerSubheadline || "Save big on our hottest promotions — grab these deals before they're gone!",
+            showFilters: base.showFilters !== false,
+            productsPerRow: base.productsPerRow || 5,
+            bannerAlignment: base.bannerAlignment || "center",
+            bannerOverlayOpacity: base.bannerOverlayOpacity !== undefined ? base.bannerOverlayOpacity : 40,
+            bannerHeight: base.bannerHeight || 400,
+            bannerFullWidth: !!base.fullWidth || !!base.bannerFullWidth,
+            bannerImage: base.bannerImage || "",
+            bannerBackgroundColor: base.bannerBackgroundColor || "",
+            bannerTextColor: base.bannerTextColor || "",
+            countdownStyle: base.countdownStyle || "classic",
+            showCartButton: !!base.showCartButton,
+            showOriginalPrice: base.showOriginalPrice !== false,
+            sortBy: base.sortBy || "ending_soon",
+        };
+    }, [propSettings, settings?.offersPage]);
 
     const [activeTab, setActiveTab] = useState<string>('all');
 
     const handleTabChange = useCallback((id: string) => setActiveTab(id), []);
 
-    // Memoize derived values to prevent recomputation on every render
+    // Sort promotions according to administrative preference
+    const sortedOfferGroups = useMemo(() => {
+        const sorted = [...offerGroups];
+        const sortMode = offersSettings.sortBy;
+        
+        sorted.sort((a, b) => {
+            if (sortMode === 'ending_soon') {
+                const aEnd = a.promotion.endDate ? new Date(a.promotion.endDate).getTime() : Infinity;
+                const bEnd = b.promotion.endDate ? new Date(b.promotion.endDate).getTime() : Infinity;
+                return aEnd - bEnd;
+            }
+            if (sortMode === 'newest') {
+                const aTime = a.promotion.createdAt ? new Date(a.promotion.createdAt).getTime() : 0;
+                const bTime = b.promotion.createdAt ? new Date(b.promotion.createdAt).getTime() : 0;
+                return bTime - aTime;
+            }
+            if (sortMode === 'discount_desc') {
+                const aVal = a.promotion.value || 0;
+                const bVal = b.promotion.value || 0;
+                return bVal - aVal;
+            }
+            return 0;
+        });
+        
+        return sorted;
+    }, [offerGroups, offersSettings.sortBy]);
+
+    // Apply active filter
     const filteredGroups = useMemo(
-        () => activeTab === 'all' ? offerGroups : offerGroups.filter(g => g.promotion.id === activeTab),
-        [activeTab, offerGroups]
+        () => activeTab === 'all' ? sortedOfferGroups : sortedOfferGroups.filter(g => g.promotion.id === activeTab),
+        [activeTab, sortedOfferGroups]
     );
 
     const totalProducts = useMemo(
@@ -165,7 +203,6 @@ export default function OffersPage({ offerGroups, promotions, offersSettings: pr
     );
 
     const gridCols = useMemo(() => {
-        // Explicit block body keeps the dep array unambiguous for formatters
         const colMap: Record<number, string> = {
             2: 'grid-cols-2 lg:grid-cols-2',
             3: 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3',
@@ -175,6 +212,13 @@ export default function OffersPage({ offerGroups, promotions, offersSettings: pr
         };
         return colMap[offersSettings.productsPerRow || 5] ?? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
     }, [offersSettings.productsPerRow]);
+
+    const bannerAlignClass = useMemo(() => {
+        const align = offersSettings.bannerAlignment;
+        if (align === 'left') return 'items-start text-left';
+        if (align === 'right') return 'items-end text-right';
+        return 'items-center text-center';
+    }, [offersSettings.bannerAlignment]);
 
     const bannerStyle = useMemo(() => ({
         height: offersSettings.bannerShow ? `${offersSettings.bannerHeight || 400}px` : '0px',
@@ -192,7 +236,7 @@ export default function OffersPage({ offerGroups, promotions, offersSettings: pr
                 {offersSettings.bannerShow && (
                     <div
                         style={bannerStyle}
-                        className={`relative overflow-hidden ${offersSettings.bannerFullWidth ? '' : 'rounded-[3rem]'} mb-16 flex flex-col items-center justify-center p-12 md:p-24 text-center ${!offersSettings.bannerBackgroundColor && !offersSettings.bannerImage ? 'bg-slate-50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800' : ''}`}
+                        className={`relative overflow-hidden ${offersSettings.bannerFullWidth ? '' : 'rounded-[3rem]'} mb-16 flex flex-col justify-center p-12 md:p-24 ${bannerAlignClass} ${!offersSettings.bannerBackgroundColor && !offersSettings.bannerImage ? 'bg-slate-50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800' : ''}`}
                     >
                         {/* Glowing background blobs - only show if no image */}
                         {!offersSettings.bannerImage && (
@@ -202,9 +246,12 @@ export default function OffersPage({ offerGroups, promotions, offersSettings: pr
                             </>
                         )}
 
-                        {/* Overlay for better text readability if there's an image */}
+                        {/* Overlay with custom opacity support */}
                         {offersSettings.bannerImage && (
-                            <div className="absolute inset-0 bg-black/40 z-0" />
+                            <div
+                                className="absolute inset-0 bg-black z-0 transition-opacity"
+                                style={{ opacity: offersSettings.bannerOverlayOpacity / 100 }}
+                            />
                         )}
 
                         <div className="relative z-10">
@@ -314,14 +361,19 @@ export default function OffersPage({ offerGroups, promotions, offersSettings: pr
                         >
                             {filteredGroups.map((group) => (
                                 <section key={group.promotion.id} className="mb-16">
-                                    {/* Promotion Header Card from PromotionSection (simplified for grid layout adjustment) */}
-                                    <PromotionSectionHeader group={group} />
+                                    {/* Promotion Header Card */}
+                                    <PromotionSectionHeader group={group} offersSettings={offersSettings} />
 
                                     {/* Products Grid */}
                                     <div className={`grid ${gridCols} gap-8`}>
                                         <AnimatePresence>
                                             {group.products.map((product) => (
-                                                <ProductCard key={`${group.promotion.id}-${product.id}`} product={product} />
+                                                <ProductCard
+                                                    key={`${group.promotion.id}-${product.id}`}
+                                                    product={product}
+                                                    hideCartButton={!offersSettings.showCartButton}
+                                                    hideOriginalPrice={offersSettings.showOriginalPrice === false}
+                                                />
                                             ))}
                                         </AnimatePresence>
                                     </div>
@@ -336,7 +388,7 @@ export default function OffersPage({ offerGroups, promotions, offersSettings: pr
 }
 
 // Separate helper for promotion header to keep OffersPage clean
-function PromotionSectionHeader({ group }: { group: OfferGroup }) {
+function PromotionSectionHeader({ group, offersSettings }: { group: OfferGroup; offersSettings: any }) {
     const timeLeft = useCountdown(group.promotion.endDate);
     const hasEndDate = !!group.promotion.endDate;
     const isExpiringSoon = hasEndDate && timeLeft.days < 2;
@@ -392,29 +444,40 @@ function PromotionSectionHeader({ group }: { group: OfferGroup }) {
                 </div>
 
                 {/* Countdown Timer */}
-                {hasEndDate && (
+                {hasEndDate && offersSettings.countdownStyle !== 'hidden' && (
                     <div className="shrink-0">
-                        <p className="text-white/60 text-xs font-medium mb-2 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {isExpiringSoon ? '⚡ Expiring Soon!' : 'Ends In'}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            {[
-                                { v: timeLeft.days, l: 'Days' },
-                                { v: timeLeft.hours, l: 'Hrs' },
-                                { v: timeLeft.minutes, l: 'Min' },
-                                { v: timeLeft.seconds, l: 'Sec' },
-                            ].map(({ v, l }) => (
-                                <div key={l} className="flex flex-col items-center">
-                                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-                                        <span className="text-xl font-bold text-white tabular-nums">
-                                            {String(v).padStart(2, '0')}
-                                        </span>
-                                    </div>
-                                    <span className="text-[10px] text-white/60 mt-1 font-medium">{l}</span>
+                        {offersSettings.countdownStyle === 'compact' ? (
+                            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2.5 rounded-2xl text-white">
+                                <Clock className="w-4 h-4 text-amber-300 animate-pulse" />
+                                <span className="text-xs font-black uppercase tracking-wider">
+                                    Ends in: {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                                </span>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-white/60 text-xs font-medium mb-2 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {isExpiringSoon ? '⚡ Expiring Soon!' : 'Ends In'}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    {[
+                                        { v: timeLeft.days, l: 'Days' },
+                                        { v: timeLeft.hours, l: 'Hrs' },
+                                        { v: timeLeft.minutes, l: 'Min' },
+                                        { v: timeLeft.seconds, l: 'Sec' },
+                                    ].map(({ v, l }) => (
+                                        <div key={l} className="flex flex-col items-center">
+                                            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
+                                                <span className="text-xl font-bold text-white tabular-nums">
+                                                    {String(v).padStart(2, '0')}
+                                                </span>
+                                            </div>
+                                            <span className="text-[10px] text-white/60 mt-1 font-medium">{l}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </>
+                        )}
                     </div>
                 )}
             </div>

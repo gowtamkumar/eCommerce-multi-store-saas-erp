@@ -155,6 +155,12 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
             bannerSubheadline: "",
             showFilters: true,
             productsPerRow: 5,
+            bannerAlignment: "center",
+            bannerOverlayOpacity: 40,
+            countdownStyle: "classic",
+            showCartButton: false,
+            showOriginalPrice: true,
+            sortBy: "ending_soon",
         },
         labelSettings: {
             newArrivalText: "New",
@@ -304,12 +310,19 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
                         showProductFAQs: true,
                         relatedProductsPerRow: 4,
                     },
-                    offersPage: data.offersPage || {
+                    offersPage: {
                         bannerShow: true,
                         bannerHeadline: "",
                         bannerSubheadline: "",
                         showFilters: true,
                         productsPerRow: 5,
+                        bannerAlignment: "center",
+                        bannerOverlayOpacity: 40,
+                        countdownStyle: "classic",
+                        showCartButton: false,
+                        showOriginalPrice: true,
+                        sortBy: "ending_soon",
+                        ...(data.offersPage || {}),
                     },
                     labelSettings: data.labelSettings || {
                         newArrivalText: "New",

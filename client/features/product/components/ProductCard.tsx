@@ -17,6 +17,8 @@ interface ProductCardProps {
   viewMode?: 'grid' | 'list';
   className?: string;
   cardRadius?: 'small' | 'large' | 'none';
+  hideOriginalPrice?: boolean;
+  hideCartButton?: boolean;
 }
 
 export const PromotionTypeBadge = memo(({ type }: { type: string }) => {
@@ -41,7 +43,9 @@ const ProductCard = memo(({
   priority = false,
   viewMode = 'grid',
   className = "",
-  cardRadius
+  cardRadius,
+  hideOriginalPrice = false,
+  hideCartButton = false
 }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -199,7 +203,7 @@ const ProductCard = memo(({
               <Price
                 amount={finalPrice}
                 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2"
-                showOriginal={discountAmount > 0}
+                showOriginal={hideOriginalPrice ? false : discountAmount > 0}
                 originalAmount={basePrice + Number(product.taxRate || 0)}
               />
               {mainPromo && (
@@ -210,7 +214,7 @@ const ProductCard = memo(({
             </div>
 
             <div className="flex items-center gap-2">
-              {Number(product.stock) > 0 && (
+              {Number(product.stock) > 0 && !hideCartButton && (
                 <button
                   onClick={handleAddToCart}
                   disabled={adding}

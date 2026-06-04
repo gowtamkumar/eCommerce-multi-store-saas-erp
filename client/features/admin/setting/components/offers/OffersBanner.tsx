@@ -15,6 +15,8 @@ interface OffersBannerProps {
   bannerTextColor: string;
   bannerHeight: number;
   bannerFullWidth: boolean;
+  bannerAlignment?: string;
+  bannerOverlayOpacity?: number;
   onUpdate: (field: string, value: any) => void;
 }
 
@@ -27,6 +29,8 @@ export const OffersBanner = memo(({
   bannerTextColor,
   bannerHeight,
   bannerFullWidth,
+  bannerAlignment,
+  bannerOverlayOpacity,
   onUpdate
 }: OffersBannerProps) => {
   return (
@@ -124,7 +128,7 @@ export const OffersBanner = memo(({
           </div>
         </div>
 
-        {/* Dimensions */}
+        {/* Dimensions & Advanced Styling */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -145,6 +149,52 @@ export const OffersBanner = memo(({
             <div className="flex justify-between text-[10px] font-medium text-slate-400 mt-2">
               <span>Short (200px)</span>
               <span>Tall (800px)</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Overlay Opacity</label>
+              <span className="px-3 py-1 bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 font-bold rounded-lg text-sm">
+                {bannerOverlayOpacity !== undefined ? bannerOverlayOpacity : 40}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              value={bannerOverlayOpacity !== undefined ? bannerOverlayOpacity : 40}
+              onChange={(e) => onUpdate('bannerOverlayOpacity', parseInt(e.target.value))}
+              className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-600"
+            />
+            <div className="flex justify-between text-[10px] font-medium text-slate-400 mt-2">
+              <span>Transparent (0%)</span>
+              <span>Opaque (100%)</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+              Text Alignment
+            </label>
+            <div className="flex gap-2">
+              {(["left", "center", "right"] as const).map((align) => (
+                <button
+                  key={align}
+                  type="button"
+                  onClick={() => onUpdate("bannerAlignment", align)}
+                  className={`flex-1 py-3 text-xs font-bold rounded-xl border-2 transition-all capitalize ${
+                    (bannerAlignment || "center") === align
+                      ? "border-brand-500 bg-brand-50/50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300"
+                      : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {align}
+                </button>
+              ))}
             </div>
           </div>
 

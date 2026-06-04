@@ -41,8 +41,8 @@ export default function FAQs() {
 
             const res = await fetchAPI(`/faqs?${queryParams.toString()}`);
             if (res.success && res.data) {
-                setFaqs(res.data.faqs || []);
-                setTotal(res.data.total || 0);
+                setFaqs(res.data || []);
+                setTotal(res.pagination?.total || 0);
             }
         } catch (error) {
             toast.error('Failed to load FAQs');
