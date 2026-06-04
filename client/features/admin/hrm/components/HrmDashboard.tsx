@@ -1,7 +1,6 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -14,15 +13,30 @@ import {
   ArrowRight,
   Plus,
   UserCheck,
+  Loader2,
 } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Link from 'next/link';
-import { getHrmDashboardStats, getAttendanceSessions } from '@/services/hrm';
+import { useHrmDashboard } from '../hooks/useHrmDashboard';
 
-const StatCard = ({ stat }: any) => (
+interface StatCardData {
+  label: string;
+  value: string | number;
+  subValue: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bg: string;
+  border: string;
+}
+
+interface StatCardProps {
+  stat: StatCardData;
+}
+
+const StatCard = ({ stat }: StatCardProps) => (
   <motion.div 
     whileHover={{ y: -5 }}
-    className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border ${stat.border} dark:border-slate-700 transition-all hover:shadow-lg group`}
+    className={`bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-sm border ${stat.border} dark:border-slate-700 transition-all hover:shadow-lg group`}
   >
     <div className="flex items-center justify-between mb-4">
       <div>
@@ -44,11 +58,18 @@ const StatCard = ({ stat }: any) => (
   </motion.div>
 );
 
-const QuickAction = ({ label, icon: Icon, href, color }: any) => (
+interface QuickActionProps {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  color: string;
+}
+
+const QuickAction = ({ label, icon: Icon, href, color }: QuickActionProps) => (
   <Link href={href}>
     <motion.div 
       whileTap={{ scale: 0.95 }}
-      className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 hover:shadow-md transition-all group"
+      className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-750 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 hover:shadow-md transition-all group"
     >
       <div className={`p-2 rounded-xl ${color} bg-opacity-10 text-opacity-100`}>
         <Icon className="w-5 h-5" />
@@ -62,66 +83,57 @@ const QuickAction = ({ label, icon: Icon, href, color }: any) => (
 );
 
 export default function HrmDashboard() {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-  const [chartData, setChartData] = useState<any[]>([
-    { name: 'Mon', attendance: 0 },
-    { name: 'Tue', attendance: 0 },
-    { name: 'Wed', attendance: 0 },
-    { name: 'Thu', attendance: 0 },
-    { name: 'Fri', attendance: 0 },
-    { name: 'Sat', attendance: 0 },
-    { name: 'Sun', attendance: 0 },
-  ]);
+  const { stats, chartData, loading } = useHrmDashboard();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [statsData, sessionsData] = await Promise.all([
-          getHrmDashboardStats().catch(() => null),
-          getAttendanceSessions().catch(() => [])
-        ]);
-
-        if (statsData) {
-          setStats(statsData);
-        }
-
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const dayCounts: Record<string, number> = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
-        
-        if (Array.isArray(sessionsData)) {
-          sessionsData.forEach((s: any) => {
-            if (s.checkIn) {
-              const d = new Date(s.checkIn);
-              const dayName = days[d.getDay()];
-              if (dayCounts[dayName] !== undefined) {
-                dayCounts[dayName]++;
-              }
-            }
-          });
-        }
-
-        const updatedChart = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(name => ({
-          name,
-          attendance: dayCounts[name] || 0
-        }));
-        setChartData(updatedChart);
-      } catch (err) {
-        console.error('Failed to fetch stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const statCards = [
-    { label: 'Total Employees', value: stats?.employeeCount || '0', subValue: 'Registered personnel', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { label: 'Present Today', value: stats?.attendanceCount || '0', subValue: `${Math.round(stats?.attendanceRate || 0)}% attendance today`, icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    { label: 'Pending Leaves', value: stats?.leaveCount !== undefined ? stats.leaveCount.toString() : '0', subValue: 'Requires manager approval', icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { label: 'Active Jobs', value: stats?.jobCount || '0', subValue: `${stats?.applicantCount || 0} applicants listed`, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+  const statCards: StatCardData[] = [
+    { 
+      label: 'Total Employees', 
+      value: stats?.employeeCount ?? 0, 
+      subValue: 'Registered personnel', 
+      icon: Users, 
+      color: 'text-blue-600', 
+      bg: 'bg-blue-50', 
+      border: 'border-blue-100' 
+    },
+    { 
+      label: 'Present Today', 
+      value: stats?.attendanceCount ?? 0, 
+      subValue: `${Math.round(stats?.attendanceRate ?? 0)}% attendance today`, 
+      icon: UserCheck, 
+      color: 'text-emerald-600', 
+      bg: 'bg-emerald-50', 
+      border: 'border-emerald-100' 
+    },
+    { 
+      label: 'Pending Leaves', 
+      value: stats?.leaveCount ?? 0, 
+      subValue: 'Requires manager approval', 
+      icon: Calendar, 
+      color: 'text-amber-600', 
+      bg: 'bg-amber-50', 
+      border: 'border-amber-100' 
+    },
+    { 
+      label: 'Active Jobs', 
+      value: stats?.jobCount ?? 0, 
+      subValue: `${stats?.applicantCount ?? 0} applicants listed`, 
+      icon: Briefcase, 
+      color: 'text-purple-600', 
+      bg: 'bg-purple-50', 
+      border: 'border-purple-100' 
+    },
   ];
+
+  if (loading) {
+    return (
+      <div className="p-8 max-w-[1600px] mx-auto space-y-8 flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+        <p className="text-slate-400 dark:text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] animate-pulse">
+          Syncing operations log...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
@@ -137,7 +149,7 @@ export default function HrmDashboard() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/admin/hrm/employees">
-            <button className="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-colors flex items-center gap-2">
+            <button className="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-colors flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Manage Employees
             </button>

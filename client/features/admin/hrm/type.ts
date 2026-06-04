@@ -185,3 +185,24 @@ export interface Applicant {
   status: string
   jobPostingId: string
 }
+
+export interface HrmDashboardStats {
+  employeeCount: number;
+  attendanceCount: number;
+  attendanceRate: number;
+  leaveCount: number;
+  jobCount: number;
+  applicantCount: number;
+}
+
+export interface HrmDashboardChartItem {
+  name: string;
+  attendance: number;
+}
+
+export interface HrmDashboardProps {
+  stats: HrmDashboardStats | null;
+  chartData: HrmDashboardChartItem[];
+  loading: boolean;
+}
+
