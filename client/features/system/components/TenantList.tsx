@@ -4,23 +4,19 @@ import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
   Filter,
   Loader2,
   Plus,
   RefreshCw,
   Search,
   Terminal,
-  XCircle,
   BarChart3,
   ExternalLink,
   Layers,
   Store,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { StatusStyles, TenantListProps, Tenant } from '../types/tenant.types';
@@ -75,14 +71,17 @@ export default function TenantList({ initialTenants }: TenantListProps) {
 
       const res = await fetchSuperAdminAPI(`/super-admin/tenants?${qs}`);
       if (res.success) setTenants(res.data);
-    } catch (e: any) {
+    } catch {
       toast.error('Failed to fetch tenants');
     } finally {
       setLoading(false);
     }
   }, [debouncedSearch, selectedStatus, selectedPlan, selectedSort]);
 
-  useEffect(() => { fetchTenants(); }, [fetchTenants]);
+  useEffect(() => {
+    const id = setTimeout(() => fetchTenants(), 0);
+    return () => clearTimeout(id);
+  }, [fetchTenants]);
 
   const getStatusStyles = useCallback((status: string): StatusStyles => {
     switch (status) {
@@ -116,7 +115,11 @@ export default function TenantList({ initialTenants }: TenantListProps) {
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -150,8 +153,8 @@ export default function TenantList({ initialTenants }: TenantListProps) {
       setSelectedIds(new Set());
       setBulkAction('');
       fetchTenants();
-    } catch (e: any) {
-      toast.error(e.message || 'Bulk action failed');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Bulk action failed');
     } finally {
       setIsBulkProcessing(false);
     }

@@ -20,14 +20,12 @@ export async function fetchSuperAdminAPI(endpoint: string, options: RequestInit 
     throw new Error("No auth token");
   }
 
-  const headers: any = {
-    'Authorization': `Bearer ${token}`,
-    ...options.headers,
-  };
+  const headers = new Headers(options.headers);
+  headers.set('Authorization', `Bearer ${token}`);
 
   // Only set Content-Type if not FormData (to let browser set boundary)
-  if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
+  if (!(options.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
 
 
