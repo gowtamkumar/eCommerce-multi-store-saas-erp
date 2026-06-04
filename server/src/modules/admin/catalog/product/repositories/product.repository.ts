@@ -18,7 +18,7 @@ export class ProductRepository {
   async findAllWithFilters(filterDto: any, tenantId: string): Promise<[ProductEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
-    const { q, status, categoryId, brandId, exclude } = filterDto
+    const { q, status, categoryId, brandId, exclude, lowStock } = filterDto
 
     const query = this.repo
       .createQueryBuilder('product')
@@ -31,6 +31,16 @@ export class ProductRepository {
     if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
     if (brandId) query.andWhere('product.brandId = :brandId', { brandId })
     if (exclude) query.andWhere('product.id != :exclude', { exclude })
+
+    if (lowStock === 'true') {
+      const stockSubquery = `COALESCE((
+        SELECT SUM(il.quantity)
+        FROM inventory_ledger il
+        WHERE il.product_id = product.id
+          AND il.tenant_id = :tenantId
+      ), 0)`
+      query.andWhere(`${stockSubquery} <= product.low_stock_threshold`)
+    }
 
     const finalPriceExpr = `CASE 
       WHEN product.discount_type = 'percentage' 

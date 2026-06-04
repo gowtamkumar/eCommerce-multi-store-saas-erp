@@ -32,4 +32,8 @@ export class FilterProductDto extends PaginationDto {
   @IsOptional()
   @IsString()
   exclude?: string
+
+  @IsOptional()
+  @IsString()
+  lowStock?: string
 }

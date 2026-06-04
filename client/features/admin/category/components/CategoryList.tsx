@@ -4,38 +4,10 @@ import { ChevronDown, ChevronRight, Edit, FolderTree, Layers, Package, Plus, Sea
 import { useState, useMemo, useCallback } from 'react';
 import type { Category, CategoryListProps } from '../type';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { buildTree, flattenTree } from '../utils/treeHelpers';
+import type { CategoryRow } from '../utils/treeHelpers';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
-type CategoryRow = Category & { depth: number; hasChildren: boolean };
-
-// Build a parent/child tree from a flat list of categories.
-const buildTree = (items: Category[]): Category[] => {
-    const map = new Map<string, Category>();
-    const roots: Category[] = [];
-    items.forEach(item => map.set(item.id!, { ...item, children: [] }));
-    map.forEach(item => {
-        if (item.parentId && map.has(item.parentId)) {
-            map.get(item.parentId)!.children!.push(item);
-        } else {
-            roots.push(item);
-        }
-    });
-    return roots;
-};
-
-// Depth-first flatten that records each node's depth for indentation and skips
-// the descendants of any collapsed node.
-const flattenTree = (nodes: Category[], collapsed: Set<string>, depth = 0): CategoryRow[] => {
-    const flat: CategoryRow[] = [];
-    nodes.forEach(node => {
-        const hasChildren = !!node.children && node.children.length > 0;
-        flat.push({ ...node, depth, hasChildren });
-        if (hasChildren && !(node.id && collapsed.has(node.id))) {
-            flat.push(...flattenTree(node.children!, collapsed, depth + 1));
-        }
-    });
-    return flat;
-};
 
 export default function CategoryList({ categories, loading, onEdit, onDelete, onAdd }: CategoryListProps) {
     const [searchQuery, setSearchQuery] = useState('');

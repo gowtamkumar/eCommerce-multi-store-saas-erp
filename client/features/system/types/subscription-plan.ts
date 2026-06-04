@@ -3,5 +3,7 @@ export interface SubscriptionPlan {
     name: string;
     description: string;
     price: number;
+    monthlyPrice?: number;
+    yearlyPrice?: number;
     features: string[];
 }

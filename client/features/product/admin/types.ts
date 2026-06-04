@@ -25,6 +25,8 @@ export interface ProductListProps {
     onDelete: (id: string) => void;
     onStatusChange: (id: string, newStatus: string) => void;
     onLandingPage: (product: Product) => void;
+    filterLowStock: boolean;
+    onLowStockToggle: () => void;
 }
 
 export type { Product };

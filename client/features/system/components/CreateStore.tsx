@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { SubscriptionPlan } from '../type';
+import { SubscriptionPlan } from '../types/subscription-plan';
 
 export default function CreateStore() {
     const [step, setStep] = useState(1);
@@ -108,7 +108,7 @@ export default function CreateStore() {
             } else {
                 setError(data.message || 'Onboarding failed. Please try again.');
             }
-        } catch (err) {
+        } catch {
             setError('Network error. Check your connection.');
         } finally {
             setLoading(false);
@@ -122,7 +122,7 @@ export default function CreateStore() {
     ];
 
     return (
-        <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-[radial-gradient(circle_at_top_right,_var(--color-brand-50),_transparent_50%)] dark:bg-[radial-gradient(circle_at_top_right,_var(--color-brand-900),_transparent_50%)]">
+        <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-[radial-gradient(circle_at_top_right,var(--color-brand-50),transparent_50%)] dark:bg-[radial-gradient(circle_at_top_right,var(--color-brand-900),transparent_50%)]">
             <div className="max-w-6xl mx-auto">
                 {/* Header & Progress */}
                 <div className="mb-12 text-center">
@@ -342,11 +342,11 @@ export default function CreateStore() {
                                                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Pricing data is arriving...</p>
                                                 </div>
                                             ) : (
-                                                plans.map((plan: any) => (
+                                                plans.map((plan) => (
                                                     <div
                                                         key={plan.id}
                                                         onClick={() => setFormData({ ...formData, planId: plan.id })}
-                                                        className={`relative p-6 rounded-[2rem] border-2 cursor-pointer transition-all duration-300 ${formData.planId === plan.id
+                                                        className={`relative p-6 rounded-4xl border-2 cursor-pointer transition-all duration-300 ${formData.planId === plan.id
                                                             ? 'border-brand-500 bg-brand-500/5 dark:bg-brand-500/10 shadow-[0_0_40px_rgba(14,165,233,0.1)]'
                                                             : 'border-slate-100 dark:border-slate-800 hover:border-brand-200 dark:hover:border-slate-700'}`}
                                                     >
@@ -364,7 +364,7 @@ export default function CreateStore() {
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <span className="text-2xl font-black text-slate-900 dark:text-white leading-none">
-                                                                        ${formData.subscriptionBillingCycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice}
+                                                                        ${formData.subscriptionBillingCycle === 'yearly' ? (plan.yearlyPrice ?? plan.price) : (plan.monthlyPrice ?? plan.price)}
                                                                     </span>
                                                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">
                                                                         /{formData.subscriptionBillingCycle === 'yearly' ? 'yr' : 'mo'}
@@ -398,7 +398,7 @@ export default function CreateStore() {
                                             <button
                                                 type="button"
                                                 onClick={nextStep}
-                                                className="flex-[2] py-5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-3 group active:scale-[0.98]"
+                                                className="flex-2 py-5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-3 group active:scale-[0.98]"
                                             >
                                                 Next Details
                                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -488,7 +488,7 @@ export default function CreateStore() {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="flex-[2] py-5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-3 disabled:opacity-70 active:scale-[0.98]"
+                                                className="flex-2 py-5 bg-brand-600 hover:bg-brand-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-3 disabled:opacity-70 active:scale-[0.98]"
                                             >
                                                 {loading ? (
                                                     <>

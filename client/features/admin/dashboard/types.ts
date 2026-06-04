@@ -1,4 +1,25 @@
 import type { Product } from '@/types/product';
+import type { ComponentType } from 'react';
+
+export type DashboardPeriod = 'day' | 'week' | 'month';
+export type DashboardIcon = ComponentType<{ className?: string; strokeWidth?: number }>;
+export type ActionTone = 'rose' | 'amber' | 'blue' | 'emerald' | 'slate';
+
+export type HealthItem = {
+    label: string;
+    val: number;
+    color: string;
+    pct: number;
+};
+
+export type ActionCenterItem = {
+    label: string;
+    value: string | number;
+    detail: string;
+    href: string;
+    icon: DashboardIcon;
+    tone: ActionTone;
+};
 
 export interface DashboardStats {
     totalSales: number;

@@ -79,17 +79,13 @@ export default function ProductList({
   onPageChange,
   onDelete,
   onStatusChange,
-  onLandingPage
+  onLandingPage,
+  filterLowStock,
+  onLowStockToggle,
 }: ProductListProps) {
   const { formatPrice } = useSettings();
-  const [filterLowStock, setFilterLowStock] = useState(false);
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
   const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
-
-  const visibleProducts = useMemo(
-    () => products.filter(p => !filterLowStock || p.stock <= (p.lowStockThreshold || 5)),
-    [products, filterLowStock]
-  );
 
   const handleSortChange = (key: string) => {
     onSortChange(key as 'name' | 'price');
@@ -97,10 +93,6 @@ export default function ProductList({
 
   const handleSearchChange = (value: string) => {
     onSearchChange(value);
-  };
-
-  const handleLowStockToggle = () => {
-    setFilterLowStock((prev) => !prev);
   };
 
   const columns = useMemo<DataTableColumn<Product>[]>(() => [
@@ -306,7 +298,7 @@ export default function ProductList({
 
           {/* Low Stock Toggle */}
           <button
-            onClick={handleLowStockToggle}
+            onClick={onLowStockToggle}
             className={`px-4 py-2.5 rounded-xl border text-sm font-bold flex items-center gap-2 transition-all ${filterLowStock
               ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400'
               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
@@ -319,7 +311,7 @@ export default function ProductList({
 
       {/* Table */}
       <DataTable
-        data={visibleProducts}
+        data={products}
         columns={columns}
         getRowKey={(product) => product.id}
         loading={loading}
@@ -344,8 +336,8 @@ export default function ProductList({
         paginationSummary={
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
             {filterLowStock
-              ? `Showing ${visibleProducts.length} low-stock products on this page`
-              : `Showing ${visibleProducts.length === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}-${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} products`}
+              ? `Showing ${products.length} low-stock products on this page`
+              : `Showing ${products.length === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}-${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} products`}
           </p>
         }
       />
