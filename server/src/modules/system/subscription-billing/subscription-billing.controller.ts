@@ -23,7 +23,7 @@ export class SubscriptionBillingController {
     private readonly billingService: SubscriptionBillingService,
     private readonly configService: ConfigService,
     private readonly addonCatalogService: AddonCatalogService,
-  ) { }
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Get('addon-catalog')
@@ -112,7 +112,9 @@ export class SubscriptionBillingController {
     @Query('tran_id') tran_id: string,
     @Body() body: any,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`Payment completion success callback for tran_id: ${sanitizeLogInput(tran_id)}`)
+    this.logger.verbose(
+      `Payment completion success callback for tran_id: ${sanitizeLogInput(tran_id)}`,
+    )
     try {
       const data: any = await this.billingService.handleSuccessPayment(tran_id, body)
       return {
@@ -141,7 +143,9 @@ export class SubscriptionBillingController {
     @Query('tran_id') tran_id: string,
     @Body() body: any,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`Payment completion failure callback for tran_id: ${sanitizeLogInput(tran_id)}`)
+    this.logger.verbose(
+      `Payment completion failure callback for tran_id: ${sanitizeLogInput(tran_id)}`,
+    )
     try {
       const data: any = await this.billingService.handleFailPayment(tran_id, body)
       return {
@@ -173,7 +177,9 @@ export class SubscriptionBillingController {
     @Query('tran_id') tran_id: string,
     @Body() body: any,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`Payment completion cancel callback for tran_id: ${sanitizeLogInput(tran_id)}`)
+    this.logger.verbose(
+      `Payment completion cancel callback for tran_id: ${sanitizeLogInput(tran_id)}`,
+    )
     try {
       const data: any = await this.billingService.handleCancelPayment(tran_id, body)
       return {
@@ -209,7 +215,9 @@ export class SubscriptionBillingController {
       try {
         await this.billingService.handleSuccessPayment(tran_id, body)
       } catch (err: any) {
-        this.logger.warn(`IPN handling failed for tran_id=${sanitizeLogInput(tran_id)}: ${sanitizeLogInput(err?.message)}`)
+        this.logger.warn(
+          `IPN handling failed for tran_id=${sanitizeLogInput(tran_id)}: ${sanitizeLogInput(err?.message)}`,
+        )
       }
     }
     return { received: true }
@@ -233,7 +241,9 @@ export class SubscriptionBillingController {
     @RequestContext() ctx: RequestContextDto,
     @Body('addonSlug') addonSlug: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${sanitizeLogInput(ctx.user?.username || 'System')}" purchasing addon "${sanitizeLogInput(addonSlug)}".`)
+    this.logger.verbose(
+      `User "${sanitizeLogInput(ctx.user?.username || 'System')}" purchasing addon "${sanitizeLogInput(addonSlug)}".`,
+    )
     await this.billingService.purchaseAddon(ctx.tenantId, addonSlug)
     return {
       success: true,

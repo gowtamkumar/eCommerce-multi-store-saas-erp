@@ -165,18 +165,21 @@ export class PaymentService {
       this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
     ])
 
-    await this.auditLogService.log({ tenantId: order.tenantId, userId: order.userId } as RequestContextDto, {
-      action: 'PAYMENT_SUCCESS',
-      entity: 'Payment',
-      entityId: payment.id,
-      newValue: {
-        orderId: order.id,
-        transactionId: tran_id,
-        amount: order.totalAmount,
-        currency: order.currency,
-        status: PaymentStatus.COMPLETED,
+    await this.auditLogService.log(
+      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+      {
+        action: 'PAYMENT_SUCCESS',
+        entity: 'Payment',
+        entityId: payment.id,
+        newValue: {
+          orderId: order.id,
+          transactionId: tran_id,
+          amount: order.totalAmount,
+          currency: order.currency,
+          status: PaymentStatus.COMPLETED,
+        },
       },
-    })
+    )
     return { success: true }
   }
 
@@ -212,18 +215,21 @@ export class PaymentService {
       this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
     ])
 
-    await this.auditLogService.log({ tenantId: order.tenantId, userId: order.userId } as RequestContextDto, {
-      action: 'PAYMENT_FAILED',
-      entity: 'Payment',
-      entityId: payment.id,
-      newValue: {
-        orderId: order.id,
-        transactionId: tran_id,
-        amount: order.totalAmount,
-        currency: order.currency,
-        status: PaymentStatus.FAILED,
+    await this.auditLogService.log(
+      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+      {
+        action: 'PAYMENT_FAILED',
+        entity: 'Payment',
+        entityId: payment.id,
+        newValue: {
+          orderId: order.id,
+          transactionId: tran_id,
+          amount: order.totalAmount,
+          currency: order.currency,
+          status: PaymentStatus.FAILED,
+        },
       },
-    })
+    )
 
     await this.notifyPaymentEvent(
       order,
@@ -269,18 +275,21 @@ export class PaymentService {
       this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
     ])
 
-    await this.auditLogService.log({ tenantId: order.tenantId, userId: order.userId } as RequestContextDto, {
-      action: 'PAYMENT_CANCELLED',
-      entity: 'Payment',
-      entityId: payment.id,
-      newValue: {
-        orderId: order.id,
-        transactionId: tran_id,
-        amount: order.totalAmount,
-        currency: order.currency,
-        status: PaymentStatus.PENDING,
+    await this.auditLogService.log(
+      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+      {
+        action: 'PAYMENT_CANCELLED',
+        entity: 'Payment',
+        entityId: payment.id,
+        newValue: {
+          orderId: order.id,
+          transactionId: tran_id,
+          amount: order.totalAmount,
+          currency: order.currency,
+          status: PaymentStatus.PENDING,
+        },
       },
-    })
+    )
 
     await this.notifyPaymentEvent(
       order,

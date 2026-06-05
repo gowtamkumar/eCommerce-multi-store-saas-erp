@@ -30,5 +30,3 @@ export class CurrentSubscriptionResponseDto {
   @Expose()
   activeAddons: string[]
 }
-
-

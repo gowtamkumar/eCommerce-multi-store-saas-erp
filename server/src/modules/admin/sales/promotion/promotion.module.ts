@@ -9,11 +9,7 @@ import { PromotionService } from './services/promotion.service'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([PromotionEntity]),
-    CacheModule,
-    TenantModule,
-  ],
+  imports: [TypeOrmModule.forFeature([PromotionEntity]), CacheModule, TenantModule],
   controllers: [PromotionController],
   providers: [PromotionService, PromotionRepository],
   exports: [PromotionService],

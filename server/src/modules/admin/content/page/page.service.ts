@@ -38,7 +38,7 @@ export class PageService {
     if (dto.isHomePage === true) {
       prepared.slug = ''
     } else {
-      const hasSlug = dto.slug !== undefined && dto.slug !== null && dto.slug.trim() !== '';
+      const hasSlug = dto.slug !== undefined && dto.slug !== null && dto.slug.trim() !== ''
       if (hasSlug) {
         prepared.slug = normalizePageSlug(dto.slug, false)
       } else if (dto.slug === '' || dto.slug === null) {

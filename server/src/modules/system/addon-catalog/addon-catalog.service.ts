@@ -82,7 +82,8 @@ export class AddonCatalogService {
 
       if (processedSlug !== addon.slug) {
         const existing = await this.addonRepo.findBySlug(processedSlug)
-        if (existing) throw new BadRequestException(`Addon with slug "${processedSlug}" already exists`)
+        if (existing)
+          throw new BadRequestException(`Addon with slug "${processedSlug}" already exists`)
       }
       data.slug = processedSlug
     }
@@ -125,7 +126,12 @@ export class AddonCatalogService {
         boostUnit: 'mb',
         price: 5,
         icon: 'HardDrive',
-        features: ['5,120 MB Storage Space', 'High-speed MinIO hosting', 'Instant activation', 'Cancel anytime'],
+        features: [
+          '5,120 MB Storage Space',
+          'High-speed MinIO hosting',
+          'Instant activation',
+          'Cancel anytime',
+        ],
         isActive: true,
         sortOrder: 1,
       },
@@ -139,7 +145,12 @@ export class AddonCatalogService {
         boostUnit: 'mb',
         price: 9,
         icon: 'HardDrive',
-        features: ['10,240 MB Storage Space', 'High-speed MinIO hosting', 'Instant activation', 'Cancel anytime'],
+        features: [
+          '10,240 MB Storage Space',
+          'High-speed MinIO hosting',
+          'Instant activation',
+          'Cancel anytime',
+        ],
         isActive: true,
         sortOrder: 2,
       },
@@ -153,7 +164,12 @@ export class AddonCatalogService {
         boostUnit: 'mb',
         price: 15,
         icon: 'HardDrive',
-        features: ['20,480 MB Storage Space', 'High-speed MinIO hosting', 'Instant activation', 'Cancel anytime'],
+        features: [
+          '20,480 MB Storage Space',
+          'High-speed MinIO hosting',
+          'Instant activation',
+          'Cancel anytime',
+        ],
         isActive: true,
         sortOrder: 3,
       },
@@ -167,21 +183,32 @@ export class AddonCatalogService {
         boostUnit: 'products',
         price: 15,
         icon: 'Package',
-        features: ['1,000 product capability', 'Immediate synchronization', 'Plan-independent override', 'One-off activation'],
+        features: [
+          '1,000 product capability',
+          'Immediate synchronization',
+          'Plan-independent override',
+          'One-off activation',
+        ],
         isActive: true,
         sortOrder: 4,
       },
       {
         slug: 'addon_orders_5000',
         name: 'Transactions Boost',
-        description: 'Increase monthly order limits by 5,000/mo to handle sales spikes and campaigns.',
+        description:
+          'Increase monthly order limits by 5,000/mo to handle sales spikes and campaigns.',
         category: 'resource',
         boostLabel: '+5,000 Orders/Mo',
         boostValue: 5000,
         boostUnit: 'orders',
         price: 25,
         icon: 'ShoppingCart',
-        features: ['5,000 extra monthly orders', 'Dynamic threshold update', 'Prevents checkout locks', 'One-off activation'],
+        features: [
+          '5,000 extra monthly orders',
+          'Dynamic threshold update',
+          'Prevents checkout locks',
+          'One-off activation',
+        ],
         isActive: true,
         sortOrder: 5,
       },
@@ -195,21 +222,32 @@ export class AddonCatalogService {
         boostUnit: 'staff',
         price: 20,
         icon: 'Users',
-        features: ['10 team accounts', 'Granular role assignments', 'Global branch scoping', 'One-off activation'],
+        features: [
+          '10 team accounts',
+          'Granular role assignments',
+          'Global branch scoping',
+          'One-off activation',
+        ],
         isActive: true,
         sortOrder: 6,
       },
       {
         slug: 'addon_locations_3',
         name: 'Logistics Expansion Boost',
-        description: 'Add 3 branches and 3 warehouses to expand physical operations and supply chain.',
+        description:
+          'Add 3 branches and 3 warehouses to expand physical operations and supply chain.',
         category: 'resource',
         boostLabel: '+3 Loc / WH',
         boostValue: 3,
         boostUnit: 'locations',
         price: 35,
         icon: 'MapPin',
-        features: ['3 physical branches', '3 warehouse inventories', 'Multi-source stock routing', 'One-off activation'],
+        features: [
+          '3 physical branches',
+          '3 warehouse inventories',
+          'Multi-source stock routing',
+          'One-off activation',
+        ],
         isActive: true,
         sortOrder: 7,
       },

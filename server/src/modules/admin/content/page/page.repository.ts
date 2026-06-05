@@ -98,10 +98,7 @@ export class PageRepository {
   async setHomePageTransactional(page: PageEntity, dto: Partial<PageEntity>): Promise<PageEntity> {
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PageEntity)
-      await repo.update(
-        { tenantId: page.tenantId, isHomePage: true },
-        { isHomePage: false },
-      )
+      await repo.update({ tenantId: page.tenantId, isHomePage: true }, { isHomePage: false })
       Object.assign(page, dto, { isHomePage: true })
       return repo.save(page)
     })

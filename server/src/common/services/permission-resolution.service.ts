@@ -3,7 +3,11 @@ import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/use
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
 import { OverrideEffect } from '@/common/enums/override-effect.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { CORE_FEATURE_SLUGS, isCoreFeature, getPlanFeature } from '@/common/constants/feature-mapping'
+import {
+  CORE_FEATURE_SLUGS,
+  isCoreFeature,
+  getPlanFeature,
+} from '@/common/constants/feature-mapping'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Injectable, Logger } from '@nestjs/common'

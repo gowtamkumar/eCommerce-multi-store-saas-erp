@@ -31,8 +31,7 @@ export class TenantIsolationGuard implements CanActivate {
     const request = context.switchToHttp().getRequest()
 
     // Tenant context the request is trying to act on (set by TenantContextMiddleware).
-    const headerTenantId =
-      request.tenantId || (request.headers['x-tenant-id'] as string) || null
+    const headerTenantId = request.tenantId || (request.headers['x-tenant-id'] as string) || null
 
     // Resolve the authenticated identity from the bearer token. Unauthenticated
     // (public/storefront) requests have no token — leave them to other guards.

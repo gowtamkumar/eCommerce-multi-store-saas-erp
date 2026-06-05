@@ -288,20 +288,24 @@ export class SupplierInvoiceService {
 
       await queryRunner.commitTransaction()
 
-      await this.accountingQueue.add(
-        'post-supplier-invoice-payment',
-        {
-          ctx,
-          payload: {
-            invoiceId: invoice.id,
-            invoiceNumber: invoice.invoiceNumber,
-            amount: Number(dto.amount),
+      await this.accountingQueue
+        .add(
+          'post-supplier-invoice-payment',
+          {
+            ctx,
+            payload: {
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              amount: Number(dto.amount),
+            },
           },
-        },
-        { removeOnComplete: true },
-      ).catch((err) => {
-        this.logger.error(`Failed to queue supplier invoice payment journal entry: ${err.message}`)
-      })
+          { removeOnComplete: true },
+        )
+        .catch((err) => {
+          this.logger.error(
+            `Failed to queue supplier invoice payment journal entry: ${err.message}`,
+          )
+        })
 
       await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
       await this.cacheService.delCache(`si:id:${invoice.id}`, tenantId)

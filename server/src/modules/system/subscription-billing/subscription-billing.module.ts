@@ -9,7 +9,14 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
 import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog.module'
 
 @Module({
-  imports: [PaymentModule, ConfigModule, CacheModule, TenantModule, NotificationModule, AddonCatalogModule],
+  imports: [
+    PaymentModule,
+    ConfigModule,
+    CacheModule,
+    TenantModule,
+    NotificationModule,
+    AddonCatalogModule,
+  ],
   controllers: [SubscriptionBillingController],
   providers: [SubscriptionBillingService],
   exports: [SubscriptionBillingService],

@@ -20,8 +20,7 @@ export class FilesService {
     private readonly tenantService: TenantService,
     private readonly dataSource: DataSource,
     private readonly addonCatalogService: AddonCatalogService,
-  ) { }
-
+  ) {}
 
   async generatePresignedUpload(dto: GetPresignedUrlDto, ctx: RequestContextDto) {
     this.logger.log(`${this.generatePresignedUpload.name} Service Called`)
@@ -32,7 +31,8 @@ export class FilesService {
       const tenant = await this.tenantService.findOneTenants(tenantId)
       if (tenant) {
         const baseLimitMb = tenant.subscriptionPlan?.maxStorageMb ?? 1024 // default 1GB
-        if (baseLimitMb !== -1) { // -1 represents unlimited
+        if (baseLimitMb !== -1) {
+          // -1 represents unlimited
           let addonsMb = 0
           const activeOverrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
             where: { tenantId, isEnabled: true },
@@ -41,7 +41,10 @@ export class FilesService {
           const storageAddonDefs = await this.addonCatalogService.getStorageAddons()
           for (const override of activeOverrides) {
             for (const def of storageAddonDefs) {
-              if (override.featureSlug === def.slug || override.featureSlug.startsWith(def.slug + '_')) {
+              if (
+                override.featureSlug === def.slug ||
+                override.featureSlug.startsWith(def.slug + '_')
+              ) {
                 addonsMb += def.boostValue
                 break
               }

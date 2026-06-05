@@ -29,11 +29,17 @@ export function normalizeAndValidateSettingsUpdate(
 ): UpdateSiteSettingsDto {
   const normalized: UpdateSiteSettingsDto = {
     ...dto,
-    currency: typeof dto.currency === 'string' && dto.currency.trim() !== '' ? normalizeCurrencyCode(dto.currency) : undefined,
+    currency:
+      typeof dto.currency === 'string' && dto.currency.trim() !== ''
+        ? normalizeCurrencyCode(dto.currency)
+        : undefined,
     supportedCurrencies: normalizeSupportedCurrencies(dto.supportedCurrencies),
-    defaultBranchId: dto.defaultBranchId === undefined
-      ? undefined
-      : (typeof dto.defaultBranchId === 'string' && dto.defaultBranchId.trim() !== '' ? dto.defaultBranchId : null),
+    defaultBranchId:
+      dto.defaultBranchId === undefined
+        ? undefined
+        : typeof dto.defaultBranchId === 'string' && dto.defaultBranchId.trim() !== ''
+          ? dto.defaultBranchId
+          : null,
   }
 
   const effectiveCurrency = normalizeCurrencyCode(normalized.currency ?? existing?.currency)
@@ -78,7 +84,8 @@ export function normalizeAndValidateSettingsUpdate(
         name: defaultNameMap[effectiveCurrency] || `${effectiveCurrency} (Base)`,
       }
       if (!normalized.supportedCurrencies) {
-        normalized.supportedCurrencies = normalizeSupportedCurrencies(existing?.supportedCurrencies) || []
+        normalized.supportedCurrencies =
+          normalizeSupportedCurrencies(existing?.supportedCurrencies) || []
       }
       normalized.supportedCurrencies.push(baseEntry)
       effectiveSupportedCurrencies = normalized.supportedCurrencies

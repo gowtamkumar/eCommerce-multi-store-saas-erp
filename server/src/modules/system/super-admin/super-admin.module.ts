@@ -39,4 +39,3 @@ import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subs
   exports: [TrafficService],
 })
 export class SuperAdminModule {}
-

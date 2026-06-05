@@ -22,7 +22,8 @@ async function bootstrap() {
     const planRepo = dataSource.getRepository(SubscriptionPlanEntity)
 
     // 1. Get default plan
-    const defaultPlan = await planRepo.findOne({ where: { code: 'enterprise' } }) || await planRepo.findOne({})
+    const defaultPlan =
+      (await planRepo.findOne({ where: { code: 'enterprise' } })) || (await planRepo.findOne({}))
     if (!defaultPlan) {
       logger.error('No subscription plan found in the database. Run seed first!')
       return
@@ -36,7 +37,9 @@ async function bootstrap() {
 
     for (const tenant of tenants) {
       if (!tenant.activeSubscriptionId) {
-        logger.log(`Tenant ${tenant.storeName} (${tenant.id}) has no active subscription. Creating one...`)
+        logger.log(
+          `Tenant ${tenant.storeName} (${tenant.id}) has no active subscription. Creating one...`,
+        )
         const now = new Date()
         const endsAt = new Date()
         endsAt.setDate(endsAt.getDate() + 30) // 30 days trial/access
@@ -56,7 +59,9 @@ async function bootstrap() {
         await tenantRepo.save(tenant)
         logger.log(`Restored subscription for tenant ${tenant.storeName}.`)
       } else {
-        logger.log(`Tenant ${tenant.storeName} (${tenant.id}) already has active subscription: ${tenant.activeSubscriptionId}`)
+        logger.log(
+          `Tenant ${tenant.storeName} (${tenant.id}) already has active subscription: ${tenant.activeSubscriptionId}`,
+        )
       }
     }
 

@@ -68,7 +68,7 @@ export class SuperAdminController {
     private readonly authService: AuthService,
     private readonly auditLogService: AuditLogService,
     @InjectDataSource() private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
   @Post('/setup')
   async setup(
@@ -337,18 +337,18 @@ export class SuperAdminController {
       currentStart.setDate(now.getDate() - days)
 
       const prevStart = new Date()
-      prevStart.setDate(now.getDate() - (days * 2))
+      prevStart.setDate(now.getDate() - days * 2)
 
       const currentCount = await repo.count({
         where: {
-          createdAt: MoreThanOrEqual(currentStart)
-        }
+          createdAt: MoreThanOrEqual(currentStart),
+        },
       })
 
       const prevCount = await repo.count({
         where: {
-          createdAt: Between(prevStart, currentStart)
-        }
+          createdAt: Between(prevStart, currentStart),
+        },
       })
 
       if (prevCount === 0) {
@@ -369,10 +369,10 @@ export class SuperAdminController {
   async getOverview(@Query('days') days?: number): Promise<BaseApiSuccessResponse<any>> {
     const daysNum = Number(days) || 7
     const [
-      tenantOverview, 
-      userOverview, 
-      productOverview, 
-      orderOverview, 
+      tenantOverview,
+      userOverview,
+      productOverview,
+      orderOverview,
       traffic,
       totalReviews,
       tenantTrend,
@@ -401,9 +401,14 @@ export class SuperAdminController {
     prevPeriodStart.setDate(prevPeriodStart.getDate() - daysNum)
 
     const prevTraffic = await this.trafficService.getGlobalTrafficStats(daysNum * 2)
-    const prevTrafficCount = prevTraffic.slice(daysNum).reduce((acc: number, t: any) => acc + (t.requestCount || 0), 0)
+    const prevTrafficCount = prevTraffic
+      .slice(daysNum)
+      .reduce((acc: number, t: any) => acc + (t.requestCount || 0), 0)
     const currTrafficCount = traffic.reduce((acc: number, t: any) => acc + (t.requestCount || 0), 0)
-    const trafficTrend = prevTrafficCount > 0 ? (((currTrafficCount - prevTrafficCount) / prevTrafficCount) * 100).toFixed(1) : null
+    const trafficTrend =
+      prevTrafficCount > 0
+        ? (((currTrafficCount - prevTrafficCount) / prevTrafficCount) * 100).toFixed(1)
+        : null
 
     return {
       success: true,
@@ -433,18 +438,24 @@ export class SuperAdminController {
   @Get('/overview/compare')
   async getOverviewCompare(@Query('days') days?: number): Promise<BaseApiSuccessResponse<any>> {
     const daysNum = Number(days) || 7
-    const [tenantTrend, userTrend, orderTrend, reviewTrend, traffic, prevTraffic] = await Promise.all([
-      this.calculateTrendForRepository(this.dataSource.getRepository(TenantEntity), daysNum),
-      this.calculateTrendForRepository(this.dataSource.getRepository(UserEntity), daysNum),
-      this.calculateTrendForRepository(this.dataSource.getRepository(OrderEntity), daysNum),
-      this.calculateTrendForRepository(this.dataSource.getRepository(ReviewEntity), daysNum),
-      this.trafficService.getGlobalTrafficStats(daysNum),
-      this.trafficService.getGlobalTrafficStats(daysNum * 2),
-    ])
+    const [tenantTrend, userTrend, orderTrend, reviewTrend, traffic, prevTraffic] =
+      await Promise.all([
+        this.calculateTrendForRepository(this.dataSource.getRepository(TenantEntity), daysNum),
+        this.calculateTrendForRepository(this.dataSource.getRepository(UserEntity), daysNum),
+        this.calculateTrendForRepository(this.dataSource.getRepository(OrderEntity), daysNum),
+        this.calculateTrendForRepository(this.dataSource.getRepository(ReviewEntity), daysNum),
+        this.trafficService.getGlobalTrafficStats(daysNum),
+        this.trafficService.getGlobalTrafficStats(daysNum * 2),
+      ])
 
-    const prevTrafficCount = prevTraffic.slice(daysNum).reduce((acc: number, t: any) => acc + (t.requestCount || 0), 0)
+    const prevTrafficCount = prevTraffic
+      .slice(daysNum)
+      .reduce((acc: number, t: any) => acc + (t.requestCount || 0), 0)
     const currTrafficCount = traffic.reduce((acc: number, t: any) => acc + (t.requestCount || 0), 0)
-    const trafficTrend = prevTrafficCount > 0 ? (((currTrafficCount - prevTrafficCount) / prevTrafficCount) * 100).toFixed(1) : null
+    const trafficTrend =
+      prevTrafficCount > 0
+        ? (((currTrafficCount - prevTrafficCount) / prevTrafficCount) * 100).toFixed(1)
+        : null
 
     return {
       success: true,
@@ -456,7 +467,7 @@ export class SuperAdminController {
         orders: orderTrend,
         reviews: reviewTrend,
         traffic: trafficTrend ? `${Number(trafficTrend) >= 0 ? '+' : ''}${trafficTrend}%` : null,
-      }
+      },
     }
   }
 
@@ -490,19 +501,22 @@ export class SuperAdminController {
 
     if (search) {
       const term = search.toLowerCase()
-      filtered = filtered.filter(t =>
-        t.storeName?.toLowerCase().includes(term) ||
-        t.subdomain?.toLowerCase().includes(term) ||
-        t.customDomain?.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (t) =>
+          t.storeName?.toLowerCase().includes(term) ||
+          t.subdomain?.toLowerCase().includes(term) ||
+          t.customDomain?.toLowerCase().includes(term),
       )
     }
 
     if (status) {
-      filtered = filtered.filter(t => t.status?.toLowerCase() === status.toLowerCase())
+      filtered = filtered.filter((t) => t.status?.toLowerCase() === status.toLowerCase())
     }
 
     if (plan) {
-      filtered = filtered.filter(t => t.subscriptionPlan?.name?.toLowerCase().includes(plan.toLowerCase()))
+      filtered = filtered.filter((t) =>
+        t.subscriptionPlan?.name?.toLowerCase().includes(plan.toLowerCase()),
+      )
     }
 
     if (sort === 'created_asc') {
@@ -515,9 +529,11 @@ export class SuperAdminController {
 
     // Add trial expiry countdown
     const now = new Date()
-    filtered = filtered.map(t => {
+    filtered = filtered.map((t) => {
       const endsAt = t.subscriptionEndsAt ? new Date(t.subscriptionEndsAt) : null
-      const daysUntilExpiry = endsAt ? Math.ceil((endsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null
+      const daysUntilExpiry = endsAt
+        ? Math.ceil((endsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        : null
       return { ...t, daysUntilExpiry }
     })
 
@@ -560,7 +576,10 @@ export class SuperAdminController {
         data,
       }
     } catch (error) {
-      this.logger.error(`[SuperAdmin] Error fetching detailed analytics for tenant ${sanitizeLog(id)}:`, error)
+      this.logger.error(
+        `[SuperAdmin] Error fetching detailed analytics for tenant ${sanitizeLog(id)}:`,
+        error,
+      )
       throw error
     }
   }
@@ -650,14 +669,17 @@ export class SuperAdminController {
     @Body('status') status: TenantStatus,
   ): Promise<BaseApiSuccessResponse<any>> {
     const tenant = await this.tenantService.updateTenantStatus(id, status as any)
-    await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
-      userId: ctx.userId,
-      actorName: ctx.user?.username,
-      action: 'TENANT_STATUS_CHANGE',
-      entity: 'Tenant',
-      entityId: id,
-      newValue: { status },
-    } as any)
+    await this.auditLogService.log(
+      { tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto,
+      {
+        userId: ctx.userId,
+        actorName: ctx.user?.username,
+        action: 'TENANT_STATUS_CHANGE',
+        entity: 'Tenant',
+        entityId: id,
+        newValue: { status },
+      } as any,
+    )
     return {
       success: true,
       statusCode: 200,
@@ -675,14 +697,17 @@ export class SuperAdminController {
     @Body('planId') planId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     await this.tenantService.updateTenantPlan(id, planId)
-    await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
-      userId: ctx.userId,
-      actorName: ctx.user?.username,
-      action: 'TENANT_PLAN_CHANGE',
-      entity: 'Tenant',
-      entityId: id,
-      newValue: { planId },
-    } as any)
+    await this.auditLogService.log(
+      { tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto,
+      {
+        userId: ctx.userId,
+        actorName: ctx.user?.username,
+        action: 'TENANT_PLAN_CHANGE',
+        entity: 'Tenant',
+        entityId: id,
+        newValue: { planId },
+      } as any,
+    )
     return {
       success: true,
       statusCode: 200,
@@ -706,20 +731,28 @@ export class SuperAdminController {
     for (const id of ids) {
       try {
         await this.tenantService.updateTenantStatus(id, status as any)
-        await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
-          userId: ctx.userId,
-          actorName: ctx.user?.username,
-          action: 'TENANT_STATUS_CHANGE',
-          entity: 'Tenant',
-          entityId: id,
-          newValue: { status },
-        } as any)
+        await this.auditLogService.log(
+          { tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto,
+          {
+            userId: ctx.userId,
+            actorName: ctx.user?.username,
+            action: 'TENANT_STATUS_CHANGE',
+            entity: 'Tenant',
+            entityId: id,
+            newValue: { status },
+          } as any,
+        )
         updated++
       } catch (e) {
         this.logger.warn(`Bulk status update failed for tenant ${id}: ${e.message}`)
       }
     }
-    return { success: true, statusCode: 200, message: `${updated} tenants updated`, data: { updated } }
+    return {
+      success: true,
+      statusCode: 200,
+      message: `${updated} tenants updated`,
+      data: { updated },
+    }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -735,20 +768,28 @@ export class SuperAdminController {
     for (const id of ids) {
       try {
         await this.tenantService.updateTenantPlan(id, planId)
-        await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
-          userId: ctx.userId,
-          actorName: ctx.user?.username,
-          action: 'TENANT_PLAN_CHANGE',
-          entity: 'Tenant',
-          entityId: id,
-          newValue: { planId },
-        } as any)
+        await this.auditLogService.log(
+          { tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto,
+          {
+            userId: ctx.userId,
+            actorName: ctx.user?.username,
+            action: 'TENANT_PLAN_CHANGE',
+            entity: 'Tenant',
+            entityId: id,
+            newValue: { planId },
+          } as any,
+        )
         updated++
       } catch (e) {
         this.logger.warn(`Bulk plan update failed for tenant ${id}: ${e.message}`)
       }
     }
-    return { success: true, statusCode: 200, message: `${updated} tenants updated`, data: { updated } }
+    return {
+      success: true,
+      statusCode: 200,
+      message: `${updated} tenants updated`,
+      data: { updated },
+    }
   }
 
   // ─── User Management Actions ─────────────────────────────────────────────
@@ -763,23 +804,30 @@ export class SuperAdminController {
   ): Promise<BaseApiSuccessResponse<null>> {
     try {
       await this.userService.updateUser(id, { requirePasswordChange: true } as any)
-      this.logger.log(`Super Admin ${sanitizeLog(ctx.user?.username)} forced password reset for user ${sanitizeLog(id)}`)
+      this.logger.log(
+        `Super Admin ${sanitizeLog(ctx.user?.username)} forced password reset for user ${sanitizeLog(id)}`,
+      )
     } catch (e) {
       this.logger.warn(`Force password reset for ${id}: ${e.message}`)
     }
-    return { success: true, statusCode: 200, message: 'Password reset flag set for user', data: null }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Password reset flag set for user',
+      data: null,
+    }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Post('/users/:id/send-verification')
   @HttpCode(200)
-  async sendVerificationEmail(
-    @Param('id') id: string,
-  ): Promise<BaseApiSuccessResponse<null>> {
+  async sendVerificationEmail(@Param('id') id: string): Promise<BaseApiSuccessResponse<null>> {
     try {
       const user = await this.userService.getUser(id)
-      this.logger.log(`Sending verification email to user ${sanitizeLog(id)}: ${sanitizeLog(user?.email)}`)
+      this.logger.log(
+        `Sending verification email to user ${sanitizeLog(id)}: ${sanitizeLog(user?.email)}`,
+      )
       // The actual email sending would be triggered here via a notification/email service
       // For now we log and return success — the auth service handles re-sending via existing flows
     } catch (e) {
@@ -807,7 +855,12 @@ export class SuperAdminController {
       from,
       to,
     } as any)
-    return { success: true, statusCode: 200, message: 'Impersonation logs retrieved', data: result as any }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Impersonation logs retrieved',
+      data: result as any,
+    }
   }
 
   // ─── Billing & Revenue ────────────────────────────────────────────────────
@@ -899,7 +952,7 @@ export class SuperAdminController {
     if (search) {
       qb.andWhere(
         '(tenant.storeName ILIKE :search OR inv.invoiceNumber ILIKE :search OR inv.transactionId ILIKE :search)',
-        { search: `%${search}%` }
+        { search: `%${search}%` },
       )
     }
 
@@ -943,7 +996,11 @@ export class SuperAdminController {
       success: true,
       statusCode: 200,
       message: 'Revenue chart data retrieved',
-      data: result.map(r => ({ month: r.month, revenue: Number(r.revenue || 0), count: Number(r.count || 0) })),
+      data: result.map((r) => ({
+        month: r.month,
+        revenue: Number(r.revenue || 0),
+        count: Number(r.count || 0),
+      })),
     }
   }
 
@@ -995,17 +1052,21 @@ export class SuperAdminController {
     })
 
     const rows = [
-      ['Invoice #', 'Tenant', 'Plan', 'Amount', 'Currency', 'Status', 'Billing Cycle', 'Date'].join(','),
-      ...invoices.map(inv => [
-        inv.invoiceNumber,
-        `"${(inv.tenant?.storeName || '').replace(/"/g, '""')}"`,
-        inv.subscriptionPlan?.name || '',
-        inv.amount,
-        inv.currency,
-        inv.status,
-        inv.billingCycle,
-        inv.billingDate ? new Date(inv.billingDate).toISOString() : '',
-      ].join(',')),
+      ['Invoice #', 'Tenant', 'Plan', 'Amount', 'Currency', 'Status', 'Billing Cycle', 'Date'].join(
+        ',',
+      ),
+      ...invoices.map((inv) =>
+        [
+          inv.invoiceNumber,
+          `"${(inv.tenant?.storeName || '').replace(/"/g, '""')}"`,
+          inv.subscriptionPlan?.name || '',
+          inv.amount,
+          inv.currency,
+          inv.status,
+          inv.billingCycle,
+          inv.billingDate ? new Date(inv.billingDate).toISOString() : '',
+        ].join(','),
+      ),
     ]
 
     res.setHeader('Content-Type', 'text/csv')
@@ -1019,19 +1080,29 @@ export class SuperAdminController {
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/analytics/export')
   async exportAnalyticsCSV(@Res() res: Response): Promise<void> {
-    const tenants = await this.tenantService.findAllTenants() as any[]
+    const tenants = (await this.tenantService.findAllTenants()) as any[]
 
     const rows = [
-      ['Store Name', 'Subdomain', 'Plan', 'Status', 'Subscription Status', 'Subscription Ends', 'Created At'].join(','),
-      ...tenants.map(t => [
-        `"${(t.storeName || '').replace(/"/g, '""')}"`,
-        t.subdomain || '',
-        t.subscriptionPlan?.name || 'No Plan',
-        t.status || '',
-        t.subscriptionStatus || '',
-        t.subscriptionEndsAt ? new Date(t.subscriptionEndsAt).toISOString() : '',
-        t.createdAt ? new Date(t.createdAt).toISOString() : '',
-      ].join(',')),
+      [
+        'Store Name',
+        'Subdomain',
+        'Plan',
+        'Status',
+        'Subscription Status',
+        'Subscription Ends',
+        'Created At',
+      ].join(','),
+      ...tenants.map((t) =>
+        [
+          `"${(t.storeName || '').replace(/"/g, '""')}"`,
+          t.subdomain || '',
+          t.subscriptionPlan?.name || 'No Plan',
+          t.status || '',
+          t.subscriptionStatus || '',
+          t.subscriptionEndsAt ? new Date(t.subscriptionEndsAt).toISOString() : '',
+          t.createdAt ? new Date(t.createdAt).toISOString() : '',
+        ].join(','),
+      ),
     ]
 
     res.setHeader('Content-Type', 'text/csv')
@@ -1061,17 +1132,28 @@ export class SuperAdminController {
     } as any)
 
     const rows = [
-      ['ID', 'Action', 'Entity', 'Entity ID', 'Actor', 'Tenant ID', 'IP Address', 'Created At'].join(','),
-      ...data.map((log: any) => [
-        log.id,
-        log.action,
-        log.entity,
-        log.entityId || '',
-        `"${(log.actorName || '').replace(/"/g, '""')}"`,
-        log.tenantId || '',
-        log.ipAddress || '',
-        log.createdAt ? new Date(log.createdAt).toISOString() : '',
-      ].join(',')),
+      [
+        'ID',
+        'Action',
+        'Entity',
+        'Entity ID',
+        'Actor',
+        'Tenant ID',
+        'IP Address',
+        'Created At',
+      ].join(','),
+      ...data.map((log: any) =>
+        [
+          log.id,
+          log.action,
+          log.entity,
+          log.entityId || '',
+          `"${(log.actorName || '').replace(/"/g, '""')}"`,
+          log.tenantId || '',
+          log.ipAddress || '',
+          log.createdAt ? new Date(log.createdAt).toISOString() : '',
+        ].join(','),
+      ),
     ]
 
     res.setHeader('Content-Type', 'text/csv')
@@ -1125,14 +1207,17 @@ export class SuperAdminController {
 
     // Audit the impersonation against the target user's tenant for traceability.
     if (user.tenantId) {
-      await this.auditLogService.log({ tenantId: user.tenantId, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
-        userId: ctx.userId,
-        actorName: ctx.user?.username,
-        action: 'IMPERSONATE_START',
-        entity: 'User',
-        entityId: user.id,
-        newValue: { targetUserId: user.id, targetUsername: user.username },
-      } as any)
+      await this.auditLogService.log(
+        { tenantId: user.tenantId, userId: ctx.userId, user: ctx.user } as RequestContextDto,
+        {
+          userId: ctx.userId,
+          actorName: ctx.user?.username,
+          action: 'IMPERSONATE_START',
+          entity: 'User',
+          entityId: user.id,
+          newValue: { targetUserId: user.id, targetUsername: user.username },
+        } as any,
+      )
     }
 
     // 3. Construct redirect URL
@@ -1185,14 +1270,17 @@ export class SuperAdminController {
       body.featureSlug,
       body.overrideValue,
     )
-    await this.auditLogService.log({ tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto, {
-      userId: ctx.userId,
-      actorName: ctx.user?.username,
-      action: 'TENANT_FEATURE_OVERRIDE',
-      entity: 'Tenant',
-      entityId: id,
-      newValue: { featureSlug: body.featureSlug, overrideValue: body.overrideValue },
-    } as any)
+    await this.auditLogService.log(
+      { tenantId: id, userId: ctx.userId, user: ctx.user } as RequestContextDto,
+      {
+        userId: ctx.userId,
+        actorName: ctx.user?.username,
+        action: 'TENANT_FEATURE_OVERRIDE',
+        entity: 'Tenant',
+        entityId: id,
+        newValue: { featureSlug: body.featureSlug, overrideValue: body.overrideValue },
+      } as any,
+    )
     return {
       success: true,
       statusCode: 200,

@@ -85,9 +85,7 @@ describe('FilesService - Storage Limits', () => {
       } as any,
     }
 
-    await expect(service.generatePresignedUpload(dto, ctx)).rejects.toThrow(
-      BadRequestException,
-    )
+    await expect(service.generatePresignedUpload(dto, ctx)).rejects.toThrow(BadRequestException)
   })
 
   it('should allow file upload if storage limit is not exceeded', async () => {
@@ -101,9 +99,7 @@ describe('FilesService - Storage Limits', () => {
 
     // Mock active 5GB addon
     const mockRepo = {
-      find: jest.fn().mockResolvedValue([
-        { featureSlug: 'addon_storage_5gb', isEnabled: true },
-      ]),
+      find: jest.fn().mockResolvedValue([{ featureSlug: 'addon_storage_5gb', isEnabled: true }]),
     }
     dataSource.getRepository.mockReturnValue(mockRepo)
 

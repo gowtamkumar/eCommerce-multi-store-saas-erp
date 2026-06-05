@@ -1,7 +1,4 @@
-import {
-  sanitizePageHtml,
-  validateAndSanitizeSections,
-} from './page-html-sanitizer.util'
+import { sanitizePageHtml, validateAndSanitizeSections } from './page-html-sanitizer.util'
 
 describe('page-html-sanitizer', () => {
   it('removes script tags and event handlers', () => {

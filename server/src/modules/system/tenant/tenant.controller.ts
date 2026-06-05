@@ -84,9 +84,7 @@ export class TenantController {
   }
 
   @Get('check-domain')
-  async checkDomain(
-    @Query('domain') domain: string,
-  ): Promise<void> {
+  async checkDomain(@Query('domain') domain: string): Promise<void> {
     if (!domain) {
       throw new BadRequestException('Domain query parameter is required')
     }

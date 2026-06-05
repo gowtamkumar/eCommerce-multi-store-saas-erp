@@ -63,4 +63,3 @@ export class FileRepository {
     return parseInt(result?.total || '0', 10)
   }
 }
-

@@ -7,11 +7,7 @@
  * The slugs here must match the `feature` prefix of the corresponding
  * permission codes (e.g. `users:read` → feature `users`).
  */
-export const CORE_FEATURE_SLUGS: ReadonlySet<string> = new Set([
-  'users',
-  'settings',
-  'audit-logs',
-])
+export const CORE_FEATURE_SLUGS: ReadonlySet<string> = new Set(['users', 'settings', 'audit-logs'])
 
 /**
  * Whether a feature slug is a plan-independent core feature.
@@ -52,4 +48,3 @@ export const PERMISSION_FEATURE_TO_PLAN_FEATURE: Record<string, string> = {
 export function getPlanFeature(featureSlug: string): string {
   return PERMISSION_FEATURE_TO_PLAN_FEATURE[featureSlug] || featureSlug
 }
-

@@ -557,16 +557,18 @@ export class PosService {
     })
 
     if (isNewSale && jobData) {
-      await this.accountingQueue.add(
-        'post-pos-sale',
-        {
-          ctx,
-          payload: jobData,
-        },
-        { removeOnComplete: true },
-      ).catch((err) => {
-        this.logger.error(`Failed to queue POS sale journal entry: ${err.message}`)
-      })
+      await this.accountingQueue
+        .add(
+          'post-pos-sale',
+          {
+            ctx,
+            payload: jobData,
+          },
+          { removeOnComplete: true },
+        )
+        .catch((err) => {
+          this.logger.error(`Failed to queue POS sale journal entry: ${err.message}`)
+        })
     }
 
     return {

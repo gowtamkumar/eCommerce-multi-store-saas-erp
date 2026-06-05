@@ -151,21 +151,23 @@ export class DebitNoteService {
 
       await queryRunner.commitTransaction()
 
-      await this.accountingQueue.add(
-        'post-debit-note-approved',
-        {
-          ctx,
-          payload: {
-            debitNoteId: dn.id,
-            debitNoteNumber: dn.debitNoteNumber,
-            supplierId: dn.supplierId,
-            amount: dn.amount,
+      await this.accountingQueue
+        .add(
+          'post-debit-note-approved',
+          {
+            ctx,
+            payload: {
+              debitNoteId: dn.id,
+              debitNoteNumber: dn.debitNoteNumber,
+              supplierId: dn.supplierId,
+              amount: dn.amount,
+            },
           },
-        },
-        { removeOnComplete: true },
-      ).catch((err) => {
-        this.logger.error(`Failed to queue debit note journal entry: ${err.message}`)
-      })
+          { removeOnComplete: true },
+        )
+        .catch((err) => {
+          this.logger.error(`Failed to queue debit note journal entry: ${err.message}`)
+        })
 
       await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
       await this.cacheService.delCache(`dn:id:${dn.id}`, tenantId)

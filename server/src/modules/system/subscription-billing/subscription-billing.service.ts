@@ -43,7 +43,6 @@ export class SubscriptionBillingService {
     private readonly dataSource: DataSource,
   ) {}
 
-
   async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
     const cacheKey = `subscription:${tenantId}:current`
@@ -115,7 +114,10 @@ export class SubscriptionBillingService {
           // Match against DB-defined storage addons by prefix
           if (baseLimitMb !== -1) {
             for (const def of storageAddonDefs) {
-              if (override.featureSlug === def.slug || override.featureSlug.startsWith(def.slug + '_')) {
+              if (
+                override.featureSlug === def.slug ||
+                override.featureSlug.startsWith(def.slug + '_')
+              ) {
                 addonsMb += def.boostValue
                 break
               }
@@ -362,7 +364,10 @@ export class SubscriptionBillingService {
         subscriptionPlanId: record.subscriptionPlanId,
         status: SubscriptionStatus.ACTIVE,
         billingCycle: record.billingCycle,
-        startsAt: (isCurrentlyActive && tenant.subscriptionStartsAt) ? tenant.subscriptionStartsAt : currentDate,
+        startsAt:
+          isCurrentlyActive && tenant.subscriptionStartsAt
+            ? tenant.subscriptionStartsAt
+            : currentDate,
         endsAt: newEndsAt,
       })
       const savedSub = await this.subscriptionRepo.save(sub)
@@ -517,4 +522,3 @@ export class SubscriptionBillingService {
     }
   }
 }
-

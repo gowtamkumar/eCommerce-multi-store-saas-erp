@@ -27,7 +27,15 @@ export class AccountingProcessor extends WorkerHost {
           return { success: true }
 
         case 'post-payroll-accrual': {
-          const { batchId, name, period, totalSalary, totalTaxesWithheld, totalDeductions, totalAmount } = payload
+          const {
+            batchId,
+            name,
+            period,
+            totalSalary,
+            totalTaxesWithheld,
+            totalDeductions,
+            totalAmount,
+          } = payload
           this.logger.log(`Posting Payroll Accrual for batch: ${batchId}`)
           await this.accountingService.createJournalEntry(
             {
@@ -89,10 +97,18 @@ export class AccountingProcessor extends WorkerHost {
           this.logger.log(`Posting B2B Credit Sale entries for order: ${orderId}`)
           const lines = []
           if (walletDeduction > 0) {
-            lines.push({ accountCode: '2300', side: LedgerEntrySide.DEBIT, amount: walletDeduction })
+            lines.push({
+              accountCode: '2300',
+              side: LedgerEntrySide.DEBIT,
+              amount: walletDeduction,
+            })
           }
           if (remainingAmount > 0) {
-            lines.push({ accountCode: '1200', side: LedgerEntrySide.DEBIT, amount: remainingAmount })
+            lines.push({
+              accountCode: '1200',
+              side: LedgerEntrySide.DEBIT,
+              amount: remainingAmount,
+            })
           }
           if (netRevenue > 0) {
             lines.push({ accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netRevenue })
@@ -116,7 +132,14 @@ export class AccountingProcessor extends WorkerHost {
         }
 
         case 'post-order-paid': {
-          const { orderId, paymentMethod, walletDeduction, remainingAmount, netRevenue, taxAmount } = payload
+          const {
+            orderId,
+            paymentMethod,
+            walletDeduction,
+            remainingAmount,
+            netRevenue,
+            taxAmount,
+          } = payload
           this.logger.log(`Posting Sales Recognition entries for order: ${orderId}`)
           if (paymentMethod === 'ON_ACCOUNT') {
             return { success: true, skipped: true }
@@ -154,7 +177,9 @@ export class AccountingProcessor extends WorkerHost {
             },
             ctx,
           )
-          this.logger.log(`Successfully posted Sales Cash Recognition GL entries for order ${orderId}`)
+          this.logger.log(
+            `Successfully posted Sales Cash Recognition GL entries for order ${orderId}`,
+          )
           return { success: true }
         }
 
@@ -192,7 +217,9 @@ export class AccountingProcessor extends WorkerHost {
             },
             ctx,
           )
-          this.logger.log(`Successfully posted Exchange Completed GL entries for Return: ${returnId}`)
+          this.logger.log(
+            `Successfully posted Exchange Completed GL entries for Return: ${returnId}`,
+          )
           return { success: true }
         }
 
@@ -243,7 +270,9 @@ export class AccountingProcessor extends WorkerHost {
             },
             ctx,
           )
-          this.logger.log(`Successfully posted Supplier Invoice Payment GL entries for invoice: ${invoiceId}`)
+          this.logger.log(
+            `Successfully posted Supplier Invoice Payment GL entries for invoice: ${invoiceId}`,
+          )
           return { success: true }
         }
 
@@ -263,7 +292,9 @@ export class AccountingProcessor extends WorkerHost {
             },
             ctx,
           )
-          this.logger.log(`Successfully posted Debit Note Approved GL entries for Debit Note: ${debitNoteId}`)
+          this.logger.log(
+            `Successfully posted Debit Note Approved GL entries for Debit Note: ${debitNoteId}`,
+          )
           return { success: true }
         }
 

@@ -7,9 +7,7 @@ import { FulfillmentService } from './fulfillment.service'
 export class FulfillmentProcessor extends WorkerHost {
   private readonly logger = new Logger(FulfillmentProcessor.name)
 
-  constructor(
-    private readonly fulfillmentService: FulfillmentService,
-  ) {
+  constructor(private readonly fulfillmentService: FulfillmentService) {
     super()
   }
 

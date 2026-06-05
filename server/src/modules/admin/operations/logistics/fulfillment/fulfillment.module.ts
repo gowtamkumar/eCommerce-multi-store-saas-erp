@@ -24,4 +24,4 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
   providers: [FulfillmentService, FulfillmentRepository, FulfillmentProcessor],
   exports: [FulfillmentService, FulfillmentRepository, BullModule],
 })
-export class FulfillmentModule { }
+export class FulfillmentModule {}

@@ -11,7 +11,14 @@ import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
-  imports: [SettingsModule, InvoiceModule, MailModule, NotificationModule, TenantModule, AuditLogModule],
+  imports: [
+    SettingsModule,
+    InvoiceModule,
+    MailModule,
+    NotificationModule,
+    TenantModule,
+    AuditLogModule,
+  ],
   controllers: [PaymentController, PaymentActionController],
   providers: [PaymentService],
   exports: [PaymentService],

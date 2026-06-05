@@ -56,7 +56,7 @@ describe('PermissionResolutionService', () => {
     it('respects sub-feature specific overrides over plan features', async () => {
       // Explicitly disabled override for 'accounting' sub-feature
       tenantFeatureRepo.findOne.mockResolvedValueOnce({ isEnabled: false }) // for 'accounting'
-      
+
       tenantRepo.findOne.mockResolvedValue({
         subscriptionPlan: {
           features: ['finance'],
@@ -102,16 +102,11 @@ describe('PermissionResolutionService', () => {
       // Since user holds both, but plan only enables 'finance',
       // only 'accounting:read' should be filtered in (as it maps to 'finance'),
       // and 'hrm:read' should be filtered out (no 'hrm' feature).
-      assignmentRepo.find.mockResolvedValue([
-        { roleId: 'role-1', expiresAt: null },
-      ])
+      assignmentRepo.find.mockResolvedValue([{ roleId: 'role-1', expiresAt: null }])
       roleRepo.find.mockResolvedValue([
         {
           id: 'role-1',
-          permissions: [
-            { code: 'accounting:read' },
-            { code: 'hrm:read' },
-          ],
+          permissions: [{ code: 'accounting:read' }, { code: 'hrm:read' }],
         },
       ])
 

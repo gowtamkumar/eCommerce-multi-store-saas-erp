@@ -8,9 +8,7 @@ import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 export class InvoiceProcessor extends WorkerHost {
   private readonly logger = new Logger(InvoiceProcessor.name)
 
-  constructor(
-    private readonly invoiceService: InvoiceService,
-  ) {
+  constructor(private readonly invoiceService: InvoiceService) {
     super()
   }
 
@@ -45,7 +43,11 @@ export class InvoiceProcessor extends WorkerHost {
         case 'update-invoice-cancelled': {
           const { orderId } = payload
           this.logger.log(`Updating invoice status to CANCELLED for order ${orderId}`)
-          await this.invoiceService.updateInvoiceStatusByOrderId(orderId, InvoiceStatus.CANCELLED, ctx)
+          await this.invoiceService.updateInvoiceStatusByOrderId(
+            orderId,
+            InvoiceStatus.CANCELLED,
+            ctx,
+          )
           this.logger.log(`Successfully updated invoice status to CANCELLED for order ${orderId}`)
           return { success: true }
         }

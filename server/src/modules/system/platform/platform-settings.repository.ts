@@ -76,8 +76,10 @@ export class PlatformSettingsRepository {
       },
       seo: {
         metaTitle: 'YourSaaS - Launch Your Store in Seconds',
-        metaDescription: 'The all-in-one multi-tenant platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
-        ogImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop',
+        metaDescription:
+          'The all-in-one multi-tenant platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
+        ogImage:
+          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop',
       },
       isMaintenanceMode: false,
       maintenanceMessage:

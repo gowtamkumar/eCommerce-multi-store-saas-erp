@@ -44,7 +44,6 @@ export class TenantEntity extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
 
-
   get subscriptionPlan(): SubscriptionPlanEntity | null {
     return this.activeSubscription?.subscriptionPlan || null
   }

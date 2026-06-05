@@ -20,7 +20,10 @@ export class PageReusableBlockService {
     return validateAndSanitizeSections(arr)
   }
 
-  async create(dto: CreateReusableBlockDto, ctx: RequestContextDto): Promise<PageReusableBlockEntity> {
+  async create(
+    dto: CreateReusableBlockDto,
+    ctx: RequestContextDto,
+  ): Promise<PageReusableBlockEntity> {
     return this.repo.create(
       {
         name: dto.name,

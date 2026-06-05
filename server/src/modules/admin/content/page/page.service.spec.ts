@@ -60,37 +60,49 @@ describe('PageService', () => {
   describe('createPage slug generation', () => {
     it('should use explicit slug if provided', async () => {
       pageRepository.findBySlug.mockResolvedValue(null)
-      const res = await service.createPage({
-        title: 'Custom Title',
-        slug: 'custom-slug',
-      }, mockContext)
+      const res = await service.createPage(
+        {
+          title: 'Custom Title',
+          slug: 'custom-slug',
+        },
+        mockContext,
+      )
       expect(res.slug).toBe('custom-slug')
     })
 
     it('should generate slug from title if slug is not provided', async () => {
       pageRepository.findBySlug.mockResolvedValue(null)
-      const res = await service.createPage({
-        title: 'Hello World Page!',
-      } as any, mockContext)
+      const res = await service.createPage(
+        {
+          title: 'Hello World Page!',
+        } as any,
+        mockContext,
+      )
       expect(res.slug).toBe('hello-world-page')
     })
 
     it('should generate slug from title if slug is explicitly empty', async () => {
       pageRepository.findBySlug.mockResolvedValue(null)
-      const res = await service.createPage({
-        title: 'Another Awesome Page',
-        slug: '   ',
-      }, mockContext)
+      const res = await service.createPage(
+        {
+          title: 'Another Awesome Page',
+          slug: '   ',
+        },
+        mockContext,
+      )
       expect(res.slug).toBe('another-awesome-page')
     })
 
     it('should keep slug empty for home page', async () => {
       pageRepository.findBySlug.mockResolvedValue(null)
-      const res = await service.createPage({
-        title: 'My Store Home',
-        slug: 'home-slug-ignored',
-        isHomePage: true,
-      }, mockContext)
+      const res = await service.createPage(
+        {
+          title: 'My Store Home',
+          slug: 'home-slug-ignored',
+          isHomePage: true,
+        },
+        mockContext,
+      )
       expect(res.slug).toBe('')
     })
   })

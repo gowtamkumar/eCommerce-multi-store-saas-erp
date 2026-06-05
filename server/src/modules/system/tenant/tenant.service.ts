@@ -542,7 +542,11 @@ export class TenantService {
     const updated = await this.tenantRepository.updateAndSave(tenant, {
       status: status as TenantStatus,
     })
-    await this.invalidateTenantCache(id, tenant.subdomain, tenant.domains?.map((d) => d.hostname))
+    await this.invalidateTenantCache(
+      id,
+      tenant.subdomain,
+      tenant.domains?.map((d) => d.hostname),
+    )
     return updated
   }
 
@@ -640,11 +644,13 @@ export class TenantService {
 
       const now = new Date()
       // If current active subscription is still active, extend from endsAt, otherwise from now
-      const isCurrentlyActive = tenant.activeSubscription?.endsAt && tenant.activeSubscription.endsAt > now
+      const isCurrentlyActive =
+        tenant.activeSubscription?.endsAt && tenant.activeSubscription.endsAt > now
       const baseDate = isCurrentlyActive ? tenant.activeSubscription.endsAt : now
       const endsAt = new Date(baseDate)
 
-      const billingCycle = tenant.activeSubscription?.billingCycle || SubscriptionBillingCycle.MONTHLY
+      const billingCycle =
+        tenant.activeSubscription?.billingCycle || SubscriptionBillingCycle.MONTHLY
       if (billingCycle === SubscriptionBillingCycle.YEARLY) {
         endsAt.setFullYear(endsAt.getFullYear() + 1)
       } else {
@@ -666,7 +672,11 @@ export class TenantService {
       const updatedTenant = await tenantRepo.save(tenant)
 
       // 2. Clear tenant cache
-      await this.invalidateTenantCache(id, tenant.subdomain, tenant.domains?.map((d) => d.hostname))
+      await this.invalidateTenantCache(
+        id,
+        tenant.subdomain,
+        tenant.domains?.map((d) => d.hostname),
+      )
 
       // 3. Invalidate permission manifest caches for all tenant users
       try {
@@ -771,7 +781,11 @@ export class TenantService {
     }
 
     // Clear tenant cache
-    await this.invalidateTenantCache(tenantId, tenant.subdomain, tenant.domains?.map((d) => d.hostname))
+    await this.invalidateTenantCache(
+      tenantId,
+      tenant.subdomain,
+      tenant.domains?.map((d) => d.hostname),
+    )
 
     // Invalidate permission manifest caches for all tenant users
     try {
@@ -787,7 +801,11 @@ export class TenantService {
     return { success: true }
   }
 
-  private async invalidateTenantCache(id: string, subdomain?: string, customDomains?: string | string[]) {
+  private async invalidateTenantCache(
+    id: string,
+    subdomain?: string,
+    customDomains?: string | string[],
+  ) {
     const keys = [`${this.CACHE_PREFIX}all`, `${this.CACHE_PREFIX}id:${id}`]
     if (subdomain) keys.push(`${this.CACHE_PREFIX}subdomain:${subdomain}`)
     if (customDomains) {
