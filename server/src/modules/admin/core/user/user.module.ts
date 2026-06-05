@@ -30,6 +30,6 @@ import { UserService } from './services/user.service'
   ],
   controllers: [RoleController, UserController],
   providers: [UserService, StaffInvitationService, UserRepository, StaffInvitationRepository],
-  exports: [UserService, StaffInvitationService],
+  exports: [UserService, StaffInvitationService, UserRepository, StaffInvitationRepository],
 })
 export class UserModule {}

@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { Injectable } from '@nestjs/common'
@@ -75,7 +76,7 @@ export class InventoryLedgerRepository {
     tenantId: string,
     manager?: any,
   ): Promise<number> {
-    const repo = manager ? manager.getRepository(InventoryLedgerEntity) : this.repo
+    const repo = getTransactionalRepo(InventoryLedgerEntity, this.repo, manager)
     const where: Record<string, any> = { productId, tenantId }
     if (variantId) where.variantId = variantId
     if (warehouseId) where.warehouseId = warehouseId
@@ -106,12 +107,16 @@ export class InventoryLedgerRepository {
     ctx: RequestContextDto,
     manager?: any,
   ): Promise<InventoryLedgerEntity> {
-    const repo = manager ? manager.getRepository(InventoryLedgerEntity) : this.repo
-    const transaction = repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId })
+    const repo = getTransactionalRepo(InventoryLedgerEntity, this.repo, manager)
+    const transaction = repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as Partial<InventoryLedgerEntity>)
     if (dto.createdAt) {
       transaction.createdAt = new Date(dto.createdAt)
     }
-    return await (repo.save(transaction) as unknown as Promise<InventoryLedgerEntity>)
+    return repo.save(transaction)
   }
   async getStockSums(tenantId: string, warehouseId?: string): Promise<any[]> {
     const qb = this.repo
@@ -134,7 +139,7 @@ export class InventoryLedgerRepository {
     warehouseId?: string | null,
     manager?: any,
   ): Promise<number> {
-    const repo = manager ? manager.getRepository(InventoryLedgerEntity) : this.repo
+    const repo = getTransactionalRepo(InventoryLedgerEntity, this.repo, manager)
 
     const query = repo
       .createQueryBuilder('ledger')

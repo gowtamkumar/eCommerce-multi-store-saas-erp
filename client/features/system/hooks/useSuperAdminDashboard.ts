@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { fetchSuperAdminAPI, downloadSuperAdminFile } from '@/services/supperAdminApi';
+import { fetchSuperAdminAPI, downloadSuperAdminFile } from '@/services/superAdminApi';
 import { buildDashboardStats } from '../lib/dashboard';
 import type {
   BillingOverview,

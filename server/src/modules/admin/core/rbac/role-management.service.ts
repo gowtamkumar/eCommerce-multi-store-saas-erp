@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { RiskLevel } from '@/common/enums/risk-level.enum'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.entity'
@@ -12,7 +13,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
+import { EntityManager, In, Repository } from 'typeorm'
 
 export interface CreateRoleDto {
   name: string
@@ -207,9 +208,9 @@ export class RoleManagementService {
    * Called during tenant creation. Gets ALL available permissions.
    * isSystemRole = true — immutable and non-deletable.
    */
-  async seedSuperAdminRole(tenantId: string, manager?: any): Promise<RoleEntity> {
-    const repo = manager ? manager.getRepository(RoleEntity) : this.roleRepo
-    const permRepo = manager ? manager.getRepository(PermissionEntity) : this.permissionRepo
+  async seedSuperAdminRole(tenantId: string, manager?: EntityManager): Promise<RoleEntity> {
+    const repo = getTransactionalRepo(RoleEntity, this.roleRepo, manager)
+    const permRepo = getTransactionalRepo(PermissionEntity, this.permissionRepo, manager)
 
     const allPermissions = await permRepo.find()
 
@@ -229,9 +230,9 @@ export class RoleManagementService {
    * Seed the 7 default roles for a new tenant.
    * These are deletable/modifiable by the tenant admin (isSystemRole = false).
    */
-  async seedDefaultRoles(tenantId: string, manager?: any): Promise<RoleEntity[]> {
-    const repo = manager ? manager.getRepository(RoleEntity) : this.roleRepo
-    const permRepo = manager ? manager.getRepository(PermissionEntity) : this.permissionRepo
+  async seedDefaultRoles(tenantId: string, manager?: EntityManager): Promise<RoleEntity[]> {
+    const repo = getTransactionalRepo(RoleEntity, this.roleRepo, manager)
+    const permRepo = getTransactionalRepo(PermissionEntity, this.permissionRepo, manager)
 
     const defaultRoleDefs: Array<{
       name: string

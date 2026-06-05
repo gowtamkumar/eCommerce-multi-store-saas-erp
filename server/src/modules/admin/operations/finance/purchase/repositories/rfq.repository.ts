@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -12,7 +13,7 @@ export class RfqRepository {
   ) {}
 
   private getRepo(manager?: EntityManager): Repository<RfqEntity> {
-    return manager ? manager.getRepository(RfqEntity) : this.repo
+    return getTransactionalRepo(RfqEntity, this.repo, manager)
   }
 
   async generateRFQNumber(tenantId: string, manager?: EntityManager): Promise<string> {

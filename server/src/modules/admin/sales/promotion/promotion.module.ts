@@ -5,13 +5,15 @@ import { PromotionController } from './controllers/promotion.controller'
 import { PromotionEntity } from './entities/promotion.entity'
 import { PromotionRepository } from './repositories/promotion.repository'
 import { PromotionService } from './services/promotion.service'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PromotionEntity]), CacheModule, TenantModule],
+  imports: [TypeOrmModule.forFeature([PromotionEntity, ProductEntity]), CacheModule, TenantModule],
   controllers: [PromotionController],
-  providers: [PromotionService, PromotionRepository],
-  exports: [PromotionService],
+  providers: [PromotionService, PromotionRepository, ProductRepository],
+  exports: [PromotionService, PromotionRepository],
 })
 export class PromotionModule {}

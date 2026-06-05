@@ -4,7 +4,7 @@ import { NotificationService } from '@/modules/admin/operations/infra/notificati
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto'
 import { ReviewEntity } from '../entities/review.entity'
-import { ReviewRepository } from '../repositoris/review.repository'
+import { ReviewRepository } from '../repositories/review.repository'
 
 @Injectable()
 export class ReviewService {

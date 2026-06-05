@@ -13,6 +13,6 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
   imports: [TypeOrmModule.forFeature([LeadEntity]), CacheModule, TenantModule, NotificationModule],
   controllers: [LeadController],
   providers: [LeadService, LeadRepository],
-  exports: [LeadService],
+  exports: [LeadService, LeadRepository],
 })
 export class LeadModule {}

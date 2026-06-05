@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { fetchAPI } from '@/services/api';
+import { useApiList } from '@/hooks/useApiList';
+import { useApiMutation } from '@/hooks/useApiMutation';
 import { Product } from '@/types/product';
-import { useDebounce } from '@/hooks/useDebounce';
 import type { ProductPagination, ProductSortField, ProductSortOrder } from '../types';
 import { getLandingPagePayload } from '../utils/landingPageTemplate';
 
@@ -18,20 +19,11 @@ const getSortParam = (sortBy?: ProductSortField, sortOrder?: ProductSortOrder) =
 };
 
 export function useProductCatalog() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearch = useDebounce(searchQuery, 400);
   const [statusFilter, setStatusFilter] = useState('all');
   const [filterLowStock, setFilterLowStock] = useState(false);
   const [sortBy, setSortBy] = useState<ProductSortField | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<ProductSortOrder>('ASC');
-  const [pagination, setPagination] = useState<ProductPagination>({
-    total: 0,
-    page: 1,
-    limit: PAGE_SIZE,
-    totalPages: 1,
-  });
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -42,63 +34,53 @@ export function useProductCatalog() {
   });
 
   const router = useRouter();
-  const requestIdRef = useRef(0);
+  const { mutate } = useApiMutation();
 
-  const fetchProducts = useCallback(async (page = pagination.page) => {
-    const requestId = ++requestIdRef.current;
-    setLoading(true);
-    try {
+  const buildEndpoint = useCallback(
+    (page: number) => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: PAGE_SIZE.toString(),
         sort: getSortParam(sortBy, sortOrder),
       });
-      if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+      if (searchQuery.trim()) params.set('q', searchQuery.trim());
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (filterLowStock) params.set('lowStock', 'true');
+      return `/products?${params}`;
+    },
+    [searchQuery, sortBy, sortOrder, statusFilter, filterLowStock],
+  );
 
-      const res = await fetchAPI(`/products?${params}`);
-      if (requestId !== requestIdRef.current) return;
-
-      if (res.success && res.data) {
-        setProducts(res.data);
-        const nextPagination = res.pagination || {
-          total: res.data.length,
-          page,
-          limit: PAGE_SIZE,
-          totalPages: 1,
-        };
-        setPagination(nextPagination);
-      }
-    } catch (error) {
-      if (requestId !== requestIdRef.current) return;
-      console.error('Failed to fetch products', error);
-      toast.error('Failed to load products');
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
-  }, [debouncedSearch, pagination.page, sortBy, sortOrder, statusFilter, filterLowStock]);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      void fetchProducts(pagination.page);
-    }, 0);
-    return () => clearTimeout(t);
-  }, [fetchProducts, pagination.page]);
+  const {
+    items: products,
+    loading,
+    pagination,
+    setPagination,
+    refresh,
+    handlePageChange,
+    resetToFirstPage,
+  } = useApiList<Product>({
+    buildEndpoint,
+    pageSize: PAGE_SIZE,
+    searchQuery,
+    debounceMs: 400,
+    errorMessage: 'Failed to load products',
+    deps: [statusFilter, filterLowStock, sortBy, sortOrder],
+  });
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setPagination(prev => ({ ...prev, page: 1 }));
+    resetToFirstPage();
   };
 
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value);
-    setPagination(prev => ({ ...prev, page: 1 }));
+    resetToFirstPage();
   };
 
   const handleLowStockToggle = () => {
     setFilterLowStock(prev => !prev);
-    setPagination(prev => ({ ...prev, page: 1 }));
+    resetToFirstPage();
   };
 
   const handleSortChange = (value: ProductSortField) => {
@@ -108,11 +90,7 @@ export function useProductCatalog() {
       setSortBy(value);
       setSortOrder('ASC');
     }
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
-  const handlePageChange = (page: number) => {
-    setPagination(prev => ({ ...prev, page }));
+    resetToFirstPage();
   };
 
   const handleDelete = (id: string) => {
@@ -122,40 +100,29 @@ export function useProductCatalog() {
       message: 'Are you sure you want to delete this product? This action cannot be undone.',
       isDangerous: true,
       onConfirm: async () => {
-        try {
-          const res = await fetchAPI(`/products/${id}`, { method: 'DELETE' });
-          if (res.success) {
-            toast.success('Product deleted successfully');
-            const nextPage = products.length === 1 && pagination.page > 1
-              ? pagination.page - 1
-              : pagination.page;
-            setPagination(prev => ({ ...prev, page: nextPage }));
-            void fetchProducts(nextPage);
-          } else {
-            toast.error(res.error || 'Error deleting product');
-          }
-        } catch {
-          toast.error('Error deleting product');
+        const result = await mutate(`/products/${id}`, { method: 'DELETE' }, {
+          successMessage: 'Product deleted successfully',
+          errorMessage: 'Error deleting product',
+        });
+        if (result.success) {
+          const nextPage = products.length === 1 && pagination.page > 1
+            ? pagination.page - 1
+            : pagination.page;
+          setPagination(prev => ({ ...prev, page: nextPage }));
+          refresh(nextPage);
         }
       },
     });
   };
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
-    try {
-      const res = await fetchAPI(`/products/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (res.success) {
-        toast.success('Product status updated');
-        void fetchProducts(pagination.page);
-      } else {
-        toast.error(res.error || 'Error updating product status');
-      }
-    } catch {
-      toast.error('Error updating product status');
+    const result = await mutate(
+      `/products/${id}`,
+      { method: 'PATCH', body: JSON.stringify({ status: newStatus }) },
+      { successMessage: 'Product status updated', errorMessage: 'Error updating product status' },
+    );
+    if (result.success) {
+      refresh(pagination.page);
     }
   };
 
@@ -199,7 +166,7 @@ export function useProductCatalog() {
     filterLowStock,
     sortBy,
     sortOrder,
-    pagination,
+    pagination: pagination as ProductPagination,
     confirmModal,
     setConfirmModal,
     handleSearchChange,

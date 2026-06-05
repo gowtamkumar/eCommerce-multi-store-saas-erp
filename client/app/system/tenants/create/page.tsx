@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import { fetchSuperAdminAPI } from '@/services/superAdminApi';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Loader2, Store } from 'lucide-react';
 import Link from 'next/link';

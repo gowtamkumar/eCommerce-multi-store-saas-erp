@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import toast from 'react-hot-toast';
-import { fetchAPI } from '@/services/api';
+import { useCallback, useState } from 'react';
+import { useApiList } from '@/hooks/useApiList';
+import { useApiMutation } from '@/hooks/useApiMutation';
 import type { Brand } from '../type';
 
 export function useBrandDashboard() {
-    const [brands, setBrands] = useState<Brand[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
 
@@ -18,41 +16,28 @@ export function useBrandDashboard() {
         onConfirm: () => {},
     });
 
-    const fetchBrands = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await fetchAPI('/brands/stats');
-            if (res.success) {
-                setBrands(res.data);
-            }
-        } catch (error) {
-            toast.error('Failed to load brands');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const { items: brands, setItems: setBrands, loading, refresh } = useApiList<Brand>({
+        buildEndpoint: () => '/brands/stats',
+        errorMessage: 'Failed to load brands',
+    });
 
-    useEffect(() => {
-        void fetchBrands();
-    }, [fetchBrands]);
+    const { mutate } = useApiMutation();
 
     const handleFormSubmit = async (formData: Brand) => {
-        try {
-            const url = editingBrand ? `/brands/${editingBrand.id}` : '/brands';
-            const method = editingBrand ? 'PATCH' : 'POST';
+        const url = editingBrand ? `/brands/${editingBrand.id}` : '/brands';
+        const method = editingBrand ? 'PATCH' : 'POST';
 
-            const res = await fetchAPI(url, {
-                method,
-                body: JSON.stringify(formData),
-            });
+        const result = await mutate(url, {
+            method,
+            body: JSON.stringify(formData),
+        }, {
+            successMessage: `Brand ${editingBrand ? 'updated' : 'created'} successfully`,
+            errorMessage: 'Error saving brand',
+        });
 
-            if (res.success) {
-                toast.success(`Brand ${editingBrand ? 'updated' : 'created'} successfully`);
-                void fetchBrands();
-                closeModal();
-            }
-        } catch (error) {
-            toast.error('Error saving brand');
+        if (result.success) {
+            refresh();
+            closeModal();
         }
     };
 
@@ -62,30 +47,26 @@ export function useBrandDashboard() {
             title: 'Delete Brand',
             message: 'Are you sure you want to delete this brand? Products associated with this brand will be affected.',
             onConfirm: async () => {
-                try {
-                    await fetchAPI(`/brands/${id}`, { method: 'DELETE' });
+                const result = await mutate(`/brands/${id}`, { method: 'DELETE' }, {
+                    successMessage: 'Brand deleted successfully',
+                    errorMessage: 'Error deleting brand',
+                });
+                if (result.success) {
                     setBrands(prev => prev.filter(b => b.id !== id));
-                    toast.success('Brand deleted successfully');
-                } catch (error) {
-                    toast.error('Error deleting brand');
                 }
             },
         });
     };
 
-    const openModal = (brand?: Brand) => {
-        if (brand) {
-            setEditingBrand(brand);
-        } else {
-            setEditingBrand(null);
-        }
+    const openModal = useCallback((brand?: Brand) => {
+        setEditingBrand(brand ?? null);
         setIsModalOpen(true);
-    };
+    }, []);
 
-    const closeModal = () => {
+    const closeModal = useCallback(() => {
         setIsModalOpen(false);
         setEditingBrand(null);
-    };
+    }, []);
 
     return {
         brands,
@@ -94,7 +75,7 @@ export function useBrandDashboard() {
         editingBrand,
         confirmModal,
         setConfirmModal,
-        fetchBrands,
+        fetchBrands: refresh,
         handleFormSubmit,
         handleDelete,
         openModal,

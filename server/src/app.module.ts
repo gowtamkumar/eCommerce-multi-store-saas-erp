@@ -9,7 +9,6 @@ import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
 import { TenantContextMiddleware } from '@/common/middleware/tenant-context.middleware'
 import { DatabaseModule } from '@/database/database.module'
-import { PersistenceModule } from '@/database/persistence.module'
 import { CatalogModule } from '@/modules/admin/catalog/catalog.module'
 import { ContentModule } from '@/modules/admin/content/content.module'
 import { AdminModule } from '@/modules/admin/core/admin.module'
@@ -40,7 +39,6 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
       envFilePath: ['.env.development.local', '.env.development'],
     }),
     DatabaseModule,
-    PersistenceModule,
     SettingsModule,
     CacheModule,
 

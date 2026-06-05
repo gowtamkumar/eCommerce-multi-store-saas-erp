@@ -18,7 +18,7 @@ import {
     UserX,
     Eye
 } from 'lucide-react';
-import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import { fetchSuperAdminAPI } from '@/services/superAdminApi';
 import toast from 'react-hot-toast';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 

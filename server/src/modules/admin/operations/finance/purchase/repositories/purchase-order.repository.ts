@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -14,7 +15,7 @@ export class PurchaseOrderRepository {
   ) {}
 
   private getRepo(manager?: EntityManager): Repository<PurchaseOrderEntity> {
-    return manager ? manager.getRepository(PurchaseOrderEntity) : this.repo
+    return getTransactionalRepo(PurchaseOrderEntity, this.repo, manager)
   }
 
   async createAndSave(

@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useApiList } from '@/hooks/useApiList';
 import { fetchAPI } from '@/services/api';
 import { CourierType } from '@/lib/enums/courier-type.enum';
 import { OrderStatus } from '@/lib/enums/order-status.enum';
@@ -14,8 +14,6 @@ const EXPORT_PAGE_LIMIT = 100;
 const EXPORT_MAX_PAGES = 100;
 
 export function useOrders() {
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [creatingOrder, setCreatingOrder] = useState<string | null>(null);
     const [creatingPathaoOrder, setCreatingPathaoOrder] = useState<string | null>(null);
@@ -23,102 +21,93 @@ export function useOrders() {
     const [showCourierModal, setShowCourierModal] = useState(false);
     const [pendingCourierOrder, setPendingCourierOrder] = useState<{ order: Order; courier: string } | null>(null);
 
-    // Premium Filter States
     const [statusFilter, setStatusFilter] = useState('');
     const [sourceFilter, setSourceFilter] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('');
 
-    // Sorting
     const [sortBy, setSortBy] = useState('createdAt');
     const [sortOrder, setSortOrder] = useState<OrderSortOrder>('DESC');
 
-    // Bulk selection
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [bulkUpdating, setBulkUpdating] = useState(false);
 
     const [pageSize, setPageSize] = useState(10);
-    const [pagination, setPagination] = useState<OrderListPagination>({
-        total: 0,
-        page: 1,
-        limit: 10,
-        totalPages: 1
+
+    const buildEndpoint = useCallback(
+        (page: number) => {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: pageSize.toString(),
+                search: searchQuery,
+                isAdmin: 'true',
+                sortBy,
+                sortOrder,
+            });
+            if (statusFilter) params.append('status', statusFilter);
+            if (sourceFilter) params.append('orderSource', sourceFilter);
+            if (paymentFilter) params.append('paymentStatus', paymentFilter);
+            return `/orders?${params}`;
+        },
+        [searchQuery, sortBy, sortOrder, statusFilter, sourceFilter, paymentFilter, pageSize],
+    );
+
+    const {
+        items: orders,
+        setItems: setOrders,
+        loading,
+        pagination,
+        refresh,
+        handlePageChange: basePageChange,
+        resetToFirstPage,
+        fetchPage,
+    } = useApiList<Order>({
+        buildEndpoint,
+        pageSize,
+        searchQuery,
+        debounceMs: 500,
+        useAbort: true,
+        errorMessage: 'Failed to load orders',
+        deps: [statusFilter, sourceFilter, paymentFilter, sortBy, sortOrder, pageSize],
+        parseResponse: (res, page, limit) => {
+            const data = res.data as { orders?: Order[]; pagination?: OrderListPagination } | Order[] | undefined;
+            if (data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.orders)) {
+                return {
+                    items: data.orders,
+                    pagination: data.pagination ?? {
+                        total: data.orders.length,
+                        page,
+                        limit,
+                        totalPages: 1,
+                    },
+                };
+            }
+            const items = Array.isArray(data) ? data : [];
+            return {
+                items,
+                pagination: (res.pagination as OrderListPagination | undefined) ?? {
+                    total: items.length,
+                    page,
+                    limit,
+                    totalPages: 1,
+                },
+            };
+        },
     });
 
-    const debouncedSearch = useDebounce(searchQuery, 500);
-
-    // Guards against out-of-order responses overwriting fresher data.
-    const requestIdRef = useRef(0);
-    const abortRef = useRef<AbortController | null>(null);
-
-    const buildQuery = useCallback((page: number, limit: number) => {
-        const params = new URLSearchParams({
-            page: page.toString(),
-            limit: limit.toString(),
-            search: debouncedSearch,
-            isAdmin: 'true',
-            sortBy,
-            sortOrder,
-        });
-        if (statusFilter) params.append('status', statusFilter);
-        if (sourceFilter) params.append('orderSource', sourceFilter);
-        if (paymentFilter) params.append('paymentStatus', paymentFilter);
-        return params;
-    }, [debouncedSearch, sortBy, sortOrder, statusFilter, sourceFilter, paymentFilter]);
-
-    const fetchOrders = useCallback(async (page: number) => {
-        const requestId = ++requestIdRef.current;
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
-
-        setLoading(true);
-        try {
-            const params = buildQuery(page, pageSize);
-            const res = await fetchAPI(`/orders?${params}`, { signal: controller.signal });
-
-            // Ignore responses that have been superseded by a newer request.
-            if (requestId !== requestIdRef.current) return;
-
-            if (res?.data?.orders) {
-                setOrders(res.data.orders);
-                setPagination(res.data.pagination);
-            } else if (res?.success && Array.isArray(res.data)) {
-                setOrders(res.data);
-                if (res.pagination) {
-                    setPagination(res.pagination);
-                }
-            }
-        } catch (error) {
-            if ((error as Error)?.name === 'AbortError') return;
-            if (requestId !== requestIdRef.current) return;
-            console.error('Failed to fetch orders', error);
-            toast.error('Failed to load orders');
-        } finally {
-            if (requestId === requestIdRef.current) {
-                setLoading(false);
-            }
-        }
-    }, [buildQuery, pageSize]);
-
-    // Any change to search / filters / sort / page size resets to page 1.
     useEffect(() => {
-        const timer = window.setTimeout(() => {
-            setSelectedIds(new Set());
-            void fetchOrders(1);
-        }, 0);
+        setSelectedIds(new Set());
+        resetToFirstPage();
+    }, [statusFilter, sourceFilter, paymentFilter, sortBy, sortOrder, pageSize, searchQuery, resetToFirstPage]);
 
-        return () => window.clearTimeout(timer);
-    }, [fetchOrders]);
-
-    // Abort any in-flight request on unmount.
-    useEffect(() => () => abortRef.current?.abort(), []);
-
-    const handlePageChange = useCallback((newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.totalPages) {
-            setSelectedIds(new Set());
-            void fetchOrders(newPage);
-        }
-    }, [pagination.totalPages, fetchOrders]);
+    const handlePageChange = useCallback(
+        (newPage: number) => {
+            if (newPage >= 1 && newPage <= pagination.totalPages) {
+                setSelectedIds(new Set());
+                basePageChange(newPage);
+            }
+        },
+        [pagination.totalPages, basePageChange],
+    );
 
     const handleSortChange = useCallback((sortKey: string) => {
         setSortBy(prevSortBy => {
@@ -195,7 +184,7 @@ export function useOrders() {
             setBulkUpdating(false);
             handleClearSelection();
         }
-    }, [selectedIds, handleClearSelection]);
+    }, [selectedIds, handleClearSelection, setOrders]);
 
     const handleStatusChange = useCallback(async (id: string, newStatus: string) => {
         const result = await updateOrderStatus(id, { status: newStatus });
@@ -206,7 +195,7 @@ export function useOrders() {
         } else {
             toast.error(result.error || 'Error updating status');
         }
-    }, []);
+    }, [setOrders]);
 
     const handleCreateCourierOrder = useCallback(async (order: Order, courier: string) => {
         try {
@@ -221,12 +210,12 @@ export function useOrders() {
                 }
             }
             if (courier !== CourierType.IN_STORE) {
-                void fetchOrders(pagination.page);
+                refresh(pagination.page);
             }
         } catch (error) {
             console.error('Courier order creation failed', error);
         }
-    }, [pagination.page, fetchOrders]);
+    }, [pagination.page, refresh, setOrders]);
 
     const isCreatingCourierOrder = useCallback((orderId: string) => {
         return creatingOrder === orderId || creatingPathaoOrder === orderId;
@@ -271,7 +260,18 @@ export function useOrders() {
             let totalPages = 1;
 
             do {
-                const params = buildQuery(page, EXPORT_PAGE_LIMIT);
+                const params = new URLSearchParams({
+                    page: page.toString(),
+                    limit: EXPORT_PAGE_LIMIT.toString(),
+                    search: searchQuery,
+                    isAdmin: 'true',
+                    sortBy,
+                    sortOrder,
+                });
+                if (statusFilter) params.append('status', statusFilter);
+                if (sourceFilter) params.append('orderSource', sourceFilter);
+                if (paymentFilter) params.append('paymentStatus', paymentFilter);
+
                 const res = await fetchAPI(`/orders?${params}`);
                 const batch: Order[] = res?.data?.orders || (Array.isArray(res?.data) ? res.data : []);
                 collected.push(...batch);
@@ -316,7 +316,7 @@ export function useOrders() {
             console.error('Export failed', error);
             toast.error('Failed to export orders to CSV', { id: toastId });
         }
-    }, [buildQuery, escapeCsv]);
+    }, [searchQuery, sortBy, sortOrder, statusFilter, sourceFilter, paymentFilter, escapeCsv]);
 
     return {
         orders,
@@ -347,8 +347,8 @@ export function useOrders() {
         setBulkUpdating,
         pageSize,
         setPageSize,
-        pagination,
-        fetchOrders,
+        pagination: pagination as OrderListPagination,
+        fetchOrders: fetchPage,
         handlePageChange,
         handleSortChange,
         handleClearFilters,

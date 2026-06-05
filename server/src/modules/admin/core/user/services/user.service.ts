@@ -890,11 +890,6 @@ export class UserService implements OnApplicationBootstrap {
     return { users, total }
   }
 
-  async findAllUsersCrossTenant(filterDto: FilterUserDto): Promise<[UserEntity[], number]> {
-    this.logger.log(`${this.findAllUsersCrossTenant.name} Service Called`)
-    return this.userRepo.findAllCrossTenant(filterDto)
-  }
-
   async getUser(id: string): Promise<UserEntity> {
     this.logger.log(`${this.getUser.name} Service Called`)
     const user = await this.userRepo.findById(id)

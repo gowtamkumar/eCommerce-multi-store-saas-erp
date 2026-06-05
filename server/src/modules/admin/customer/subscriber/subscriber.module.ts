@@ -13,6 +13,6 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   imports: [TypeOrmModule.forFeature([SubscriberEntity]), CacheModule, TenantModule, MailModule],
   controllers: [SubscriberController],
   providers: [SubscriberService, SubscriberRepository],
-  exports: [SubscriberService],
+  exports: [SubscriberService, SubscriberRepository],
 })
 export class SubscriberModule {}

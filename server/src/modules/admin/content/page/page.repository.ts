@@ -70,10 +70,6 @@ export class PageRepository {
     })
   }
 
-  async findAllCrossTenant(): Promise<PageEntity[]> {
-    return this.repo.find()
-  }
-
   async countByTenant(ctx: RequestContextDto): Promise<number> {
     return this.repo.count({ where: { tenantId: ctx.tenantId } })
   }

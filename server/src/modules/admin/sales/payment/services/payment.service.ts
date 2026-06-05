@@ -10,13 +10,13 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
+import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.repository'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InitPaymentDto } from '../dto/payment.dto'
 import { PaymentEntity } from '../entities/payment.entity'
-import { PaymentRepository } from '../repositoris/payment.repository'
+import { PaymentRepository } from '../repositories/payment.repository'
 
 @Injectable()
 export class PaymentService {

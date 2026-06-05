@@ -1,5 +1,5 @@
 import TenantList from "@/features/system/components/TenantList";
-import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
+import { fetchSuperAdminAPI } from "@/services/superAdminApi";
 
 async function getTenants() {
   try {

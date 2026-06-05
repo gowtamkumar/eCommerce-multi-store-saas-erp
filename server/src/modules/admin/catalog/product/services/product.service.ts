@@ -31,6 +31,7 @@ import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
 import { generateEAN13, generateProductSku, generateVariantSku } from '../utils/catalog-id.util'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
+import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -51,6 +52,7 @@ export class ProductService {
     private readonly dataSource: DataSource,
     private readonly addonCatalogService: AddonCatalogService,
     @InjectQueue('product') private readonly productQueue: Queue,
+    private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
   ) {}
 
   private async assertProductQuotaAvailable(tenantId: string): Promise<void> {
@@ -682,7 +684,7 @@ export class ProductService {
 
   async findAllProductsCrossTenant(): Promise<ProductEntity[]> {
     this.logger.log(`${this.findAllProductsCrossTenant.name} Service Called`)
-    return await this.productRepository.findAllCrossTenant()
+    return await this.crossTenantRepository.findAllProductsCrossTenant()
   }
 
   async countByTenant(ctx: RequestContextDto): Promise<number> {

@@ -9,6 +9,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
+import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageEntity } from './entities/page.entity'
 import { PageRevisionRepository } from './page-revision.repository'
@@ -27,6 +28,7 @@ export class PageService {
     private readonly pageRevisionRepository: PageRevisionRepository,
     private readonly faqService: FaqService,
     private readonly cache: CacheService,
+    private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
   ) {}
 
   private prepareDto(
@@ -301,7 +303,7 @@ export class PageService {
 
   async findAllPagesCrossTenant(): Promise<PageEntity[]> {
     this.logger.log(`${this.findAllPagesCrossTenant.name} Service Called`)
-    return await this.pageRepository.findAllCrossTenant()
+    return await this.crossTenantRepository.findAllPagesCrossTenant()
   }
 
   async enrichPageWithFaqs(page: PageEntity, ctx: RequestContextDto): Promise<PageEntity> {

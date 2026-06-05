@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CouponService } from './coupon.service'
-import { CouponRepository } from '../repositoris/coupon.repository'
+import { CouponRepository } from '../repositories/coupon.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 describe('CouponService', () => {

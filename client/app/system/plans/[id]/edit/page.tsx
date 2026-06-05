@@ -1,5 +1,5 @@
 import PlanForm from "@/features/system/components/PlanForm";
-import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
+import { fetchSuperAdminAPI } from "@/services/superAdminApi";
 
 async function getPlan(id: string) {
     try {

@@ -20,6 +20,6 @@ import { SettingsModule } from '@/modules/admin/settings/settings.module'
   ],
   controllers: [ExpenseController],
   providers: [ExpenseService, ExpenseRepository],
-  exports: [ExpenseService],
+  exports: [ExpenseService, ExpenseRepository],
 })
 export class ExpenseModule {}

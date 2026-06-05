@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -23,7 +24,7 @@ export class GrnRepository {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<GoodsReceivedNoteEntity> {
-    const repo = manager ? manager.getRepository(GoodsReceivedNoteEntity) : this.repository
+    const repo = getTransactionalRepo(GoodsReceivedNoteEntity, this.repository, manager)
 
     const grn = repo.create({
       grnNumber,
@@ -98,7 +99,7 @@ export class GrnRepository {
     grn: GoodsReceivedNoteEntity,
     manager?: EntityManager,
   ): Promise<GoodsReceivedNoteEntity> {
-    const repo = manager ? manager.getRepository(GoodsReceivedNoteEntity) : this.repository
+    const repo = getTransactionalRepo(GoodsReceivedNoteEntity, this.repository, manager)
     return repo.save(grn)
   }
 

@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { FileEntity } from './entities/file.entity'
+import { FileRepository } from './file.repository'
 import { AdminMediaController } from './controllers/file.controller'
 import { FilesService } from './services/file.service'
 import { MinioService } from './services/minio.service'
@@ -6,9 +9,9 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog.module'
 
 @Module({
-  imports: [TenantModule, AddonCatalogModule],
+  imports: [TypeOrmModule.forFeature([FileEntity]), TenantModule, AddonCatalogModule],
   controllers: [AdminMediaController],
-  providers: [FilesService, MinioService],
-  exports: [FilesService, MinioService],
+  providers: [FilesService, MinioService, FileRepository],
+  exports: [FilesService, MinioService, FileRepository],
 })
 export class FileModule {}

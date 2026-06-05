@@ -1,5 +1,16 @@
 import { BullModule } from '@nestjs/bullmq'
 import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { PurchaseOrderEntity } from './entities/purchase-order.entity'
+import { PurchaseOrderItemEntity } from './entities/purchase-order-item.entity'
+import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
+import { PurchaseRequisitionEntity } from './entities/purchase-requisition.entity'
+import { PurchaseRequisitionItemEntity } from './entities/purchase-requisition-item.entity'
+import { RfqEntity } from './entities/rfq.entity'
+import { QuotationEntity } from './entities/quotation.entity'
+import { DebitNoteEntity } from './entities/debit-note.entity'
+import { SupplierInvoiceEntity } from './entities/supplier-invoice.entity'
+import { SupplierInvoiceItemEntity } from './entities/supplier-invoice-item.entity'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { GrnModule } from '@/modules/admin/operations/logistics/grn/grn.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
@@ -29,6 +40,18 @@ import { SupplierInvoiceRepository } from './repositories/supplier-invoice.repos
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([
+      PurchaseOrderEntity,
+      PurchaseOrderItemEntity,
+      SupplierPaymentEntity,
+      PurchaseRequisitionEntity,
+      PurchaseRequisitionItemEntity,
+      RfqEntity,
+      QuotationEntity,
+      DebitNoteEntity,
+      SupplierInvoiceEntity,
+      SupplierInvoiceItemEntity,
+    ]),
     BullModule.registerQueue({ name: 'product' }),
     BullModule.registerQueue({ name: 'accounting' }),
     TenantModule,

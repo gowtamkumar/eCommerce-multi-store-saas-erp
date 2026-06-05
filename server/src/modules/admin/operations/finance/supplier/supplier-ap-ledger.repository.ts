@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -23,7 +24,7 @@ export class SupplierAPLedgerRepository {
     },
     manager?: EntityManager,
   ): Promise<SupplierAPLedgerEntity> {
-    const repo = manager ? manager.getRepository(SupplierAPLedgerEntity) : this.repository
+    const repo = getTransactionalRepo(SupplierAPLedgerEntity, this.repository, manager)
 
     // Lock the last row to calculate running balance safely
     const lastEntry = await repo

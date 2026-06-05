@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CheckCircle, Loader2, Store, User as UserIcon, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { User } from '../types/user-management.types';
-import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import { fetchSuperAdminAPI } from '@/services/superAdminApi';
 import toast from 'react-hot-toast';
 
 interface UserDetailsModalProps {

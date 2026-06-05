@@ -23,7 +23,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import Link from 'next/link';
-import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import { fetchSuperAdminAPI } from '@/services/superAdminApi';
 import toast from 'react-hot-toast';
 import { Tenant } from '../types/tenant.types';
 

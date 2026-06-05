@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -18,7 +19,7 @@ export class ProductAttributeRepository {
     manager?: any,
   ): Promise<ProductAttributeEntity[]> {
     if (!attributes || attributes.length === 0) return []
-    const repo = manager ? manager.getRepository(ProductAttributeEntity) : this.repo
+    const repo = getTransactionalRepo(ProductAttributeEntity, this.repo, manager)
     const entities = attributes.map((attr) =>
       repo.create({
         ...attr,
@@ -31,7 +32,7 @@ export class ProductAttributeRepository {
   }
 
   async deleteByProductId(productId: string, tenantId: string, manager?: any): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductAttributeEntity) : this.repo
+    const repo = getTransactionalRepo(ProductAttributeEntity, this.repo, manager)
     await repo.softDelete({ productId, tenantId })
   }
 }

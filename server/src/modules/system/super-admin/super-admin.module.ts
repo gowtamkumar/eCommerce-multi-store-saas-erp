@@ -10,11 +10,16 @@ import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.module'
 import { AddonCatalogModule } from '../addon-catalog/addon-catalog.module'
-import { SuperAdminController } from './super-admin.controller'
+import { SuperAdminTenantsController } from './controllers/super-admin-tenants.controller'
+import { SuperAdminUsersController } from './controllers/super-admin-users.controller'
+import { SuperAdminBillingController } from './controllers/super-admin-billing.controller'
+import { SuperAdminPlatformController } from './controllers/super-admin-platform.controller'
 import { TrafficService } from './traffic.service'
 import { SuperAdminService } from './super-admin.service'
+import { SuperAdminCrossTenantRepository } from './repositories/super-admin-cross-tenant.repository'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subscription-invoice.entity'
+import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
+import { TrafficRepository } from './traffic.repository'
 
 @Module({
   imports: [
@@ -27,12 +32,19 @@ import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subs
     AddonCatalogModule,
     AuthModule,
     AuditLogModule,
-    TypeOrmModule.forFeature([SubscriptionInvoiceEntity]),
+    TypeOrmModule.forFeature([TenantTrafficEntity]),
   ],
-  controllers: [SuperAdminController],
+  controllers: [
+    SuperAdminTenantsController,
+    SuperAdminUsersController,
+    SuperAdminBillingController,
+    SuperAdminPlatformController,
+  ],
   providers: [
     TrafficService,
+    TrafficRepository,
     SuperAdminService,
+    SuperAdminCrossTenantRepository,
     {
       provide: APP_INTERCEPTOR,
       useClass: TrafficInterceptor,

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import SuperAdminDashboard from "@/features/system/components/SuperAdminDashboard";
-import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
+import { fetchSuperAdminAPI } from "@/services/superAdminApi";
 import { buildDashboardStats } from "@/features/system/lib/dashboard";
 import type { TenantAnalytics } from "@/features/system/types/dashboard.types";
 

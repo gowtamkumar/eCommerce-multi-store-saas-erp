@@ -1,5 +1,5 @@
 import AddonCatalogList from "@/features/system/components/AddonCatalogList";
-import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
+import { fetchSuperAdminAPI } from "@/services/superAdminApi";
 
 async function getAddonCatalog() {
     try {

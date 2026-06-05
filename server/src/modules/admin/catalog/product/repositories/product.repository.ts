@@ -1,7 +1,8 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { ProductStatus } from '@/common/enums/product-status.enum'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { EntityManager, Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
 import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -166,8 +167,12 @@ export class ProductRepository {
     return this.repo.count({ where: { tenantId } })
   }
 
-  async updateAndSave(product: ProductEntity, data: any, manager?: any): Promise<ProductEntity> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
+  async updateAndSave(
+    product: ProductEntity,
+    data: any,
+    manager?: EntityManager,
+  ): Promise<ProductEntity> {
+    const repo = getTransactionalRepo(ProductEntity, this.repo, manager)
 
     // When updating raw IDs (categoryId, brandId, supplierId), we must
     // remove the corresponding relation objects if they are already loaded.
@@ -185,9 +190,9 @@ export class ProductRepository {
     id: string,
     tenantId: string,
     newCost: number,
-    manager?: any,
+    manager?: EntityManager,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
+    const repo = getTransactionalRepo(ProductEntity, this.repo, manager)
     await repo.update({ id, tenantId }, { averageCost: newCost })
   }
 
@@ -205,10 +210,6 @@ export class ProductRepository {
       order: { createdAt: 'DESC' },
       take: limit,
     })
-  }
-
-  async findAllCrossTenant(): Promise<ProductEntity[]> {
-    return this.repo.find()
   }
 
   async countProducts(tenantId: string): Promise<number> {

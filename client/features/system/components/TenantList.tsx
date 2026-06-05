@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import { fetchSuperAdminAPI } from '@/services/superAdminApi';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertTriangle,

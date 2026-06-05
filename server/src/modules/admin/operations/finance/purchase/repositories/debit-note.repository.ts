@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -12,7 +13,7 @@ export class DebitNoteRepository {
   ) {}
 
   private getRepo(manager?: EntityManager): Repository<DebitNoteEntity> {
-    return manager ? manager.getRepository(DebitNoteEntity) : this.repo
+    return getTransactionalRepo(DebitNoteEntity, this.repo, manager)
   }
 
   async generateDebitNoteNumber(tenantId: string, manager?: EntityManager): Promise<string> {

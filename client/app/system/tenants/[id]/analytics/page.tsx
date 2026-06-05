@@ -1,5 +1,5 @@
 import TenantAnalytics from "@/features/system/components/TenantAnalytics";
-import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
+import { fetchSuperAdminAPI } from "@/services/superAdminApi";
 import { notFound } from "next/navigation";
 
 

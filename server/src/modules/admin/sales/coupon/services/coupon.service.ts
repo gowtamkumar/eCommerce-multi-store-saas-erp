@@ -6,7 +6,7 @@ import { EntityManager } from 'typeorm'
 import { CreateCouponDto } from '../dto/create-coupon.dto'
 import { UpdateCouponDto } from '../dto/update-coupon.dto'
 import { CouponEntity } from '../entities/coupon.entity'
-import { CouponRepository } from '../repositoris/coupon.repository'
+import { CouponRepository } from '../repositories/coupon.repository'
 
 @Injectable()
 export class CouponService {

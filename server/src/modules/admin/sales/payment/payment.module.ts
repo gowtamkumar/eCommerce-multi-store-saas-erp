@@ -2,7 +2,11 @@ import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoic
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { SettingsModule } from '@/modules/admin/settings/settings.module'
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { PaymentEntity } from './entities/payment.entity'
+import { PaymentRepository } from './repositories/payment.repository'
+import { OrderModule } from '../order/order.module'
 import { PaymentActionController } from './controllers/payment-action.controller'
 import { PaymentController } from './controllers/payment.controller'
 import { PaymentService } from './services/payment.service'
@@ -12,15 +16,17 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([PaymentEntity]),
+    forwardRef(() => OrderModule),
     SettingsModule,
-    InvoiceModule,
+    forwardRef(() => InvoiceModule),
     MailModule,
     NotificationModule,
     TenantModule,
     AuditLogModule,
   ],
   controllers: [PaymentController, PaymentActionController],
-  providers: [PaymentService],
-  exports: [PaymentService],
+  providers: [PaymentService, PaymentRepository],
+  exports: [PaymentService, PaymentRepository],
 })
 export class PaymentModule {}

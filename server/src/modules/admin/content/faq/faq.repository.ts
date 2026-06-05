@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { FaqStatus } from '@/common/enums/faq-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -99,7 +100,7 @@ export class FaqRepository {
     manager?: any,
   ): Promise<FaqEntity[]> {
     if (!faqs || faqs.length === 0) return []
-    const repo = manager ? manager.getRepository(FaqEntity) : this.repo
+    const repo = getTransactionalRepo(FaqEntity, this.repo, manager)
     const entities = faqs.map((faq) =>
       repo.create({ ...faq, productId, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity),
     )
@@ -107,7 +108,7 @@ export class FaqRepository {
   }
 
   async deleteByProductId(productId: string, tenantId: string, manager?: any): Promise<void> {
-    const repo = manager ? manager.getRepository(FaqEntity) : this.repo
+    const repo = getTransactionalRepo(FaqEntity, this.repo, manager)
     await repo.softDelete({ productId, tenantId })
   }
 }

@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -12,7 +13,7 @@ export class SupplierInvoiceRepository {
   ) {}
 
   private getRepo(manager?: EntityManager): Repository<SupplierInvoiceEntity> {
-    return manager ? manager.getRepository(SupplierInvoiceEntity) : this.repo
+    return getTransactionalRepo(SupplierInvoiceEntity, this.repo, manager)
   }
 
   async createAndSave(

@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -12,7 +13,7 @@ export class PurchaseRequisitionRepository {
   ) {}
 
   private getRepo(manager?: EntityManager): Repository<PurchaseRequisitionEntity> {
-    return manager ? manager.getRepository(PurchaseRequisitionEntity) : this.repo
+    return getTransactionalRepo(PurchaseRequisitionEntity, this.repo, manager)
   }
 
   async generatePRNumber(tenantId: string, manager?: EntityManager): Promise<string> {

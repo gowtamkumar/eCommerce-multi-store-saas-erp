@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
@@ -30,7 +31,7 @@ export class StockReservationService {
 
   // ── Private helper to pick the right repo (supports EntityManager transactions) ──
   private r(manager?: EntityManager): Repository<StockReservationEntity> {
-    return manager ? manager.getRepository(StockReservationEntity) : this.repo
+    return getTransactionalRepo(StockReservationEntity, this.repo, manager)
   }
 
   // ============================================================================

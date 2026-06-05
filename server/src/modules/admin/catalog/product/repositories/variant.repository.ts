@@ -1,6 +1,7 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { EntityManager, Repository } from 'typeorm'
 import { ProductVariantEntity } from '../entities/variant.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -33,7 +34,7 @@ export class ProductVariantRepository {
     tenantId: string,
     manager?: any,
   ): Promise<ProductVariantEntity | null> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
     return repo.findOne({ where: { id, tenantId } })
   }
 
@@ -43,7 +44,7 @@ export class ProductVariantRepository {
     ctx: RequestContextDto,
     manager?: any,
   ): Promise<ProductVariantEntity> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
     const variant = repo.create({
       ...variantDto,
       productId,
@@ -60,7 +61,7 @@ export class ProductVariantRepository {
     ctx: RequestContextDto,
     manager?: any,
   ): Promise<ProductVariantEntity> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
 
     // ERP FIX: Never update stock via the product edit form.
     const { stock, ...updateData } = variantDto
@@ -80,7 +81,7 @@ export class ProductVariantRepository {
     newCost: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
     await repo.update({ id, tenantId }, { averageCost: newCost })
   }
 
@@ -90,13 +91,13 @@ export class ProductVariantRepository {
     manager?: any,
     withDeleted: boolean = false,
   ): Promise<ProductVariantEntity | null> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
     return repo.findOne({ where: { sku, tenantId }, withDeleted })
   }
 
   async deleteByIds(ids: string[], manager?: any): Promise<void> {
     if (ids.length > 0) {
-      const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+      const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
       await repo.softDelete(ids)
     }
   }

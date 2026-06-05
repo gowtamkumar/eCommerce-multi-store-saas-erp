@@ -19,6 +19,20 @@ import { TaxBracketEntity } from './entities/tax-bracket.entity'
 import { HrmService } from './hrm.service'
 import { HrmController } from './hrm.controller'
 import { HrmRepository } from './hrm.repository'
+import { HrmOrganizationRepository } from './repositories/hrm-organization.repository'
+import { HrmEmployeeRepository } from './repositories/hrm-employee.repository'
+import { HrmAttendanceRepository } from './repositories/hrm-attendance.repository'
+import { HrmLeaveRepository } from './repositories/hrm-leave.repository'
+import { HrmPayrollRepository } from './repositories/hrm-payroll.repository'
+import { HrmRecruitmentRepository } from './repositories/hrm-recruitment.repository'
+import { HrmPerformanceRepository } from './repositories/hrm-performance.repository'
+import { HrmOrganizationService } from './services/hrm-organization.service'
+import { HrmEmployeeService } from './services/hrm-employee.service'
+import { HrmAttendanceService } from './services/hrm-attendance.service'
+import { HrmLeaveService } from './services/hrm-leave.service'
+import { HrmPayrollService } from './services/hrm-payroll.service'
+import { HrmRecruitmentService } from './services/hrm-recruitment.service'
+import { HrmPerformanceService } from './services/hrm-performance.service'
 import { HrmSchedulerProcessor } from './queue/hrm-scheduler.processor'
 import { HrmSchedulerService } from './queue/hrm-scheduler.service'
 import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
@@ -56,7 +70,26 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     ]),
   ],
   controllers: [HrmController],
-  providers: [HrmService, HrmRepository, HrmSchedulerProcessor, HrmSchedulerService],
+  providers: [
+    HrmService,
+    HrmRepository,
+    HrmOrganizationRepository,
+    HrmEmployeeRepository,
+    HrmAttendanceRepository,
+    HrmLeaveRepository,
+    HrmPayrollRepository,
+    HrmRecruitmentRepository,
+    HrmPerformanceRepository,
+    HrmOrganizationService,
+    HrmEmployeeService,
+    HrmAttendanceService,
+    HrmLeaveService,
+    HrmPayrollService,
+    HrmRecruitmentService,
+    HrmPerformanceService,
+    HrmSchedulerProcessor,
+    HrmSchedulerService,
+  ],
   exports: [HrmService],
 })
 export class HrmModule {}

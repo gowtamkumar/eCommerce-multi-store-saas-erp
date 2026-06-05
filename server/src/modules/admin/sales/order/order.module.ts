@@ -6,11 +6,19 @@ import { InventoryLedgerModule } from '@/modules/admin/operations/logistics/inve
 import { CouponModule } from '@/modules/admin/sales/coupon/coupon.module'
 import { OrderController } from '@/modules/admin/sales/order/controllers/order.controller'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
+import { OrderCheckoutService } from '@/modules/admin/sales/order/services/order-checkout.service'
+import { OrderLifecycleService } from '@/modules/admin/sales/order/services/order-lifecycle.service'
 import { ReturnController } from '@/modules/admin/sales/order/controllers/return.controller'
 import { ReturnService } from '@/modules/admin/sales/order/services/return.service'
 import { CartModule } from '@/modules/store/cart/cart.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { OrderEntity } from './entities/order.entity'
+import { OrderItemEntity } from './entities/order-item.entity'
+import { OrderReturnEntity } from './entities/order-return.entity'
+import { OrderRepository } from './repositories/order.repository'
+import { OrderReturnRepository } from './repositories/order-return.repository'
 import { PricingModule } from '@/modules/admin/catalog/pricing/pricing.module'
 import { PaymentModule } from '../payment/payment.module'
 import { BullModule } from '@nestjs/bullmq'
@@ -35,8 +43,9 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     BullModule.registerQueue({
       name: 'fulfillment',
     }),
+    TypeOrmModule.forFeature([OrderEntity, OrderItemEntity, OrderReturnEntity]),
     CouponModule,
-    PaymentModule,
+    forwardRef(() => PaymentModule),
     CartModule,
     InventoryLedgerModule,
     ShippingAddressModule,
@@ -48,7 +57,16 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     LoyaltyModule,
   ],
   controllers: [OrderController, ReturnController], // Registered
-  providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered
-  exports: [OrderService, ReturnService],
+  providers: [
+    OrderService,
+    OrderCheckoutService,
+    OrderLifecycleService,
+    ReturnService,
+    OrderProcessor,
+    OrderProcessHelper,
+    OrderRepository,
+    OrderReturnRepository,
+  ],
+  exports: [OrderService, ReturnService, OrderRepository, OrderReturnRepository],
 })
 export class OrderModule {}

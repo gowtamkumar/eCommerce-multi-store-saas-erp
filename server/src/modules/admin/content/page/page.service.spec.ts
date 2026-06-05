@@ -4,6 +4,7 @@ import { PageRepository } from './page.repository'
 import { PageRevisionRepository } from './page-revision.repository'
 import { FaqService } from '@/modules/admin/content/faq/faq.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 describe('PageService', () => {
@@ -27,6 +28,7 @@ describe('PageService', () => {
       invalidatePageCache: jest.fn(),
       delCache: jest.fn(),
     }
+    const mockCrossTenantRepository = {}
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -46,6 +48,10 @@ describe('PageService', () => {
         {
           provide: CacheService,
           useValue: mockCacheService,
+        },
+        {
+          provide: SuperAdminCrossTenantRepository,
+          useValue: mockCrossTenantRepository,
         },
       ],
     }).compile()

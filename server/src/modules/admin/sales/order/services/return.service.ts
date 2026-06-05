@@ -7,8 +7,8 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
-import { OrderReturnRepository } from '@/modules/admin/sales/order/repositoris/order-return.repository'
-import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
+import { OrderReturnRepository } from '@/modules/admin/sales/order/repositories/order-return.repository'
+import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.repository'
 import { FilterReturnDto } from '../dto/filter-return.dto'
 import { OrderReturnEntity } from '../entities/order-return.entity'
 

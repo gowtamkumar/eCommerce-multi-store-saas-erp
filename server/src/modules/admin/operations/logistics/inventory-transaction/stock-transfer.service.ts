@@ -1,3 +1,4 @@
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { StockTransferStatus } from '@/common/enums/stock-transfer-status.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
@@ -28,11 +29,11 @@ export class StockTransferService {
   ) {}
 
   private r(manager?: EntityManager): Repository<StockTransferEntity> {
-    return manager ? manager.getRepository(StockTransferEntity) : this.repo
+    return getTransactionalRepo(StockTransferEntity, this.repo, manager)
   }
 
   private ri(manager?: EntityManager): Repository<StockTransferItemEntity> {
-    return manager ? manager.getRepository(StockTransferItemEntity) : this.itemRepo
+    return getTransactionalRepo(StockTransferItemEntity, this.itemRepo, manager)
   }
 
   private generateTransferNumber(): string {

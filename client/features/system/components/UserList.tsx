@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import { fetchSuperAdminAPI } from '@/services/superAdminApi';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Terminal, Filter, RefreshCw, Shield, Store, User as UserIcon, Info, Loader2, UserCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';

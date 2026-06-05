@@ -1,20 +1,31 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Brackets, Repository } from 'typeorm'
+import { Brackets, EntityManager, Repository } from 'typeorm'
 import { OrderEntity } from '../entities/order.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class OrderRepository {
+export class OrderRepository extends BaseTenantRepository<OrderEntity> {
   constructor(
     @InjectRepository(OrderEntity)
-    private readonly repo: Repository<OrderEntity>,
-  ) {}
+    repo: Repository<OrderEntity>,
+  ) {
+    super(OrderEntity, repo)
+  }
 
-  async createAndSave(data: any, ctx: RequestContextDto, manager?: any): Promise<OrderEntity> {
-    const repo = manager ? manager.getRepository(OrderEntity) : this.repo
-    const order = repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId })
+  async createAndSave(
+    data: any,
+    ctx: RequestContextDto,
+    manager?: EntityManager,
+  ): Promise<OrderEntity> {
+    const repo = this.txRepo(manager)
+    const order = repo.create({
+      ...data,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as Partial<OrderEntity>)
     return repo.save(order)
   }
 
@@ -32,15 +43,21 @@ export class OrderRepository {
     })
   }
 
-  async findOrderByTransactionId(transactionId: string): Promise<OrderEntity | null> {
+  async findOrderByTransactionId(
+    transactionId: string,
+    tenantId?: string,
+  ): Promise<OrderEntity | null> {
     return await this.repo.findOne({
-      where: { transactionId },
+      where: { transactionId, ...(tenantId ? { tenantId } : {}) },
     })
   }
 
-  async findOrderByTrackingId(trackingId: string): Promise<OrderEntity | null> {
+  async findOrderByTrackingId(
+    trackingId: string,
+    tenantId?: string,
+  ): Promise<OrderEntity | null> {
     return await this.repo.findOne({
-      where: { trackingId },
+      where: { trackingId, ...(tenantId ? { tenantId } : {}) },
       relations: {
         items: {
           product: true,
@@ -50,8 +67,11 @@ export class OrderRepository {
     })
   }
 
-  async findOrderByInvoiceCode(invoiceCode: string): Promise<OrderEntity | null> {
-    return await this.repo
+  async findOrderByInvoiceCode(
+    invoiceCode: string,
+    tenantId?: string,
+  ): Promise<OrderEntity | null> {
+    const queryBuilder = this.repo
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
@@ -59,7 +79,12 @@ export class OrderRepository {
       .where('UPPER(RIGHT(CAST(order.id AS VARCHAR), 8)) = :invoiceCode', {
         invoiceCode: invoiceCode.toUpperCase(),
       })
-      .getOne()
+
+    if (tenantId) {
+      queryBuilder.andWhere('order.tenantId = :tenantId', { tenantId })
+    }
+
+    return await queryBuilder.getOne()
   }
 
   async findOneForCourier(id: string, tenantId: string): Promise<OrderEntity | null> {
