@@ -55,7 +55,9 @@ export class RoleManagementService {
   async getAllRoles(tenantId: string): Promise<RoleEntity[]> {
     return this.roleRepo.find({
       where: [{ tenantId }, { isSystemDefault: true }],
-      relations: ['permissions'],
+      relations: {
+        permissions: true,
+      },
       order: { isSystemRole: 'DESC', name: 'ASC' },
     })
   }
@@ -63,7 +65,9 @@ export class RoleManagementService {
   async getRoleById(roleId: string, tenantId: string): Promise<RoleEntity> {
     const role = await this.roleRepo.findOne({
       where: { id: roleId, tenantId },
-      relations: ['permissions'],
+      relations: {
+        permissions: true,
+      },
     })
     if (!role) throw new NotFoundException(`Role ${roleId} not found`)
     return role
@@ -450,7 +454,9 @@ export class RoleManagementService {
   private async invalidateCacheForRoleUsers(roleId: string, tenantId: string): Promise<void> {
     const assignments = await this.assignmentRepo.find({
       where: { roleId, tenantId },
-      select: ['userId'],
+      select: {
+        userId: true,
+      },
     })
 
     await Promise.all(

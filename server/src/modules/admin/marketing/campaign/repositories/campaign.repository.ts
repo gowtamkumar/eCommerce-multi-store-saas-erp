@@ -45,7 +45,9 @@ export class CampaignRepository {
   async findAllByTenant(tenantId: string): Promise<CampaignEntity[]> {
     return this.repo.find({
       where: { tenantId },
-      relations: ['messages'],
+      relations: {
+        messages: true,
+      },
       order: { createdAt: 'DESC' },
     })
   }
@@ -55,7 +57,9 @@ export class CampaignRepository {
     if (tenantId) where.tenantId = tenantId
     return this.repo.findOne({
       where,
-      relations: ['messages'],
+      relations: {
+        messages: true,
+      },
     })
   }
 

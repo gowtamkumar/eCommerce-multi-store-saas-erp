@@ -242,7 +242,11 @@ export class AccountingService {
   async getJournalEntries(ctx: RequestContextDto): Promise<JournalEntryEntity[]> {
     return this.dataSource.getRepository(JournalEntryEntity).find({
       where: { tenantId: ctx.tenantId },
-      relations: ['lines', 'lines.account'],
+      relations: {
+        lines: {
+          account: true,
+        },
+      },
       order: { createdAt: 'DESC', date: 'DESC' },
     })
   }
@@ -302,7 +306,11 @@ export class AccountingService {
       // 1. Fetch original entry with lines and account relation
       const original = await em.findOne(JournalEntryEntity, {
         where: { id, tenantId },
-        relations: ['lines', 'lines.account'],
+        relations: {
+          lines: {
+            account: true,
+          },
+        },
       })
 
       if (!original) {

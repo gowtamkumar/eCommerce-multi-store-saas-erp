@@ -116,21 +116,35 @@ export class ProductRepository {
   async findBySlugWithRelations(slug: string, tenantId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
       where: { slug, tenantId },
-      relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
+      relations: {
+        faqs: true,
+        category: true,
+        attributes: true,
+        variants: true,
+        reviews: true,
+      },
     })
   }
 
   async findByIdWithRelations(id: string, tenantId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
       where: { id, tenantId },
-      relations: ['faqs', 'attributes', 'variants', 'category', 'supplier'],
+      relations: {
+        faqs: true,
+        attributes: true,
+        variants: true,
+        category: true,
+        supplier: true,
+      },
     })
   }
 
   async findProductById(id: string, tenantId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
       where: { id, tenantId },
-      relations: ['variants'],
+      relations: {
+        variants: true,
+      },
     })
   }
 
@@ -184,7 +198,10 @@ export class ProductRepository {
   async findLatestProducts(tenantId: string, limit: number): Promise<ProductEntity[]> {
     return this.repo.find({
       where: { tenantId },
-      relations: ['variants', 'category'],
+      relations: {
+        variants: true,
+        category: true,
+      },
       order: { createdAt: 'DESC' },
       take: limit,
     })

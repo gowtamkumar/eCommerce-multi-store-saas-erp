@@ -685,7 +685,14 @@ export class HrmService {
 
       const employees = await employeeRepo.find({
         where: { tenantId: ctx.tenantId },
-        relations: ['user', 'department', 'designation', 'branch', 'manager', 'personalDetails'],
+        relations: {
+          user: true,
+          department: true,
+          designation: true,
+          branch: true,
+          manager: true,
+          personalDetails: true,
+        },
       })
 
       const activeEmployees = employees.filter(
@@ -1205,7 +1212,7 @@ export class HrmService {
         },
         ctx.tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger applicant onboarding notification: ${e.message}`)
     }
 

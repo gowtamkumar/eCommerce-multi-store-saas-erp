@@ -138,7 +138,10 @@ export class ProductBatchService {
   async findOne(id: string, ctx: RequestContextDto): Promise<ProductBatchEntity> {
     const batch = await this.repo.findOne({
       where: { id, tenantId: ctx.tenantId },
-      relations: ['product', 'variant'],
+      relations: {
+        product: true,
+        variant: true,
+      },
     })
 
     if (!batch) {

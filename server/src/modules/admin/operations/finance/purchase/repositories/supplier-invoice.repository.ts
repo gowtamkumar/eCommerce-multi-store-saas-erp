@@ -67,7 +67,14 @@ export class SupplierInvoiceRepository {
     const repo = this.getRepo(manager)
     return await repo.findOne({
       where: { id, tenantId },
-      relations: ['supplier', 'purchaseOrder', 'createdBy', 'items', 'items.product'],
+      relations: {
+        supplier: true,
+        purchaseOrder: true,
+        createdBy: true,
+        items: {
+          product: true,
+        },
+      },
     })
   }
 

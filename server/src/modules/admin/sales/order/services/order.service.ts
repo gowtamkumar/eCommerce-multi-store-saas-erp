@@ -87,7 +87,7 @@ export class OrderService {
             ctx,
           )
           resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`
-        } catch (err) {
+        } catch (err: any) {
           this.logger.error('Failed to resolve shipping address', err)
         }
       }
@@ -350,7 +350,12 @@ export class OrderService {
 
       const finalOrder = await manager.findOne(OrderEntity, {
         where: { id: savedOrder.id, tenantId },
-        relations: ['items', 'items.product', 'items.variant'],
+        relations: {
+          items: {
+            product: true,
+            variant: true,
+          },
+        },
       })
 
       return {
@@ -384,7 +389,7 @@ export class OrderService {
           { removeOnComplete: true },
         )
       }
-    } catch (jobError) {
+    } catch (jobError: any) {
       this.logger.error('Failed to publish order placed event / enqueue notification', jobError)
     }
 
@@ -670,7 +675,7 @@ export class OrderService {
             tenantId,
           )
         }
-      } catch (e) {
+      } catch (e: any) {
         this.logger.error(`Failed to trigger order notifications: ${e.message}`)
       }
 
@@ -684,7 +689,7 @@ export class OrderService {
         this.cacheService.delCacheByPattern('ledger:customer*', tenantId),
       ])
       return savedOrder
-    } catch (err) {
+    } catch (err: any) {
       await queryRunner.rollbackTransaction()
       throw err
     } finally {

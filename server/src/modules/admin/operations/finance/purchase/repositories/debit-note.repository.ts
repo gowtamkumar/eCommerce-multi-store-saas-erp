@@ -75,7 +75,11 @@ export class DebitNoteRepository {
     const repo = this.getRepo(manager)
     return await repo.findOne({
       where: { id, tenantId },
-      relations: ['supplier', 'purchaseOrder', 'createdBy'],
+      relations: {
+        supplier: true,
+        purchaseOrder: true,
+        createdBy: true,
+      },
     })
   }
 

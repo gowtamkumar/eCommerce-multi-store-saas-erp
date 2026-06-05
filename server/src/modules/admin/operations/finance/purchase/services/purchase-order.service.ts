@@ -174,7 +174,12 @@ export class PurchaseOrderService {
       // 1. Re-fetch the order WITH items inside the transaction
       const orderWithItems = await queryRunner.manager.findOne(PurchaseOrderEntity, {
         where: { id: order.id, tenantId },
-        relations: ['items', 'items.product', 'items.variant'],
+        relations: {
+          items: {
+            product: true,
+            variant: true,
+          },
+        },
       })
 
       if (!orderWithItems) throw new BadRequestException('Purchase order not found')
@@ -287,12 +292,12 @@ export class PurchaseOrderService {
           },
           tenantId,
         )
-      } catch (e) {
+      } catch (e: any) {
         this.logger.error(`Failed to trigger supplier invoice notification: ${e.message}`)
       }
 
       return savedOrder
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error('Receive Purchase Order failed', err.stack)
       await queryRunner.rollbackTransaction()
       throw err
@@ -350,7 +355,7 @@ export class PurchaseOrderService {
       await this.cacheService.delCache(`po:id:${id}`, tenantId)
 
       return savedOrder
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error('Record Payment failed', err.stack)
       await queryRunner.rollbackTransaction()
       throw err

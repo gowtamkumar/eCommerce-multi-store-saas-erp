@@ -79,7 +79,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.warn(`Disconnecting client ${client.id}: No agent token or visitorId provided.`)
         client.disconnect(true)
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Disconnecting client ${client.id}: Authentication failed.`, error.stack)
       client.disconnect(true)
     }

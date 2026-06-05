@@ -24,7 +24,12 @@ export class WishlistRepository {
   async findByUserId(userId: string, tenantId: string): Promise<WishlistEntity[]> {
     return this.repo.find({
       where: { userId, tenantId },
-      relations: ['product', 'product.variants', 'product.category'],
+      relations: {
+  product: {
+    variants: true,
+    category: true
+  }
+},
       order: { createdAt: 'DESC' },
     })
   }

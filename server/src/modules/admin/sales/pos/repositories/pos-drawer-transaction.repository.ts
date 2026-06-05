@@ -14,7 +14,9 @@ export class PosDrawerTransactionRepository {
   async findAllForShift(shiftId: string, tenantId: string): Promise<PosDrawerTransactionEntity[]> {
     return this.repo.find({
       where: { shiftId, tenantId },
-      relations: ['user'],
+      relations: {
+  user: true
+},
       order: { createdAt: 'DESC' },
     })
   }

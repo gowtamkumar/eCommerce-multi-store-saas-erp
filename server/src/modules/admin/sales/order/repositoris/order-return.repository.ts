@@ -78,14 +78,24 @@ export class OrderReturnRepository {
     return await this.repo.find({
       where: { userId, tenantId },
       order: { createdAt: 'DESC' },
-      relations: ['order'],
+      relations: {
+        order: true,
+      },
     })
   }
 
   async findByIdWithRelations(id: string, tenantId: string): Promise<OrderReturnEntity | null> {
     return await this.repo.findOne({
       where: { id, tenantId },
-      relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
+      relations: {
+        order: {
+          items: {
+            product: true,
+            variant: true,
+          },
+        },
+        user: true,
+      },
     })
   }
 

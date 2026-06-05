@@ -12,11 +12,16 @@ export class WarehouseRepository {
   ) {}
 
   async findAll(tenantId: string): Promise<WarehouseEntity[]> {
-    return this.repo.find({ where: { tenantId }, relations: ['branch'] })
+    return this.repo.find({ where: { tenantId }, relations: {
+  branch: true
+} })
   }
 
   async findOne(id: string, tenantId: string): Promise<WarehouseEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId }, relations: ['branch', 'bins'] })
+    return this.repo.findOne({ where: { id, tenantId }, relations: {
+  branch: true,
+  bins: true
+} })
   }
 
   async create(data: any, ctx: RequestContextDto): Promise<WarehouseEntity> {

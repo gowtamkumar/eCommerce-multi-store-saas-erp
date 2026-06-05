@@ -82,7 +82,7 @@ export class TierSchedulerProcessor extends WorkerHost {
 
       try {
         await this.assessTenantTiers(config)
-      } catch (err) {
+      } catch (err: any) {
         this.logger.error(`Error assessing tiers for tenant ${config.tenantId}: ${err.message}`)
       }
     }
@@ -158,7 +158,7 @@ export class TierSchedulerProcessor extends WorkerHost {
             },
             tenantId,
           )
-        } catch (e) {
+        } catch (e: any) {
           this.logger.error(`Failed to send tier notification to user ${customer.id}: ${e.message}`)
         }
       }

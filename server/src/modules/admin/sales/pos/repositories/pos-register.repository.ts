@@ -14,14 +14,18 @@ export class PosRegisterRepository {
   async findAll(tenantId: string): Promise<PosRegisterEntity[]> {
     return this.repo.find({
       where: { tenantId },
-      relations: ['branch'],
+      relations: {
+  branch: true
+},
     })
   }
 
   async findOne(id: string, tenantId: string): Promise<PosRegisterEntity | null> {
     return this.repo.findOne({
       where: { id, tenantId },
-      relations: ['branch'],
+      relations: {
+  branch: true
+},
     })
   }
 

@@ -38,7 +38,7 @@ export class ReviewService {
         },
         ctx.tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger product review notification: ${e.message}`)
     }
 

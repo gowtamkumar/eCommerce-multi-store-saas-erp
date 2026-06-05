@@ -14,7 +14,9 @@ export class CartItemRepository {
   async findByIdWithCart(id: string, tenantId: string): Promise<CartItemEntity | null> {
     return await this.repo.findOne({
       where: { id, tenantId },
-      relations: ['cart'],
+      relations: {
+  cart: true
+},
     })
   }
 

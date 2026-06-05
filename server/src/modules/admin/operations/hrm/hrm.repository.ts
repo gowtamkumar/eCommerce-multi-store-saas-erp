@@ -107,7 +107,12 @@ export class HrmRepository {
   }
 
   async findAllDesignations(tenantId: string): Promise<DesignationEntity[]> {
-    return this.designationRepo.find({ where: { tenantId }, relations: ['department'] })
+    return this.designationRepo.find({
+      where: { tenantId },
+      relations: {
+        department: true,
+      },
+    })
   }
 
   async findDesignationById(id: string, tenantId: string): Promise<DesignationEntity | null> {
@@ -178,22 +183,29 @@ export class HrmRepository {
     if (branchId) where.branchId = branchId
     return this.employeeRepo.find({
       where,
-      relations: ['user', 'department', 'designation', 'branch', 'manager', 'personalDetails'],
+      relations: {
+        user: true,
+        department: true,
+        designation: true,
+        branch: true,
+        manager: true,
+        personalDetails: true,
+      },
     })
   }
 
   async findEmployeeById(id: string, tenantId: string): Promise<EmployeeEntity | null> {
     return this.employeeRepo.findOne({
       where: { id, tenantId },
-      relations: [
-        'user',
-        'department',
-        'designation',
-        'branch',
-        'manager',
-        'personalDetails',
-        'documents',
-      ],
+      relations: {
+        user: true,
+        department: true,
+        designation: true,
+        branch: true,
+        manager: true,
+        personalDetails: true,
+        documents: true,
+      },
     })
   }
 
@@ -234,7 +246,9 @@ export class HrmRepository {
   ): Promise<EmployeeShiftAssignmentEntity[]> {
     return this.shiftAssignmentRepo.find({
       where: { employeeId, tenantId },
-      relations: ['shift'],
+      relations: {
+        shift: true,
+      },
       order: { effectiveFrom: 'DESC' },
     })
   }
@@ -458,7 +472,13 @@ export class HrmRepository {
   async findPayrollSlipsByBatch(batchId: string, tenantId: string): Promise<PayrollSlipEntity[]> {
     return this.payrollSlipRepo.find({
       where: { batchId, tenantId },
-      relations: ['employee', 'employee.user', 'employee.department', 'employee.designation'],
+      relations: {
+        employee: {
+          user: true,
+          department: true,
+          designation: true,
+        },
+      },
     })
   }
 
@@ -468,7 +488,12 @@ export class HrmRepository {
   }
 
   async findAllJobPostings(tenantId: string): Promise<JobPostingEntity[]> {
-    return this.jobPostingRepo.find({ where: { tenantId }, relations: ['department'] })
+    return this.jobPostingRepo.find({
+      where: { tenantId },
+      relations: {
+        department: true,
+      },
+    })
   }
 
   async createApplicant(data: Partial<ApplicantEntity>): Promise<ApplicantEntity> {
@@ -478,7 +503,10 @@ export class HrmRepository {
   async findAllApplicants(tenantId: string): Promise<ApplicantEntity[]> {
     return this.applicantRepo.find({
       where: { tenantId },
-      relations: ['jobPosting', 'interviews'],
+      relations: {
+        jobPosting: true,
+        interviews: true,
+      },
       order: { createdAt: 'DESC' },
     })
   }
@@ -486,7 +514,9 @@ export class HrmRepository {
   async findApplicantById(id: string, tenantId: string): Promise<ApplicantEntity | null> {
     return this.applicantRepo.findOne({
       where: { id, tenantId },
-      relations: ['jobPosting'],
+      relations: {
+        jobPosting: true,
+      },
     })
   }
 
@@ -504,7 +534,11 @@ export class HrmRepository {
   ): Promise<InterviewEntity[]> {
     return this.interviewRepo.find({
       where: { applicantId, tenantId },
-      relations: ['interviewer', 'interviewer.user'],
+      relations: {
+        interviewer: {
+          user: true,
+        },
+      },
       order: { createdAt: 'DESC' },
     })
   }
@@ -519,7 +553,15 @@ export class HrmRepository {
   async findAllPerformanceReviews(tenantId: string): Promise<PerformanceReviewEntity[]> {
     return this.performanceReviewRepo.find({
       where: { tenantId },
-      relations: ['employee', 'employee.user', 'employee.department', 'reviewer', 'reviewer.user'],
+      relations: {
+        employee: {
+          user: true,
+          department: true,
+        },
+        reviewer: {
+          user: true,
+        },
+      },
       order: { createdAt: 'DESC' },
     })
   }
@@ -530,7 +572,11 @@ export class HrmRepository {
   ): Promise<PerformanceReviewEntity[]> {
     return this.performanceReviewRepo.find({
       where: { employeeId, tenantId },
-      relations: ['reviewer', 'reviewer.user'],
+      relations: {
+        reviewer: {
+          user: true,
+        },
+      },
       order: { createdAt: 'DESC' },
     })
   }
@@ -590,7 +636,9 @@ export class HrmRepository {
         status: 'PROBATION' as any,
         joiningDate: LessThanOrEqual(cutoff) as any,
       },
-      relations: ['user'],
+      relations: {
+        user: true,
+      },
     })
   }
 

@@ -168,7 +168,7 @@ export class StaffInvitationService {
         },
         invitation.tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger invitation acceptance notification: ${e.message}`)
     }
 

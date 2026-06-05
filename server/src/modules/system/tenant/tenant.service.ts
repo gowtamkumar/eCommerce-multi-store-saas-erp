@@ -344,12 +344,14 @@ export class TenantService {
 
     const domainRecord = await this.dataSource.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
-      relations: [
-        'tenant',
-        'tenant.domains',
-        'tenant.activeSubscription',
-        'tenant.activeSubscription.subscriptionPlan',
-      ],
+      relations: {
+  tenant: {
+    domains: true,
+    activeSubscription: {
+      subscriptionPlan: true
+    }
+  }
+},
     })
 
     if (domainRecord && domainRecord.status === CustomDomainStatus.ACTIVE) {
@@ -685,7 +687,7 @@ export class TenantService {
           const cacheKey = `rbac:manifest:${id}:${member.id}`
           await this.cacheService.delCache(cacheKey)
         }
-      } catch (err) {
+      } catch (err: any) {
         this.logger.error(`Failed to invalidate team member permission caches: ${err.message}`)
       }
 
@@ -794,7 +796,7 @@ export class TenantService {
         const cacheKey = `rbac:manifest:${tenantId}:${member.id}`
         await this.cacheService.delCache(cacheKey)
       }
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error(`Failed to invalidate team member permission caches: ${err.message}`)
     }
 

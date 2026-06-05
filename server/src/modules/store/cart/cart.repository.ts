@@ -14,7 +14,12 @@ export class CartRepository {
   async findByUserId(userId: string, tenantId: string): Promise<CartEntity | null> {
     return await this.repo.findOne({
       where: { userId, tenantId },
-      relations: ['items', 'items.product', 'items.variant'],
+      relations: {
+  items: {
+    product: true,
+    variant: true
+  }
+},
     })
   }
 

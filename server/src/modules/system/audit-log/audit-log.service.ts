@@ -36,7 +36,7 @@ export class AuditLogService {
         ipAddress: dto.ipAddress ?? ipAddress,
         userAgent: dto.userAgent ?? userAgent,
       } as any)
-    } catch (err) {
+    } catch (err: any) {
       // Never let audit logging break the main request flow
       console.error('[AuditLog] Failed to write audit log:', err?.message)
     }
@@ -304,7 +304,7 @@ export class AuditLogService {
           newValue: sanitizeAuditValue(newValue),
         } as any,
       )
-    } catch (err) {
+    } catch (err: any) {
       console.error('[AuditLog] Failed to write permission audit log:', err?.message)
     }
   }

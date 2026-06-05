@@ -33,7 +33,7 @@ export class OrderProcessor extends WorkerHost {
         default:
           this.logger.warn(`Unknown job name: ${job.name}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to process job ${job.id}: ${error.message}`, error.stack)
       throw error
     }
@@ -60,7 +60,7 @@ export class OrderProcessor extends WorkerHost {
           this.logger.log(
             `SMS notification sent successfully to ${orderWithRelations.customerPhone}`,
           )
-        } catch (smsError) {
+        } catch (smsError: any) {
           this.logger.error(`Failed to send SMS notification for order ${orderId}`, smsError.stack)
           // Don't throw - we don't want to fail the whole job if only SMS fails
         }
@@ -80,7 +80,7 @@ export class OrderProcessor extends WorkerHost {
             tenantId,
           )
           this.logger.log(`Push notification triggered successfully for order ${orderId}`)
-        } catch (pushError) {
+        } catch (pushError: any) {
           this.logger.error(
             `Failed to trigger push notification for order ${orderId}`,
             pushError.stack,
@@ -101,7 +101,7 @@ export class OrderProcessor extends WorkerHost {
           tenantId,
         )
         this.logger.log(`In-app system notification created for order ${orderId}`)
-      } catch (sysNotifError) {
+      } catch (sysNotifError: any) {
         this.logger.error(
           `Failed to create system notification for order ${orderId}`,
           sysNotifError.stack,

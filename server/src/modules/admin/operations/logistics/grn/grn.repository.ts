@@ -48,16 +48,17 @@ export class GrnRepository {
   async findById(id: string, tenantId: string): Promise<GoodsReceivedNoteEntity> {
     const grn = await this.repository.findOne({
       where: { id, tenantId },
-      relations: [
-        'items',
-        'items.product',
-        'items.variant',
-        'supplier',
-        'warehouse',
-        'branch',
-        'receivedByUser',
-        'purchaseOrder',
-      ],
+      relations: {
+        items: {
+          product: true,
+          variant: true,
+        },
+        supplier: true,
+        warehouse: true,
+        branch: true,
+        receivedByUser: true,
+        purchaseOrder: true,
+      },
     })
 
     if (!grn) {

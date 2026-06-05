@@ -21,7 +21,16 @@ export class FulfillmentRepository {
   async findTaskById(id: string, tenantId: string): Promise<FulfillmentTaskEntity | null> {
     return this.taskRepository.findOne({
       where: { id, tenantId },
-      relations: ['items', 'items.product', 'items.variant', 'items.bin', 'order', 'order.items'],
+      relations: {
+        items: {
+          product: true,
+          variant: true,
+          bin: true,
+        },
+        order: {
+          items: true,
+        },
+      },
     })
   }
 

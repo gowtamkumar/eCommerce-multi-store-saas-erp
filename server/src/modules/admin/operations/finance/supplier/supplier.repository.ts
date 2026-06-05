@@ -57,14 +57,18 @@ export class SupplierRepository {
   async findByIdAndTenant(id: string, tenantId: string): Promise<SupplierEntity | null> {
     return await this.repo.findOne({
       where: { id, tenantId },
-      relations: ['category'],
+      relations: {
+        category: true,
+      },
     })
   }
 
   async findByUserIdAndTenant(userId: string, tenantId: string): Promise<SupplierEntity | null> {
     return await this.repo.findOne({
       where: { userId, tenantId },
-      relations: ['category'],
+      relations: {
+        category: true,
+      },
     })
   }
 

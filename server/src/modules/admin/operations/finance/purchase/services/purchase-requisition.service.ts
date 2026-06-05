@@ -204,7 +204,7 @@ export class PurchaseRequisitionService {
         if (!po.purchaseRequisitionId || String(po.purchaseRequisitionId) !== String(pr.id)) {
           throw new BadRequestException('Purchase Order not linked to Purchase Requisition')
         }
-      } catch (err) {
+      } catch (err: any) {
         this.logger.error(`Validation after PO creation failed for PR ${pr.id}: ${err.message}`)
         throw err
       }
@@ -219,7 +219,7 @@ export class PurchaseRequisitionService {
       await this.notifyPRConverted(pr, po.id, tenantId)
 
       return po
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction()
       throw error
     } finally {

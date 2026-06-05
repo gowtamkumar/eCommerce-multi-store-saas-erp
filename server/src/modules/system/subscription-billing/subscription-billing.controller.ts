@@ -129,7 +129,7 @@ export class SubscriptionBillingController {
           transactionId: data?.transactionId,
         },
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Error in completePaymentSuccess: ${error.message}`, error.stack)
       throw error
     }
@@ -158,7 +158,7 @@ export class SubscriptionBillingController {
           transactionId: tran_id,
         },
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Error in completePaymentFail: ${error.message}`)
       return {
         success: false,
@@ -192,7 +192,7 @@ export class SubscriptionBillingController {
           transactionId: tran_id,
         },
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Error in completePaymentCancel: ${error.message}`)
       return {
         success: false,

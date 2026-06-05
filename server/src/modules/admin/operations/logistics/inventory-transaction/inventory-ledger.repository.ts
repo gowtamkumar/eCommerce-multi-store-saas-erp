@@ -92,7 +92,12 @@ export class InventoryLedgerRepository {
     return await this.repo.find({
       where: { productId, tenantId },
       order: { createdAt: 'DESC' },
-      relations: ['product', 'variant', 'user', 'warehouse'],
+      relations: {
+        product: true,
+        variant: true,
+        user: true,
+        warehouse: true,
+      },
     })
   }
 

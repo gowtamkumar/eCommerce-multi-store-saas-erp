@@ -219,7 +219,7 @@ export class InventoryLedgerService {
           tenantId,
         )
       }
-    } catch (notifError) {
+    } catch (notifError: any) {
       this.logger.error(`Failed to trigger inventory notification: ${notifError.message}`)
     }
 

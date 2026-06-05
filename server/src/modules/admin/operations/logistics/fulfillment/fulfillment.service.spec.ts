@@ -11,6 +11,7 @@ import { FulfillmentStatus } from './enums/fulfillment-status.enum'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { StockReservationEntity } from '../inventory-transaction/entities/stock-reservation.entity'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 describe('FulfillmentService', () => {
   let service: FulfillmentService
@@ -20,9 +21,13 @@ describe('FulfillmentService', () => {
   let orderRepoMock: any
   let dataSourceMock: any
   let batchServiceMock: any
+  let notificationServiceMock: any
 
   beforeEach(async () => {
     batchServiceMock = {}
+    notificationServiceMock = {
+      createNotification: jest.fn(),
+    }
     repoMock = {
       findTaskById: jest.fn(),
       updateTask: jest.fn(),
@@ -78,6 +83,10 @@ describe('FulfillmentService', () => {
         {
           provide: DataSource,
           useValue: dataSourceMock,
+        },
+        {
+          provide: NotificationService,
+          useValue: notificationServiceMock,
         },
       ],
     }).compile()

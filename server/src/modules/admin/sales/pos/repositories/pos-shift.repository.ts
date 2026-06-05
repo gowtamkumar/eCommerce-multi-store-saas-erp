@@ -14,7 +14,10 @@ export class PosShiftRepository {
   async findAll(tenantId: string): Promise<PosShiftEntity[]> {
     return this.repo.find({
       where: { tenantId },
-      relations: ['register', 'user'],
+      relations: {
+  register: true,
+  user: true
+},
       order: { openingTime: 'DESC' },
     })
   }
@@ -27,14 +30,19 @@ export class PosShiftRepository {
     const repository = manager ? manager.getRepository(PosShiftEntity) : this.repo
     return repository.findOne({
       where: { id, tenantId },
-      relations: ['register', 'user'],
+      relations: {
+  register: true,
+  user: true
+},
     })
   }
 
   async findActiveShiftForUser(userId: string, tenantId: string): Promise<PosShiftEntity | null> {
     return this.repo.findOne({
       where: { userId, tenantId, status: PosShiftStatus.OPEN },
-      relations: ['register'],
+      relations: {
+  register: true
+},
     })
   }
 

@@ -39,7 +39,12 @@ export class FulfillmentService {
   ): Promise<FulfillmentTaskEntity | null> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId, tenantId: ctx.tenantId },
-      relations: ['items', 'items.product', 'items.variant'],
+      relations: {
+        items: {
+          product: true,
+          variant: true,
+        },
+      },
     })
 
     if (!order) {
@@ -287,7 +292,7 @@ export class FulfillmentService {
             item.quantity,
             manager,
           )
-        } catch (batchErr) {
+        } catch (batchErr: any) {
           this.logger.warn(
             `FEFO Batch allocation failed for item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`,
           )

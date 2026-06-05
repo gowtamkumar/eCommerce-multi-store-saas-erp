@@ -74,13 +74,15 @@ export class RfqRepository {
     const repo = this.getRepo(manager)
     return await repo.findOne({
       where: { id, tenantId },
-      relations: [
-        'purchaseRequisition',
-        'purchaseRequisition.items',
-        'createdBy',
-        'quotations',
-        'quotations.supplier',
-      ],
+      relations: {
+        purchaseRequisition: {
+          items: true,
+        },
+        createdBy: true,
+        quotations: {
+          supplier: true,
+        },
+      },
     })
   }
 

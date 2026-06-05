@@ -87,7 +87,7 @@ export class CampaignProcessor extends WorkerHost {
         },
         tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger campaign budget notification: ${e.message}`)
     }
 
@@ -209,7 +209,7 @@ export class CampaignProcessor extends WorkerHost {
             tenantId,
           )
           success = true
-        } catch (e) {
+        } catch (e: any) {
           success = false
           log.error = (e as Error)?.message ?? 'push delivery failed'
         }
@@ -225,7 +225,7 @@ export class CampaignProcessor extends WorkerHost {
         log.error = log.error || 'Channel delivery failed or missing recipient info'
         await this.campaignRepository.incrementFailedCount(campaignId, 1)
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Failed to send message to ${recipientKey} for campaign ${campaignId}`,
         error as any,

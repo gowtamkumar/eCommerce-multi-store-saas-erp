@@ -60,7 +60,14 @@ export class AudienceService {
     if (options.targetUsers !== false) {
       const users = await this.userRepository.find({
         where: { tenantId, status: 'active' as any },
-        select: ['id', 'email', 'phone', 'pushToken', 'fcmToken', 'name'],
+        select: {
+          id: true,
+          email: true,
+          phone: true,
+          pushToken: true,
+          fcmToken: true,
+          name: true,
+        },
       })
       users.forEach((u) => {
         if (u.email) {
@@ -81,7 +88,10 @@ export class AudienceService {
     if (options.targetSubscribers) {
       const subscribers = await this.subscriberRepository.find({
         where: { tenantId, isActive: true },
-        select: ['id', 'email'],
+        select: {
+          id: true,
+          email: true,
+        },
       })
       subscribers.forEach((s) => {
         const email = s.email.toLowerCase()
@@ -99,7 +109,12 @@ export class AudienceService {
     if (options.targetLeads) {
       const leads = await this.leadRepository.find({
         where: { tenantId },
-        select: ['id', 'email', 'phone', 'name'],
+        select: {
+          id: true,
+          email: true,
+          phone: true,
+          name: true,
+        },
       })
       leads.forEach((l) => {
         const email = l.email.toLowerCase()

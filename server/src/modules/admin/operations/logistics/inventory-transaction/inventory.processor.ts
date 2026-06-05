@@ -32,7 +32,7 @@ export class InventoryProcessor extends WorkerHost {
         default:
           this.logger.warn(`Unknown job name: ${job.name}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to process job ${job.id}: ${error.message}`, error.stack)
       throw error
     }
@@ -45,7 +45,11 @@ export class InventoryProcessor extends WorkerHost {
   async handleSweepExpiredBatches() {
     this.logger.log('Starting daily sweep of expired product batches...')
     const tenantRepo = this.dataSource.getRepository(TenantEntity)
-    const tenants = await tenantRepo.find({ select: ['id'] })
+    const tenants = await tenantRepo.find({
+      select: {
+        id: true,
+      },
+    })
     let totalAffected = 0
     for (const tenant of tenants) {
       try {

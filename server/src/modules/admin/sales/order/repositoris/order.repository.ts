@@ -21,7 +21,14 @@ export class OrderRepository {
   async findOrderById(id: string, tenantId: string): Promise<OrderEntity | null> {
     return await this.repo.findOne({
       where: { id, tenantId },
-      relations: ['items', 'items.product', 'items.variant', 'returns', 'shippingAddress'],
+      relations: {
+        items: {
+          product: true,
+          variant: true,
+        },
+        returns: true,
+        shippingAddress: true,
+      },
     })
   }
 
@@ -34,7 +41,12 @@ export class OrderRepository {
   async findOrderByTrackingId(trackingId: string): Promise<OrderEntity | null> {
     return await this.repo.findOne({
       where: { trackingId },
-      relations: ['items', 'items.product', 'shippingAddress'],
+      relations: {
+        items: {
+          product: true,
+        },
+        shippingAddress: true,
+      },
     })
   }
 
@@ -53,7 +65,12 @@ export class OrderRepository {
   async findOneForCourier(id: string, tenantId: string): Promise<OrderEntity | null> {
     return await this.repo.findOne({
       where: { id, tenantId },
-      relations: ['items', 'items.product', 'shippingAddress'],
+      relations: {
+        items: {
+          product: true,
+        },
+        shippingAddress: true,
+      },
     })
   }
 

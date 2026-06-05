@@ -161,7 +161,13 @@ export class LoyaltyController {
 
     const user = await this.dataSource.manager.findOne(UserEntity, {
       where: { id: customerId, tenantId: ctx.tenantId },
-      select: ['id', 'name', 'membershipTier', 'referralCode', 'loyaltyPointsBalance'],
+      select: {
+        id: true,
+        name: true,
+        membershipTier: true,
+        referralCode: true,
+        loyaltyPointsBalance: true,
+      },
     })
 
     const history = await this.loyaltyService.getPointsHistory(customerId, ctx.tenantId)

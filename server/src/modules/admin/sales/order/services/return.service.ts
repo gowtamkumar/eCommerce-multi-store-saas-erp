@@ -141,7 +141,7 @@ export class ReturnService {
         },
         tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger return/refund notification: ${e.message}`)
     }
 
@@ -271,7 +271,7 @@ export class ReturnService {
           `Exchange GL memo enqueued for return ${returnRequest.id} → new order ${newOrderId}`,
         )
       }
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(
         `Failed to post Exchange GL memo for return ${returnRequest.id}: ${e.message}`,
       )
@@ -408,7 +408,7 @@ export class ReturnService {
             `Wallet credited for return ${returnRequest.id}: customer=${customerId}, amount=${refundAmount}`,
           )
           await this.notifyStoreCreditRefund(returnRequest, customerId, refundAmount, ctx.tenantId)
-        } catch (e) {
+        } catch (e: any) {
           this.logger.error(`Failed to credit wallet for return ${returnRequest.id}: ${e.message}`)
         }
         break
@@ -433,7 +433,7 @@ export class ReturnService {
           this.logger.log(
             `Refund of ${refundAmount} via ${method} enqueued for return ${returnRequest.id}.`,
           )
-        } catch (e) {
+        } catch (e: any) {
           this.logger.error(
             `Failed to enqueue refund GL entry for return ${returnRequest.id}: ${e.message}`,
           )

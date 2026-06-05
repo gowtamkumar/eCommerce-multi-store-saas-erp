@@ -67,7 +67,10 @@ export class DunningService {
   async findAllLogs(tenantId: string): Promise<DunningLogEntity[]> {
     return this.dataSource.manager.find(DunningLogEntity, {
       where: { tenantId },
-      relations: ['customer', 'dunningRule'],
+      relations: {
+        customer: true,
+        dunningRule: true,
+      },
       order: { createdAt: 'DESC' },
     })
   }

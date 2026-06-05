@@ -357,7 +357,7 @@ export class SuperAdminController {
 
       const percent = ((currentCount - prevCount) / prevCount) * 100
       return `${percent >= 0 ? '+' : ''}${percent.toFixed(1)}%`
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Error calculating trend: ${e.message}`)
       return null
     }
@@ -557,7 +557,7 @@ export class SuperAdminController {
         message: 'Tenant analytics retrieved successfully',
         data: analytics,
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('[SuperAdmin] Error fetching tenant analytics:', error)
       throw error
     }
@@ -575,7 +575,7 @@ export class SuperAdminController {
         message: 'Detailed tenant analytics retrieved',
         data,
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `[SuperAdmin] Error fetching detailed analytics for tenant ${sanitizeLog(id)}:`,
         error,
@@ -743,7 +743,7 @@ export class SuperAdminController {
           } as any,
         )
         updated++
-      } catch (e) {
+      } catch (e: any) {
         this.logger.warn(`Bulk status update failed for tenant ${id}: ${e.message}`)
       }
     }
@@ -780,7 +780,7 @@ export class SuperAdminController {
           } as any,
         )
         updated++
-      } catch (e) {
+      } catch (e: any) {
         this.logger.warn(`Bulk plan update failed for tenant ${id}: ${e.message}`)
       }
     }
@@ -807,7 +807,7 @@ export class SuperAdminController {
       this.logger.log(
         `Super Admin ${sanitizeLog(ctx.user?.username)} forced password reset for user ${sanitizeLog(id)}`,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.warn(`Force password reset for ${id}: ${e.message}`)
     }
     return {
@@ -830,7 +830,7 @@ export class SuperAdminController {
       )
       // The actual email sending would be triggered here via a notification/email service
       // For now we log and return success — the auth service handles re-sending via existing flows
-    } catch (e) {
+    } catch (e: any) {
       this.logger.warn(`Send verification for ${id}: ${e.message}`)
     }
     return { success: true, statusCode: 200, message: 'Verification email queued', data: null }
@@ -1009,7 +1009,11 @@ export class SuperAdminController {
   @Get('/billing/churn')
   async getChurnAnalytics(): Promise<BaseApiSuccessResponse<any[]>> {
     const tenants = await this.dataSource.getRepository(TenantEntity).find({
-      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan'],
+      relations: {
+  activeSubscription: {
+    subscriptionPlan: true
+  }
+},
     })
 
     const churned = tenants
@@ -1046,7 +1050,10 @@ export class SuperAdminController {
   async exportInvoicesCSV(@Res() res: Response): Promise<void> {
     const invoiceRepo = this.dataSource.getRepository(SubscriptionInvoiceEntity)
     const invoices = await invoiceRepo.find({
-      relations: ['tenant', 'subscriptionPlan'],
+      relations: {
+  tenant: true,
+  subscriptionPlan: true
+},
       order: { billingDate: 'DESC' },
       take: 5000,
     })
@@ -1228,7 +1235,7 @@ export class SuperAdminController {
         const url = new URL(frontendUrl)
         url.hostname = `${user.tenant.subdomain}.${url.hostname}`
         redirectUrl = `${url.origin}/login?impersonateToken=${impersonateToken}`
-      } catch (e) {
+      } catch (e: any) {
         redirectUrl = `http://${user.tenant.subdomain}.localhost:3000/login?impersonateToken=${impersonateToken}`
       }
     }

@@ -68,7 +68,9 @@ export class CampaignLogRepository {
   ): Promise<[CampaignLogEntity[], number]> {
     return this.repo.findAndCount({
       where: { campaignId },
-      relations: ['recipient'],
+      relations: {
+        recipient: true,
+      },
       order: { createdAt: 'DESC' },
       take,
       skip,

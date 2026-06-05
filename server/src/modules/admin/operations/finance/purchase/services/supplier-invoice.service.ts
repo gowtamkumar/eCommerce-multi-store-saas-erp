@@ -92,7 +92,9 @@ export class SupplierInvoiceService {
 
       const grns = await queryRunner.manager.find(GoodsReceivedNoteEntity, {
         where: { poId: po.id, tenantId, status: GrnStatus.RECEIVED },
-        relations: ['items'],
+        relations: {
+          items: true,
+        },
       })
 
       const receivedQtyMap = new Map<string, number>()

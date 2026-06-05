@@ -79,7 +79,7 @@ export class AuthService {
       const refCode = await this.referralService.generateUniqueReferralCode(user.name, tenantId)
       await this.userService.updateUser(user.id, { referralCode: refCode } as any)
       user.referralCode = refCode
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to generate referral code: ${e.message}`)
     }
 
@@ -93,7 +93,7 @@ export class AuthService {
           undefined,
           'signup',
         )
-      } catch (e) {
+      } catch (e: any) {
         this.logger.error(`Failed to link referral code: ${e.message}`)
       }
     }
@@ -171,7 +171,7 @@ export class AuthService {
           tenantId,
         )
       }
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger security notification: ${e.message}`)
     }
 
@@ -292,7 +292,7 @@ export class AuthService {
       if (decoded && decoded.sessionId) {
         oldSessionId = decoded.sessionId
       }
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to decode refresh token: ${e.message}`)
     }
 

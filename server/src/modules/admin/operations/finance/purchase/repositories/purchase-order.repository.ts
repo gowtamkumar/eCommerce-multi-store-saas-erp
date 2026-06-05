@@ -75,7 +75,15 @@ export class PurchaseOrderRepository {
     const repo = this.getRepo(manager)
     return await repo.findOne({
       where: { id, tenantId },
-      relations: ['supplier', 'items', 'items.product', 'items.variant', 'payments', 'user'],
+      relations: {
+        supplier: true,
+        items: {
+          product: true,
+          variant: true,
+        },
+        payments: true,
+        user: true,
+      },
     })
   }
 
@@ -101,7 +109,9 @@ export class PurchaseOrderRepository {
   async findAllBySupplier(supplierId: string, tenantId: string): Promise<PurchaseOrderEntity[]> {
     return await this.repo.find({
       where: { supplierId, tenantId },
-      relations: ['items'],
+      relations: {
+        items: true,
+      },
       order: { createdAt: 'DESC' },
     })
   }

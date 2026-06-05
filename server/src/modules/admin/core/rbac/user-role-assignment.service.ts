@@ -41,7 +41,9 @@ export class UserRoleAssignmentService {
     const now = new Date()
     const assignments = await this.assignmentRepo.find({
       where: { userId, tenantId },
-      relations: ['role'],
+      relations: {
+        role: true,
+      },
     })
 
     // Filter out expired assignments

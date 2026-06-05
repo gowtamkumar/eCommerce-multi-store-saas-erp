@@ -52,7 +52,9 @@ export class RoleController {
   ): Promise<BaseApiSuccessResponse<RoleEntity[]>> {
     const roles = await this.roleRepo.find({
       where: [{ tenantId: ctx.tenantId }, { isSystemDefault: true }],
-      relations: ['permissions'],
+      relations: {
+        permissions: true,
+      },
       order: { name: 'ASC' },
     })
     return {

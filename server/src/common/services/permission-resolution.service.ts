@@ -98,7 +98,11 @@ export class PermissionResolutionService {
 
     const tenant = await this.tenantRepo.findOne({
       where: { id: tenantId },
-      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan'],
+      relations: {
+        activeSubscription: {
+          subscriptionPlan: true,
+        },
+      },
     })
 
     if (!tenant) return false
@@ -175,7 +179,11 @@ export class PermissionResolutionService {
     // ── Build enabled features list ───────────────────────────────────
     const tenant = await this.tenantRepo.findOne({
       where: { id: tenantId },
-      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan'],
+      relations: {
+        activeSubscription: {
+          subscriptionPlan: true,
+        },
+      },
     })
     const planFeatures: string[] = tenant?.subscriptionPlan?.features ?? []
 
@@ -273,7 +281,11 @@ export class PermissionResolutionService {
     // Load all role assignments for this user in this tenant
     const assignments = await this.assignmentRepo.find({
       where: { userId, tenantId },
-      relations: ['role', 'role.permissions'],
+      relations: {
+        role: {
+          permissions: true,
+        },
+      },
     })
 
     // Filter out expired assignments
@@ -287,7 +299,9 @@ export class PermissionResolutionService {
     // Load all roles with their permissions in a single query
     const roles = await this.roleRepo.find({
       where: { id: In(roleIds) },
-      relations: ['permissions'],
+      relations: {
+        permissions: true,
+      },
     })
 
     // Union all permission slugs

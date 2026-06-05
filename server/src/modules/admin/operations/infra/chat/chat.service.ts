@@ -23,7 +23,9 @@ export class ChatService {
   ): Promise<ConversationEntity> {
     let conversation = await this.conversationRepo.findOne({
       where: { tenantId, visitorId },
-      relations: ['customer'],
+      relations: {
+        customer: true,
+      },
     })
 
     if (!conversation) {
@@ -118,7 +120,9 @@ export class ChatService {
 
     return await this.conversationRepo.findAndCount({
       where,
-      relations: ['customer'],
+      relations: {
+        customer: true,
+      },
       order: { lastMessageAt: 'DESC' },
       take: limit,
       skip: offset,

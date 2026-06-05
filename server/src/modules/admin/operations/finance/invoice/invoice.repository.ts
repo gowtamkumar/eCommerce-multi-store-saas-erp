@@ -66,7 +66,14 @@ export class InvoiceRepository {
   async findByIdWithRelations(id: string, tenantId: string): Promise<InvoiceEntity | null> {
     return this.repo.findOne({
       where: { id, tenantId },
-      relations: ['order', 'order.items', 'order.items.product', 'user'],
+      relations: {
+        order: {
+          items: {
+            product: true,
+          },
+        },
+        user: true,
+      },
     })
   }
 

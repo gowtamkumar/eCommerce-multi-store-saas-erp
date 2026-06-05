@@ -39,7 +39,10 @@ export class SupplierPaymentRepository {
   async findAllPayments(tenantId: string): Promise<SupplierPaymentEntity[]> {
     return this.repo.find({
       where: { tenantId },
-      relations: ['supplier', 'purchaseOrder'],
+      relations: {
+        supplier: true,
+        purchaseOrder: true,
+      },
       order: { paymentDate: 'DESC' },
     })
   }

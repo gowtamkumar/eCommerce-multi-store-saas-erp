@@ -79,7 +79,15 @@ export class PurchaseRequisitionRepository {
     const repo = this.getRepo(manager)
     return await repo.findOne({
       where: { id, tenantId },
-      relations: ['requestedBy', 'approvedBy', 'branch', 'warehouse', 'items', 'items.product'],
+      relations: {
+        requestedBy: true,
+        approvedBy: true,
+        branch: true,
+        warehouse: true,
+        items: {
+          product: true,
+        },
+      },
     })
   }
 

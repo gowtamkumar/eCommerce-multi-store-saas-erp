@@ -61,7 +61,7 @@ export class SmsService {
         success: false,
         messageId: '',
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to send SMS to ${phone}`, error.stack)
       return {
         success: false,

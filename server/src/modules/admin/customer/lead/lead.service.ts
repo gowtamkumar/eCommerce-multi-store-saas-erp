@@ -33,7 +33,7 @@ export class LeadService {
         },
         tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger new lead notification: ${e.message}`)
     }
 

@@ -70,56 +70,64 @@ export class UserRepository {
   async findById(id: string): Promise<UserEntity | null> {
     return this.repo.findOne({
       where: { id },
-      select: [
-        'id',
-        'name',
-        'username',
-        'email',
-        'phone',
-        'address',
-        'image',
-        'role',
-        'status',
-        'createdAt',
-        'tenantId',
-        'isEmailVerified',
-        'roleId',
-        'companyName',
-        'customerCode',
-        'taxId',
-        'creditLimit',
-        'creditHold',
-        'priceBookCode',
-      ],
-      relations: ['roleEntity', 'roleEntity.permissions'],
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        phone: true,
+        address: true,
+        image: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        tenantId: true,
+        isEmailVerified: true,
+        roleId: true,
+        companyName: true,
+        customerCode: true,
+        taxId: true,
+        creditLimit: true,
+        creditHold: true,
+        priceBookCode: true,
+      },
+      relations: {
+        roleEntity: {
+          permissions: true,
+        },
+      },
     })
   }
 
   async findByIdAndTenant(id: string, tenantId: string): Promise<UserEntity | null> {
     return this.repo.findOne({
       where: { id, tenantId },
-      select: [
-        'id',
-        'name',
-        'username',
-        'email',
-        'phone',
-        'address',
-        'image',
-        'role',
-        'status',
-        'createdAt',
-        'tenantId',
-        'isEmailVerified',
-        'roleId',
-        'companyName',
-        'customerCode',
-        'taxId',
-        'creditLimit',
-        'creditHold',
-        'priceBookCode',
-      ],
-      relations: ['roleEntity', 'roleEntity.permissions'],
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        phone: true,
+        address: true,
+        image: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        tenantId: true,
+        isEmailVerified: true,
+        roleId: true,
+        companyName: true,
+        customerCode: true,
+        taxId: true,
+        creditLimit: true,
+        creditHold: true,
+        priceBookCode: true,
+      },
+      relations: {
+        roleEntity: {
+          permissions: true,
+        },
+      },
     })
   }
 
@@ -200,7 +208,16 @@ export class UserRepository {
     return this.repo.find({
       where: { tenantId },
       order: { createdAt: 'DESC' },
-      select: ['id', 'name', 'username', 'email', 'role', 'status', 'image', 'createdAt'],
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        role: true,
+        status: true,
+        image: true,
+        createdAt: true,
+      },
     })
   }
 }

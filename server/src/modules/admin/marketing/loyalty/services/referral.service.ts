@@ -105,7 +105,10 @@ export class ReferralService {
     if ((result.affected ?? 0) === 0) {
       const existing = await em.findOne(UserEntity, {
         where: { id: refereeId, tenantId },
-        select: ['id', 'referredById'],
+        select: {
+          id: true,
+          referredById: true,
+        },
       })
       this.logger.log(
         `Referral attempt rejected for ${refereeId}: already attributed to ${existing?.referredById ?? 'n/a'}`,
@@ -207,7 +210,7 @@ export class ReferralService {
         )
         this.logger.log(`Rewarded referrer ${referrerId} with ${rewardAmount} loyalty points`)
       }
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error(`Failed to award referral bonus to referrer ${referrerId}: ${err.message}`)
     }
   }

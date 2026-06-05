@@ -32,7 +32,9 @@ async function bootstrap() {
 
     // 2. Find all tenants without active subscription
     const tenants = await tenantRepo.find({
-      relations: ['activeSubscription'],
+      relations: {
+        activeSubscription: true,
+      },
     })
 
     for (const tenant of tenants) {

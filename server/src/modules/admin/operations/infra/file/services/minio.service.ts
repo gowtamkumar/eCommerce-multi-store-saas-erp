@@ -78,7 +78,7 @@ export class MinioService implements OnModuleInit {
       this.logger.log(
         `MinIO bucket "${this.bucketName}" public-read policy configured successfully.`,
       )
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Error initializing MinIO client/bucket: ${error.message}`, error.stack)
     }
   }

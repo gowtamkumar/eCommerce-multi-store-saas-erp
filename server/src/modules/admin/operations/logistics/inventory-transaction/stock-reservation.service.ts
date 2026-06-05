@@ -312,7 +312,11 @@ export class StockReservationService {
     return this.repo.find({
       where: { orderId, tenantId },
       order: { reservedAt: 'DESC' },
-      relations: ['product', 'variant', 'warehouse'],
+      relations: {
+        product: true,
+        variant: true,
+        warehouse: true,
+      },
     })
   }
 

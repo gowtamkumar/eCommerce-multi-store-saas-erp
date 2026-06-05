@@ -31,7 +31,9 @@ export class QuotationRepository {
   async findAllByRfq(rfqId: string, tenantId: string): Promise<QuotationEntity[]> {
     return this.repo.find({
       where: { rfqId, tenantId },
-      relations: ['supplier'],
+      relations: {
+        supplier: true,
+      },
       order: { totalAmount: 'ASC' }, // Sort by lowest bid
     })
   }
@@ -44,7 +46,10 @@ export class QuotationRepository {
     const repo = this.getRepo(manager)
     return await repo.findOne({
       where: { id, tenantId },
-      relations: ['rfq', 'supplier'],
+      relations: {
+        rfq: true,
+        supplier: true,
+      },
     })
   }
 

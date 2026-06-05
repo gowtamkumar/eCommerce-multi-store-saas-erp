@@ -23,33 +23,50 @@ export class TenantRepository {
   async findByIdWithRelations(id: string): Promise<TenantEntity | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan', 'domains'],
+      relations: {
+  activeSubscription: {
+    subscriptionPlan: true
+  },
+  domains: true
+},
     })
   }
 
   async findByIdWithUser(id: string): Promise<TenantEntity | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ['user', 'activeSubscription', 'activeSubscription.subscriptionPlan'],
+      relations: {
+  user: true,
+  activeSubscription: {
+    subscriptionPlan: true
+  }
+},
     })
   }
 
   async findBySubdomain(subdomain: string): Promise<TenantEntity | null> {
     return await this.repo.findOne({
       where: { subdomain },
-      relations: ['domains', 'activeSubscription', 'activeSubscription.subscriptionPlan'],
+      relations: {
+  domains: true,
+  activeSubscription: {
+    subscriptionPlan: true
+  }
+},
     })
   }
 
   async findByCustomDomain(customDomain: string): Promise<TenantEntity | null> {
     const domainRecord = await this.repo.manager.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
-      relations: [
-        'tenant',
-        'tenant.domains',
-        'tenant.activeSubscription',
-        'tenant.activeSubscription.subscriptionPlan',
-      ],
+      relations: {
+  tenant: {
+    domains: true,
+    activeSubscription: {
+      subscriptionPlan: true
+    }
+  }
+},
     })
     return domainRecord ? domainRecord.tenant : null
   }
@@ -57,7 +74,12 @@ export class TenantRepository {
   async findAllSorted(): Promise<TenantEntity[]> {
     return await this.repo.find({
       order: { createdAt: 'DESC' },
-      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan', 'domains'],
+      relations: {
+  activeSubscription: {
+    subscriptionPlan: true
+  },
+  domains: true
+},
     })
   }
 

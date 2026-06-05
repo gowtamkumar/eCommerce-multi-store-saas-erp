@@ -64,7 +64,7 @@ export class CacheRepository {
           }
           cleared = true
         }
-      } catch (err) {
+      } catch (err: any) {
         this.logger.error(`Error deleting by pattern in store: ${err.message}`)
       }
     }

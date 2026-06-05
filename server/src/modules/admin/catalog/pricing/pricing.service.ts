@@ -243,7 +243,10 @@ export class PricingService {
   async findProductPrices(productId: string, ctx: RequestContextDto) {
     return await this.productPriceRepo.find({
       where: { productId, tenantId: ctx.tenantId },
-      relations: ['priceBook', 'variant'],
+      relations: {
+        priceBook: true,
+        variant: true,
+      },
       order: { minQuantity: 'ASC' },
     })
   }

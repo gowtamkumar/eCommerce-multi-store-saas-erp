@@ -86,7 +86,7 @@ export class PushService {
 
       const result = await webPush.sendNotification(subscriptionInfo, data)
       return { success: true, messageId: result.headers['location'] }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`[PUSH ERROR] Failed to send push to tenant ${tenantId}`, error.stack)
       if (error.statusCode === 410 || error.statusCode === 404) {
         // Subscription is no longer valid, delete it

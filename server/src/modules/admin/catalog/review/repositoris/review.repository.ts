@@ -45,7 +45,9 @@ export class ReviewRepository {
   async findPublicReviews(tenantId: string): Promise<ReviewEntity[]> {
     return this.repo.find({
       where: { tenantId, status: ReviewStatus.APPROVED },
-      relations: ['user'],
+      relations: {
+        user: true,
+      },
       order: { createdAt: 'DESC' },
     })
   }
@@ -53,7 +55,9 @@ export class ReviewRepository {
   async findByProductReviews(productId: string, tenantId: string): Promise<ReviewEntity[]> {
     return this.repo.find({
       where: { productId, tenantId },
-      relations: ['user'],
+      relations: {
+        user: true,
+      },
       order: { createdAt: 'DESC' },
     })
   }
@@ -63,7 +67,13 @@ export class ReviewRepository {
   }
 
   async findByIdWithRelations(id: string, tenantId: string): Promise<ReviewEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId }, relations: ['product', 'user'] })
+    return this.repo.findOne({
+      where: { id, tenantId },
+      relations: {
+        product: true,
+        user: true,
+      },
+    })
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<ReviewEntity> {

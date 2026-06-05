@@ -7,12 +7,14 @@ import { DataSource } from 'typeorm'
 import { BadRequestException } from '@nestjs/common'
 import { GetPresignedUrlDto } from '../dtos'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 
 describe('FilesService - Storage Limits', () => {
   let service: FilesService
   let fileRepo: jest.Mocked<FileRepository>
   let minioService: jest.Mocked<MinioService>
   let tenantService: jest.Mocked<TenantService>
+  let addonCatalogService: jest.Mocked<AddonCatalogService>
   let dataSource: any
 
   beforeEach(async () => {
@@ -30,6 +32,15 @@ describe('FilesService - Storage Limits', () => {
       findOneTenants: jest.fn(),
     } as any
 
+    addonCatalogService = {
+      getStorageAddons: jest.fn().mockResolvedValue([
+        {
+          slug: 'addon_storage_5gb',
+          boostValue: 5 * 1024,
+        },
+      ]),
+    } as any
+
     dataSource = {
       getRepository: jest.fn().mockReturnValue({
         find: jest.fn(),
@@ -43,6 +54,7 @@ describe('FilesService - Storage Limits', () => {
         { provide: MinioService, useValue: minioService },
         { provide: TenantService, useValue: tenantService },
         { provide: DataSource, useValue: dataSource },
+        { provide: AddonCatalogService, useValue: addonCatalogService },
       ],
     }).compile()
 

@@ -76,7 +76,7 @@ export class SubscriptionBillingService {
                 )
                 // Set cache to prevent re-alerting for 24 hours
                 await this.cacheService.setCache(alertKey, true, 86400, tenantId)
-              } catch (e) {
+              } catch (e: any) {
                 this.logger.error(
                   `Failed to trigger subscription expiry notification: ${e.message}`,
                 )
@@ -397,7 +397,7 @@ export class SubscriptionBillingService {
           },
           null,
         )
-      } catch (e) {
+      } catch (e: any) {
         this.logger.error(`Failed to trigger global billing notification: ${e.message}`)
       }
     }
@@ -429,7 +429,7 @@ export class SubscriptionBillingService {
           },
           null,
         )
-      } catch (e) {
+      } catch (e: any) {
         this.logger.error(`Failed to trigger global billing failure notification: ${e.message}`)
       }
 
@@ -517,7 +517,7 @@ export class SubscriptionBillingService {
         },
         tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger billing notification for addon purchase: ${e.message}`)
     }
   }

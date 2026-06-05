@@ -406,7 +406,11 @@ export class LoyaltyService {
     const resolvedOrder =
       (await em.findOne(OrderEntity, {
         where: { id: order.id, tenantId: ctx.tenantId },
-        relations: ['items', 'items.product'],
+        relations: {
+          items: {
+            product: true,
+          },
+        },
       })) || order
 
     const now = new Date()

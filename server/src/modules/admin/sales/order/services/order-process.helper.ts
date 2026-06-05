@@ -213,7 +213,7 @@ export class OrderProcessHelper {
       if (validation.coupon.discountType === DiscountType.FREE_SHIPPING) {
         isFreeShipping = true
       }
-    } catch (error) {
+    } catch (error: any) {
       // Concurrent over-redeem or stale validate — surface to the caller so
       // checkout fails cleanly instead of silently dropping the discount.
       if (error instanceof BadRequestException) throw error

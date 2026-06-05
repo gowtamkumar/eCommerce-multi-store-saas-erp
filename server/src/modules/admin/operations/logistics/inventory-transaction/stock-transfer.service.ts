@@ -126,14 +126,15 @@ export class StockTransferService {
   async findOne(id: string, ctx: RequestContextDto): Promise<StockTransferEntity> {
     const transfer = await this.repo.findOne({
       where: { id, tenantId: ctx.tenantId },
-      relations: [
-        'sourceWarehouse',
-        'destinationWarehouse',
-        'user',
-        'items',
-        'items.product',
-        'items.variant',
-      ],
+      relations: {
+        sourceWarehouse: true,
+        destinationWarehouse: true,
+        user: true,
+        items: {
+          product: true,
+          variant: true,
+        },
+      },
     })
 
     if (!transfer) {
