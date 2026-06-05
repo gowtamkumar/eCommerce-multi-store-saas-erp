@@ -370,22 +370,28 @@ export class SupplierInvoiceService {
       order: { name: 'ASC' },
     })
 
+    // Load every unpaid invoice for the tenant in a single query, then group
+    // them by supplier in memory (avoids one invoice query per supplier).
+    const unpaidInvoicesAll = await em
+      .createQueryBuilder(SupplierInvoiceEntity, 'inv')
+      .where('inv.tenantId = :tenantId', { tenantId })
+      .andWhere('inv.status NOT IN (:...excluded)', {
+        excluded: [SupplierInvoiceStatus.PAID, SupplierInvoiceStatus.CANCELLED],
+      })
+      .getMany()
+
+    const invoicesBySupplier = new Map<string, SupplierInvoiceEntity[]>()
+    for (const inv of unpaidInvoicesAll) {
+      const list = invoicesBySupplier.get(inv.supplierId) ?? []
+      list.push(inv)
+      invoicesBySupplier.set(inv.supplierId, list)
+    }
+
     const report: any[] = []
     const now = new Date()
 
     for (const supplier of suppliers) {
-      const invoices = await em.find(SupplierInvoiceEntity, {
-        where: {
-          supplierId: supplier.id,
-          tenantId,
-        },
-      })
-
-      const unpaidInvoices = invoices.filter(
-        (inv) =>
-          inv.status !== SupplierInvoiceStatus.PAID &&
-          inv.status !== SupplierInvoiceStatus.CANCELLED,
-      )
+      const unpaidInvoices = invoicesBySupplier.get(supplier.id) ?? []
 
       if (unpaidInvoices.length === 0) continue
 

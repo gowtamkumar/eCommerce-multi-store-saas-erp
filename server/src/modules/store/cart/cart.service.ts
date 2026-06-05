@@ -113,26 +113,30 @@ export class CartService {
     const user = ctx.userId ? await this.userService.findUserById(ctx.userId) : null
     const userPriceBookCode = user?.priceBookCode || null
 
-    const resolvedItems = await Promise.all(
-      (cart.items || []).map(async (item) => {
-        const pbPrice = await this.pricingService.getApplicablePrice(
-          item.productId,
-          item.variantId || null,
-          item.quantity,
-          userPriceBookCode,
-          tenantId,
-        )
-        if (pbPrice !== null) {
-          const clonedItem = {
-            ...item,
-            product: item.product ? { ...item.product, price: pbPrice } : null,
-            variant: item.variant ? { ...item.variant, price: pbPrice } : null,
-          }
-          return clonedItem as any
-        }
-        return item
-      }),
+    // Bulk-resolve price-book prices for all cart items in a single query
+    // (was one getApplicablePrice call — and several queries — per item).
+    const cartItems = cart.items || []
+    const priceMap = await this.pricingService.getApplicablePrices(
+      cartItems.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId || null,
+        quantity: item.quantity,
+      })),
+      userPriceBookCode,
+      tenantId,
     )
+
+    const resolvedItems = cartItems.map((item) => {
+      const pbPrice = priceMap.get(`${item.productId}:${item.variantId ?? ''}`) ?? null
+      if (pbPrice !== null) {
+        return {
+          ...item,
+          product: item.product ? { ...item.product, price: pbPrice } : null,
+          variant: item.variant ? { ...item.variant, price: pbPrice } : null,
+        } as any
+      }
+      return item
+    })
 
     // 2. Delegate all math to the PricingEngineService (Option 1 + 2)
     const {
@@ -292,21 +296,29 @@ export class CartService {
       cart.items = []
     }
 
-    // Phase 1: Resolve all variant IDs in PARALLEL (was sequential N+1 loop)
-    const resolvedItems = await Promise.all(
-      items.map(async (item) => {
-        let { productId, variantId, quantity } = item
-
-        if (!variantId) {
-          const product = await this.productRepository.findProductById(productId, tenantId)
-          if (product?.variants?.length > 0) {
-            variantId = product.variants[0].id
-          }
-        }
-
-        return { productId, variantId: variantId || null, quantity: Number(quantity) }
-      }),
+    // Phase 1: Resolve all variant IDs. Bulk-load the products that need a
+    // default variant in ONE query (was N+1: one product lookup per item).
+    const idsNeedingVariant = [
+      ...new Set(items.filter((i) => !i.variantId).map((i) => i.productId)),
+    ]
+    const productsNeedingVariant = await this.productRepository.findProductsByIds(
+      idsNeedingVariant,
+      tenantId,
     )
+    const productById = new Map(productsNeedingVariant.map((p) => [p.id, p]))
+
+    const resolvedItems = items.map((item) => {
+      let { productId, variantId, quantity } = item
+
+      if (!variantId) {
+        const product = productById.get(productId)
+        if (product?.variants?.length > 0) {
+          variantId = product.variants[0].id
+        }
+      }
+
+      return { productId, variantId: variantId || null, quantity: Number(quantity) }
+    })
 
     // Phase 2: Persist all resolved items in PARALLEL
     await Promise.all(

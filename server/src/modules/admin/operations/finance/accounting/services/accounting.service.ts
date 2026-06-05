@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
-import { DataSource, EntityManager } from 'typeorm'
+import { DataSource, EntityManager, In } from 'typeorm'
 import { AccountEntity } from '../entities/account.entity'
 import { JournalEntryEntity } from '../entities/journal-entry.entity'
 import { LedgerEntryEntity } from '../entities/ledger-entry.entity'
@@ -113,16 +113,26 @@ export class AccountingService {
       const savedJournal = (await em.save(JournalEntryEntity, journal)) as JournalEntryEntity
 
       // 3. Process Ledger Lines
-      for (const line of lines) {
-        const account = (await em.findOne(AccountEntity, {
-          where: { code: line.accountCode, tenantId },
-        })) as AccountEntity | null
+      // Bulk-load every referenced account once (avoids one query per line and
+      // repeated loads when the same account code appears on multiple lines).
+      const uniqueCodes = [...new Set(lines.map((l) => l.accountCode))]
+      const accounts = (await em.find(AccountEntity, {
+        where: { code: In(uniqueCodes), tenantId },
+      })) as AccountEntity[]
+      const accountByCode = new Map(accounts.map((a) => [a.code, a]))
 
-        if (!account) {
-          throw new NotFoundException(
-            `Account with code ${line.accountCode} not found for tenant ${tenantId}`,
-          )
-        }
+      const missingCode = uniqueCodes.find((code) => !accountByCode.has(code))
+      if (missingCode) {
+        throw new NotFoundException(
+          `Account with code ${missingCode} not found for tenant ${tenantId}`,
+        )
+      }
+
+      const ledgerEntries: LedgerEntryEntity[] = []
+      const affectedAccounts = new Set<AccountEntity>()
+
+      for (const line of lines) {
+        const account = accountByCode.get(line.accountCode)!
 
         // Update Account Balance (standard double-entry rules)
         const amount = Number(line.amount)
@@ -147,20 +157,24 @@ export class AccountingService {
             ? Number(account.balance) + amount
             : Number(account.balance) - amount
         }
+        affectedAccounts.add(account)
 
-        await em.save(AccountEntity, account)
-
-        // Create Ledger Entry
-        const ledgerEntry = em.create(LedgerEntryEntity, {
-          journalEntryId: savedJournal.id,
-          accountId: account.id,
-          side: line.side,
-          amount,
-          balanceAfter: account.balance,
-          tenantId,
-        })
-        await em.save(LedgerEntryEntity, ledgerEntry)
+        // Create Ledger Entry — balanceAfter reflects the running in-memory
+        // balance so multiple lines on the same account stay correct.
+        ledgerEntries.push(
+          em.create(LedgerEntryEntity, {
+            journalEntryId: savedJournal.id,
+            accountId: account.id,
+            side: line.side,
+            amount,
+            balanceAfter: account.balance,
+            tenantId,
+          }),
+        )
       }
+
+      await em.save(AccountEntity, [...affectedAccounts])
+      await em.save(LedgerEntryEntity, ledgerEntries)
 
       if (queryRunner) await queryRunner.commitTransaction()
       return savedJournal

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, IsNull, LessThanOrEqual, MoreThanOrEqual, Or, Not } from 'typeorm'
+import { Repository, IsNull, LessThanOrEqual, MoreThanOrEqual, Or, Not, In } from 'typeorm'
 import { PriceBookEntity } from './entities/price-book.entity'
 import { ProductPriceEntity } from './entities/product-price.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -76,18 +76,16 @@ export class PricingService {
   }
 
   /**
-   * Finds the applicable price for a product/variant based on quantity.
-   * This is used by the Cart and Checkout modules.
+   * Resolves the applicable price book for a tenant given an optional explicit
+   * code, falling back to the active PROMOTIONAL then RETAIL book. The result
+   * does not depend on any product, so it can be resolved once for many items.
    */
-  async getApplicablePrice(
-    productId: string,
-    variantId: string | null,
-    quantity: number,
+  private async resolvePriceBook(
     priceBookCode: string | null | undefined,
     tenantId: string,
-  ) {
-    const now = new Date()
-    let pb = null
+    now: Date,
+  ): Promise<PriceBookEntity | null> {
+    let pb: PriceBookEntity | null = null
 
     // 1. If explicit priceBookCode is passed, look up that specific active book (of any type)
     if (priceBookCode) {
@@ -198,6 +196,51 @@ export class PricingService {
       })
     }
 
+    return pb
+  }
+
+  /**
+   * Picks the applicable tier from a pre-loaded list of product prices using the
+   * same rules as the DB query (highest minQuantity satisfied by quantity, with
+   * variant-specific tiers taking precedence over base tiers).
+   */
+  private pickApplicableTier(
+    prices: ProductPriceEntity[],
+    productId: string,
+    variantId: string | null,
+    quantity: number,
+  ): number | null {
+    let applicablePrice: ProductPriceEntity | undefined
+
+    if (variantId) {
+      applicablePrice = prices.find(
+        (p) =>
+          p.productId === productId && p.variantId === variantId && quantity >= p.minQuantity,
+      )
+    }
+
+    if (!applicablePrice) {
+      applicablePrice = prices.find(
+        (p) => p.productId === productId && p.variantId == null && quantity >= p.minQuantity,
+      )
+    }
+
+    return applicablePrice ? Number(applicablePrice.price) : null
+  }
+
+  /**
+   * Finds the applicable price for a product/variant based on quantity.
+   * This is used by the Cart and Checkout modules.
+   */
+  async getApplicablePrice(
+    productId: string,
+    variantId: string | null,
+    quantity: number,
+    priceBookCode: string | null | undefined,
+    tenantId: string,
+  ) {
+    const now = new Date()
+    const pb = await this.resolvePriceBook(priceBookCode, tenantId, now)
     if (!pb) return null
 
     let applicablePrice = null
@@ -231,6 +274,48 @@ export class PricingService {
     }
 
     return applicablePrice ? Number(applicablePrice.price) : null
+  }
+
+  /**
+   * Bulk variant of getApplicablePrice: resolves prices for many cart/checkout
+   * items using a single price-book resolution and a single product-price query
+   * (avoids the per-item N+1 that getApplicablePrice incurs in a loop).
+   *
+   * Returns a map keyed by `${productId}:${variantId ?? ''}` -> price | null.
+   */
+  async getApplicablePrices(
+    items: { productId: string; variantId: string | null; quantity: number }[],
+    priceBookCode: string | null | undefined,
+    tenantId: string,
+  ): Promise<Map<string, number | null>> {
+    const result = new Map<string, number | null>()
+    if (items.length === 0) return result
+
+    const keyOf = (productId: string, variantId: string | null) =>
+      `${productId}:${variantId ?? ''}`
+
+    const now = new Date()
+    const pb = await this.resolvePriceBook(priceBookCode, tenantId, now)
+    if (!pb) {
+      for (const item of items) result.set(keyOf(item.productId, item.variantId), null)
+      return result
+    }
+
+    const productIds = [...new Set(items.map((i) => i.productId))]
+    // Single query for every tier across all requested products. Ordered by
+    // minQuantity DESC so pickApplicableTier selects the highest satisfied tier.
+    const prices = await this.productPriceRepo.find({
+      where: { priceBookId: pb.id, productId: In(productIds), tenantId },
+      order: { minQuantity: 'DESC' },
+    })
+
+    for (const item of items) {
+      result.set(
+        keyOf(item.productId, item.variantId),
+        this.pickApplicableTier(prices, item.productId, item.variantId, item.quantity),
+      )
+    }
+    return result
   }
 
   async findAllPriceBooks(ctx: RequestContextDto) {

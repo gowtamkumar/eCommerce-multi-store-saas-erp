@@ -16,7 +16,7 @@ import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entit
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { DataSource } from 'typeorm'
+import { DataSource, In } from 'typeorm'
 import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
 import { CreateDrawerTransactionDto } from './dtos/create-drawer-transaction.dto'
 import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
@@ -271,14 +271,22 @@ export class PosService {
       let totalSaleAmount = 0
       let totalTaxAmount = 0
 
+      // Preload all sold products once for tax-rate lookups (avoids N+1).
+      const productIds = [...new Set(dto.items.map((i) => i.productId))]
+      const products =
+        productIds.length > 0
+          ? await manager.find(ProductEntity, {
+              where: { id: In(productIds), tenantId },
+            })
+          : []
+      const productById = new Map(products.map((p) => [p.id, p]))
+
       // A. Process each sold item
       for (const item of dto.items) {
         const itemTotal = Number(item.price) * Number(item.quantity)
         totalSaleAmount += itemTotal
 
-        const product = await manager.findOne(ProductEntity, {
-          where: { id: item.productId, tenantId },
-        })
+        const product = productById.get(item.productId)
         const taxRate = product ? Number(product.taxRate || 0) : 0
         const itemTax = (itemTotal * taxRate) / 100
         totalTaxAmount += itemTax

@@ -2,7 +2,7 @@ import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { ProductStatus } from '@/common/enums/product-status.enum'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { EntityManager, Repository } from 'typeorm'
+import { EntityManager, In, Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
 import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -143,6 +143,20 @@ export class ProductRepository {
   async findProductById(id: string, tenantId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
       where: { id, tenantId },
+      relations: {
+        variants: true,
+      },
+    })
+  }
+
+  /**
+   * Bulk variant of findProductById: loads many products (with variants) in a
+   * single query. Used to avoid N+1 lookups when resolving cart/sync items.
+   */
+  async findProductsByIds(ids: string[], tenantId: string): Promise<ProductEntity[]> {
+    if (ids.length === 0) return []
+    return this.repo.find({
+      where: { id: In(ids), tenantId },
       relations: {
         variants: true,
       },

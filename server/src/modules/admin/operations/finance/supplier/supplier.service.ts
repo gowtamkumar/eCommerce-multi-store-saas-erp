@@ -51,9 +51,13 @@ export class SupplierService {
       async () => {
         const [items, total] = await this.repository.findAllByTenant(tenantId, page, limit, search)
 
-        // Populate outstanding balances for list if needed (optional optimization)
+        // Bulk-resolve outstanding balances in a single query (avoids N+1).
+        const balances = await this.apLedgerRepository.getBalances(
+          items.map((item) => item.id),
+          tenantId,
+        )
         for (const item of items) {
-          item.outstandingBalance = await this.apLedgerRepository.getBalance(item.id, tenantId)
+          item.outstandingBalance = balances.get(item.id) ?? 0
         }
 
         return {
