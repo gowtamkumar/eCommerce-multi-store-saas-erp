@@ -15,11 +15,11 @@ export class CartRepository {
     return await this.repo.findOne({
       where: { userId, tenantId },
       relations: {
-  items: {
-    product: true,
-    variant: true
-  }
-},
+        items: {
+          product: true,
+          variant: true,
+        },
+      },
     })
   }
 

@@ -15,8 +15,8 @@ export class CartItemRepository {
     return await this.repo.findOne({
       where: { id, tenantId },
       relations: {
-  cart: true
-},
+        cart: true,
+      },
     })
   }
 

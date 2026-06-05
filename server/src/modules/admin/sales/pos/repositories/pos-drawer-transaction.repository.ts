@@ -15,8 +15,8 @@ export class PosDrawerTransactionRepository {
     return this.repo.find({
       where: { shiftId, tenantId },
       relations: {
-  user: true
-},
+        user: true,
+      },
       order: { createdAt: 'DESC' },
     })
   }

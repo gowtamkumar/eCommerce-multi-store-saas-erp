@@ -15,8 +15,8 @@ export class PosRegisterRepository {
     return this.repo.find({
       where: { tenantId },
       relations: {
-  branch: true
-},
+        branch: true,
+      },
     })
   }
 
@@ -24,8 +24,8 @@ export class PosRegisterRepository {
     return this.repo.findOne({
       where: { id, tenantId },
       relations: {
-  branch: true
-},
+        branch: true,
+      },
     })
   }
 

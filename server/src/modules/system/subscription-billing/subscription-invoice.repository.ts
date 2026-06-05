@@ -20,8 +20,8 @@ export class SubscriptionInvoiceRepository {
     return await this.repo.find({
       where: { tenantId },
       relations: {
-  subscriptionPlan: true
-},
+        subscriptionPlan: true,
+      },
       order: { billingDate: 'DESC' },
     })
   }
@@ -30,8 +30,8 @@ export class SubscriptionInvoiceRepository {
     return await this.repo.findOne({
       where: { transactionId },
       relations: {
-  subscriptionPlan: true
-},
+        subscriptionPlan: true,
+      },
     })
   }
 

@@ -345,13 +345,13 @@ export class TenantService {
     const domainRecord = await this.dataSource.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
       relations: {
-  tenant: {
-    domains: true,
-    activeSubscription: {
-      subscriptionPlan: true
-    }
-  }
-},
+        tenant: {
+          domains: true,
+          activeSubscription: {
+            subscriptionPlan: true,
+          },
+        },
+      },
     })
 
     if (domainRecord && domainRecord.status === CustomDomainStatus.ACTIVE) {

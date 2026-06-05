@@ -15,9 +15,9 @@ export class PosShiftRepository {
     return this.repo.find({
       where: { tenantId },
       relations: {
-  register: true,
-  user: true
-},
+        register: true,
+        user: true,
+      },
       order: { openingTime: 'DESC' },
     })
   }
@@ -31,9 +31,9 @@ export class PosShiftRepository {
     return repository.findOne({
       where: { id, tenantId },
       relations: {
-  register: true,
-  user: true
-},
+        register: true,
+        user: true,
+      },
     })
   }
 
@@ -41,8 +41,8 @@ export class PosShiftRepository {
     return this.repo.findOne({
       where: { userId, tenantId, status: PosShiftStatus.OPEN },
       relations: {
-  register: true
-},
+        register: true,
+      },
     })
   }
 

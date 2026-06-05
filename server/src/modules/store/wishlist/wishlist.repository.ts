@@ -25,11 +25,11 @@ export class WishlistRepository {
     return this.repo.find({
       where: { userId, tenantId },
       relations: {
-  product: {
-    variants: true,
-    category: true
-  }
-},
+        product: {
+          variants: true,
+          category: true,
+        },
+      },
       order: { createdAt: 'DESC' },
     })
   }

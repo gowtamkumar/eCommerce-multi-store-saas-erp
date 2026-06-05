@@ -1010,10 +1010,10 @@ export class SuperAdminController {
   async getChurnAnalytics(): Promise<BaseApiSuccessResponse<any[]>> {
     const tenants = await this.dataSource.getRepository(TenantEntity).find({
       relations: {
-  activeSubscription: {
-    subscriptionPlan: true
-  }
-},
+        activeSubscription: {
+          subscriptionPlan: true,
+        },
+      },
     })
 
     const churned = tenants
@@ -1051,9 +1051,9 @@ export class SuperAdminController {
     const invoiceRepo = this.dataSource.getRepository(SubscriptionInvoiceEntity)
     const invoices = await invoiceRepo.find({
       relations: {
-  tenant: true,
-  subscriptionPlan: true
-},
+        tenant: true,
+        subscriptionPlan: true,
+      },
       order: { billingDate: 'DESC' },
       take: 5000,
     })

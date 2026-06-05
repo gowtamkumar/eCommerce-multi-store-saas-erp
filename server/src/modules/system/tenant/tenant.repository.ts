@@ -24,11 +24,11 @@ export class TenantRepository {
     return await this.repo.findOne({
       where: { id },
       relations: {
-  activeSubscription: {
-    subscriptionPlan: true
-  },
-  domains: true
-},
+        activeSubscription: {
+          subscriptionPlan: true,
+        },
+        domains: true,
+      },
     })
   }
 
@@ -36,11 +36,11 @@ export class TenantRepository {
     return await this.repo.findOne({
       where: { id },
       relations: {
-  user: true,
-  activeSubscription: {
-    subscriptionPlan: true
-  }
-},
+        user: true,
+        activeSubscription: {
+          subscriptionPlan: true,
+        },
+      },
     })
   }
 
@@ -48,11 +48,11 @@ export class TenantRepository {
     return await this.repo.findOne({
       where: { subdomain },
       relations: {
-  domains: true,
-  activeSubscription: {
-    subscriptionPlan: true
-  }
-},
+        domains: true,
+        activeSubscription: {
+          subscriptionPlan: true,
+        },
+      },
     })
   }
 
@@ -60,13 +60,13 @@ export class TenantRepository {
     const domainRecord = await this.repo.manager.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
       relations: {
-  tenant: {
-    domains: true,
-    activeSubscription: {
-      subscriptionPlan: true
-    }
-  }
-},
+        tenant: {
+          domains: true,
+          activeSubscription: {
+            subscriptionPlan: true,
+          },
+        },
+      },
     })
     return domainRecord ? domainRecord.tenant : null
   }
@@ -75,11 +75,11 @@ export class TenantRepository {
     return await this.repo.find({
       order: { createdAt: 'DESC' },
       relations: {
-  activeSubscription: {
-    subscriptionPlan: true
-  },
-  domains: true
-},
+        activeSubscription: {
+          subscriptionPlan: true,
+        },
+        domains: true,
+      },
     })
   }
 
