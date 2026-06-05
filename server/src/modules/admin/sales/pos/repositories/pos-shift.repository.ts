@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { PosShiftEntity, PosShiftStatus } from '../entities/pos-shift.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 
 @Injectable()
 export class PosShiftRepository {
@@ -27,7 +28,7 @@ export class PosShiftRepository {
     tenantId: string,
     manager?: EntityManager,
   ): Promise<PosShiftEntity | null> {
-    const repository = manager ? manager.getRepository(PosShiftEntity) : this.repo
+    const repository = getTransactionalRepo(PosShiftEntity, this.repo, manager)
     return repository.findOne({
       where: { id, tenantId },
       relations: {
@@ -51,7 +52,7 @@ export class PosShiftRepository {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<PosShiftEntity> {
-    const repository = manager ? manager.getRepository(PosShiftEntity) : this.repo
+    const repository = getTransactionalRepo(PosShiftEntity, this.repo, manager)
     const shift = repository.create({
       ...data,
       tenantId: ctx.tenantId,
@@ -60,7 +61,7 @@ export class PosShiftRepository {
   }
 
   async update(shift: PosShiftEntity, data: any, manager?: EntityManager): Promise<PosShiftEntity> {
-    const repository = manager ? manager.getRepository(PosShiftEntity) : this.repo
+    const repository = getTransactionalRepo(PosShiftEntity, this.repo, manager)
     Object.assign(shift, data)
     return repository.save(shift) as any
   }

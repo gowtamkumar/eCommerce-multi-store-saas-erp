@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { PosDrawerTransactionEntity } from '../entities/pos-drawer-transaction.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { getTransactionalRepo } from '@/common/utils/repository.util'
 
 @Injectable()
 export class PosDrawerTransactionRepository {
@@ -26,7 +27,7 @@ export class PosDrawerTransactionRepository {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<PosDrawerTransactionEntity> {
-    const repository = manager ? manager.getRepository(PosDrawerTransactionEntity) : this.repo
+    const repository = getTransactionalRepo(PosDrawerTransactionEntity, this.repo, manager)
     const tx = repository.create({
       ...data,
       tenantId: ctx.tenantId,

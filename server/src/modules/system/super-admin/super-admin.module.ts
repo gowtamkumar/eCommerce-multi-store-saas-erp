@@ -12,6 +12,7 @@ import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.m
 import { AddonCatalogModule } from '../addon-catalog/addon-catalog.module'
 import { SuperAdminController } from './super-admin.controller'
 import { TrafficService } from './traffic.service'
+import { SuperAdminService } from './super-admin.service'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subscription-invoice.entity'
 
@@ -31,11 +32,12 @@ import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subs
   controllers: [SuperAdminController],
   providers: [
     TrafficService,
+    SuperAdminService,
     {
       provide: APP_INTERCEPTOR,
       useClass: TrafficInterceptor,
     },
   ],
-  exports: [TrafficService],
+  exports: [TrafficService, SuperAdminService],
 })
 export class SuperAdminModule {}
