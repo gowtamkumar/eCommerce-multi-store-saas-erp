@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react';
+
 export interface SalesTrendPoint {
     name: string;
     sales: number;
@@ -29,6 +31,13 @@ export interface SalesDashboardData {
     salesData: SalesTrendPoint[];
     lowStockProducts: LowStockProduct[];
     recentProducts: RecentProduct[];
+}
+
+export type SalesReportPeriod = 'day' | 'week' | 'month';
+
+export interface SalesReportDateRange {
+    startDate: string;
+    endDate: string;
 }
 
 export interface FinanceChartPoint {
@@ -165,8 +174,15 @@ export interface FinanceDashboardData {
 export interface SalesReportProps {
     data: SalesDashboardData | null;
     isLoading: boolean;
-    period: string;
-    onPeriodChange: (period: string) => void;
+    period: SalesReportPeriod;
+    onPeriodChange: (period: SalesReportPeriod) => void;
+    onExport: () => void;
+}
+
+export interface SalesAnalysisHeaderProps {
+    period: SalesReportPeriod;
+    isExporting: boolean;
+    onPeriodChange: (period: SalesReportPeriod) => void;
     onExport: () => void;
 }
 
@@ -180,6 +196,12 @@ export interface RecentProductsTableProps {
     isLoading: boolean;
 }
 
+export interface SalesTablesSectionProps {
+    lowStockProducts: LowStockProduct[];
+    recentProducts: RecentProduct[];
+    isLoading: boolean;
+}
+
 export interface ProfitLossKpiGridProps {
     data?: ProfitLossData | null;
     isLoading: boolean;
@@ -189,6 +211,25 @@ export interface ProfitLossKpiGridProps {
 export interface FinancialStatementProps {
     data?: ProfitLossData | null;
     isLoading: boolean;
+    formatPrice: (price: number) => string;
+}
+
+export interface ProfitLossKpiCardConfig {
+    key: string;
+    label: string;
+    icon: LucideIcon;
+    iconWrapperClassName: string;
+    iconClassName: string;
+    badgeLabel: (data?: ProfitLossData | null) => string;
+    badgeClassName: string;
+    getValue: (data?: ProfitLossData | null) => number;
+    subtitle: (data?: ProfitLossData | null) => string;
+    variant?: 'default' | 'highlight';
+}
+
+export interface ProfitLossKpiCardProps {
+    config: ProfitLossKpiCardConfig;
+    data?: ProfitLossData | null;
     formatPrice: (price: number) => string;
 }
 
@@ -206,24 +247,70 @@ export interface FinanceKpiGridProps {
     formatPrice: (price: number) => string;
 }
 
+export interface FinanceSummaryHeaderProps {
+    onRefresh: () => void;
+    isLoading: boolean;
+}
+
+export interface FinanceKpiCardConfig {
+    key: keyof FinanceKpis;
+    label: string;
+    icon: LucideIcon;
+    iconWrapperClassName: string;
+    iconClassName: string;
+    cardClassName?: string;
+    valueClassName?: string;
+    formatValue?: (value: number, formatPrice: (price: number) => string) => string;
+    progressValue?: (value: number) => number;
+}
+
+export interface FinanceKpiCardProps {
+    config: FinanceKpiCardConfig;
+    kpis?: FinanceKpis;
+    formatPrice: (price: number) => string;
+}
+
+export interface FinanceQuickAction {
+    href: string;
+    icon: LucideIcon;
+    title: string;
+    description: string;
+    bgColor: string;
+    iconColor: string;
+    borderColor: string;
+    hoverIconColor: string;
+}
+
+export interface ReportExportPartyOption {
+    id: string;
+    name?: string;
+    email?: string;
+}
+
 export interface ReportExportSettingsProps {
     reportType: string;
     startDate: string;
     endDate: string;
     onStartDateChange: (date: string) => void;
     onEndDateChange: (date: string) => void;
-    suppliers: any[];
+    suppliers: ReportExportPartyOption[];
     selectedSupplierId: string;
     onSupplierChange: (id: string) => void;
-    customers: any[];
+    customers: ReportExportPartyOption[];
     selectedCustomerId: string;
     onCustomerChange: (id: string) => void;
     onExport: () => void;
     isLoading: boolean;
 }
 
+export interface CustomerOption {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+}
+
 export interface CustomerLedgerHeaderProps {
-    customers: any[];
+    customers: CustomerOption[];
     selectedCustomerId: string;
     onCustomerChange: (id: string) => void;
     hasLedgerData: boolean;
@@ -236,16 +323,16 @@ export interface CustomerLedgerSummaryProps {
     formatPrice: (price: number) => string;
 }
 
-interface ReportType {
+export interface ReportTypeOption {
     id: string;
     name: string;
     description: string;
-    icon: any;
+    icon: LucideIcon;
     color: string;
 }
 
 export interface ReportTypeSelectionProps {
-    reports: ReportType[];
+    reports: ReportTypeOption[];
     currentType: string;
     onTypeChange: (type: string) => void;
 }
@@ -290,8 +377,13 @@ export interface SalesStatsGridProps {
     formatPrice: (price: number) => string;
 }
 
+export interface SupplierOption {
+    id: string;
+    name: string;
+}
+
 export interface SupplierLedgerHeaderProps {
-    suppliers: any[];
+    suppliers: SupplierOption[];
     selectedSupplierId: string;
     onSupplierChange: (id: string) => void;
     hasLedgerData: boolean;
@@ -314,4 +406,180 @@ export interface SupplierLedgerTableProps {
 export interface CashFlowHeaderProps {
     onExport: () => void;
     isExporting?: boolean;
+}
+
+export interface CashFlowKpiGridProps {
+    summary: CashFlowSummary;
+    formatPrice: (price: number) => string;
+}
+
+export interface CashFlowKpiCardConfig {
+    key: 'totalInflow' | 'totalOutflow';
+    label: string;
+    cornerIcon: LucideIcon;
+    cornerIconClassName: string;
+    badgeIcon: LucideIcon;
+    badgeLabel: string;
+    badgeClassName: string;
+}
+
+export interface WarehouseBranchRef {
+    id: string;
+    name: string;
+    branchId?: string;
+    branch?: { id: string; name?: string };
+}
+
+export interface WarehouseStockVariant {
+    id: string;
+    sku: string;
+    price: number;
+    stock: number;
+    reservedStock?: number;
+    lowStockThreshold?: number;
+    combination?: Record<string, string>;
+    lowStock?: boolean;
+    outOfStock?: boolean;
+}
+
+export interface WarehouseStockProduct {
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+    stockValue: number;
+    reservedStock?: number;
+    lowStockThreshold?: number;
+    categoryName?: string;
+    supplierName?: string;
+    images?: string[];
+    hasVariants?: boolean;
+    variants?: WarehouseStockVariant[];
+    lowStock?: boolean;
+    outOfStock?: boolean;
+}
+
+export type WarehouseStockFilter = 'all' | 'inStock' | 'lowStock' | 'outOfStock';
+
+export interface WarehouseStockStats {
+    totalProducts: number;
+    totalValue: number;
+    outOfStockCount: number;
+    lowStockCount: number;
+    inStockCount: number;
+}
+
+export interface WarehouseStockTableRow extends Partial<WarehouseStockProduct>, Partial<WarehouseStockVariant> {
+    id: string;
+    isParent?: boolean;
+    isVariant?: boolean;
+    parentProduct?: WarehouseStockProduct;
+}
+
+export interface WarehouseStockSummaryCardProps {
+    title: string;
+    value: string | number;
+    icon: LucideIcon;
+    colorClass: string;
+    borderClass?: string;
+}
+
+export interface WarehouseStockSummaryCardsProps {
+    stats: WarehouseStockStats;
+    formatPrice: (price: number) => string;
+}
+
+export interface WarehouseStockHeaderProps {
+    branches: WarehouseBranchRef[];
+    warehouses: WarehouseBranchRef[];
+    selectedBranchId: string;
+    selectedWarehouseId: string;
+    isExportDisabled: boolean;
+    onBranchChange: (branchId: string) => void;
+    onWarehouseChange: (warehouseId: string) => void;
+    onExport: () => void;
+}
+
+export interface WarehouseStockFilterCount {
+    key: WarehouseStockFilter;
+    label: string;
+    count: number;
+}
+
+export interface WarehouseStockFiltersProps {
+    filterCounts: WarehouseStockFilterCount[];
+    activeFilter: WarehouseStockFilter;
+    searchQuery: string;
+    onFilterChange: (filter: WarehouseStockFilter) => void;
+    onSearchChange: (value: string) => void;
+}
+
+export type CampaignChannel = 'email' | 'sms' | 'push' | string;
+
+export interface MarketingCampaign {
+    id?: string;
+    name: string;
+    type: CampaignChannel;
+    status: string;
+    sentCount?: number;
+    failedCount?: number;
+    totalAudience?: number;
+}
+
+export interface MarketingCoupon {
+    id?: string;
+    code: string;
+    isActive?: boolean;
+    usedCount?: number;
+    usageLimit?: number | null;
+    discountType?: string;
+    amount: number;
+}
+
+export interface MarketingOrderItem {
+    discountAmount?: number | string;
+    quantity?: number;
+}
+
+export interface MarketingOrder {
+    couponDiscountAmount?: number | string;
+    items?: MarketingOrderItem[];
+}
+
+export interface LoyaltyConfig {
+    pointsPerCurrencySpent?: number;
+    pointsRequiredPerCurrencyDiscount?: number;
+}
+
+export interface LoyaltyRule {
+    name?: string;
+    ruleType?: string;
+    pointsAwarded?: number;
+    rewardPoints?: number;
+}
+
+export interface MarketingCustomer {
+    id?: string;
+    name?: string;
+    email?: string;
+    customerName?: string;
+    customerEmail?: string;
+    membershipTier?: string;
+    loyaltyPointsBalance?: number;
+}
+
+export interface MarketingDiscountTotals {
+    couponDiscountTotal: number;
+    promoDiscountTotal: number;
+    totalSaved: number;
+}
+
+export interface MarketingMetrics {
+    totalCampaigns: number;
+    totalReach: number;
+    deliverySuccessRate: number;
+    totalCoupons: number;
+    activeCoupons: number;
+    totalRedemptions: number;
+    totalPointsHeld: number;
 }

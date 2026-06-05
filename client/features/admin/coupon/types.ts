@@ -28,11 +28,17 @@ export interface CouponListProps {
     loading: boolean;
     onEdit: (coupon: Coupon) => void;
     onDelete: (id: string) => void;
-    onAdd: () => void;
-    searchQuery: string;
-    onSearchChange: (value: string) => void;
     pagination: CouponPagination;
     onPageChange: (page: number) => void;
+}
+
+export interface CouponHeaderProps {
+    onAdd: () => void;
+}
+
+export interface CouponFiltersProps {
+    searchQuery: string;
+    onSearchChange: (value: string) => void;
     statusFilter: string;
     onStatusFilterChange: (value: string) => void;
     isSearchLoading?: boolean;
@@ -43,4 +49,13 @@ export interface CouponFormProps {
     onClose: () => void;
     onSuccess: () => void;
     initialData?: Coupon | null;
+}
+
+export type CouponFormData = Partial<Coupon>;
+
+export interface CouponFormFieldsProps {
+    formData: CouponFormData;
+    currency: string;
+    onChange: <K extends keyof CouponFormData>(field: K, value: CouponFormData[K]) => void;
+    onGenerateCode: () => void;
 }

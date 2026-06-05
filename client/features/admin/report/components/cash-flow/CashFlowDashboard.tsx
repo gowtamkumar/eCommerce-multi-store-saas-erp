@@ -1,11 +1,8 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { fetchAPI } from '@/services/api';
-import React, { useCallback, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import { useReportExport } from '../../hooks/useReportExport';
-import { CashFlowData } from '../../types';
+import React from 'react';
+import { useCashFlowReport } from '../../hooks/useCashFlowReport';
 import CashFlowChart from './CashFlowChart';
 import CashFlowHeader from './CashFlowHeader';
 import CashFlowKpiGrid from './CashFlowKpiGrid';
@@ -13,35 +10,12 @@ import CashFlowMovementTable from './CashFlowMovementTable';
 
 const CashFlowDashboard: React.FC = () => {
     const { formatPrice } = useSettings();
-    const [data, setData] = useState<CashFlowData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const { exportReport, isExporting } = useReportExport();
-
-    const fetchReport = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            const res = await fetchAPI('/report/cash-flow');
-            setData(res.data);
-        } catch (error) {
-            console.error('Cash Flow fetch error:', error);
-            toast.error('Failed to load cash flow summary');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchReport();
-    }, [fetchReport]);
-
-    const handleExport = useCallback(() => {
-        void exportReport({ type: 'cash-flow' });
-    }, [exportReport]);
+    const { data, isLoading, isExporting, handleExport } = useCashFlowReport();
 
     if (isLoading && !data) {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600" />
             </div>
         );
     }
