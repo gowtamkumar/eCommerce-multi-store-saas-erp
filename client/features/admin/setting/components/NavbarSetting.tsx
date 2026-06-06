@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
-import React, { useCallback } from "react";
-import NavbarPresets from "./navbar/NavbarPresets";
-import NavbarConfig from "./navbar/NavbarConfig";
-import DesignTemplate from "./navbar/DesignTemplate";
+import React from "react";
+import { useNavbarSettings } from "../hooks/useNavbarSettings";
 import AdvancedDesigner from "./navbar/AdvancedDesigner";
+import DesignTemplate from "./navbar/DesignTemplate";
 import MenuManager from "./navbar/MenuManager";
+import NavbarConfig from "./navbar/NavbarConfig";
+import NavbarPresets from "./navbar/NavbarPresets";
+
 
 interface NavbarSettingProps {
     formData: any;
@@ -15,27 +17,11 @@ const NavbarSetting = React.memo(({
     formData,
     setFormData,
 }: NavbarSettingProps) => {
-    
-    // Centralized update helper
-    const updateNavbar = useCallback((updates: any) => {
-        setFormData((prev: any) => ({
-            ...prev,
-            navbar: {
-                ...(prev.navbar || {}),
-                ...updates
-            }
-        }));
-    }, [setFormData]);
 
-    // Field-specific update helper
-    const updateNavbarField = useCallback((key: string, value: any) => {
-        updateNavbar({ [key]: value });
-    }, [updateNavbar]);
-
-    // Menu update helper
-    const updateNavbarLinks = useCallback((links: any[]) => {
-        updateNavbar({ links });
-    }, [updateNavbar]);
+    const { updateNavbar, updateNavbarField, updateNavbarLinks } = useNavbarSettings(
+        formData,
+        setFormData
+    );
 
     return (
         <motion.div
@@ -46,42 +32,44 @@ const NavbarSetting = React.memo(({
             className="space-y-6"
         >
             {/* Presets Selection */}
-            <NavbarPresets 
-                navbarData={formData.navbar} 
-                onUpdate={updateNavbar} 
+            <NavbarPresets
+                navbarData={formData.navbar}
+                onUpdate={updateNavbar}
             />
 
             <div className="h-px bg-slate-200 dark:bg-slate-800 my-8" />
-            
+
             {/* Layout and Basic Config */}
-            <NavbarConfig 
-                navbarData={formData.navbar} 
-                onUpdate={updateNavbarField} 
+            <NavbarConfig
+                navbarData={formData.navbar}
+                onUpdate={updateNavbarField}
             />
 
             {/* Visual Templates */}
-            <DesignTemplate 
-                navbarData={formData.navbar} 
-                onUpdate={updateNavbarField} 
+            <DesignTemplate
+                navbarData={formData.navbar}
+                onUpdate={updateNavbarField}
             />
 
             <div className="h-px bg-slate-200 dark:bg-slate-800 my-8" />
 
             {/* Advanced Aesthetics */}
-            <AdvancedDesigner 
-                navbarData={formData.navbar} 
-                onUpdate={updateNavbarField} 
+            <AdvancedDesigner
+                navbarData={formData.navbar}
+                onUpdate={updateNavbarField}
             />
 
             <div className="h-px bg-slate-200 dark:bg-slate-800 my-8" />
 
             {/* Links and Menu Management */}
-            <MenuManager 
-                navbarData={formData.navbar} 
-                onUpdate={updateNavbarLinks} 
+            <MenuManager
+                navbarData={formData.navbar}
+                onUpdate={updateNavbarLinks}
             />
         </motion.div>
     );
 });
+
+NavbarSetting.displayName = "NavbarSetting";
 
 export default NavbarSetting;
