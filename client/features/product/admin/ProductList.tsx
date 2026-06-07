@@ -1,15 +1,25 @@
 'use client';
 
-import { useSettings } from '@/hooks/SettingsContext';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import { useSettings } from '@/hooks/SettingsContext';
 import {
-  Edit, Eye, LayoutTemplate, Plus, Search, Trash2,
-  Tag, Package, TrendingUp, AlertTriangle, CheckCircle, XCircle, ChevronDown, Printer, X
+  AlertTriangle, CheckCircle,
+  ChevronDown,
+  Edit, Eye, LayoutTemplate,
+  Package,
+  Plus,
+  Printer,
+  Search,
+  Tag,
+  Trash2,
+  TrendingUp,
+  X,
+  XCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { ProductListProps, Product } from './types';
 import BarcodeLabelModal from './BarcodeLabelModal';
+import { Product, ProductListProps } from './types';
 
 function StockBadge({ stock, threshold }: { stock: number; threshold: number }) {
   if (stock === 0) return (
@@ -35,8 +45,8 @@ function MarginBadge({ price, cost }: { price: number; cost: number }) {
   const color = margin >= 40
     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
     : margin >= 20
-    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black font-mono ${color}`}>
       <TrendingUp className="w-2.5 h-2.5" />

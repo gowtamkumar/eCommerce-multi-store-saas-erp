@@ -1,11 +1,11 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ProductStatus } from '@/common/enums/product-status.enum'
+import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, In, Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
-import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class ProductRepository {
@@ -21,12 +21,30 @@ export class ProductRepository {
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { q, status, categoryId, brandId, exclude, lowStock } = filterDto
 
+    // Select only the fields required for the admin product list to avoid heavy payloads.
+    // Variants are not needed here because stock is populated later via a separate service.
     const query = this.repo
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.brand', 'brand')
-      .leftJoinAndSelect('product.variants', 'variants')
+      .leftJoin('product.category', 'category')
+      .leftJoin('product.brand', 'brand')
       .where('product.tenantId = :tenantId', { tenantId })
+      .select([
+        'product.id',
+        'product.name',
+        'product.slug',
+        'product.price',
+        'product.discountAmount',
+        'product.discountType',
+        'product.images',
+        'product.lowStockThreshold',
+        // 'product.stock' column does not exist; stock is calculated via inventory ledger
+        'product.status',
+        'product.createdAt',
+        'category.id',
+        'category.name',
+        'brand.id',
+        'brand.name',
+      ])
 
     if (status) query.andWhere('product.status = :status', { status })
     if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
@@ -262,11 +280,12 @@ export class ProductRepository {
     const { tenantId, targetType, targetId, limit = 20 } = params
     const query = this.repo
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.brand', 'brand')
+      .leftJoin('product.category', 'category')
+      .leftJoin('product.brand', 'brand')
       .where('product.tenantId = :tenantId', { tenantId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
-      .andWhere('product.stock > 0')
+      // Stock is derived from inventory ledger; we cannot filter on a non‑existent column.
+      // The caller can still filter low‑stock via the lowStock flag in the main list query.
       .select([
         'product.id',
         'product.name',
@@ -275,7 +294,7 @@ export class ProductRepository {
         'product.discountAmount',
         'product.images',
         'product.shortDescription',
-        'product.stock',
+        // 'product.stock' omitted – column does not exist in the schema
         'product.categoryId',
         'product.brandId',
         'product.createdAt',

@@ -49,10 +49,14 @@ export default function ProductDashboard() {
 
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
+                // Provide a callback that updates the modal state when the user closes it
                 onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
                 onConfirm={confirmModal.onConfirm}
                 title={confirmModal.title}
                 message={confirmModal.message}
+                // Provide default button texts to avoid undefined props
+                confirmText="Confirm"
+                cancelText="Cancel"
                 isDangerous={confirmModal.isDangerous}
             />
         </>

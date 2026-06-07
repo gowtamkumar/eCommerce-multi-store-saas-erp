@@ -1,9 +1,9 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { CategoryEntity } from './entities/category.entity'
 import { ProductEntity } from '../product/entities/product.entity'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { CategoryEntity } from './entities/category.entity'
 
 @Injectable()
 export class CategoryRepository {
@@ -25,6 +25,23 @@ export class CategoryRepository {
       where: { tenantId },
       order: { name: 'ASC' },
     })
+  }
+
+  /**
+   * Retrieve all categories across tenants. Used by super‑admin UI where no tenant
+   * context is available. This method bypasses the private `repo` property restriction
+   * by exposing a public accessor.
+   */
+  async findAll(): Promise<CategoryEntity[]> {
+    return this.repo.find({ order: { name: 'ASC' } })
+  }
+
+  /**
+   * Expose a query builder for categories without tenant filtering.
+   * Used by the service when computing stats for all tenants.
+   */
+  getAllCategoriesQueryBuilder() {
+    return this.repo.createQueryBuilder('category')
   }
 
   async findAllWithProductCounts(tenantId: string) {

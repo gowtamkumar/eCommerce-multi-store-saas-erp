@@ -38,12 +38,18 @@ export class CategoryService {
     const tenantId = ctx.tenantId
     const cacheKey = `categories:list`
 
-    return this.cache.rememberCache(
-      cacheKey,
-      () => this.categoryRepo.findAllByTenant(tenantId),
-      600, // 10 minutes
-      tenantId,
-    )
+    // If the request does not contain a tenant (e.g., super‑admin UI), fall back to
+    // returning all categories across tenants. This prevents a TypeORM error caused
+    // by querying with an undefined UUID.
+    const fetchFn = async () => {
+      if (tenantId) {
+        return this.categoryRepo.findAllByTenant(tenantId)
+      }
+      // No tenant – return all categories (ordered by name) without a tenant filter.
+      return this.categoryRepo.findAll()
+    }
+
+    return this.cache.rememberCache(cacheKey, fetchFn, 600, tenantId)
   }
 
   async findAllCategoriesWithStats(ctx: RequestContextDto) {
@@ -51,18 +57,43 @@ export class CategoryService {
     const tenantId = ctx.tenantId
     const cacheKey = `categories:stats`
 
-    return this.cache.rememberCache(
-      cacheKey,
-      async () => {
+    const fetchFn = async () => {
+      if (tenantId) {
         const results = await this.categoryRepo.findAllWithProductCounts(tenantId)
         return results.map((r) => ({
           ...r,
           productCount: Number(r.productCount || 0),
         }))
-      },
-      600, // 10 minutes
-      tenantId,
-    )
+      }
+      // No tenant – compute stats for all categories.
+      const qb = await this.categoryRepo.getAllCategoriesQueryBuilder()
+      const results = await qb
+        .select([
+          'category.id as id',
+          'category.name as name',
+          'category.slug as slug',
+          'category.description as description',
+          'category.image as image',
+          'category.createdAt as "createdAt"',
+        ])
+        .addSelect(
+          (sub) =>
+            sub
+              .select('COUNT(p.id)', 'count')
+              .from('products', 'p')
+              .where('p.categoryId = category.id')
+              .andWhere('p.deletedAt IS NULL'),
+          'productCount',
+        )
+        .orderBy('category.name', 'ASC')
+        .getRawMany()
+      return results.map((r) => ({
+        ...r,
+        productCount: Number(r.productCount || 0),
+      }))
+    }
+
+    return this.cache.rememberCache(cacheKey, fetchFn, 600, tenantId)
   }
 
   async findOneCategory(id: string, ctx: RequestContextDto): Promise<CategoryEntity> {
