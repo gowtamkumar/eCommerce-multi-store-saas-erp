@@ -1,10 +1,10 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { BrandRepository } from './brand.repository'
 import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
 import { BrandEntity } from './entities/brand.entity'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class BrandService {
@@ -36,12 +36,15 @@ export class BrandService {
     const tenantId = ctx.tenantId
     const cacheKey = `brands:list`
 
-    return this.cache.rememberCache(
-      cacheKey,
-      () => this.brandRepo.findAllByTenant(tenantId),
-      600, // 10 minutes
-      tenantId,
-    )
+    const fetchFn = async () => {
+      if (tenantId) {
+        return this.brandRepo.findAllByTenant(tenantId)
+      }
+      // No tenant – return all brands across tenants.
+      return this.brandRepo.findAll()
+    }
+
+    return this.cache.rememberCache(cacheKey, fetchFn, 600, tenantId)
   }
 
   async findAllBrandsWithStats(ctx: RequestContextDto) {
@@ -52,7 +55,30 @@ export class BrandService {
     return this.cache.rememberCache(
       cacheKey,
       async () => {
-        const results = await this.brandRepo.findAllWithProductCounts(tenantId)
+        if (tenantId) {
+          const results = await this.brandRepo.findAllWithProductCounts(tenantId)
+          return results.map((r) => ({
+            ...r,
+            productCount: Number(r.productCount || 0),
+          }))
+        }
+        // No tenant – compute stats for all brands.
+        const qb = this.brandRepo.getAllBrandsQueryBuilder()
+        const results = await qb
+          .select([
+            'brand.id as id',
+            'brand.name as name',
+            'brand.slug as slug',
+            'brand.description as description',
+            'brand.image as image',
+            'brand.website as website',
+            'brand.createdAt as "createdAt"',
+          ])
+          .addSelect('COUNT(product.id)', 'productCount')
+          .leftJoin('brand.products', 'product')
+          .groupBy('brand.id')
+          .orderBy('brand.name', 'ASC')
+          .getRawMany()
         return results.map((r) => ({
           ...r,
           productCount: Number(r.productCount || 0),

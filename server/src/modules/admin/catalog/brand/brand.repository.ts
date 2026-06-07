@@ -1,9 +1,9 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ProductEntity } from '../product/entities/product.entity'
 import { BrandEntity } from './entities/brand.entity'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class BrandRepository {
@@ -25,6 +25,21 @@ export class BrandRepository {
       where: { tenantId },
       order: { name: 'ASC' },
     })
+  }
+
+  /**
+   * Retrieve all brands across tenants. Used when no tenant context is provided
+   * (e.g., super‑admin UI). Returns brands ordered by name.
+   */
+  async findAll(): Promise<BrandEntity[]> {
+    return this.repo.find({ order: { name: 'ASC' } })
+  }
+
+  /**
+   * Expose a query builder for brands without tenant filtering.
+   */
+  getAllBrandsQueryBuilder() {
+    return this.repo.createQueryBuilder('brand')
   }
 
   async findAllWithProductCounts(tenantId: string) {
