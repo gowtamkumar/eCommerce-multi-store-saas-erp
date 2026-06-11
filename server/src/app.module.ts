@@ -29,6 +29,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
+import { AppThrottlerModule } from '@/common/throttler/throttler.module'
 import { CacheModule } from './modules/admin/operations/infra/cache/cache.module'
 import { QueueModule } from './modules/admin/operations/infra/queue/queue.module'
 
@@ -69,8 +70,8 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     // Queue
     QueueModule,
 
-    // Rate Limiting
-    // AppThrottlerModule,
+    // Rate Limiting (Redis-backed global throttling)
+    AppThrottlerModule,
   ],
   controllers: [],
   providers: [

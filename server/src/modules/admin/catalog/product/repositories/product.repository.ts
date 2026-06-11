@@ -76,8 +76,16 @@ export class ProductRepository {
       query.andWhere(`${finalPriceExpr} <= :maxPrice`, { maxPrice: Number(filterDto.maxPrice) })
     }
     if (q) {
+      // `variants` is not joined into this query (stock/variants are loaded
+      // separately), so match variant SKU/barcode via an EXISTS subquery. Using
+      // a join here would duplicate product rows and corrupt getManyAndCount().
       query.andWhere(
-        '(product.name ILIKE :q OR product.description ILIKE :q OR product.sku ILIKE :q OR product.barcode ILIKE :q OR variants.sku ILIKE :q OR variants.barcode ILIKE :q)',
+        `(product.name ILIKE :q OR product.description ILIKE :q OR product.sku ILIKE :q OR product.barcode ILIKE :q
+          OR EXISTS (
+            SELECT 1 FROM product_variants pv
+            WHERE pv.product_id = product.id
+              AND (pv.sku ILIKE :q OR pv.barcode ILIKE :q)
+          ))`,
         { q: `%${q}%` },
       )
     }

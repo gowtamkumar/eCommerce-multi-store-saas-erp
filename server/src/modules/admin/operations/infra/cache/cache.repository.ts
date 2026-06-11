@@ -43,14 +43,14 @@ export class CacheRepository {
           underlyingStore._client ||
           underlyingStore.instance
 
-        if (client && (typeof client.keys === 'function' || typeof client.scan === 'function')) {
-          this.logger.debug(`Found Redis client in store. Using native keys/scan.`)
-          const keys =
-            typeof client.keys === 'function'
-              ? await client.keys(pattern)
-              : await this.scanRecursive(client, pattern)
+        if (client && typeof client.scan === 'function') {
+          // Always use non-blocking SCAN (never KEYS): KEYS is O(N) and blocks
+          // the single-threaded Redis server, causing latency spikes for every
+          // tenant during cache invalidation on large keyspaces.
+          this.logger.debug(`Found Redis client in store. Using non-blocking SCAN.`)
+          const keys = await this.scanRecursive(client, pattern)
 
-          if (Array.isArray(keys) && keys.length > 0) {
+          if (keys.length > 0) {
             await (client.del || client.delete).call(client, ...keys)
             this.logger.log(`[CACHE] Deleted ${keys.length} keys for pattern: ${pattern}`)
           }

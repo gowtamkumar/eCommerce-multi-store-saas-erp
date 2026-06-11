@@ -518,4 +518,12 @@ export class InventoryLedgerService {
   async getStockSums(tenantId: string, warehouseId?: string): Promise<any[]> {
     return await this.repository.getStockSums(tenantId, warehouseId)
   }
+
+  async getStockSumsByProductIds(
+    tenantId: string,
+    productIds: string[],
+    warehouseId?: string,
+  ): Promise<any[]> {
+    return await this.repository.getStockSumsByProductIds(tenantId, productIds, warehouseId)
+  }
 }

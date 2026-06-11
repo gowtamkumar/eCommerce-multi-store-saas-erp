@@ -172,7 +172,10 @@ export class CacheService {
       return await fetcher()
     }
     const cached = await this.getCache<T>(key, tenantId)
-    if (cached) return cached
+    // Use an explicit null/undefined check so legitimately falsy cached values
+    // (0, false, '', empty arrays/objects) are served from cache instead of
+    // being recomputed on every request.
+    if (cached !== null && cached !== undefined) return cached
 
     const fresh = await fetcher()
     await this.setCache(key, fresh, ttl, tenantId)

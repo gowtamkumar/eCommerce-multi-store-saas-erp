@@ -137,11 +137,15 @@ export async function getSiteSettings() {
       };
     }
 
+    // Cache per-tenant public settings briefly instead of no-store. Next keys
+    // the Data Cache on URL + request headers, so the x-tenant-id header keeps
+    // each tenant's settings isolated. The "site-settings" tag allows targeted
+    // revalidation (revalidateTag) when settings change.
     const res = await fetch(`${nestApiUrl}/settings/public`, {
       headers: {
         "x-tenant-id": tenantId,
       },
-      cache: 'no-store',
+      next: { revalidate: 60, tags: [`site-settings:${tenantId}`] },
     });
 
     if (res.ok) {

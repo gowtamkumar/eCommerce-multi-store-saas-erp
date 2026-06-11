@@ -246,7 +246,10 @@ export class ProductService {
   private async populateProductsStock(products: any[], tenantId: string): Promise<any[]> {
     if (!products || products.length === 0) return products
     try {
-      const sums = await this.inventoryService.getStockSums(tenantId)
+      // Only aggregate ledger rows for the products on this page, so the cost
+      // scales with the result size instead of the entire tenant inventory.
+      const productIds = products.map((p) => p.id).filter(Boolean)
+      const sums = await this.inventoryService.getStockSumsByProductIds(tenantId, productIds)
       const stockMap = new Map<string, number>()
       sums.forEach((item: any) => {
         const key = item.variantId ? `${item.productId}:${item.variantId}` : item.productId

@@ -1,43 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Banknote, CreditCard, QrCode, Coins, Wallet, Loader2, DollarSign, AlertCircle } from 'lucide-react';
-import type { Customer } from '../type';
+import { Banknote, Coins, CreditCard, Loader2, QrCode, Wallet, X } from 'lucide-react';
+import type { CheckoutModalProps } from '../type';
 import { DELIVERY_ZONES } from '../utils/posHelpers';
 
-interface CheckoutModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  paymentMethod: 'cash' | 'card' | 'mobile' | 'on_account' | 'wallet';
-  setPaymentMethod: (method: 'cash' | 'card' | 'mobile' | 'on_account' | 'wallet') => void;
-  amountTendered: number | '';
-  setAmountTendered: (amount: number | '') => void;
-  processingPayment: boolean;
-  handleConfirmCheckout: () => void;
-  splitPayment: boolean;
-  setSplitPayment: (val: boolean) => void;
-  splitPayments: { cash: number | ''; card: number | ''; mobile: number | ''; on_account: number | '' };
-  setSplitPayments: React.Dispatch<React.SetStateAction<{ cash: number | ''; card: number | ''; mobile: number | ''; on_account: number | '' }>>;
-  selectedCustomer: Customer | null;
-  walletBalance: number;
-  outstandingBalance: number;
-  useWalletBalance: boolean;
-  setUseWalletBalance: (val: boolean) => void;
-  walletAmountToUse: number | '';
-  setWalletAmountToUse: (amount: number | '') => void;
-  handleWalletSelect: (cust: Customer) => void;
-  deliveryZone: string;
-  setDeliveryZone: (zone: string) => void;
-  shippingAddress: string;
-  setShippingAddress: (addr: string) => void;
-  grandTotal: number;
-  changeDue: number;
-  getSplitPaymentsSum: () => number;
-  getRemainingPayableAmount: () => number;
-  taxName: string;
-  taxRate: number;
-  taxableAmount: number;
-  tax: number;
-  shippingFee: number;
-}
+
 
 export default function CheckoutModal({
   isOpen,

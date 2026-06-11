@@ -132,6 +132,34 @@ export class InventoryLedgerRepository {
 
     return await qb.groupBy('ledger.productId').addGroupBy('ledger.variantId').getRawMany()
   }
+
+  /**
+   * Stock sums restricted to a specific set of product IDs. Used to enrich a
+   * single page of products without aggregating the entire tenant ledger,
+   * which keeps product list/detail cost proportional to the page size rather
+   * than total inventory movements.
+   */
+  async getStockSumsByProductIds(
+    tenantId: string,
+    productIds: string[],
+    warehouseId?: string,
+  ): Promise<any[]> {
+    if (!productIds || productIds.length === 0) return []
+
+    const qb = this.repo
+      .createQueryBuilder('ledger')
+      .select('ledger.productId', 'productId')
+      .addSelect('ledger.variantId', 'variantId')
+      .addSelect('SUM(ledger.quantity)', 'sum')
+      .where('ledger.tenantId = :tenantId', { tenantId })
+      .andWhere('ledger.productId IN (:...productIds)', { productIds })
+
+    if (warehouseId) {
+      qb.andWhere('ledger.warehouseId = :warehouseId', { warehouseId })
+    }
+
+    return await qb.groupBy('ledger.productId').addGroupBy('ledger.variantId').getRawMany()
+  }
   async getLiveStock(
     productId: string,
     variantId: string | null,

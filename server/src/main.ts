@@ -25,9 +25,38 @@ async function bootstrap() {
     }),
   )
 
+  // CORS: reflect any origin only in non-production. In production, restrict to
+  // an explicit allowlist (CORS_ORIGINS, comma-separated) plus any subdomain of
+  // PLATFORM_HOST so tenant stores (e.g. acme.luxesaas.com) keep working.
+  const isProduction = process.env.NODE_ENV === 'production'
+  const allowlist = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+  const platformHost = process.env.PLATFORM_HOST
+
   app.enableCors({
-    origin: true,
     credentials: true,
+    origin: (origin, callback) => {
+      // Allow non-browser clients (curl, server-to-server) with no Origin header.
+      if (!origin) return callback(null, true)
+      if (!isProduction) return callback(null, true)
+
+      if (allowlist.includes(origin)) return callback(null, true)
+
+      if (platformHost) {
+        try {
+          const { hostname } = new URL(origin)
+          if (hostname === platformHost || hostname.endsWith(`.${platformHost}`)) {
+            return callback(null, true)
+          }
+        } catch {
+          // Malformed origin — fall through to rejection.
+        }
+      }
+
+      return callback(new Error(`Origin not allowed by CORS: ${origin}`), false)
+    },
   })
 
   app.use(compression())

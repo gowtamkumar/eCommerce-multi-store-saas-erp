@@ -115,31 +115,6 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
 
     const skip = (page - 1) * limit
 
-    const queryBuilder = this.repo
-      .createQueryBuilder('order')
-      .leftJoinAndSelect('order.items', 'items')
-      .leftJoinAndSelect('items.product', 'product')
-      .where('order.tenantId = :tenantId', { tenantId })
-
-    if (status) {
-      queryBuilder.andWhere('order.status = :status', { status })
-    }
-
-    if (orderSource) {
-      queryBuilder.andWhere('order.orderSource = :orderSource', { orderSource })
-    }
-
-    if (paymentStatus) {
-      queryBuilder.andWhere('order.paymentStatus = :paymentStatus', { paymentStatus })
-    }
-
-    if (search) {
-      queryBuilder.andWhere(
-        '(order.customerName ILIKE :search OR order.customerEmail ILIKE :search OR order.customerPhone ILIKE :search OR CAST(order.id AS TEXT) ILIKE :search OR product.name ILIKE :search)',
-        { search: `%${search}%` },
-      )
-    }
-
     // Whitelist sort columns to avoid SQL injection via the sort param.
     const sortableColumns: Record<string, string> = {
       createdAt: 'order.createdAt',
@@ -151,11 +126,69 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
     const sortColumn = sortableColumns[sortBy as string] || 'order.createdAt'
     const sortDirection = sortOrder === 'ASC' ? 'ASC' : 'DESC'
 
-    const [orders, total] = await queryBuilder
+    // Phase 1: filter + paginate on the orders table alone. Product-name search
+    // uses an EXISTS subquery instead of a join, so rows are never duplicated
+    // and getCount()/pagination stay accurate and cheap regardless of how many
+    // line items each order has.
+    const filterQb = this.repo
+      .createQueryBuilder('order')
+      .where('order.tenantId = :tenantId', { tenantId })
+
+    if (status) {
+      filterQb.andWhere('order.status = :status', { status })
+    }
+
+    if (orderSource) {
+      filterQb.andWhere('order.orderSource = :orderSource', { orderSource })
+    }
+
+    if (paymentStatus) {
+      filterQb.andWhere('order.paymentStatus = :paymentStatus', { paymentStatus })
+    }
+
+    if (search) {
+      filterQb.andWhere(
+        new Brackets((qb) => {
+          qb.where('order.customerName ILIKE :search', { search: `%${search}%` })
+            .orWhere('order.customerEmail ILIKE :search', { search: `%${search}%` })
+            .orWhere('order.customerPhone ILIKE :search', { search: `%${search}%` })
+            .orWhere('CAST(order.id AS TEXT) ILIKE :search', { search: `%${search}%` })
+            .orWhere(
+              `EXISTS (
+                SELECT 1 FROM order_items oi
+                LEFT JOIN products p ON p.id = oi.product_id
+                WHERE oi.order_id = order.id AND p.name ILIKE :search
+              )`,
+              { search: `%${search}%` },
+            )
+        }),
+      )
+    }
+
+    const total = await filterQb.getCount()
+
+    const idRows = await filterQb
+      .clone()
+      .select('order.id', 'id')
       .orderBy(sortColumn, sortDirection)
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount()
+      .offset(skip)
+      .limit(limit)
+      .getRawMany<{ id: string }>()
+
+    const ids = idRows.map((r) => r.id)
+    if (ids.length === 0) {
+      return { orders: [], total }
+    }
+
+    // Phase 2: load the full page of orders (with relations) by id, preserving
+    // the order from phase 1.
+    const orders = await this.repo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .where('order.id IN (:...ids)', { ids })
+      .orderBy(sortColumn, sortDirection)
+      .getMany()
 
     return {
       orders,
