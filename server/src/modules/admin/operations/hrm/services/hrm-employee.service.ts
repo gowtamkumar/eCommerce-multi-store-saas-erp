@@ -191,7 +191,7 @@ export class HrmEmployeeService {
       where: { id: docId, tenantId: ctx.tenantId },
     })
     if (!doc) throw new NotFoundException('Document not found')
-    await this.hrmRepo.documentRepo.delete(docId)
+    await this.hrmRepo.documentRepo.softDelete(docId)
 
     await this.auditLogService.log(ctx, {
       action: 'DELETE',
@@ -249,7 +249,7 @@ export class HrmEmployeeService {
       where: { id, tenantId: ctx.tenantId },
     })
     if (!holiday) throw new NotFoundException('Holiday not found')
-    await this.hrmRepo.holidayRepo.delete(id)
+    await this.hrmRepo.holidayRepo.softDelete(id)
     await this.auditLogService.log(ctx, {
       action: 'DELETE',
       entity: 'Holiday',
@@ -289,7 +289,7 @@ export class HrmEmployeeService {
       where: { id, tenantId: ctx.tenantId },
     })
     if (!bracket) throw new NotFoundException('Tax bracket not found')
-    await this.hrmRepo.taxBracketRepo.delete(id)
+    await this.hrmRepo.taxBracketRepo.softDelete(id)
     return { id }
   }
 
@@ -404,7 +404,7 @@ export class HrmEmployeeService {
 
     for (const doc of existing) {
       if (!incomingIds.has(doc.id)) {
-        await this.hrmRepo.documentRepo.delete(doc.id)
+        await this.hrmRepo.documentRepo.softDelete(doc.id)
       }
     }
 

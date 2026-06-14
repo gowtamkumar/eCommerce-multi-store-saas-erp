@@ -31,7 +31,7 @@ export class HrmOrganizationRepository {
   }
 
   async deleteDepartment(id: string): Promise<void> {
-    await this.departmentRepo.delete(id)
+    await this.departmentRepo.softDelete(id)
   }
 
   // --- Designation ---
@@ -57,6 +57,6 @@ export class HrmOrganizationRepository {
   }
 
   async deleteDesignation(id: string): Promise<void> {
-    await this.designationRepo.delete(id)
+    await this.designationRepo.softDelete(id)
   }
 }

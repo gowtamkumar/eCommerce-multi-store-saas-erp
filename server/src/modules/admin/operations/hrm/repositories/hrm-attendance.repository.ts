@@ -39,7 +39,7 @@ export class HrmAttendanceRepository {
   }
 
   async deleteShift(id: string): Promise<void> {
-    await this.shiftRepo.delete(id)
+    await this.shiftRepo.softDelete(id)
   }
 
   async assignShift(

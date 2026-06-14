@@ -250,7 +250,7 @@ export class AccountingService {
     if (Number(account.balance) !== 0) {
       throw new BadRequestException('Cannot delete an account with a non-zero balance')
     }
-    await repo.remove(account)
+    await repo.softRemove(account)
   }
 
   async getJournalEntries(ctx: RequestContextDto): Promise<JournalEntryEntity[]> {

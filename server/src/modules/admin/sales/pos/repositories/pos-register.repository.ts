@@ -43,6 +43,6 @@ export class PosRegisterRepository {
   }
 
   async remove(register: PosRegisterEntity): Promise<void> {
-    await this.repo.remove(register)
+    await this.repo.softRemove(register)
   }
 }

@@ -59,7 +59,7 @@ export class DunningService {
   async deleteRule(id: string, tenantId: string): Promise<void> {
     const em = this.dataSource.manager
     const rule = await this.findRuleById(id, tenantId)
-    await em.remove(DunningRuleEntity, rule)
+    await em.softRemove(DunningRuleEntity, rule)
   }
 
   // --- Dunning Notice Logs ---

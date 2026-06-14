@@ -33,7 +33,7 @@ export class WarehouseBinRepository {
   }
 
   async remove(bin: WarehouseBinEntity): Promise<void> {
-    await this.repo.remove(bin)
+    await this.repo.softRemove(bin)
   }
 
   async findByCode(warehouseId: string, binCode: string): Promise<WarehouseBinEntity | null> {

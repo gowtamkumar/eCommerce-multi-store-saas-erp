@@ -70,7 +70,7 @@ export class CampaignRepository {
   }
 
   async remove(campaign: CampaignEntity): Promise<void> {
-    await this.repo.remove(campaign)
+    await this.repo.softRemove(campaign)
   }
 
   async incrementSentCount(id: string, count: number = 1): Promise<void> {

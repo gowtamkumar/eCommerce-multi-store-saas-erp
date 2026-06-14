@@ -554,6 +554,6 @@ export class LoyaltyService {
   async deleteRule(id: string, tenantId: string): Promise<void> {
     const em = this.dataSource.manager
     const rule = await this.findRuleById(id, tenantId)
-    await em.remove(LoyaltyRuleEntity, rule)
+    await em.softRemove(LoyaltyRuleEntity, rule)
   }
 }

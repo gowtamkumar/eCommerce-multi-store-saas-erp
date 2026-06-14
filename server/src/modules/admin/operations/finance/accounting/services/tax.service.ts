@@ -146,7 +146,7 @@ export class TaxService {
     if (rule.isSystem) {
       throw new BadRequestException('System tax rules are locked and cannot be deleted')
     }
-    await repo.remove(rule)
+    await repo.softRemove(rule)
   }
 
   /**
