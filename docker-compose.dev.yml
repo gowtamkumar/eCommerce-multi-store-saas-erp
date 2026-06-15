@@ -17,7 +17,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.00'
+          cpus: "1.00"
           memory: 512M
 
   pgadmin:
@@ -35,7 +35,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 200M
 
   redis:
@@ -50,7 +50,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
+          cpus: "0.50"
           memory: 128M
 
   redis-commander:
@@ -70,7 +70,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 100M
 
   minio:
@@ -87,7 +87,7 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -96,7 +96,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
+          cpus: "0.50"
           memory: 256M
 
   # mailhog:
@@ -138,7 +138,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.00'
+          cpus: "2.00"
           memory: 1.5G
 
   client:
@@ -160,29 +160,29 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.00'
+          cpus: "2.00"
           memory: 2G
-  # caddy:
-  #   image: caddy:2.7-alpine
-  #   container_name: multi_tenant_caddy_dev
-  #   restart: "no"
-  #   ports:
-  #     - "8080:80"
-  #     - "8443:443"
-  #   volumes:
-  #     - ./Caddyfile:/etc/caddy/Caddyfile
-  #     - caddy_data:/data
-  #     - caddy_config:/config
-  #   depends_on:
-  #     - server
-  #     - client
-  #   networks:
-  #     - multi_tenant_main_network
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '0.50'
-  #         memory: 128M
+  caddy:
+    image: caddy:2.7-alpine
+    container_name: multi_tenant_caddy_dev
+    restart: "no"
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+      - client
+    networks:
+      - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
 
 networks:
   multi_tenant_main_network:

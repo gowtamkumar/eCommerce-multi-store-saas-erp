@@ -1,5 +1,11 @@
 "use client";
 
+// Gateway targets are deployment-specific. Configure them per-environment so
+// the instructions always point at the real reverse proxy rather than a
+// placeholder. Fallbacks are clearly marked so a misconfiguration is obvious.
+const GATEWAY_HOST = process.env.NEXT_PUBLIC_GATEWAY_HOST || "gateway.your-saas.com";
+const GATEWAY_IP = process.env.NEXT_PUBLIC_GATEWAY_IP || "<your-server-ip>";
+
 export function DnsInstructions() {
   return (
     <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -7,7 +13,22 @@ export function DnsInstructions() {
         DNS Setup Instructions
       </h3>
       <p className="text-sm text-slate-500">
-        To link your custom domain to your storefront, configure the following DNS records in your registrar&apos;s portal (e.g. GoDaddy, Cloudflare, Namecheap).
+        Linking a custom domain takes two steps: (1) prove ownership with the{" "}
+        <strong>TXT</strong> record shown on each pending domain above, then (2)
+        route traffic to us with the <strong>CNAME</strong> (or{" "}
+        <strong>A</strong>) record below. Configure these in your registrar&apos;s
+        portal (e.g. GoDaddy, Cloudflare, Namecheap).
+      </p>
+
+      <div className="p-4 bg-brand-500/5 border border-brand-500/10 rounded-2xl text-xs text-slate-500">
+        <span className="font-bold text-slate-700 dark:text-slate-300">Step 1 — Verify ownership: </span>
+        add the <strong>TXT</strong> record displayed on your pending domain card
+        (host <span className="font-mono">_omnicart-verify.&lt;your-domain&gt;</span>),
+        then click <strong>Verify DNS</strong>.
+      </div>
+
+      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest pt-1">
+        Step 2 — Route traffic
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -27,7 +48,7 @@ export function DnsInstructions() {
             <div className="text-slate-600 dark:text-slate-300">CNAME</div>
             <div className="text-slate-600 dark:text-slate-300">shop (or host)</div>
             <div className="text-slate-600 dark:text-slate-300 break-all">
-              cname.your-saas.com
+              {GATEWAY_HOST}
             </div>
           </div>
         </div>
@@ -47,7 +68,7 @@ export function DnsInstructions() {
             <div className="text-slate-400">IP Value</div>
             <div className="text-slate-600 dark:text-slate-300">A</div>
             <div className="text-slate-600 dark:text-slate-300">@</div>
-            <div className="text-slate-600 dark:text-slate-300">76.76.21.21</div>
+            <div className="text-slate-600 dark:text-slate-300 break-all">{GATEWAY_IP}</div>
           </div>
         </div>
       </div>

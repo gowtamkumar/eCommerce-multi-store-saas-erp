@@ -19,8 +19,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { plainToInstance } from 'class-transformer'
-import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
 import { UpdateCustomDomainDto } from './dto/update-custom-domain.dto'
@@ -39,6 +39,20 @@ function toTenantResponse(tenant: TenantEntity): TenantResponseDto {
   return plainToInstance(TenantResponseDto, tenant, {
     excludeExtraneousValues: true,
   })
+}
+
+/**
+ * Public-facing tenant shape (storefront lookup by subdomain/custom domain).
+ * Unauthenticated callers must never see per-domain verification tokens — they
+ * are only meaningful to the tenant admin proving DNS ownership, so we strip
+ * them here while keeping them on the authenticated `/tenants/info` response.
+ */
+function toPublicTenantResponse(tenant: TenantEntity): TenantResponseDto {
+  const dto = toTenantResponse(tenant)
+  if (Array.isArray(dto.domains)) {
+    dto.domains = dto.domains.map((d) => ({ ...d, verificationToken: null }))
+  }
+  return dto
 }
 
 @Controller('tenants')
@@ -70,7 +84,7 @@ export class TenantController {
         success: true,
         statusCode: 200,
         message: 'Tenant lookup successful',
-        data: toTenantResponse(findDomain),
+        data: toPublicTenantResponse(findDomain),
       }
     }
 
@@ -79,7 +93,7 @@ export class TenantController {
       success: true,
       statusCode: 200,
       message: 'Tenants retrieved successfully',
-      data: tenants.map(toTenantResponse),
+      data: tenants.map(toPublicTenantResponse),
     }
   }
 
@@ -117,6 +131,7 @@ export class TenantController {
 
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Patch('custom-domain')
   @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_REQUEST' })
   async updateCustomDomain(
@@ -139,6 +154,7 @@ export class TenantController {
 
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('custom-domain/verify/:domainId')
   @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_VERIFY' })
   async verifyCustomDomain(

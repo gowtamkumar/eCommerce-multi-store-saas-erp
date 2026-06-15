@@ -26,6 +26,7 @@ import {
   normalizeCustomDomain,
   verifyDomainOwnership,
 } from './custom-domain.util'
+import { InvalidSubdomainError, normalizeSubdomain } from './reserved-subdomains.util'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -103,7 +104,15 @@ export class TenantService {
       subscriptionBillingCycle,
     } = createTenantDto
 
-    const subdomain = rawSubdomain.trim().toLowerCase()
+    let subdomain: string
+    try {
+      subdomain = normalizeSubdomain(rawSubdomain)
+    } catch (err: any) {
+      if (err instanceof InvalidSubdomainError) {
+        throw new BadRequestException(err.message)
+      }
+      throw err
+    }
 
     // 1. Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findBySubdomain(subdomain)
