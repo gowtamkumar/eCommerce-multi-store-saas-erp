@@ -398,35 +398,42 @@ export class InventoryLedgerService {
 
     const transferRef = `XFER-${Date.now()}`
 
-    const outEntry = await this.createLedgerEntry(
-      {
-        productId: dto.productId,
-        variantId: dto.variantId,
-        warehouseId: dto.sourceWarehouseId,
-        type: InventoryTransactionType.TRANSFER_OUT,
-        quantity: dto.quantity,
-        referenceType: InventoryTransactionReferenceType.STOCK_TRANSFER,
-        referenceId: transferRef,
-        remarks: dto.remarks || `Transfer to warehouse ${dto.destinationWarehouseId}`,
-      },
-      ctx,
-    )
+    // Both legs must commit together: a failed TRANSFER_IN must not leave the
+    // source warehouse permanently debited. Running both ledger writes inside a
+    // single transaction guarantees all-or-nothing.
+    return await this.dataSource.transaction(async (manager) => {
+      const outEntry = await this.createLedgerEntry(
+        {
+          productId: dto.productId,
+          variantId: dto.variantId,
+          warehouseId: dto.sourceWarehouseId,
+          type: InventoryTransactionType.TRANSFER_OUT,
+          quantity: dto.quantity,
+          referenceType: InventoryTransactionReferenceType.STOCK_TRANSFER,
+          referenceId: transferRef,
+          remarks: dto.remarks || `Transfer to warehouse ${dto.destinationWarehouseId}`,
+        },
+        ctx,
+        manager,
+      )
 
-    const inEntry = await this.createLedgerEntry(
-      {
-        productId: dto.productId,
-        variantId: dto.variantId,
-        warehouseId: dto.destinationWarehouseId,
-        type: InventoryTransactionType.TRANSFER_IN,
-        quantity: dto.quantity,
-        referenceType: InventoryTransactionReferenceType.STOCK_TRANSFER,
-        referenceId: transferRef,
-        remarks: dto.remarks || `Transfer from warehouse ${dto.sourceWarehouseId}`,
-      },
-      ctx,
-    )
+      const inEntry = await this.createLedgerEntry(
+        {
+          productId: dto.productId,
+          variantId: dto.variantId,
+          warehouseId: dto.destinationWarehouseId,
+          type: InventoryTransactionType.TRANSFER_IN,
+          quantity: dto.quantity,
+          referenceType: InventoryTransactionReferenceType.STOCK_TRANSFER,
+          referenceId: transferRef,
+          remarks: dto.remarks || `Transfer from warehouse ${dto.sourceWarehouseId}`,
+        },
+        ctx,
+        manager,
+      )
 
-    return { outEntry, inEntry }
+      return { outEntry, inEntry }
+    })
   }
 
   // =========================================================================

@@ -6,6 +6,7 @@ import { NotificationEntity } from './entities/notification.entity'
 import { NotificationController } from './notification.controller'
 import { NotificationGateway } from './notification.gateway'
 import { NotificationService } from './notification.service'
+import { getJwtSecret } from '@/common/utils/jwt-secret.util'
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { NotificationService } from './notification.service'
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET_KEY') || 'myUnsecureJwtSecret',
+        secret: getJwtSecret(),
         signOptions: { expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRES') || '15m' },
       }),
     }),

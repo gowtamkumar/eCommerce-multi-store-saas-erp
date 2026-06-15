@@ -7,6 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
+import { getJwtSecret } from '@/common/utils/jwt-secret.util'
 
 @WebSocketGateway({
   cors: {
@@ -41,7 +42,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
 
       // Verify the JWT token
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET_KEY || 'myUnsecureJwtSecret',
+        secret: getJwtSecret(),
       })
 
       // Extract user metadata

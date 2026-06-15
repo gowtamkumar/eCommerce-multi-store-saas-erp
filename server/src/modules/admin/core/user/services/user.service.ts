@@ -1,18 +1,24 @@
-import { RiskLevel } from '@/common/enums/risk-level.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { RiskLevel } from '@/common/enums/risk-level.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnApplicationBootstrap,
+  UnauthorizedException,
+} from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
+import { Repository } from 'typeorm'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
+import { PermissionEntity } from '../entities/permission.entity'
 import { StaffInvitationEntity } from '../entities/staff-invitation.entity'
 import { UserEntity } from '../entities/user.entity'
-import { PermissionEntity } from '../entities/permission.entity'
 import { UserRepository } from '../repositories/user.repository'
 import { StaffInvitationService } from './staff-invitation.service'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { OnApplicationBootstrap } from '@nestjs/common'
 
 @Injectable()
 export class UserService implements OnApplicationBootstrap {
@@ -1119,8 +1125,27 @@ export class UserService implements OnApplicationBootstrap {
   ): Promise<UserEntity> {
     this.logger.log(`${this.updateTeamMemberRole.name} Service Called`)
     const tenantId = ctx.tenantId
+
+    // SUPER_ADMIN is a platform-level role that bypasses all RBAC checks. It must
+    // never be grantable through tenant team management, otherwise any user with
+    // this endpoint's permission could escalate themselves/others to god-mode.
+    if (role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('The super admin role cannot be assigned.')
+    }
+
+    const actorRole = (ctx.user?.role || '').toString().toLowerCase()
+    const actorIsPrivileged = actorRole === UserRole.SUPER_ADMIN || actorRole === UserRole.ADMIN
+    // Only an existing admin/super-admin may grant the tenant ADMIN role.
+    if (role === UserRole.ADMIN && !actorIsPrivileged) {
+      throw new ForbiddenException('Only an administrator can grant the admin role.')
+    }
+
     const user = await this.userRepo.findByIdAndTenant(memberId, tenantId)
     if (!user) throw new NotFoundException('Team member not found.')
+    // Never let a tenant operation modify an existing platform super admin.
+    if (user.role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('This user cannot be modified.')
+    }
     const result = await this.userRepo.updateAndSave(user, { role })
     await this.cacheService.delCache('team:members', tenantId)
     await this.cacheService.delCache(`rbac:manifest:${tenantId}:${memberId}`)

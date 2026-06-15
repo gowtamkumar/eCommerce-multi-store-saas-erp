@@ -4,9 +4,11 @@ import { MigrationInterface, QueryRunner } from 'typeorm'
  * Migration to add indexes that improve the performance of the admin product list.
  *   - Composite index on tenantId + name for name sorting and search.
  *   - Composite index on tenantId + price for price sorting.
- *   - Index on tenantId + stock to speed up low‑stock filtering.
+ *
+ * NOTE: The timestamp suffix below MUST stay greater than the InitialBaseline
+ * migration so TypeORM runs this AFTER the `products` table exists.
  */
-export class AddProductIndexes1667890123456 implements MigrationInterface {
+export class AddProductIndexes1781200000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Composite index for name sorting / searching (tenant + name)
     await queryRunner.query(

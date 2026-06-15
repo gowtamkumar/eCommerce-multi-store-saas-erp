@@ -20,6 +20,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import * as crypto from 'crypto'
 import { Not, Repository } from 'typeorm'
 import { UserEntity } from '../../user/entities/user.entity'
+import { sanitizeUser } from '@/common/utils/sanitize-user.util'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 import { SessionEntity } from '../entities/session.entity'
 
@@ -102,7 +103,7 @@ export class AuthService {
 
     const tokens = await this.getTokens(user, [], ipAddress, userAgent)
 
-    return { ...tokens, user }
+    return { ...tokens, user: sanitizeUser(user) as UserEntity }
   }
 
   async login(
@@ -176,7 +177,7 @@ export class AuthService {
     }
 
     return {
-      user: { ...user, features } as any,
+      user: { ...sanitizeUser(user), features } as any,
       permissionManifest,
       ...tokens,
     } as any
@@ -274,6 +275,18 @@ export class AuthService {
     userAgent?: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.refreshTokens.name} Service Called`)
+
+    // Verify the refresh token's signature AND expiry before trusting it. The
+    // bcrypt match below only proves it equals the stored token; without this
+    // an expired refresh JWT would still be accepted until it is rotated out.
+    try {
+      await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>('JWT_SECRET_KEY'),
+      })
+    } catch {
+      throw new UnauthorizedException('Access Denied')
+    }
+
     const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
     if (!user) throw new UnauthorizedException('Access Denied')
 

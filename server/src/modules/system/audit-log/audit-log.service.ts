@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common'
 import { AuditLogRepository } from './audit-log.repository'
 import { CreateAuditLogDto } from './dto/create-audit-log.dto'
 import { QueryAuditLogDto } from './dto/query-audit-log.dto'
@@ -219,10 +219,12 @@ export class AuditLogService {
     const userRole = ctx.user?.role || ''
     const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
 
-    let targetTenantId: string | null = ctx.tenantId
-    if (isGlobalAdmin) {
-      targetTenantId = query.tenantId ?? null
-    }
+    // Non-global admins are strictly confined to their own JWT tenant. We never
+    // fall back to a header-derived (or null) tenant here, otherwise omitting
+    // the `x-tenant-id` header would expose every tenant's logs.
+    const targetTenantId: string | null = isGlobalAdmin
+      ? (query.tenantId ?? null)
+      : this.resolveOwnTenant(ctx)
 
     const { page = 1, limit = 20, userId, action, entity, entityId, from, to } = query
     const [data, total] = await this.auditLogRepository.findAllWithFilters(targetTenantId, {
@@ -255,8 +257,21 @@ export class AuditLogService {
     const userRole = ctx.user?.role || ''
     const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
 
-    const targetTenantId = isGlobalAdmin ? null : ctx.tenantId
+    const targetTenantId = isGlobalAdmin ? null : this.resolveOwnTenant(ctx)
     return await this.auditLogRepository.findById(id, targetTenantId)
+  }
+
+  /**
+   * Resolves the authenticated user's own tenant from the JWT-backed context,
+   * rejecting the request when no tenant is bound. Prevents tenant admins from
+   * widening scope by omitting the tenant header.
+   */
+  private resolveOwnTenant(ctx: RequestContextDto): string {
+    const tenantId = ctx.user?.tenantId || ctx.tenantId
+    if (!tenantId) {
+      throw new ForbiddenException('Tenant context is required.')
+    }
+    return tenantId
   }
 
   /**
@@ -267,7 +282,9 @@ export class AuditLogService {
     days: number,
   ): Promise<{ message: string }> {
     this.logger.log(`${this.deleteOlderThanAuditLogs.name} Service Called`)
-    const { tenantId } = ctx
+    const userRole = ctx.user?.role || ''
+    const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
+    const tenantId = isGlobalAdmin ? ctx.tenantId : this.resolveOwnTenant(ctx)
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
 

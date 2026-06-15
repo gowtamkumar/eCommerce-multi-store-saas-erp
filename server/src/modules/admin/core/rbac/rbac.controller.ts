@@ -44,7 +44,7 @@ export class RbacController {
   }
 
   @Post('roles')
-  @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @RequirePermissions(SystemPermissions.USERS_ROLES_ASSIGN)
   async createRole(
     @RequestContext() ctx: RequestContextDto,
     @Req() req: any,
@@ -56,7 +56,7 @@ export class RbacController {
   }
 
   @Patch('roles/:id')
-  @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @RequirePermissions(SystemPermissions.USERS_ROLES_ASSIGN)
   async updateRole(
     @RequestContext() ctx: RequestContextDto,
     @Req() req: any,
@@ -69,7 +69,7 @@ export class RbacController {
   }
 
   @Delete('roles/:id')
-  @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @RequirePermissions(SystemPermissions.USERS_ROLES_ASSIGN)
   async deleteRole(
     @RequestContext() ctx: RequestContextDto,
     @Req() req: any,
@@ -120,7 +120,7 @@ export class RbacController {
   }
 
   @Post('users/:userId/roles')
-  @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @RequirePermissions(SystemPermissions.USERS_ROLES_ASSIGN)
   async assignRole(
     @RequestContext() ctx: RequestContextDto,
     @Req() req: any,
@@ -144,7 +144,7 @@ export class RbacController {
   }
 
   @Delete('users/:userId/roles/:assignmentId')
-  @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @RequirePermissions(SystemPermissions.USERS_ROLES_ASSIGN)
   async revokeRole(
     @RequestContext() ctx: RequestContextDto,
     @Req() req: any,
@@ -178,7 +178,7 @@ export class RbacController {
   }
 
   @Post('users/:userId/overrides')
-  @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @RequirePermissions(SystemPermissions.USERS_PERMISSIONS_OVERRIDE)
   async addOverride(
     @RequestContext() ctx: RequestContextDto,
     @Req() req: any,
@@ -203,7 +203,7 @@ export class RbacController {
   }
 
   @Delete('users/:userId/overrides/:overrideId')
-  @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @RequirePermissions(SystemPermissions.USERS_PERMISSIONS_OVERRIDE)
   async removeOverride(
     @RequestContext() ctx: RequestContextDto,
     @Req() req: any,

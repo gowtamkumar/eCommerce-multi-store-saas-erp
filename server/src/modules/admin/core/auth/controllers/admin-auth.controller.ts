@@ -7,6 +7,7 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
+import { sanitizeUser } from '@/common/utils/sanitize-user.util'
 import {
   Body,
   Controller,
@@ -19,6 +20,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
+import { Throttle } from '@nestjs/throttler'
 
 @Controller('admin')
 export class AdminAuthController {
@@ -26,7 +28,7 @@ export class AdminAuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/login')
   @Audit({ entity: 'Auth', action: 'LOGIN' })
   async login(
@@ -109,7 +111,7 @@ export class AdminAuthController {
         statusCode: 200,
         message: `Admin Impersonation successful`,
         data: {
-          user: { ...user, features },
+          user: { ...sanitizeUser(user), features },
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
         },
@@ -173,8 +175,11 @@ export class AdminAuthController {
 
   private cookiesBuildTokenResponsive(response: Response, token: string) {
     const cookiesOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
     }
-    return response.status(200).cookie('token', token, cookiesOptions)
+    return response.cookie('token', token, cookiesOptions)
   }
 }

@@ -15,6 +15,8 @@ import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { UserRoleAssignmentEntity } from '../entities/user-role-assignment.entity'
 import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
+import { sanitizeInvitation, sanitizeUser } from '@/common/utils/sanitize-user.util'
+import { UserRole } from '@/common/enums/user/user-role.enum'
 
 @Injectable()
 export class StaffInvitationService {
@@ -38,6 +40,19 @@ export class StaffInvitationService {
     this.logger.log(`${this.inviteStaff.name} Service Called`)
     const tenantId = ctx.tenantId
     const invitedBy = ctx.userId
+
+    // Tenant staff can never be invited as a platform super admin, and only an
+    // admin/super-admin may invite another tenant ADMIN. This prevents
+    // privilege escalation through the invitation flow.
+    if (dto.role === UserRole.SUPER_ADMIN) {
+      throw new BadRequestException('The super admin role cannot be assigned.')
+    }
+    const actorRole = (ctx.user?.role || '').toString().toLowerCase()
+    const actorIsPrivileged =
+      actorRole === UserRole.SUPER_ADMIN || actorRole === UserRole.ADMIN
+    if (dto.role === UserRole.ADMIN && !actorIsPrivileged) {
+      throw new BadRequestException('Only an administrator can invite an admin.')
+    }
 
     const existingUser = await checkExistingUser(dto.email, tenantId)
     if (existingUser) {
@@ -67,13 +82,17 @@ export class StaffInvitationService {
     this.mailService.sendStaffInvitationEmail(dto.email, token, dto.role, tenantId)
     await this.cacheService.delCache('team:members', tenantId)
 
-    return { message: `Invitation sent to ${dto.email}`, invitation }
+    return {
+      message: `Invitation sent to ${dto.email}`,
+      invitation: sanitizeInvitation(invitation) as StaffInvitationEntity,
+    }
   }
 
   async getInvitations(ctx: RequestContextDto): Promise<StaffInvitationEntity[]> {
     this.logger.log(`${this.getInvitations.name} Service Called`)
     const tenantId = ctx.tenantId
-    return this.invitationRepo.findAllByTenant(tenantId)
+    const invitations = await this.invitationRepo.findAllByTenant(tenantId)
+    return invitations.map((inv) => sanitizeInvitation(inv) as StaffInvitationEntity)
   }
 
   async revokeInvitation(
@@ -91,12 +110,13 @@ export class StaffInvitationService {
       status: InvitationStatus.Expired,
     })
     await this.cacheService.delCache('team:members', tenantId)
-    return result
+    return sanitizeInvitation(result) as StaffInvitationEntity
   }
 
   async findPendingByTenant(ctx: RequestContextDto): Promise<StaffInvitationEntity[]> {
     const tenantId = ctx.tenantId
-    return this.invitationRepo.findPendingByTenant(tenantId)
+    const invitations = await this.invitationRepo.findPendingByTenant(tenantId)
+    return invitations.map((inv) => sanitizeInvitation(inv) as StaffInvitationEntity)
   }
 
   async acceptInvitation(dto: any): Promise<{ message: string; user: UserEntity }> {
@@ -172,6 +192,6 @@ export class StaffInvitationService {
       this.logger.error(`Failed to trigger invitation acceptance notification: ${e.message}`)
     }
 
-    return { message: 'Invitation accepted successfully.', user }
+    return { message: 'Invitation accepted successfully.', user: sanitizeUser(user) as UserEntity }
   }
 }

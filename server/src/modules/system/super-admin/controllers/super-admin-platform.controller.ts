@@ -57,8 +57,12 @@ export class SuperAdminPlatformController {
   ): Promise<BaseApiSuccessResponse<{ user: { name: string; username: string } }>> {
     const { name, email, password, username, setupKey } = body
 
-    // Security check
-    const expectedKey = process.env.SuperAdmin_SETUP_KEY || 'super-setup-2026'
+    // Security check. The setup key MUST be configured via env; there is no
+    // insecure default. If it is unset the bootstrap endpoint is disabled.
+    const expectedKey = process.env.SuperAdmin_SETUP_KEY
+    if (!expectedKey || expectedKey.trim() === '') {
+      throw new UnauthorizedException('Super admin setup is disabled')
+    }
     if (setupKey !== expectedKey) {
       throw new UnauthorizedException('Invalid setup key')
     }

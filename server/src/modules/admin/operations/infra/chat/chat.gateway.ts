@@ -10,6 +10,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
+import { getJwtSecret } from '@/common/utils/jwt-secret.util'
 import { ChatService } from './chat.service'
 
 @WebSocketGateway({
@@ -45,7 +46,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
 
         const payload = await this.jwtService.verifyAsync(token, {
-          secret: process.env.JWT_SECRET_KEY || 'myUnsecureJwtSecret',
+          secret: getJwtSecret(),
         })
 
         client.data = {
@@ -90,6 +91,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Authorizes a client to act on a conversation:
+   *  - Agents: the conversation must belong to the agent's (JWT) tenant.
+   *  - Visitors: the conversation must belong to the visitor's tenant AND be
+   *    owned by that visitorId. Both come from the (untrusted) handshake, so we
+   *    require an exact match against the stored conversation.
+   */
+  private async isAuthorizedForConversation(
+    client: Socket,
+    conversationId: string,
+  ): Promise<boolean> {
+    if (!conversationId) return false
+    try {
+      const tenantId = client.data?.tenantId ?? null
+      const conversation = await this.chatService.assertConversation(conversationId, tenantId)
+      if (client.data?.isAgent) {
+        return true
+      }
+      return conversation.visitorId === client.data?.visitorId
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Listen for user/agent joining a specific conversation room
    */
   @SubscribeMessage('room.join')
@@ -97,11 +122,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string; senderType: 'VISITOR' | 'AGENT' },
   ) {
+    if (!(await this.isAuthorizedForConversation(client, data.conversationId))) {
+      client.emit('chat.error', { message: 'Not authorized for this conversation' })
+      return
+    }
+
     const room = `room:chat_${data.conversationId}`
     client.join(room)
 
     // Automatically mark previous messages as read
-    await this.chatService.markAsRead(data.conversationId, data.senderType)
+    await this.chatService.markAsRead(
+      data.conversationId,
+      data.senderType,
+      client.data?.tenantId ?? null,
+    )
 
     // Notify others in the room
     client.to(room).emit('room.user_joined', {
@@ -126,6 +160,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       senderName: string
     },
   ) {
+    if (!(await this.isAuthorizedForConversation(client, data.conversationId))) {
+      client.emit('chat.error', { message: 'Not authorized for this conversation' })
+      return
+    }
+
     const senderId = client.data.isAgent ? client.data.userId : null
 
     // Save to database

@@ -170,6 +170,10 @@ export class PurchaseOrderService {
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
+    // Stock-update queue jobs are deferred until after commit so workers never
+    // process a GRN/PO state that a rollback discarded.
+    const stockUpdateJobs: any[] = []
+
     try {
       // 1. Re-fetch the order WITH items inside the transaction
       const orderWithItems = await queryRunner.manager.findOne(PurchaseOrderEntity, {
@@ -237,7 +241,7 @@ export class PurchaseOrderService {
         for (const item of itemDtos) {
           totalGrnCost += item.receivedQty * item.unitCost
           if (item.receivedQty > 0 && item.productId) {
-            await this.productQueue.add('update-stock', {
+            stockUpdateJobs.push({
               productId: item.productId,
               variantId: item.variantId || null,
               quantity: item.receivedQty,
@@ -279,6 +283,15 @@ export class PurchaseOrderService {
       }
 
       await queryRunner.commitTransaction()
+
+      // Dispatch deferred stock-update jobs now that the GRN/PO state is durable.
+      for (const job of stockUpdateJobs) {
+        try {
+          await this.productQueue.add('update-stock', job)
+        } catch (e: any) {
+          this.logger.error(`Failed to enqueue stock-update job after GRN commit: ${e.message}`)
+        }
+      }
 
       // Trigger Notification for Supplier Invoice Due
       try {

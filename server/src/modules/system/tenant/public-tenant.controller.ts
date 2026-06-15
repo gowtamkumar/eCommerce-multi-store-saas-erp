@@ -1,7 +1,10 @@
 import { Body, Controller, Logger, Post } from '@nestjs/common'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantService } from './tenant.service'
+import { Public } from '@/common/decorators/public.decorator'
 
+// Public: self-service store signup must be reachable by unauthenticated users.
+@Public()
 @Controller('onboard')
 export class OnboardController {
   private readonly logger = new Logger(OnboardController.name)

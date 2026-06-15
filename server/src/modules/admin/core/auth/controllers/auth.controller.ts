@@ -27,7 +27,7 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/register')
   @Audit({ entity: 'Auth', action: 'REGISTER' })
   async register(
@@ -160,7 +160,7 @@ export class AuthController {
     }
   }
 
-  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/forgot-password')
   async forgotPassword(
     @RequestContext() ctx: RequestContextDto,
@@ -221,8 +221,11 @@ export class AuthController {
 
   private cookiesBuildTokenResponsive(response: Response, token: string) {
     const cookiesOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24),
     }
-    return response.status(200).cookie('token', token, cookiesOptions)
+    return response.cookie('token', token, cookiesOptions)
   }
 }

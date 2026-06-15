@@ -1,7 +1,7 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { EntityManager, Repository } from 'typeorm'
 import { PaymentEntity } from '../entities/payment.entity'
 
 @Injectable()
@@ -18,13 +18,23 @@ export class PaymentRepository {
     return await this.repo.findOne({ where: { transactionId, tenantId } })
   }
 
-  async createAndSave(dto: any, ctx: RequestContextDto): Promise<PaymentEntity> {
-    const payment = this.repo.create({
+  /**
+   * Persists a payment. When a transactional `EntityManager` is supplied the
+   * insert participates in the caller's transaction so a later rollback also
+   * undoes the payment row (avoids orphaned/duplicate payments).
+   */
+  async createAndSave(
+    dto: any,
+    ctx: RequestContextDto,
+    manager?: EntityManager,
+  ): Promise<PaymentEntity> {
+    const repo = manager ? manager.getRepository(PaymentEntity) : this.repo
+    const payment = repo.create({
       ...dto,
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     } as any) as unknown as PaymentEntity
-    return await (this.repo.save(payment) as Promise<PaymentEntity>)
+    return await (repo.save(payment) as Promise<PaymentEntity>)
   }
 
   /**

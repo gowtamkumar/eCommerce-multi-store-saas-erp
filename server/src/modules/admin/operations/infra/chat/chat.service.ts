@@ -89,13 +89,37 @@ export class ChatService {
   }
 
   /**
-   * Get messages for a specific conversation
+   * Verifies a conversation exists and (when a tenant is supplied) belongs to
+   * that tenant. Returns the conversation. Throws otherwise. Pass `undefined`
+   * to skip the tenant check (e.g. public visitor flows already scoped by
+   * tenant + visitorId).
+   */
+  async assertConversation(
+    conversationId: string,
+    tenantId?: string | null,
+  ): Promise<ConversationEntity> {
+    const where: any = { id: conversationId }
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId
+    }
+    const conversation = await this.conversationRepo.findOne({ where })
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found')
+    }
+    return conversation
+  }
+
+  /**
+   * Get messages for a specific conversation. When `tenantId` is provided the
+   * conversation must belong to that tenant, preventing cross-tenant reads.
    */
   async getMessages(
     conversationId: string,
     limit: number = 50,
     offset: number = 0,
+    tenantId?: string | null,
   ): Promise<[ChatMessageEntity[], number]> {
+    await this.assertConversation(conversationId, tenantId)
     return await this.messageRepo.findAndCount({
       where: { conversationId },
       order: { createdAt: 'ASC' },
@@ -132,10 +156,16 @@ export class ChatService {
   /**
    * Mark messages in a conversation as read
    */
-  async markAsRead(conversationId: string, readerType: 'VISITOR' | 'AGENT'): Promise<void> {
-    const conversation = await this.conversationRepo.findOne({
-      where: { id: conversationId },
-    })
+  async markAsRead(
+    conversationId: string,
+    readerType: 'VISITOR' | 'AGENT',
+    tenantId?: string | null,
+  ): Promise<void> {
+    const where: any = { id: conversationId }
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId
+    }
+    const conversation = await this.conversationRepo.findOne({ where })
 
     if (!conversation) return
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { publicSaasApi } from '@/services/publicSaasApi ';
+import { publicSaasApi } from '@/services/publicSaasApi';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowRight,

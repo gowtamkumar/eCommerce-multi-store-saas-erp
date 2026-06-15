@@ -7,11 +7,15 @@ const isProduction = process.env.NODE_ENV === 'production'
 const envFile = isProduction ? '.env.production' : '.env.development'
 config({ path: join(process.cwd(), envFile) })
 
-// Schema auto-sync is dangerous in production: it can silently alter/drop
-// columns and conflict with migrations. Default it OFF in production and ON
-// elsewhere, but always allow an explicit DB_SYNCHRONIZE override.
-const synchronize =
-  process.env.DB_SYNCHRONIZE !== undefined ? process.env.DB_SYNCHRONIZE === 'true' : !isProduction
+// Schema auto-sync is dangerous: it can silently alter/drop columns and
+// conflict with migrations. It is FORCED OFF in production (no override is
+// allowed). Outside production it defaults ON but can be toggled via
+// DB_SYNCHRONIZE.
+const synchronize = isProduction
+  ? false
+  : process.env.DB_SYNCHRONIZE !== undefined
+    ? process.env.DB_SYNCHRONIZE === 'true'
+    : true
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',

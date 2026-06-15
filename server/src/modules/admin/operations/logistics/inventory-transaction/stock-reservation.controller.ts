@@ -1,9 +1,14 @@
-import { Controller, Get, Param, Query, ParseUUIDPipe } from '@nestjs/common'
+import { Controller, Get, Param, Query, ParseUUIDPipe, UseGuards } from '@nestjs/common'
 import { StockReservationService } from './stock-reservation.service'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 
+@UseGuards(JwtAuthGuard)
+@RequirePermissions(SystemPermissions.INVENTORY_READ)
 @Controller('admin/inventory/reservations')
 export class StockReservationController {
   constructor(private readonly reservationService: StockReservationService) {}

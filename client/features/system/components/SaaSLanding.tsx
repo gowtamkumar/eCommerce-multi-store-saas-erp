@@ -1,6 +1,6 @@
 'use client'
 import { fetchAPI } from '@/services/api';
-import { publicSaasApi } from '@/services/publicSaasApi ';
+import { publicSaasApi } from '@/services/publicSaasApi';
 import { getFeatureDisplay } from '@/routes';
 import * as Icons from 'lucide-react';
 import Link from 'next/link';

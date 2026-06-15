@@ -14,6 +14,7 @@ import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { DataSource } from 'typeorm'
 import { InitPaymentDto } from '../dto/payment.dto'
 import { PaymentEntity } from '../entities/payment.entity'
 import { PaymentRepository } from '../repositories/payment.repository'
@@ -31,6 +32,7 @@ export class PaymentService {
     private readonly cacheService: CacheService,
     private readonly auditLogService: AuditLogService,
     private readonly notificationService: NotificationService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async initPayment(dto: InitPaymentDto, ctx: RequestContextDto): Promise<{ gatewayUrl: string }> {
@@ -117,23 +119,54 @@ export class PaymentService {
       verifiedGatewayResponse = validation.gatewayResponse
     }
 
-    order.paymentStatus = PaymentStatus.PAID
-    order.status = OrderStatus.PENDING
-    await this.orderRepository.saveOrder(order)
+    // Atomically flip the order to PAID and record the payment under a row
+    // lock. The gateway can fire concurrent/duplicate callbacks; the lock +
+    // re-check inside the transaction prevents double payments and double
+    // accounting postings.
+    const { payment, alreadyPaid } = await this.dataSource.transaction(async (manager) => {
+      const lockedOrder = await manager.findOne(OrderEntity, {
+        where: { id: order.id },
+        lock: { mode: 'pessimistic_write' },
+      })
+      if (!lockedOrder) {
+        throw new NotFoundException('Order not found')
+      }
+      if (lockedOrder.paymentStatus === PaymentStatus.PAID) {
+        return { payment: null as PaymentEntity | null, alreadyPaid: true }
+      }
 
-    // Record payment
-    const payment = await this.paymentRepository.createAndSave(
-      {
-        orderId: order.id,
-        transactionId: tran_id,
-        amount: order.totalAmount,
-        currency: order.currency,
-        method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
-        status: PaymentStatus.COMPLETED,
-        gatewayResponse: verifiedGatewayResponse,
-      },
-      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
-    )
+      // Reuse an existing payment row for this transaction if one exists.
+      const existingPayment = await manager.findOne(PaymentEntity, {
+        where: { transactionId: tran_id, tenantId: lockedOrder.tenantId },
+      })
+
+      lockedOrder.paymentStatus = PaymentStatus.PAID
+      lockedOrder.status = OrderStatus.PENDING
+      await manager.save(lockedOrder)
+
+      const savedPayment =
+        existingPayment ||
+        (await this.paymentRepository.createAndSave(
+          {
+            orderId: order.id,
+            transactionId: tran_id,
+            amount: order.totalAmount,
+            currency: order.currency,
+            method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+            status: PaymentStatus.COMPLETED,
+            gatewayResponse: verifiedGatewayResponse,
+          },
+          { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+          manager,
+        ))
+
+      return { payment: savedPayment, alreadyPaid: false }
+    })
+
+    // A concurrent callback already finalized this order — nothing more to do.
+    if (alreadyPaid || !payment) {
+      return { success: true }
+    }
 
     // Sync Invoice Status
     await this.invoiceService.updateInvoiceStatusByOrderId(

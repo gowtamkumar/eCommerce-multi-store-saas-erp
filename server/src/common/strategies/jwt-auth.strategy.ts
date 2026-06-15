@@ -8,6 +8,7 @@ import { AccessTokenPayload } from 'src/modules/admin/core/auth/dtos'
 import { UserDto } from 'src/modules/admin/core/user/dtos/user.dto'
 import { UserService } from 'src/modules/admin/core/user/services/user.service'
 import { SessionEntity } from 'src/modules/admin/core/auth/entities/session.entity'
+import { sanitizeUser } from 'src/common/utils/sanitize-user.util'
 
 @Injectable()
 export class JwtAuthStrategy extends PassportStrategy(Strategy) {
@@ -49,7 +50,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Token not valid - User not found')
       }
 
-      return { ...user, sessionId } as any
+      return { ...sanitizeUser(user), sessionId } as any
     } catch (error) {
       console.error(`[JwtStrategy] Error validating user:`, error)
       throw new UnauthorizedException('Token not valid - Validation error')

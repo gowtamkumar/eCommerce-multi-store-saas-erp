@@ -60,6 +60,11 @@ export class OrderLifecycleService {
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
+    // Side effects (queue jobs) must only run AFTER the DB transaction commits,
+    // otherwise a rollback would leave workers acting on state that never
+    // persisted. We collect them here and dispatch post-commit.
+    const postCommitJobs: Array<() => Promise<unknown>> = []
+
     try {
       const oldStatus = order.status
       const oldPaymentStatus = order.paymentStatus
@@ -77,7 +82,7 @@ export class OrderLifecycleService {
         })
 
         if (!existingPayment) {
-          const payment = await this.paymentRepository.createAndSave(
+          await this.paymentRepository.createAndSave(
             {
               orderId: order.id,
               transactionId,
@@ -88,6 +93,7 @@ export class OrderLifecycleService {
               gatewayResponse: { note: 'Manual update from admin dashboard' },
             },
             ctx,
+            queryRunner.manager,
           )
         }
       }
@@ -155,60 +161,77 @@ export class OrderLifecycleService {
         }
 
         // Recognition of Cash/Payment and Sales Revenue for standard sales
-        await this.accountingQueue.add(
-          'post-order-paid',
-          {
-            ctx,
-            payload: {
-              orderId: savedOrder.id,
-              paymentMethod: savedOrder.paymentMethod,
-              walletDeduction: Number(savedOrder.walletDeductionAmount || 0),
-              remainingAmount:
-                Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
-              netRevenue: Number(savedOrder.totalAmount) - Number(savedOrder.taxAmount || 0),
-              taxAmount: Number(savedOrder.taxAmount || 0),
+        postCommitJobs.push(() =>
+          this.accountingQueue.add(
+            'post-order-paid',
+            {
+              ctx,
+              payload: {
+                orderId: savedOrder.id,
+                paymentMethod: savedOrder.paymentMethod,
+                walletDeduction: Number(savedOrder.walletDeductionAmount || 0),
+                remainingAmount:
+                  Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
+                netRevenue: Number(savedOrder.totalAmount) - Number(savedOrder.taxAmount || 0),
+                taxAmount: Number(savedOrder.taxAmount || 0),
+              },
             },
-          },
-          { removeOnComplete: true },
+            { removeOnComplete: true },
+          ),
         )
 
-        await this.invoiceQueue.add(
-          'update-invoice-paid',
-          {
-            ctx,
-            payload: {
-              orderId: savedOrder.id,
+        postCommitJobs.push(() =>
+          this.invoiceQueue.add(
+            'update-invoice-paid',
+            {
+              ctx,
+              payload: {
+                orderId: savedOrder.id,
+              },
             },
-          },
-          { removeOnComplete: true },
+            { removeOnComplete: true },
+          ),
         )
       }
 
       // Sync Invoice Status
       if (updateOrderDto.status === OrderStatus.CANCELLED) {
-        await this.invoiceQueue.add(
-          'update-invoice-cancelled',
-          {
-            ctx,
-            payload: { orderId: id },
-          },
-          { removeOnComplete: true },
+        postCommitJobs.push(() =>
+          this.invoiceQueue.add(
+            'update-invoice-cancelled',
+            {
+              ctx,
+              payload: { orderId: id },
+            },
+            { removeOnComplete: true },
+          ),
         )
       }
 
       // Check for Order Confirmation to Trigger Fulfillment
       if (updateOrderDto.status === OrderStatus.CONFIRMED && oldStatus !== OrderStatus.CONFIRMED) {
-        await this.fulfillmentQueue.add(
-          'create-fulfillment-task',
-          {
-            ctx,
-            payload: { orderId: id },
-          },
-          { removeOnComplete: true },
+        postCommitJobs.push(() =>
+          this.fulfillmentQueue.add(
+            'create-fulfillment-task',
+            {
+              ctx,
+              payload: { orderId: id },
+            },
+            { removeOnComplete: true },
+          ),
         )
       }
 
       await queryRunner.commitTransaction()
+
+      // Dispatch deferred side effects now that the transaction is durable.
+      for (const job of postCommitJobs) {
+        try {
+          await job()
+        } catch (e: any) {
+          this.logger.error(`Failed to enqueue post-commit job for order ${id}: ${e.message}`)
+        }
+      }
 
       // Notifications
       try {

@@ -7,6 +7,7 @@ import { ChatMessageEntity } from './entities/chat-message.entity'
 import { ChatService } from './chat.service'
 import { ChatGateway } from './chat.gateway'
 import { ChatController } from './chat.controller'
+import { getJwtSecret } from '@/common/utils/jwt-secret.util'
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { ChatController } from './chat.controller'
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET_KEY') || 'myUnsecureJwtSecret',
+        secret: getJwtSecret(),
         signOptions: { expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRES') || '15m' },
       }),
     }),

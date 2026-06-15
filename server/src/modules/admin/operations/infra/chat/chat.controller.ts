@@ -109,11 +109,17 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get messages for a conversation' })
   async getConversationMessages(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') conversationId: string,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset?: number,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const [messages, total] = await this.chatService.getMessages(conversationId, limit, offset)
+    const [messages, total] = await this.chatService.getMessages(
+      conversationId,
+      limit,
+      offset,
+      ctx.tenantId || null,
+    )
 
     return {
       success: true,
@@ -133,9 +139,10 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark conversation as read by Agent' })
   async markAsReadByAgent(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') conversationId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
-    await this.chatService.markAsRead(conversationId, 'AGENT')
+    await this.chatService.markAsRead(conversationId, 'AGENT', ctx.tenantId || null)
 
     return {
       success: true,

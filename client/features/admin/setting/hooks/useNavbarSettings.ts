@@ -33,15 +33,15 @@ export function useNavbarSettings(
   setFormData: (data: unknown) => void,
 ): {
   updateNavbar: (updates: Partial<NavbarSettings>) => void;
-  updateNavbarField: (key: keyof NavbarSettings, value: unknown) => void;
+  updateNavbarField: (key: string, value: unknown) => void;
   updateNavbarLinks: (links: unknown[]) => void;
 } {
   const updateNavbar = useCallback(
     (updates: Partial<NavbarSettings>) => {
-      setFormData((prev: unknown) => ({
+      setFormData((prev: Record<string, unknown>) => ({
         ...prev,
         navbar: {
-          ...((prev as any).navbar || {}),
+          ...((prev?.navbar as Record<string, unknown>) || {}),
           ...updates,
         },
       }));
@@ -50,7 +50,7 @@ export function useNavbarSettings(
   );
 
   const updateNavbarField = useCallback(
-    (key: keyof NavbarSettings, value: unknown) => {
+    (key: string, value: unknown) => {
       updateNavbar({ [key]: value } as Partial<NavbarSettings>);
     },
     [updateNavbar],

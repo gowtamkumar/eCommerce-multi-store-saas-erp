@@ -3,7 +3,10 @@ import { SubscriptionPlanService } from './subscription-plan.service'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { SubscriptionPlanResponseDto } from './dto/subscription-plan-response.dto'
 import { Logger } from '@nestjs/common'
+import { Public } from '@/common/decorators/public.decorator'
 
+// Public: the pricing/plans list is shown on the unauthenticated SaaS landing page.
+@Public()
 @Controller('plans')
 export class PublicSubscriptionPlanController {
   private readonly logger = new Logger(PublicSubscriptionPlanController.name)
