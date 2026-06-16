@@ -37,6 +37,8 @@ describe('SslCommerzPaymentStrategy', () => {
 
     beforeEach(() => {
       strategy = new SslCommerzPaymentStrategy()
+      jest.spyOn((strategy as any).logger, 'error').mockImplementation(() => {})
+      jest.spyOn((strategy as any).logger, 'warn').mockImplementation(() => {})
     })
 
     afterEach(() => {

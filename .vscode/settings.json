@@ -20,7 +20,8 @@
     "**/dist/**": true,
     "**/postgres_data/**": true,
     "**/redis-data/**": true,
-    "**/minio_data/**": true
+    "**/minio_data/**": true,
+    "**/.hg/store/**": true
   },
   "search.exclude": {
     "**/node_modules": true,

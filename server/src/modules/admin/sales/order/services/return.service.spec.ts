@@ -38,7 +38,9 @@ describe('ReturnService', () => {
 
     const mockOrderRepository = {}
     const mockInventoryLedgerService = {}
-    const mockNotificationService = {}
+    const mockNotificationService = {
+      createNotification: jest.fn().mockResolvedValue({}),
+    }
     const mockWalletService = {}
 
     const module: TestingModule = await Test.createTestingModule({
