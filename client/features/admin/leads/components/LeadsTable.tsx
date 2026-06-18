@@ -13,11 +13,13 @@ export default function LeadsTable({
     updatingStatus,
     onPageChange,
     onStatusUpdate,
+    onDraftEmail,
 }: LeadsTableProps) {
     const columns = useMemo(() => buildLeadColumns({
         updatingStatus,
         onStatusUpdate,
-    }), [updatingStatus, onStatusUpdate]);
+        onDraftEmail,
+    }), [updatingStatus, onStatusUpdate, onDraftEmail]);
 
     const dataTablePagination = useMemo(() => ({
         page: pagination.page || 1,

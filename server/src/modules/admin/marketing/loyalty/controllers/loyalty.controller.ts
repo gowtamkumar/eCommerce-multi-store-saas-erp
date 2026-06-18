@@ -193,6 +193,8 @@ export class LoyaltyController {
           pointsRequiredPerCurrencyDiscount: config.pointsRequiredPerCurrencyDiscount,
           pointsPerCurrencySpent: config.pointsPerCurrencySpent,
         },
+        programDescription: config.programDescription || '',
+        referralMessage: config.referralMessage || '',
       },
     }
   }

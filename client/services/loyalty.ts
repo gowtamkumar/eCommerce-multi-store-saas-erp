@@ -26,6 +26,8 @@ export interface LoyaltyConfig {
   referralRewardAmount: number;
   refereeMinPurchase: number;
   pointsExpireAfterDays?: number | null;
+  programDescription?: string | null;
+  referralMessage?: string | null;
 }
 
 export interface MyLoyaltySummary {
@@ -38,6 +40,8 @@ export interface MyLoyaltySummary {
     pointsRequiredPerCurrencyDiscount: number;
     pointsPerCurrencySpent: number;
   };
+  programDescription?: string;
+  referralMessage?: string;
 }
 
 /**

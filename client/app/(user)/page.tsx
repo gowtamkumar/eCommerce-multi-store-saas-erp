@@ -35,20 +35,25 @@ function buildTypographyStyle(typography: Record<string, any>): React.CSSPropert
 export async function generateMetadata() {
   const settings = await getSiteSettings();
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const title =
+    settings.metaTitle ||
+    `${settings.brandName || "LuxeAudio"} | Experience Sound Like Never Before`;
+  const description =
+    settings.siteDescription || "Premium audio equipment for the discerning listener.";
 
   return {
-    title: `${settings.brandName || "LuxeAudio"} | Experience Sound Like Never Before`,
-    description: settings.siteDescription || "Premium audio equipment for the discerning listener.",
+    title,
+    description,
     openGraph: {
-      title: `${settings.brandName || "LuxeAudio"} | Experience Sound Like Never Before`,
-      description: settings.siteDescription || "Premium audio equipment for the discerning listener.",
+      title,
+      description,
       type: "website",
       url: baseUrl,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${settings.brandName || "LuxeAudio"} | Experience Sound Like Never Before`,
-      description: settings.siteDescription || "Premium audio equipment for the discerning listener.",
+      title,
+      description,
     },
   };
 }

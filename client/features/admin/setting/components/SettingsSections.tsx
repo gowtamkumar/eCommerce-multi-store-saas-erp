@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { SectionProps } from '../types';
 import ImageUploadField from "@/components/shared/ImageUploadField";
 import { fetchAPI } from "@/services/api";
+import { StoreSeoAiAssist } from './StoreSeoAiAssist';
 
 export const BrandIdentitySection: React.FC<SectionProps> = React.memo(({ formData, setFormData }) => (
     <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
@@ -149,8 +150,8 @@ export const ContactSection: React.FC<SectionProps> = React.memo(({ formData, se
 export const SEOSection: React.FC<SectionProps> = React.memo(({ formData, setFormData }) => {
     const [localRobots, setLocalRobots] = useState(formData.robotsTxt || '');
     const [localDescription, setLocalDescription] = useState(formData.siteDescription || '');
+    const [localMetaTitle, setLocalMetaTitle] = useState(formData.metaTitle || '');
 
-    // Sync local state with prop
     useEffect(() => {
         setLocalRobots(formData.robotsTxt || '');
     }, [formData.robotsTxt]);
@@ -159,19 +160,27 @@ export const SEOSection: React.FC<SectionProps> = React.memo(({ formData, setFor
         setLocalDescription(formData.siteDescription || '');
     }, [formData.siteDescription]);
 
-    // Debounced update to global state
+    useEffect(() => {
+        setLocalMetaTitle(formData.metaTitle || '');
+    }, [formData.metaTitle]);
+
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (localRobots !== formData.robotsTxt || localDescription !== formData.siteDescription) {
-                setFormData({ 
-                    ...formData, 
+            if (
+                localRobots !== formData.robotsTxt ||
+                localDescription !== formData.siteDescription ||
+                localMetaTitle !== formData.metaTitle
+            ) {
+                setFormData({
+                    ...formData,
                     robotsTxt: localRobots,
-                    siteDescription: localDescription 
+                    siteDescription: localDescription,
+                    metaTitle: localMetaTitle,
                 });
             }
         }, 800);
         return () => clearTimeout(timer);
-    }, [localRobots, localDescription, formData, setFormData]);
+    }, [localRobots, localDescription, localMetaTitle, formData, setFormData]);
 
     return (
         <div className="space-y-6 pt-6 border-t border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-left-4 duration-1000">
@@ -179,7 +188,33 @@ export const SEOSection: React.FC<SectionProps> = React.memo(({ formData, setFor
                 <Globe className="w-5 h-5 text-emerald-600" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white font-display">SEO & Search</h2>
             </div>
+
+            <StoreSeoAiAssist
+                brandName={formData.brandName || ''}
+                siteDescription={localDescription}
+                onApply={(result) => {
+                    setLocalMetaTitle(result.metaTitle);
+                    setLocalDescription(result.metaDescription);
+                    setFormData({
+                        ...formData,
+                        metaTitle: result.metaTitle,
+                        siteDescription: result.metaDescription,
+                    });
+                }}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Store Meta Title</label>
+                    <input
+                        type="text"
+                        value={localMetaTitle}
+                        onChange={(e) => setLocalMetaTitle(e.target.value)}
+                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200 font-display"
+                        placeholder="e.g. LuxeAudio | Premium Wireless Headphones"
+                    />
+                    <p className="text-[10px] text-slate-400">{localMetaTitle.length} / 60 chars recommended</p>
+                </div>
                 <div className="space-y-1.5 md:col-span-2">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site Meta Description</label>
                     <textarea
@@ -187,8 +222,9 @@ export const SEOSection: React.FC<SectionProps> = React.memo(({ formData, setFor
                         value={localDescription}
                         onChange={(e) => setLocalDescription(e.target.value)}
                         className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200 resize-none font-display"
-                        placeholder="Tell us about your store..."
+                        placeholder="Tell search engines what your store offers..."
                     />
+                    <p className="text-[10px] text-slate-400">{localDescription.length} / 155 chars recommended</p>
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">

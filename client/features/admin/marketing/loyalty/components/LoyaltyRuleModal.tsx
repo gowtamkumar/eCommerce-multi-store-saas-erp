@@ -2,6 +2,7 @@
 
 import { Award, RefreshCw, X } from 'lucide-react';
 import type { LoyaltyRuleModalProps, LoyaltyRuleType } from '../types';
+import { LoyaltyRuleAiAssist } from './LoyaltyRuleAiAssist';
 
 const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-semibold';
 const labelClass = 'text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400';
@@ -39,6 +40,14 @@ export default function LoyaltyRuleModal({
                 </div>
 
                 <form onSubmit={onSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+                    <LoyaltyRuleAiAssist
+                        ruleType={formData.type}
+                        value={formData.value}
+                        categoryId={formData.categoryId}
+                        minSpend={formData.minSpend}
+                        onApply={(name) => onFieldChange('name', name)}
+                    />
+
                     <div className="space-y-1.5">
                         <label className={labelClass}>Rule Name</label>
                         <input

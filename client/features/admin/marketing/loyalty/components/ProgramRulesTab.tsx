@@ -3,6 +3,7 @@
 import { RefreshCw, Save } from 'lucide-react';
 import type { LoyaltyConfig } from '@/services/loyalty';
 import type { ProgramRulesTabProps } from '../types';
+import { LoyaltyProgramAiAssist } from './LoyaltyProgramAiAssist';
 
 interface NumberFieldProps {
     label: string;
@@ -164,6 +165,51 @@ export default function ProgramRulesTab({
                             value={config.refereeMinPurchase}
                             onChange={(value) => patch({ refereeMinPurchase: Number(value) })}
                         />
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-200/50 dark:border-slate-800 space-y-6 lg:col-span-2">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                        Customer-Facing Copy
+                    </h3>
+                    <LoyaltyProgramAiAssist
+                        config={config}
+                        onApply={(result) =>
+                            patch({
+                                programDescription: result.programDescription,
+                                referralMessage: result.referralMessage,
+                            })
+                        }
+                    />
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                                Program Description
+                            </label>
+                            <textarea
+                                value={config.programDescription ?? ''}
+                                onChange={(event) => patch({ programDescription: event.target.value })}
+                                rows={4}
+                                placeholder="Explain how customers earn, redeem, and level up through tiers..."
+                                className="w-full mt-2 px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-950 dark:text-white resize-y"
+                            />
+                            <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Shown on the customer loyalty profile when set.
+                            </p>
+                        </div>
+                        <div>
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                                Referral Invite Message
+                            </label>
+                            <input
+                                type="text"
+                                value={config.referralMessage ?? ''}
+                                onChange={(event) => patch({ referralMessage: event.target.value })}
+                                maxLength={500}
+                                placeholder="Invite friends and earn rewards when they join..."
+                                className="w-full mt-2 px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-950 dark:text-white"
+                            />
+                        </div>
                     </div>
                 </div>
 

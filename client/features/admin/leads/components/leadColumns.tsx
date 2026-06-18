@@ -2,12 +2,13 @@
 
 import type { DataTableColumn } from '@/components/shared/DataTable';
 import { LeadStatus } from '@/lib/enums/lead-status.enum';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import type { LeadMessage } from '../type';
 
 interface BuildLeadColumnsOptions {
     updatingStatus: string | null;
     onStatusUpdate: (id: string, newStatus: LeadStatus) => void;
+    onDraftEmail: (lead: LeadMessage) => void;
 }
 
 function getStatusColor(status: LeadStatus) {
@@ -26,6 +27,7 @@ function getStatusColor(status: LeadStatus) {
 export function buildLeadColumns({
     updatingStatus,
     onStatusUpdate,
+    onDraftEmail,
 }: BuildLeadColumnsOptions): DataTableColumn<LeadMessage>[] {
     return [
         {
@@ -85,6 +87,20 @@ export function buildLeadColumns({
                     </select>
                     {updatingStatus === lead.id && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
                 </div>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            cell: (lead) => (
+                <button
+                    type="button"
+                    onClick={() => onDraftEmail(lead)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-50 dark:bg-brand-950/30 text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-colors"
+                >
+                    <Mail className="w-3.5 h-3.5" />
+                    Draft email
+                </button>
             ),
         },
     ];

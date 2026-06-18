@@ -23,6 +23,9 @@ export class SiteSettingsResponseDto {
   siteDescription: string
 
   @Expose()
+  metaTitle: string
+
+  @Expose()
   contactEmail: string
 
   @Expose()

@@ -100,9 +100,9 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | FAQs | `/admin/faqs` | Q&A from topic | ✅ | Bulk import from doc/PDF |
 | Page builder — SEO | Page customizer | Meta title/description | ✅ | — |
 | Page builder — blocks | Page customizer sections | Headings, paragraphs, CTAs | ✅ | `PageBlockAiAssist` on heading/paragraph/button/text-block |
-| Store SEO settings | `/admin/settings/marketing` | Site-wide meta defaults | ⬜ | Global SEO suggestions |
-| Loyalty program | `/admin/marketing/loyalty` | Rule explanations, email copy | ⬜ | Campaign-style copy |
-| Newsletter / leads | `/admin/leads` | Follow-up email drafts | ⬜ | Lead nurture sequences |
+| Store SEO settings | `/admin/settings/marketing` | Site-wide meta defaults | ✅ | `StoreSeoAiAssist` + `metaTitle` field |
+| Loyalty program | `/admin/marketing/loyalty` | Rule explanations, email copy | ✅ | `LoyaltyProgramAiAssist` + `LoyaltyRuleAiAssist` |
+| Newsletter / leads | `/admin/leads` | Follow-up email drafts | ✅ | `LeadFollowUpModal` + nurture intents |
 
 ### 3.2 Admin — Sales, Support & CRM
 
@@ -429,7 +429,7 @@ Track per tenant after each phase:
 
 | Layer | Coverage today | Highest-impact next |
 |-------|----------------|---------------------|
-| **Marketing & content** | ~80% of copy workflows | Page blocks, loyalty copy |
+| **Marketing & content** | ~95% of copy workflows | — |
 | **Catalog** | Products, categories, brands | Alt text, bulk import |
 | **Support & CRM** | 0% | Suggested chat replies |
 | **Operations / inventory** | 0% | Read-only anomaly narratives |

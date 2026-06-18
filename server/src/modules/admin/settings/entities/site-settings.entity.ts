@@ -38,6 +38,9 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ name: 'site_description', nullable: true })
   siteDescription: string
 
+  @Column({ name: 'meta_title', nullable: true })
+  metaTitle: string
+
   @Column({ name: 'contact_email', nullable: true })
   contactEmail: string
 

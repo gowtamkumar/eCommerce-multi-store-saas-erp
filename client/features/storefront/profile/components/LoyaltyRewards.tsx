@@ -108,6 +108,14 @@ export default function LoyaltyRewards() {
 
   return (
     <div className="p-6 md:p-8 space-y-8">
+      {data.programDescription && (
+        <div className="p-6 rounded-[2rem] bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed">
+            {data.programDescription}
+          </p>
+        </div>
+      )}
+
       {/* Tier & Balance Hero Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Tier Card */}
@@ -152,7 +160,8 @@ export default function LoyaltyRewards() {
             <div>
               <h4 className="text-lg font-black text-slate-900 dark:text-white">Invite Friends & Earn Rewards</h4>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-                Invite friends to register. When they place their first purchase matching or exceeding the program minimum, you will instantly receive your bonus reward!
+                {data.referralMessage ||
+                  "Invite friends to register. When they place their first purchase matching or exceeding the program minimum, you will instantly receive your bonus reward!"}
               </p>
             </div>
           </div>

@@ -15,10 +15,23 @@ import {
 } from '../dto/generate-catalog-content.dto'
 import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
 import {
+  GenerateLeadFollowUpDto,
+  LeadFollowUpResultDto,
+} from '../dto/generate-lead-follow-up.dto'
+import {
+  GenerateLoyaltyCopyDto,
+  LoyaltyProgramCopyResultDto,
+  LoyaltyRuleCopyResultDto,
+} from '../dto/generate-loyalty-copy.dto'
+import {
   GenerateMarketingDescriptionDto,
   MarketingDescriptionResultDto,
 } from '../dto/generate-marketing-description.dto'
 import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
+import {
+  GenerateStoreSeoDto,
+  StoreSeoResultDto,
+} from '../dto/generate-store-seo.dto'
 import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
@@ -151,6 +164,22 @@ export class AiController {
     }
   }
 
+  @Post('generate/store-seo')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateStoreSeo(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateStoreSeoDto,
+  ): Promise<BaseApiSuccessResponse<StoreSeoResultDto>> {
+    const data = await this.aiAssistantService.generateStoreSeo(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Store SEO generated successfully',
+      data,
+    }
+  }
+
   @Post('generate/page-block-content')
   @HttpCode(200)
   @RequirePermissions(SystemPermissions.AI_USE)
@@ -179,6 +208,38 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Marketing description generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/loyalty-copy')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateLoyaltyCopy(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateLoyaltyCopyDto,
+  ): Promise<BaseApiSuccessResponse<LoyaltyProgramCopyResultDto | LoyaltyRuleCopyResultDto>> {
+    const data = await this.aiAssistantService.generateLoyaltyCopy(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Loyalty copy generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/lead-follow-up')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateLeadFollowUp(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateLeadFollowUpDto,
+  ): Promise<BaseApiSuccessResponse<LeadFollowUpResultDto>> {
+    const data = await this.aiAssistantService.generateLeadFollowUp(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Lead follow-up email generated successfully',
       data,
     }
   }

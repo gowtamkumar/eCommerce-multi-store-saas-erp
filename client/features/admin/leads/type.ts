@@ -33,4 +33,5 @@ export interface LeadsTableProps {
     updatingStatus: string | null;
     onPageChange: (page: number) => void;
     onStatusUpdate: (id: string, newStatus: LeadStatus) => void;
+    onDraftEmail: (lead: LeadMessage) => void;
 }

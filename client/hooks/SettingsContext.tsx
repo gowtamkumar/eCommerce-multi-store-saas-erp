@@ -9,6 +9,7 @@ interface SiteSettings {
   favicon?: string;
   brandName: string;
   siteDescription: string;
+  metaTitle?: string;
   contactEmail: string;
   contactPhone: string;
   whatsappPhone: string;

@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsNumber, IsOptional, Min } from 'class-validator'
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator'
 import { Transform } from 'class-transformer'
 
 export class UpdateLoyaltyConfigDto {
@@ -75,4 +75,12 @@ export class UpdateLoyaltyConfigDto {
   @Min(1)
   @Transform(({ value }) => (value === null ? null : Math.round(Number(value))))
   pointsExpireAfterDays?: number | null
+
+  @IsOptional()
+  @IsString()
+  programDescription?: string | null
+
+  @IsOptional()
+  @IsString()
+  referralMessage?: string | null
 }

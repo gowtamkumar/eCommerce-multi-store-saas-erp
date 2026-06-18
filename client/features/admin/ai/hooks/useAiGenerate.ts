@@ -7,11 +7,16 @@ import type {
   CampaignCopyResult,
   CatalogContentResult,
   FaqContentResult,
+  LoyaltyProgramCopyResult,
+  LoyaltyRuleCopyResult,
+  LeadFollowUpIntent,
+  LeadFollowUpResult,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
   PageBlockType,
   ProductContentResult,
+  StoreSeoResult,
 } from "../types/ai-studio";
 
 export function useAiGenerate() {
@@ -83,6 +88,13 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<PageSeoResult>("/ai/generate/page-seo", payload);
 
+  const generateStoreSeo = (payload: {
+    brandName: string;
+    keywords?: string;
+    existingDescription?: string;
+    tone?: string;
+  }) => withGenerate<StoreSeoResult>("/ai/generate/store-seo", payload);
+
   const generatePageBlockContent = (payload: {
     blockType: PageBlockType;
     pageTitle?: string;
@@ -99,6 +111,28 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<MarketingDescriptionResult>("/ai/generate/marketing-description", payload);
 
+  const generateLoyaltyCopy = (payload: {
+    context: "program" | "rule";
+    offerSummary?: string;
+    ruleType?: string;
+    tone?: string;
+  }) =>
+    withGenerate<LoyaltyProgramCopyResult | LoyaltyRuleCopyResult>(
+      "/ai/generate/loyalty-copy",
+      payload,
+    );
+
+  const generateLeadFollowUp = (payload: {
+    leadName: string;
+    leadEmail: string;
+    subject?: string;
+    message?: string;
+    status?: string;
+    intent?: LeadFollowUpIntent;
+    brandName?: string;
+    tone?: string;
+  }) => withGenerate<LeadFollowUpResult>("/ai/generate/lead-follow-up", payload);
+
   return {
     configured,
     loading,
@@ -108,7 +142,10 @@ export function useAiGenerate() {
     generateCampaignCopy,
     generateFaq,
     generatePageSeo,
+    generateStoreSeo,
     generatePageBlockContent,
     generateMarketingDescription,
+    generateLoyaltyCopy,
+    generateLeadFollowUp,
   };
 }

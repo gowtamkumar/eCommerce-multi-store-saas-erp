@@ -82,6 +82,12 @@ export class LoyaltyConfigEntity extends BaseEntity {
   @Column({ type: 'integer', name: 'points_expire_after_days', nullable: true })
   pointsExpireAfterDays: number | null
 
+  @Column({ type: 'text', name: 'program_description', nullable: true })
+  programDescription: string | null
+
+  @Column({ type: 'varchar', length: 500, name: 'referral_message', nullable: true })
+  referralMessage: string | null
+
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 

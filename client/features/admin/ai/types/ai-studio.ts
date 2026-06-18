@@ -40,8 +40,27 @@ export interface PageSeoResult {
   metaDescription: string;
 }
 
+export type StoreSeoResult = PageSeoResult;
+
 export interface MarketingDescriptionResult {
   description: string;
+}
+
+export interface LoyaltyProgramCopyResult {
+  programDescription: string;
+  referralMessage: string;
+}
+
+export interface LoyaltyRuleCopyResult {
+  name: string;
+}
+
+export type LeadFollowUpIntent = "welcome" | "follow_up" | "nurture" | "conversion";
+
+export interface LeadFollowUpResult {
+  emailSubject: string;
+  emailBody: string;
+  smsText?: string;
 }
 
 export interface CatalogContentResult {

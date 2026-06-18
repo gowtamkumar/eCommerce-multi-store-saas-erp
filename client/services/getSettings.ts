@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = {
   brandName: "LuxeAudio",
   siteDescription:
     "Elevating your audio experience with premium sound and design.",
+  metaTitle: "",
   contactEmail: "support@luxesaas.com",
   contactPhone: "+8801722222222",
   whatsappPhone: "+8801722222222",

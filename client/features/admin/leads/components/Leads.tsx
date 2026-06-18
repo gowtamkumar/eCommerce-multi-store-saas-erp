@@ -1,11 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useLeadManager } from '../hooks/useLeadManager';
+import type { LeadMessage } from '../type';
+import LeadFollowUpModal from './LeadFollowUpModal';
 import LeadsFilters from './LeadsFilters';
 import LeadsHeader from './LeadsHeader';
 import LeadsTable from './LeadsTable';
 
 export default function Lead() {
+    const [draftLead, setDraftLead] = useState<LeadMessage | null>(null);
     const {
         leads,
         loading,
@@ -39,7 +43,12 @@ export default function Lead() {
                 updatingStatus={updatingStatus}
                 onPageChange={handlePageChange}
                 onStatusUpdate={handleStatusUpdate}
+                onDraftEmail={setDraftLead}
             />
+
+            {draftLead && (
+                <LeadFollowUpModal lead={draftLead} onClose={() => setDraftLead(null)} />
+            )}
         </div>
     );
 }

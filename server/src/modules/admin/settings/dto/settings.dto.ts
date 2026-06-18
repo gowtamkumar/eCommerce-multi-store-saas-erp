@@ -64,6 +64,11 @@ export class UpdateSiteSettingsDto {
   siteDescription?: string
 
   @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  metaTitle?: string
+
+  @ApiProperty({ required: false })
   @ValidateIf((o, v) => v !== '' && v !== null && v !== undefined)
   @IsEmail()
   @IsOptional()

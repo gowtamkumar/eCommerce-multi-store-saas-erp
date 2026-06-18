@@ -8,10 +8,23 @@ import {
 } from '../dto/generate-catalog-content.dto'
 import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
 import {
+  GenerateLeadFollowUpDto,
+  LeadFollowUpResultDto,
+} from '../dto/generate-lead-follow-up.dto'
+import {
+  GenerateLoyaltyCopyDto,
+  LoyaltyProgramCopyResultDto,
+  LoyaltyRuleCopyResultDto,
+} from '../dto/generate-loyalty-copy.dto'
+import {
   GenerateMarketingDescriptionDto,
   MarketingDescriptionResultDto,
 } from '../dto/generate-marketing-description.dto'
 import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
+import {
+  GenerateStoreSeoDto,
+  StoreSeoResultDto,
+} from '../dto/generate-store-seo.dto'
 import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
@@ -252,6 +265,40 @@ Return exactly this JSON shape:
     })
   }
 
+  async generateStoreSeo(tenantId: string, dto: GenerateStoreSeoDto): Promise<StoreSeoResultDto> {
+    const prompt = `Generate default storefront SEO for an e-commerce store as JSON only (no markdown fences).
+Store / brand name: ${dto.brandName}
+${dto.keywords ? `Keywords: ${dto.keywords}` : ''}
+${dto.existingDescription ? `Existing description to improve: ${dto.existingDescription}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: professional and trustworthy'}
+
+This is the site-wide default used on the home page and as fallback for social sharing.
+
+Return exactly this JSON shape:
+{
+  "metaTitle": "string (max 60 chars, include brand name)",
+  "metaDescription": "string (max 155 chars, compelling store summary)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You are an SEO specialist for e-commerce stores. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.55 },
+    )
+
+    return this.parseJsonResponse<StoreSeoResultDto>(result.content, {
+      metaTitle: dto.brandName,
+      metaDescription: dto.existingDescription || '',
+    })
+  }
+
   async generatePageBlockContent(
     tenantId: string,
     dto: GeneratePageBlockContentDto,
@@ -292,6 +339,115 @@ Return exactly this JSON shape:
     )
 
     return this.parseJsonResponse<PageBlockContentResultDto>(result.content, {})
+  }
+
+  async generateLoyaltyCopy(
+    tenantId: string,
+    dto: GenerateLoyaltyCopyDto,
+  ): Promise<LoyaltyProgramCopyResultDto | LoyaltyRuleCopyResultDto> {
+    if (dto.context === 'rule') {
+      const prompt = `Generate an internal loyalty rule name as JSON only (no markdown fences).
+Rule type: ${dto.ruleType || 'CUSTOM'}
+${dto.offerSummary ? `Rule details: ${dto.offerSummary}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: clear and professional'}
+
+Return exactly this JSON shape:
+{
+  "name": "string (short admin-facing rule name, max 80 chars)"
+}`
+
+      const result = await this.aiClient.chatCompletion(
+        tenantId,
+        [
+          {
+            role: 'system',
+            content:
+              'You name e-commerce loyalty promotion rules. Respond with valid JSON only, no extra text.',
+          },
+          { role: 'user', content: prompt },
+        ],
+        { temperature: 0.5 },
+      )
+
+      return this.parseJsonResponse<LoyaltyRuleCopyResultDto>(result.content, { name: '' })
+    }
+
+    const prompt = `Generate customer-facing loyalty program copy as JSON only (no markdown fences).
+${dto.offerSummary ? `Program details: ${dto.offerSummary}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: friendly and rewarding'}
+
+Return exactly this JSON shape:
+{
+  "programDescription": "string (2-4 sentences explaining how customers earn and redeem points, mention tiers if provided)",
+  "referralMessage": "string (1 sentence inviting friends to join, max 160 chars)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write loyalty program copy for online stores. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.6 },
+    )
+
+    return this.parseJsonResponse<LoyaltyProgramCopyResultDto>(result.content, {
+      programDescription: '',
+      referralMessage: '',
+    })
+  }
+
+  async generateLeadFollowUp(
+    tenantId: string,
+    dto: GenerateLeadFollowUpDto,
+  ): Promise<LeadFollowUpResultDto> {
+    const intent = dto.intent || 'follow_up'
+    const intentLabels: Record<string, string> = {
+      welcome: 'welcome / thank-you for subscribing',
+      follow_up: 'personal follow-up reply to their inquiry',
+      nurture: 'nurture email to keep them engaged',
+      conversion: 'conversion nudge encouraging them to become a customer',
+    }
+
+    const prompt = `Generate a lead follow-up email as JSON only (no markdown fences).
+Lead name: ${dto.leadName}
+Lead email: ${dto.leadEmail}
+${dto.status ? `Lead status: ${dto.status}` : ''}
+${dto.subject ? `Original subject: ${dto.subject}` : ''}
+${dto.message ? `Their message: ${dto.message}` : ''}
+${dto.brandName ? `Store/brand: ${dto.brandName}` : ''}
+Intent: ${intentLabels[intent] || intentLabels.follow_up}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: warm, professional, and helpful'}
+
+Return exactly this JSON shape:
+{
+  "emailSubject": "string (max 80 chars, personalized)",
+  "emailBody": "string (2-4 short paragraphs, plain text with line breaks, no HTML)",
+  "smsText": "string (optional short SMS follow-up, max 160 chars)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write personalized lead nurture and newsletter follow-up emails for e-commerce stores. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.65 },
+    )
+
+    return this.parseJsonResponse<LeadFollowUpResultDto>(result.content, {
+      emailSubject: dto.subject || `Following up with ${dto.leadName}`,
+      emailBody: result.content,
+      smsText: '',
+    })
   }
 
   async generateMarketingDescription(
