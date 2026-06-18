@@ -1,6 +1,10 @@
 import { maskApiKey, normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
-import { Injectable } from '@nestjs/common'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
+import { BadRequestException, Injectable } from '@nestjs/common'
+import { ModuleRef } from '@nestjs/core'
 import { AiChatDto } from '../dto/ai-chat.dto'
+import { DashboardCopilotDto } from '../dto/dashboard-copilot.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
 import {
   CatalogContentResultDto,
@@ -34,6 +38,10 @@ import {
   ProductContentResultDto,
 } from '../dto/generate-product-content.dto'
 import { AiChatMessage, TenantAiClientService } from './tenant-ai-client.service'
+import {
+  buildDashboardCopilotMessages,
+  buildDashboardKpiSnapshot,
+} from '../utils/dashboard-kpi-context.util'
 
 const ASSISTANT_SYSTEM_PROMPT = `You are a helpful e-commerce and ERP assistant for store administrators.
 Help with product ideas, marketing copy, operations questions, and business decisions.
@@ -41,7 +49,10 @@ Be concise, practical, and action-oriented. Never invent inventory, orders, or f
 
 @Injectable()
 export class AiAssistantService {
-  constructor(private readonly aiClient: TenantAiClientService) {}
+  constructor(
+    private readonly aiClient: TenantAiClientService,
+    private readonly moduleRef: ModuleRef,
+  ) {}
 
   async getStatus(tenantId: string) {
     const config = await this.aiClient.getConfigForTenant(tenantId)
@@ -67,6 +78,30 @@ export class AiAssistantService {
     messages.push({ role: 'user', content: dto.message })
 
     const result = await this.aiClient.chatCompletion(tenantId, messages)
+    return {
+      reply: result.content,
+      model: result.model,
+      totalTokens: result.totalTokens,
+    }
+  }
+
+  async askDashboardCopilot(ctx: RequestContextDto, dto: DashboardCopilotDto) {
+    const reportService = this.moduleRef.get(ReportService, { strict: false })
+    if (!reportService) {
+      throw new BadRequestException('Dashboard reports are not available')
+    }
+
+    const period = dto.period || 'month'
+    const stats = await reportService.getDashboardReport(ctx, period)
+    const snapshot = buildDashboardKpiSnapshot(stats, period)
+    const messages = buildDashboardCopilotMessages(snapshot, dto.message, dto.history || [])
+
+    const result = await this.aiClient.chatCompletion(
+      ctx.tenantId,
+      messages as AiChatMessage[],
+      { temperature: 0.3 },
+    )
+
     return {
       reply: result.content,
       model: result.model,

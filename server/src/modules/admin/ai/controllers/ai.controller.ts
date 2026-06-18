@@ -8,16 +8,14 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common'
 import { AiChatDto } from '../dto/ai-chat.dto'
+import { DashboardCopilotDto } from '../dto/dashboard-copilot.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
 import {
   CatalogContentResultDto,
   GenerateCatalogContentDto,
 } from '../dto/generate-catalog-content.dto'
 import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
-import {
-  GenerateLeadFollowUpDto,
-  LeadFollowUpResultDto,
-} from '../dto/generate-lead-follow-up.dto'
+import { GenerateLeadFollowUpDto, LeadFollowUpResultDto } from '../dto/generate-lead-follow-up.dto'
 import {
   GenerateLoyaltyCopyDto,
   LoyaltyProgramCopyResultDto,
@@ -27,19 +25,16 @@ import {
   GenerateMarketingDescriptionDto,
   MarketingDescriptionResultDto,
 } from '../dto/generate-marketing-description.dto'
-import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
-import {
-  GenerateStoreSeoDto,
-  StoreSeoResultDto,
-} from '../dto/generate-store-seo.dto'
 import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
 } from '../dto/generate-page-block-content.dto'
+import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
 import {
   GenerateProductContentDto,
   ProductContentResultDto,
 } from '../dto/generate-product-content.dto'
+import { GenerateStoreSeoDto, StoreSeoResultDto } from '../dto/generate-store-seo.dto'
 import { AiAssistantService } from '../services/ai-assistant.service'
 
 @Controller('ai')
@@ -80,6 +75,22 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'AI response generated successfully',
+      data,
+    }
+  }
+
+  @Post('copilot/dashboard')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.REPORTS_READ)
+  async askDashboardCopilot(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: DashboardCopilotDto,
+  ): Promise<BaseApiSuccessResponse<{ reply: string; model: string; totalTokens: number }>> {
+    const data = await this.aiAssistantService.askDashboardCopilot(ctx, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Dashboard copilot response generated successfully',
       data,
     }
   }

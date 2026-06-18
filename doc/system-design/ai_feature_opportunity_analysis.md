@@ -108,7 +108,7 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
-| Dashboard | `/admin` | Natural-language KPI questions | ⬜ | Read-only copilot (Phase D) |
+| Dashboard | `/admin` | Natural-language KPI questions | ✅ | `DashboardCopilot` — read-only KPI snapshot |
 | Orders | `/admin/orders` | Status explanation, customer email draft | ⬜ | Template + order context |
 | Returns | `/admin/returns` | Refund explanation letter | ⬜ | Draft only |
 | Customers | `/admin/customers` | Support summary, segment labels | ⬜ | Read-only profile summary |
@@ -358,7 +358,7 @@ Reuse existing endpoints and `useAiGenerate`; no new infrastructure.
 |---|---------|
 | 1 | Embedding pipeline per tenant |
 | 2 | Storefront semantic search API |
-| 3 | Admin copilot (read-only tools) |
+| 3 | Admin copilot (read-only tools) | ✅ Dashboard KPI copilot started |
 | 4 | Support chat with RAG (FAQ + orders) |
 | 5 | Token metering / usage dashboard |
 

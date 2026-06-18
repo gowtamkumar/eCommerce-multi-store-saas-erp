@@ -6,6 +6,7 @@ import { buildHealthItems } from '../lib/dashboard';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import ActionCenter from './dashboard/ActionCenter';
 import CommandCenter from './dashboard/CommandCenter';
+import DashboardCopilot from './dashboard/DashboardCopilot';
 import DashboardHeader from './dashboard/DashboardHeader';
 import ErrorBanner from './dashboard/ErrorBanner';
 import FinanceSnapshot from './dashboard/FinanceSnapshot';
@@ -50,6 +51,8 @@ export default function AdminDashboard() {
                 period={period}
                 formatPrice={formatPrice}
             />
+
+            <DashboardCopilot period={period} />
 
             <ActionCenter stats={stats} loading={loading} formatPrice={formatPrice} />
 

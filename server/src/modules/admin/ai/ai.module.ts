@@ -1,5 +1,5 @@
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { AiController } from './controllers/ai.controller'
