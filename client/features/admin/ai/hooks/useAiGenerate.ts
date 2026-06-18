@@ -14,6 +14,8 @@ import type {
   OrderAssistContext,
   OrderAssistResult,
   OrderEmailTemplate,
+  ReturnAssistResult,
+  ReturnLetterTemplate,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
@@ -147,6 +149,17 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<OrderAssistResult>("/ai/generate/order-assist", payload);
 
+  const generateReturnAssist = (payload: {
+    returnSummary: string;
+    customerName: string;
+    customerEmail?: string;
+    returnStatus: string;
+    returnType?: string;
+    refundMethod?: string;
+    letterTemplate?: ReturnLetterTemplate;
+    tone?: string;
+  }) => withGenerate<ReturnAssistResult>("/ai/generate/return-assist", payload);
+
   return {
     configured,
     loading,
@@ -162,5 +175,6 @@ export function useAiGenerate() {
     generateLoyaltyCopy,
     generateLeadFollowUp,
     generateOrderAssist,
+    generateReturnAssist,
   };
 }

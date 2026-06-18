@@ -27,6 +27,10 @@ import {
 } from '../dto/generate-marketing-description.dto'
 import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
+  GenerateReturnAssistDto,
+  ReturnAssistResultDto,
+} from '../dto/generate-return-assist.dto'
+import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
 } from '../dto/generate-page-block-content.dto'
@@ -268,6 +272,22 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Order assist content generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/return-assist')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.RETURNS_READ)
+  async generateReturnAssist(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateReturnAssistDto,
+  ): Promise<BaseApiSuccessResponse<ReturnAssistResultDto>> {
+    const data = await this.aiAssistantService.generateReturnAssist(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Return explanation letter generated successfully',
       data,
     }
   }

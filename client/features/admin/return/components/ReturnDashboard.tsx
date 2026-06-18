@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Search, AlertTriangle, CheckCircle2, RefreshCw, DollarSign } from "lucide-react";
+import type { ReturnRequest } from "../types";
+import ReturnAiAssistModal from "./ReturnAiAssistModal";
 import ReturnList from "./ReturnList";
 import Pagination from "@/components/shared/Pagination";
 import { useSettings } from "@/hooks/SettingsContext";
@@ -18,6 +21,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ReturnDashboard() {
+    const [aiReturn, setAiReturn] = useState<ReturnRequest | null>(null);
     const { formatPrice } = useSettings();
 
     const {
@@ -118,7 +122,15 @@ export default function ReturnDashboard() {
                 returns={returns}
                 loading={loading}
                 onStatusUpdate={handleStatusUpdate}
+                onOpenAiAssist={setAiReturn}
             />
+
+            {aiReturn && (
+                <ReturnAiAssistModal
+                    returnRequest={aiReturn}
+                    onClose={() => setAiReturn(null)}
+                />
+            )}
 
             {!loading && returns.length > 0 && (
                 <div className="mt-6 flex flex-col items-center gap-4">

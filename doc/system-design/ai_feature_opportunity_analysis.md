@@ -110,7 +110,7 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 |------|-------|---------|--------|-------------------|
 | Dashboard | `/admin` | Natural-language KPI questions | ✅ | `DashboardCopilot` — read-only KPI snapshot |
 | Orders | `/admin/orders` | Status explanation, customer email draft | ✅ | `OrderAiAssistModal` on list + order detail |
-| Returns | `/admin/returns` | Refund explanation letter | ⬜ | Draft only |
+| Returns | `/admin/returns` | Refund explanation letter | ✅ | Draft only |
 | Customers | `/admin/customers` | Support summary, segment labels | ⬜ | Read-only profile summary |
 | Live chat | `/admin/support` | Suggested replies | ⬜ | FAQ + order lookup context |
 | Reviews | `/admin/reviews` | Reply draft, toxicity flag | ⬜ | Moderation assist |

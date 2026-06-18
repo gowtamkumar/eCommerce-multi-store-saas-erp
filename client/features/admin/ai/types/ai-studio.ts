@@ -79,6 +79,20 @@ export interface OrderAssistResult {
   emailBody?: string;
 }
 
+export type ReturnLetterTemplate =
+  | "approved"
+  | "rejected"
+  | "refunded"
+  | "received"
+  | "exchange"
+  | "pending"
+  | "general";
+
+export interface ReturnAssistResult {
+  emailSubject: string;
+  emailBody: string;
+}
+
 export interface CatalogContentResult {
   description: string;
   seoTitle: string;

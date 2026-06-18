@@ -51,6 +51,7 @@ export interface ReturnListProps {
     comment?: string,
     refundMethod?: RefundMethod,
   ) => void;
+  onOpenAiAssist?: (returnRequest: ReturnRequest) => void;
 }
 
 export interface ReturnModalProps {

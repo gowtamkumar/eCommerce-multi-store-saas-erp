@@ -3,7 +3,7 @@
 import DataTable, { DataTableColumn } from "@/components/shared/DataTable";
 import { useSettings } from "@/hooks/SettingsContext";
 import Link from "next/link";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { ReturnRequest, ReturnListProps } from "../types";
 import { RefundMethod, REFUND_METHOD_LABELS } from "@/lib/enums/refund-method.enum";
@@ -18,7 +18,7 @@ const STATUS_STYLES: Record<string, string> = {
     cancelled: "bg-slate-100 text-slate-500 dark:bg-slate-700/50 dark:text-slate-400",
 };
 
-export default function ReturnList({ returns, loading, onStatusUpdate }: ReturnListProps) {
+export default function ReturnList({ returns, loading, onStatusUpdate, onOpenAiAssist }: ReturnListProps) {
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const { formatPrice } = useSettings();
 
@@ -138,6 +138,16 @@ export default function ReturnList({ returns, loading, onStatusUpdate }: ReturnL
                                 </button>
                             </>
                         )}
+                        {onOpenAiAssist && (
+                            <button
+                                type="button"
+                                title="AI refund explanation letter"
+                                onClick={() => onOpenAiAssist(req)}
+                                className="p-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                            </button>
+                        )}
                         <Link
                             href={`/admin/returns/${req.id}`}
                             className="text-brand-600 hover:text-brand-700 font-medium text-xs bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-lg transition-colors border border-brand-100 shadow-sm whitespace-nowrap"
@@ -148,7 +158,7 @@ export default function ReturnList({ returns, loading, onStatusUpdate }: ReturnL
                 );
             },
         },
-    ], [formatPrice, handleQuickAction, updatingId]);
+    ], [formatPrice, handleQuickAction, onOpenAiAssist, updatingId]);
 
     return (
         <DataTable

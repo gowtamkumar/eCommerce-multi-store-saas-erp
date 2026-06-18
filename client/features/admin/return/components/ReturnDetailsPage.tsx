@@ -21,10 +21,13 @@ import {
     DollarSign,
     ArrowRightLeft,
     PackageCheck,
+    Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { use } from "react";
+import { use, useState } from "react";
 import { useReturnDetails } from "../hooks/useReturnDetails";
+import ReturnAiAssistModal from "./ReturnAiAssistModal";
+import type { ReturnAssistInput } from "../lib/buildReturnAssistSummary";
 import ReturnSlipPrint from "./ReturnSlipPrint";
 
 export default function ReturnDetailsPage({
@@ -33,6 +36,7 @@ export default function ReturnDetailsPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = use(params);
+    const [showReturnAiModal, setShowReturnAiModal] = useState(false);
     const { settings, formatPrice } = useSettings();
 
     const {
@@ -157,6 +161,14 @@ export default function ReturnDetailsPage({
                         >
                             <FileText className="w-4 h-4" />
                             <span className="hidden sm:inline font-bold text-sm">Print Slip</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowReturnAiModal(true)}
+                            className="p-2 sm:px-4 sm:py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                            <span className="hidden sm:inline font-bold text-sm">AI Assist</span>
                         </button>
                     </div>
                 </div>
@@ -488,6 +500,13 @@ export default function ReturnDetailsPage({
                     </section>
                 </div>
             </div>
+
+            {showReturnAiModal && (
+                <ReturnAiAssistModal
+                    returnRequest={returnRequest as ReturnAssistInput}
+                    onClose={() => setShowReturnAiModal(false)}
+                />
+            )}
         </div>
     );
 }

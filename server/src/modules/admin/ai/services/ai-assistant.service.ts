@@ -23,6 +23,10 @@ import {
 } from '../dto/generate-marketing-description.dto'
 import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
+  GenerateReturnAssistDto,
+  ReturnAssistResultDto,
+} from '../dto/generate-return-assist.dto'
+import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
 } from '../dto/generate-page-block-content.dto'
@@ -551,6 +555,58 @@ Return exactly this JSON shape:
 
     return this.parseJsonResponse<OrderAssistResultDto>(result.content, {
       emailSubject: `Update on your order`,
+      emailBody: result.content,
+    })
+  }
+
+  async generateReturnAssist(
+    tenantId: string,
+    dto: GenerateReturnAssistDto,
+  ): Promise<ReturnAssistResultDto> {
+    const templateLabels: Record<string, string> = {
+      approved: 'return request approved — explain next steps for sending items back',
+      rejected: 'return request declined — polite explanation with policy context',
+      refunded: 'refund processed confirmation with amount and method if provided',
+      received: 'return items received — refund or exchange processing underway',
+      exchange: 'exchange approved — explain exchange process',
+      pending: 'return request received — under review',
+      general: 'general return status update',
+    }
+    const template = dto.letterTemplate || 'general'
+
+    const prompt = `Draft a customer-facing return/refund explanation letter as JSON only (no markdown fences).
+Customer: ${dto.customerName}
+${dto.customerEmail ? `Email: ${dto.customerEmail}` : ''}
+Return status: ${dto.returnStatus}
+${dto.returnType ? `Return type: ${dto.returnType}` : ''}
+${dto.refundMethod ? `Refund method: ${dto.refundMethod}` : ''}
+Letter type: ${templateLabels[template] || templateLabels.general}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: empathetic, professional, and clear'}
+
+Return request details:
+${dto.returnSummary}
+
+Return exactly this JSON shape:
+{
+  "emailSubject": "string (max 80 chars)",
+  "emailBody": "string (2-4 short paragraphs, plain text with line breaks, no HTML — draft letter only, admin sends manually; do not invent refund amounts or dates not in context)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You draft return and refund explanation letters for e-commerce stores. Respond with valid JSON only, no extra text. Never promise refund amounts, timelines, or policy exceptions not stated in the context.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.55 },
+    )
+
+    return this.parseJsonResponse<ReturnAssistResultDto>(result.content, {
+      emailSubject: 'Update on your return request',
       emailBody: result.content,
     })
   }
