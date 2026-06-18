@@ -14,6 +14,8 @@ import { ProductMedia } from './form/ProductMedia';
 import { ProductPricing } from './form/ProductPricing';
 import { ProductSEO } from './form/ProductSEO';
 import { ProductPriceTiers } from './form/ProductPriceTiers';
+import { ProductAiAssist } from './form/ProductAiAssist';
+import type { ProductContentResult } from '@/features/admin/ai/types/ai-studio';
 
 interface ProductFormProps {
   initialData?: any;
@@ -91,6 +93,16 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     setFormData(prev => ({ ...prev, attributes, variants }));
   }, []);
 
+  const handleAiContentApply = useCallback((result: ProductContentResult) => {
+    setFormData((prev) => ({
+      ...prev,
+      shortDescription: result.shortDescription || prev.shortDescription,
+      description: result.description || prev.description,
+      metaTitle: result.seoTitle || prev.metaTitle,
+      metaDescription: result.seoDescription || prev.metaDescription,
+    }));
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -162,6 +174,13 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main Content Column */}
         <div className="flex-1 space-y-8">
+          <ProductAiAssist
+            productName={formData.name}
+            shortDescription={formData.shortDescription}
+            description={formData.description}
+            onApply={handleAiContentApply}
+          />
+
           <ProductGeneralInfo
             name={formData.name}
             slug={formData.slug}
