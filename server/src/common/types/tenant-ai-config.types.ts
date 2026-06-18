@@ -14,6 +14,8 @@ export interface TenantAiConfig {
   baseUrl?: string
   defaultModel?: string
   embeddingModel?: string
+  /** Azure OpenAI API version query param */
+  apiVersion?: string
   siteUrl?: string
   siteName?: string
   maxTokens?: number
@@ -38,9 +40,9 @@ export const AI_PROVIDER_PRESETS: Record<
     embeddingModel: 'text-embedding-3-small',
   },
   [AiProviderType.ANTHROPIC]: {
-    label: 'Anthropic (OpenAI-compatible proxy)',
-    baseUrl: 'https://openrouter.ai/api/v1',
-    defaultModel: 'anthropic/claude-3.5-haiku',
+    label: 'Anthropic',
+    baseUrl: 'https://api.anthropic.com/v1',
+    defaultModel: 'claude-3-5-haiku-20241022',
   },
   [AiProviderType.AZURE_OPENAI]: {
     label: 'Azure OpenAI',
@@ -48,9 +50,10 @@ export const AI_PROVIDER_PRESETS: Record<
     defaultModel: 'gpt-4o-mini',
   },
   [AiProviderType.GOOGLE]: {
-    label: 'Google Gemini (via OpenRouter)',
-    baseUrl: 'https://openrouter.ai/api/v1',
-    defaultModel: 'google/gemini-2.0-flash-001',
+    label: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultModel: 'gemini-2.0-flash',
+    embeddingModel: 'text-embedding-004',
   },
   [AiProviderType.CUSTOM]: {
     label: 'Custom / Other',
@@ -61,10 +64,10 @@ export const AI_PROVIDER_PRESETS: Record<
 
 export const DEFAULT_TENANT_AI_CONFIG: TenantAiConfig = {
   enabled: false,
-  provider: AiProviderType.OPENROUTER,
-  baseUrl: AI_PROVIDER_PRESETS[AiProviderType.OPENROUTER].baseUrl,
-  defaultModel: AI_PROVIDER_PRESETS[AiProviderType.OPENROUTER].defaultModel,
-  embeddingModel: AI_PROVIDER_PRESETS[AiProviderType.OPENROUTER].embeddingModel,
+  provider: AiProviderType.OPENAI,
+  baseUrl: AI_PROVIDER_PRESETS[AiProviderType.OPENAI].baseUrl,
+  defaultModel: AI_PROVIDER_PRESETS[AiProviderType.OPENAI].defaultModel,
+  embeddingModel: AI_PROVIDER_PRESETS[AiProviderType.OPENAI].embeddingModel,
   maxTokens: 1024,
   temperature: 0.7,
 }

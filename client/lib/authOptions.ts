@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { fetchAPI } from "../services/api";
 import nestApiUrl from "./api-url";
+import { decodeJwtPayload } from "./jwt.util";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -247,11 +248,15 @@ async function refreshAccessToken(token: any) {
         throw refreshedTokens;
       }
 
+      const accessToken = refreshedTokens.data.accessToken as string;
+      const payload = decodeJwtPayload<{ features?: string[] }>(accessToken);
+
       return {
         ...token,
-        accessToken: refreshedTokens.data.accessToken,
+        accessToken,
         refreshToken: refreshedTokens.data.refreshToken ?? token.refreshToken,
         accessTokenExpires: Math.floor(Date.now() / 1000) + 900,
+        features: payload?.features ?? token.features ?? [],
         error: undefined,
       };
     } catch (error) {

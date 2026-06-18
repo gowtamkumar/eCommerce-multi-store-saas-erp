@@ -2,6 +2,7 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { UserRole } from '@/lib/enums/user-role.enum';
+import { decodeJwtPayload } from '@/lib/jwt.util';
 import { navGroups } from '@/routes';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Shield, Star, X } from 'lucide-react';
@@ -44,6 +45,7 @@ type AdminSession = {
     user?: {
         role?: string;
         features?: string[];
+        accessToken?: string;
     };
 };
 
@@ -131,8 +133,24 @@ export default function AdminLayout({
     const roleFilteredNavGroups = useMemo(() => {
         const rawRole = session?.user?.role || '';
         const userRole = typeof rawRole === 'string' ? rawRole.toLowerCase() : '';
-        const features = session?.user?.features || [];
+        const sessionFeatures = session?.user?.features || [];
+        const tokenFeatures = decodeJwtPayload<{ features?: string[] }>(
+            session?.user?.accessToken,
+        )?.features;
+        const features =
+            sessionFeatures.length > 0
+                ? sessionFeatures
+                : Array.isArray(tokenFeatures)
+                  ? tokenFeatures
+                  : [];
         const isSuperAdmin = userRole === UserRole.SUPER_ADMIN || features.includes('*');
+        const hasFeatureAccess = (feature?: string) => {
+            if (!feature) return true;
+            if (isSuperAdmin) return true;
+            // If plan features are unavailable (refresh/lookup issues), keep role-based nav visible.
+            if (features.length === 0) return true;
+            return features.includes(feature);
+        };
 
         return (navGroups as AdminNavGroup[])
             .filter(group => {
@@ -144,24 +162,27 @@ export default function AdminLayout({
             .map(group => ({
                 ...group,
                 items: group.items.filter((item) => {
-                    // 1. Role Check
                     const hasRole = item.roles
                         ? item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || isSuperAdmin
                         : true;
 
                     if (!hasRole) return false;
-
-                    // 2. Feature Check (Plan Based)
-                    if (isSuperAdmin) return true;
-                    if (item.feature) {
-                        return features.includes(item.feature);
-                    }
-
-                    return true;
+                    return hasFeatureAccess(item.feature);
                 })
             }))
             .filter(group => group.items.length > 0);
-    }, [session?.user?.role, session?.user?.features]);
+    }, [session?.user?.role, session?.user?.features, session?.user?.accessToken]);
+
+    // Expand all groups by default so the sidebar is never blank on first visit.
+    useEffect(() => {
+        if (roleFilteredNavGroups.length === 0) return;
+        const validTitles = new Set(roleFilteredNavGroups.map((group) => group.title));
+        setExpandedGroups((prev) => {
+            const hasValidExpansion = Array.from(prev).some((title) => validTitles.has(title));
+            if (hasValidExpansion) return prev;
+            return validTitles;
+        });
+    }, [roleFilteredNavGroups]);
 
     // Apply the sidebar search box on top of the role-filtered groups.
     const filteredNavGroups = useMemo(() => {

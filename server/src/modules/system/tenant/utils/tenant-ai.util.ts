@@ -22,6 +22,7 @@ export function normalizeTenantAiConfig(raw?: TenantAiConfig | null): TenantAiCo
     defaultModel: raw.defaultModel || preset?.defaultModel || DEFAULT_TENANT_AI_CONFIG.defaultModel,
     embeddingModel:
       raw.embeddingModel || preset?.embeddingModel || DEFAULT_TENANT_AI_CONFIG.embeddingModel,
+    apiVersion: raw.apiVersion || '2024-08-01-preview',
     siteUrl: raw.siteUrl,
     siteName: raw.siteName,
     maxTokens: raw.maxTokens ?? DEFAULT_TENANT_AI_CONFIG.maxTokens,
@@ -52,6 +53,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
   baseUrl?: string
   defaultModel?: string
   embeddingModel?: string
+  apiVersion?: string
   siteUrl?: string
   siteName?: string
   maxTokens?: number
@@ -69,6 +71,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
     baseUrl: normalized.baseUrl,
     defaultModel: normalized.defaultModel,
     embeddingModel: normalized.embeddingModel,
+    apiVersion: normalized.apiVersion,
     siteUrl: normalized.siteUrl,
     siteName: normalized.siteName,
     maxTokens: normalized.maxTokens,

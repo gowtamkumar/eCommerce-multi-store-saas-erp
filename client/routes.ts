@@ -59,7 +59,7 @@ export const storeSettings = [
     icon: Globe,
     label: "Custom Domain",
     href: "/admin/settings/domain",
-    feature: "custom_domain",
+    feature: "settings",
   },
   {
     icon: Wallet,

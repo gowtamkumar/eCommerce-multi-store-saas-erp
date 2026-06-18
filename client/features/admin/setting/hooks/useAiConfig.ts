@@ -16,11 +16,12 @@ function mapResponseToForm(data: TenantAiConfigResponse): TenantAiConfigForm {
 
   return {
     enabled: data.enabled ?? false,
-    provider: (data.provider as TenantAiConfigForm["provider"]) || "openrouter",
+    provider: (data.provider as TenantAiConfigForm["provider"]) || "openai",
     apiKey: data.hasApiKey ? AI_API_KEY_UNCHANGED : "",
     baseUrl: data.baseUrl || preset?.baseUrl || DEFAULT_AI_CONFIG_FORM.baseUrl,
     defaultModel: data.defaultModel || preset?.defaultModel || "",
     embeddingModel: data.embeddingModel || preset?.embeddingModel || "",
+    apiVersion: data.apiVersion || preset?.apiVersion || "2024-08-01-preview",
     siteUrl: data.siteUrl || "",
     siteName: data.siteName || "",
     maxTokens: data.maxTokens ?? 1024,
@@ -63,6 +64,7 @@ export function useAiConfig() {
         baseUrl: form.baseUrl,
         defaultModel: form.defaultModel,
         embeddingModel: form.embeddingModel || undefined,
+        apiVersion: form.apiVersion || undefined,
         siteUrl: form.siteUrl || undefined,
         siteName: form.siteName || undefined,
         maxTokens: form.maxTokens,
@@ -105,6 +107,7 @@ export function useAiConfig() {
             baseUrl: form.baseUrl,
             defaultModel: form.defaultModel,
             embeddingModel: form.embeddingModel || undefined,
+            apiVersion: form.apiVersion || undefined,
             siteUrl: form.siteUrl || undefined,
             siteName: form.siteName || undefined,
             maxTokens: form.maxTokens,
@@ -136,7 +139,10 @@ export function useAiConfig() {
       provider: providerId,
       baseUrl: preset.baseUrl,
       defaultModel: preset.defaultModel,
-      embeddingModel: preset.embeddingModel || prev.embeddingModel,
+      embeddingModel: preset.showEmbeddingModel === false ? "" : preset.embeddingModel || prev.embeddingModel,
+      apiVersion: preset.apiVersion || prev.apiVersion,
+      siteUrl: preset.showOpenRouterHeaders ? prev.siteUrl : "",
+      siteName: preset.showOpenRouterHeaders ? prev.siteName : "",
     }));
   };
 

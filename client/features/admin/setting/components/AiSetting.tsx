@@ -91,7 +91,7 @@ export function AiSetting() {
         <div>
           <p className="font-bold text-slate-800 dark:text-slate-100">Enable AI features for this store</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Connect your own API key (OpenRouter, OpenAI, or any OpenAI-compatible provider).
+            Connect OpenRouter, OpenAI, Anthropic, Google Gemini, Azure OpenAI, or a custom provider.
             Credentials are stored per tenant and never shared across stores.
           </p>
         </div>
@@ -121,7 +121,7 @@ export function AiSetting() {
             label="API Key"
             value={form.apiKey}
             onChange={(apiKey) => setForm({ ...form, apiKey })}
-            placeholder="sk-or-..."
+            placeholder={selectedProvider?.apiKeyPlaceholder || "API key"}
             hint={
               apiKeyPreview
                 ? `Saved key: ${apiKeyPreview}. Enter a new key only to replace it.`
@@ -137,10 +137,31 @@ export function AiSetting() {
             value={form.baseUrl}
             onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
             className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
-            placeholder="https://openrouter.ai/api/v1"
+            placeholder={selectedProvider?.baseUrl || "https://api.example.com/v1"}
           />
-          <p className="text-xs text-slate-500">Must expose an OpenAI-compatible POST /chat/completions endpoint.</p>
+          <p className="text-xs text-slate-500">
+            {form.provider === "azure_openai"
+              ? "Azure deployment URL, e.g. https://RESOURCE.openai.azure.com/openai/deployments/DEPLOYMENT"
+              : form.provider === "google"
+                ? "Google Gemini API base (usually leave as default)."
+                : form.provider === "anthropic"
+                  ? "Anthropic API base (usually leave as default)."
+                  : "API base URL for the selected provider."}
+          </p>
         </div>
+
+        {selectedProvider?.showApiVersion ? (
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">API version (Azure)</label>
+            <input
+              type="text"
+              value={form.apiVersion}
+              onChange={(e) => setForm({ ...form, apiVersion: e.target.value })}
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
+              placeholder="2024-08-01-preview"
+            />
+          </div>
+        ) : null}
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Default model</label>
@@ -149,21 +170,25 @@ export function AiSetting() {
             value={form.defaultModel}
             onChange={(e) => setForm({ ...form, defaultModel: e.target.value })}
             className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
-            placeholder="openai/gpt-4o-mini"
+            placeholder={selectedProvider?.defaultModel || "model-name"}
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Embedding model (optional)</label>
-          <input
-            type="text"
-            value={form.embeddingModel}
-            onChange={(e) => setForm({ ...form, embeddingModel: e.target.value })}
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
-            placeholder="openai/text-embedding-3-small"
-          />
-        </div>
+        {selectedProvider?.showEmbeddingModel !== false ? (
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Embedding model (optional)</label>
+            <input
+              type="text"
+              value={form.embeddingModel}
+              onChange={(e) => setForm({ ...form, embeddingModel: e.target.value })}
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
+              placeholder={selectedProvider?.embeddingModel || "embedding-model"}
+            />
+          </div>
+        ) : null}
 
+        {selectedProvider?.showOpenRouterHeaders ? (
+          <>
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site URL (OpenRouter header)</label>
           <input
@@ -185,6 +210,8 @@ export function AiSetting() {
             placeholder="My Store"
           />
         </div>
+          </>
+        ) : null}
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Max tokens</label>

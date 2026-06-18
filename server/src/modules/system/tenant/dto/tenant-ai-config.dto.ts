@@ -50,6 +50,12 @@ export class UpdateTenantAiConfigDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  apiVersion?: string
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @ValidateIf((o, v) => v !== '' && v != null)
   @IsUrl({ require_tld: false }, { message: 'siteUrl must be a valid URL' })
   siteUrl?: string
@@ -101,6 +107,9 @@ export class TenantAiConfigResponseDto {
 
   @ApiPropertyOptional()
   embeddingModel?: string
+
+  @ApiPropertyOptional()
+  apiVersion?: string
 
   @ApiPropertyOptional()
   siteUrl?: string
