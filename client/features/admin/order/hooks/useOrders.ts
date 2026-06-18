@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useApiList } from '@/hooks/useApiList';
 import { fetchAPI } from '@/services/api';
 import { CourierType } from '@/lib/enums/courier-type.enum';
@@ -9,6 +10,7 @@ import { OrderStatus } from '@/lib/enums/order-status.enum';
 import { handleCreatePathaoOrder, handleCreateSteadfastOrder, handleManualDispatch, updateOrderStatus } from '@/lib/utils';
 import type { Order } from '@/types/order';
 import type { OrderListPagination, OrderSortOrder } from '../type';
+import { parseOrdersListResponse } from '../lib/parseOrdersListResponse';
 
 const EXPORT_PAGE_LIMIT = 100;
 const EXPORT_MAX_PAGES = 100;
@@ -32,13 +34,19 @@ export function useOrders() {
     const [bulkUpdating, setBulkUpdating] = useState(false);
 
     const [pageSize, setPageSize] = useState(10);
+    const debouncedSearch = useDebounce(searchQuery, 500);
+
+    const listFilterDeps = useMemo(
+        () => [debouncedSearch, statusFilter, sourceFilter, paymentFilter, sortBy, sortOrder, pageSize] as const,
+        [debouncedSearch, statusFilter, sourceFilter, paymentFilter, sortBy, sortOrder, pageSize],
+    );
 
     const buildEndpoint = useCallback(
         (page: number) => {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: pageSize.toString(),
-                search: searchQuery,
+                search: debouncedSearch,
                 isAdmin: 'true',
                 sortBy,
                 sortOrder,
@@ -48,7 +56,7 @@ export function useOrders() {
             if (paymentFilter) params.append('paymentStatus', paymentFilter);
             return `/orders?${params}`;
         },
-        [searchQuery, sortBy, sortOrder, statusFilter, sourceFilter, paymentFilter, pageSize],
+        [debouncedSearch, sortBy, sortOrder, statusFilter, sourceFilter, paymentFilter, pageSize],
     );
 
     const {
@@ -58,46 +66,20 @@ export function useOrders() {
         pagination,
         refresh,
         handlePageChange: basePageChange,
-        resetToFirstPage,
         fetchPage,
     } = useApiList<Order>({
         buildEndpoint,
         pageSize,
-        searchQuery,
-        debounceMs: 500,
+        debounceMs: 0,
         useAbort: true,
         errorMessage: 'Failed to load orders',
-        deps: [statusFilter, sourceFilter, paymentFilter, sortBy, sortOrder, pageSize],
-        parseResponse: (res, page, limit) => {
-            const data = res.data as { orders?: Order[]; pagination?: OrderListPagination } | Order[] | undefined;
-            if (data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.orders)) {
-                return {
-                    items: data.orders,
-                    pagination: data.pagination ?? {
-                        total: data.orders.length,
-                        page,
-                        limit,
-                        totalPages: 1,
-                    },
-                };
-            }
-            const items = Array.isArray(data) ? data : [];
-            return {
-                items,
-                pagination: (res.pagination as OrderListPagination | undefined) ?? {
-                    total: items.length,
-                    page,
-                    limit,
-                    totalPages: 1,
-                },
-            };
-        },
+        deps: listFilterDeps,
+        parseResponse: parseOrdersListResponse,
     });
 
     useEffect(() => {
         setSelectedIds(new Set());
-        resetToFirstPage();
-    }, [statusFilter, sourceFilter, paymentFilter, sortBy, sortOrder, pageSize, searchQuery, resetToFirstPage]);
+    }, [listFilterDeps]);
 
     const handlePageChange = useCallback(
         (newPage: number) => {
@@ -110,15 +92,13 @@ export function useOrders() {
     );
 
     const handleSortChange = useCallback((sortKey: string) => {
-        setSortBy(prevSortBy => {
-            if (prevSortBy === sortKey) {
-                setSortOrder(prev => (prev === 'ASC' ? 'DESC' : 'ASC'));
-            } else {
-                setSortOrder('DESC');
-            }
-            return sortKey;
-        });
-    }, []);
+        if (sortBy === sortKey) {
+            setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'));
+            return;
+        }
+        setSortBy(sortKey);
+        setSortOrder('DESC');
+    }, [sortBy]);
 
     const handleClearFilters = useCallback(() => {
         setStatusFilter('');

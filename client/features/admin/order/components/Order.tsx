@@ -1,11 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import type { Order } from '@/types/order';
 import { useOrders } from '../hooks/useOrders';
+import OrderAiAssistModal from './OrderAiAssistModal';
 import OrderList from './OrderList';
 import CourierModal from './CourierModal';
 
 export default function Order() {
+    const [aiOrder, setAiOrder] = useState<Order | null>(null);
+    const [aiTab, setAiTab] = useState<'status' | 'email'>('email');
     const {
         orders,
         loading,
@@ -63,6 +67,10 @@ export default function Order() {
                 pagination={pagination}
                 onPageChange={handlePageChange}
                 onStatusChange={handleStatusChange}
+                onOpenAiAssist={(order, tab) => {
+                    setAiTab(tab);
+                    setAiOrder(order);
+                }}
                 onCourierSelect={handleCourierSelect}
                 selectedCourier={selectedCourier}
                 isCreatingCourierOrder={isCreatingCourierOrder}
@@ -92,6 +100,14 @@ export default function Order() {
                 pendingOrder={pendingCourierOrder}
                 isCreating={pendingCourierOrder ? isCreatingCourierOrder(pendingCourierOrder.order.id) : false}
             />
+
+            {aiOrder && (
+                <OrderAiAssistModal
+                    order={aiOrder}
+                    initialTab={aiTab}
+                    onClose={() => setAiOrder(null)}
+                />
+            )}
         </>
     );
 }

@@ -109,7 +109,7 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
 | Dashboard | `/admin` | Natural-language KPI questions | ✅ | `DashboardCopilot` — read-only KPI snapshot |
-| Orders | `/admin/orders` | Status explanation, customer email draft | ⬜ | Template + order context |
+| Orders | `/admin/orders` | Status explanation, customer email draft | ✅ | `OrderAiAssistModal` on list + order detail |
 | Returns | `/admin/returns` | Refund explanation letter | ⬜ | Draft only |
 | Customers | `/admin/customers` | Support summary, segment labels | ⬜ | Read-only profile summary |
 | Live chat | `/admin/support` | Suggested replies | ⬜ | FAQ + order lookup context |

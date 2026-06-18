@@ -27,6 +27,7 @@ export interface OrderListProps {
     pagination: OrderListPagination;
     onPageChange: (page: number) => void;
     onStatusChange: (id: string, newStatus: string) => void;
+    onOpenAiAssist?: (order: Order, tab: 'status' | 'email') => void;
     onCourierSelect: (order: Order, courier: string) => void;
     selectedCourier: { [orderId: string]: string };
     isCreatingCourierOrder: (orderId: string) => boolean;

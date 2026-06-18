@@ -1,6 +1,6 @@
-import { maskApiKey, normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
+import { maskApiKey, normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ModuleRef } from '@nestjs/core'
 import { AiChatDto } from '../dto/ai-chat.dto'
@@ -11,10 +11,7 @@ import {
   GenerateCatalogContentDto,
 } from '../dto/generate-catalog-content.dto'
 import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
-import {
-  GenerateLeadFollowUpDto,
-  LeadFollowUpResultDto,
-} from '../dto/generate-lead-follow-up.dto'
+import { GenerateLeadFollowUpDto, LeadFollowUpResultDto } from '../dto/generate-lead-follow-up.dto'
 import {
   GenerateLoyaltyCopyDto,
   LoyaltyProgramCopyResultDto,
@@ -24,24 +21,22 @@ import {
   GenerateMarketingDescriptionDto,
   MarketingDescriptionResultDto,
 } from '../dto/generate-marketing-description.dto'
-import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
-import {
-  GenerateStoreSeoDto,
-  StoreSeoResultDto,
-} from '../dto/generate-store-seo.dto'
+import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
 } from '../dto/generate-page-block-content.dto'
+import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
 import {
   GenerateProductContentDto,
   ProductContentResultDto,
 } from '../dto/generate-product-content.dto'
-import { AiChatMessage, TenantAiClientService } from './tenant-ai-client.service'
+import { GenerateStoreSeoDto, StoreSeoResultDto } from '../dto/generate-store-seo.dto'
 import {
   buildDashboardCopilotMessages,
   buildDashboardKpiSnapshot,
 } from '../utils/dashboard-kpi-context.util'
+import { AiChatMessage, TenantAiClientService } from './tenant-ai-client.service'
 
 const ASSISTANT_SYSTEM_PROMPT = `You are a helpful e-commerce and ERP assistant for store administrators.
 Help with product ideas, marketing copy, operations questions, and business decisions.
@@ -96,11 +91,9 @@ export class AiAssistantService {
     const snapshot = buildDashboardKpiSnapshot(stats, period)
     const messages = buildDashboardCopilotMessages(snapshot, dto.message, dto.history || [])
 
-    const result = await this.aiClient.chatCompletion(
-      ctx.tenantId,
-      messages as AiChatMessage[],
-      { temperature: 0.3 },
-    )
+    const result = await this.aiClient.chatCompletion(ctx.tenantId, messages as AiChatMessage[], {
+      temperature: 0.3,
+    })
 
     return {
       reply: result.content,
@@ -205,10 +198,7 @@ Return exactly this JSON shape:
       fields.push('"smsText": "string (max 160 chars)",')
     }
     if (channel === 'push') {
-      fields.push(
-        '"pushTitle": "string (max 50 chars)",',
-        '"pushBody": "string (max 120 chars)",',
-      )
+      fields.push('"pushTitle": "string (max 50 chars)",', '"pushBody": "string (max 120 chars)",')
     }
 
     const prompt = `Generate marketing campaign copy as JSON only (no markdown fences).
@@ -485,6 +475,86 @@ Return exactly this JSON shape:
     })
   }
 
+  async generateOrderAssist(
+    tenantId: string,
+    dto: GenerateOrderAssistDto,
+  ): Promise<OrderAssistResultDto> {
+    if (dto.context === 'status') {
+      const prompt = `Explain this order's current status for a store admin as JSON only (no markdown fences).
+Customer: ${dto.customerName}
+Order status: ${dto.orderStatus}
+${dto.paymentStatus ? `Payment status: ${dto.paymentStatus}` : ''}
+
+Order details:
+${dto.orderSummary}
+
+Return exactly this JSON shape:
+{
+  "explanation": "string (2-4 sentences: what the status means, likely cause, and suggested next admin actions — do not change any data)"
+}`
+
+      const result = await this.aiClient.chatCompletion(
+        tenantId,
+        [
+          {
+            role: 'system',
+            content:
+              'You help e-commerce operations staff understand order statuses. Respond with valid JSON only, no extra text. Never invent tracking numbers or amounts not in the context.',
+          },
+          { role: 'user', content: prompt },
+        ],
+        { temperature: 0.4 },
+      )
+
+      return this.parseJsonResponse<OrderAssistResultDto>(result.content, { explanation: '' })
+    }
+
+    const templateLabels: Record<string, string> = {
+      status_update: 'general order status update',
+      shipped: 'shipment dispatched with tracking if available',
+      delay: 'apologetic delay notification',
+      cancellation: 'order cancellation confirmation',
+      payment_issue: 'payment problem or pending payment follow-up',
+      general: 'helpful general customer update',
+    }
+    const template = dto.emailTemplate || 'general'
+
+    const prompt = `Draft a customer-facing order email as JSON only (no markdown fences).
+Customer: ${dto.customerName}
+${dto.customerEmail ? `Email: ${dto.customerEmail}` : ''}
+Order status: ${dto.orderStatus}
+${dto.paymentStatus ? `Payment status: ${dto.paymentStatus}` : ''}
+Email type: ${templateLabels[template] || templateLabels.general}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: professional, empathetic, and clear'}
+
+Order details:
+${dto.orderSummary}
+
+Return exactly this JSON shape:
+{
+  "emailSubject": "string (max 80 chars)",
+  "emailBody": "string (2-4 short paragraphs, plain text with line breaks, no HTML — draft only, admin will send manually)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You draft customer order emails for online stores. Respond with valid JSON only, no extra text. Never promise refunds or changes not stated in the order context.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.55 },
+    )
+
+    return this.parseJsonResponse<OrderAssistResultDto>(result.content, {
+      emailSubject: `Update on your order`,
+      emailBody: result.content,
+    })
+  }
+
   async generateMarketingDescription(
     tenantId: string,
     dto: GenerateMarketingDescriptionDto,
@@ -506,8 +576,7 @@ Return exactly this JSON shape:
       [
         {
           role: 'system',
-          content:
-            'You are an e-commerce marketer. Respond with valid JSON only, no extra text.',
+          content: 'You are an e-commerce marketer. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
       ],

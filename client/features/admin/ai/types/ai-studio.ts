@@ -63,6 +63,22 @@ export interface LeadFollowUpResult {
   smsText?: string;
 }
 
+export type OrderAssistContext = "status" | "email";
+
+export type OrderEmailTemplate =
+  | "status_update"
+  | "shipped"
+  | "delay"
+  | "cancellation"
+  | "payment_issue"
+  | "general";
+
+export interface OrderAssistResult {
+  explanation?: string;
+  emailSubject?: string;
+  emailBody?: string;
+}
+
 export interface CatalogContentResult {
   description: string;
   seoTitle: string;

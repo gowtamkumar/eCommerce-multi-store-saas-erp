@@ -6,7 +6,7 @@ import { CourierType } from '@/lib/enums/courier-type.enum';
 import { OrderStatus } from '@/lib/enums/order-status.enum';
 import { PaymentStatus } from '@/lib/enums/payment-status.enum';
 import { getOrderStatusStyles } from '@/lib/utils';
-import { Eye, Loader2, Search, X } from 'lucide-react';
+import { Eye, Loader2, Search, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Order, OrderListProps } from '../type';
@@ -53,6 +53,7 @@ export default function OrderList({
     pagination,
     onPageChange,
     onStatusChange,
+    onOpenAiAssist,
     onCourierSelect,
     selectedCourier,
     isCreatingCourierOrder,
@@ -239,17 +240,32 @@ export default function OrderList({
             headerClassName: 'text-right',
             className: 'text-right',
             cell: (order) => (
-                <Link
-                    href={`/admin/orders/${order.id}`}
-                    className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all inline-block"
-                    title="View Order Details"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <Eye className="w-4.5 h-4.5" />
-                </Link>
+                <div className="flex items-center justify-end gap-1">
+                    {onOpenAiAssist && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenAiAssist(order, 'email');
+                            }}
+                            className="p-2.5 text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-xl transition-all"
+                            title="AI customer email draft"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                        </button>
+                    )}
+                    <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all inline-block"
+                        title="View Order Details"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <Eye className="w-4.5 h-4.5" />
+                    </Link>
+                </div>
             ),
         },
-    ], [formatPrice, isCreatingCourierOrder, onCourierSelect, onStatusChange, selectedCourier]);
+    ], [formatPrice, isCreatingCourierOrder, onCourierSelect, onOpenAiAssist, onStatusChange, selectedCourier]);
 
     return (
         <div className="space-y-6">

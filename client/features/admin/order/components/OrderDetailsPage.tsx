@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use } from 'react';
+import React, { use, useState } from 'react';
 import Link from 'next/link';
 import {
     ArrowLeft,
@@ -13,7 +13,8 @@ import {
     Phone,
     RefreshCw,
     Truck,
-    Loader2
+    Loader2,
+    Sparkles
 } from 'lucide-react';
 import { useSettings } from '@/hooks/SettingsContext';
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
@@ -28,6 +29,7 @@ import { useOrderDetails } from '../hooks/useOrderDetails';
 import InvoicePrintArea from './InvoicePrintArea';
 import PathaoCourierModal from './PathaoCourierModal';
 import CourierStatusModal from './CourierStatusModal';
+import OrderAiAssistModal from './OrderAiAssistModal';
 
 export default function OrderDetailsPage({
     params,
@@ -37,6 +39,8 @@ export default function OrderDetailsPage({
     const { id } = use(params);
     const { settings, formatPrice } = useSettings();
     const { downloadInvoice } = useDownloadInvoice();
+    const [showOrderAiModal, setShowOrderAiModal] = useState(false);
+    const [orderAiTab, setOrderAiTab] = useState<'status' | 'email'>('status');
 
     const {
         order,
@@ -140,6 +144,16 @@ export default function OrderDetailsPage({
                             {(order.status || 'PENDING').charAt(0).toUpperCase() +
                                 (order.status || 'PENDING').slice(1).toLowerCase()}
                         </span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOrderAiTab('status');
+                                setShowOrderAiModal(true);
+                            }}
+                            className="text-[10px] sm:text-xs font-bold text-brand-600 hover:text-brand-700 underline underline-offset-2"
+                        >
+                            Explain status
+                        </button>
                     </div>
                 </div>
 
@@ -165,6 +179,17 @@ export default function OrderDetailsPage({
                     >
                         <FileText className="w-4 h-4" />
                         <span className="sm:inline">Download Invoice</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOrderAiTab('email');
+                            setShowOrderAiModal(true);
+                        }}
+                        className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-700 transition-colors shadow-sm"
+                    >
+                        <Sparkles className="w-4 h-4" />
+                        <span className="sm:inline">AI Assist</span>
                     </button>
                     <select
                         value={order.status || OrderStatus.PENDING}
@@ -687,6 +712,14 @@ export default function OrderDetailsPage({
                 loadingStatus={loadingStatus}
                 liveStatus={liveStatus}
             />
+
+            {showOrderAiModal && (
+                <OrderAiAssistModal
+                    order={order}
+                    initialTab={orderAiTab}
+                    onClose={() => setShowOrderAiModal(false)}
+                />
+            )}
         </div>
     );
 }

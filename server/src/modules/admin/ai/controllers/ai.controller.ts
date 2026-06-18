@@ -25,6 +25,7 @@ import {
   GenerateMarketingDescriptionDto,
   MarketingDescriptionResultDto,
 } from '../dto/generate-marketing-description.dto'
+import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
@@ -251,6 +252,22 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Lead follow-up email generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/order-assist')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.ORDERS_READ)
+  async generateOrderAssist(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateOrderAssistDto,
+  ): Promise<BaseApiSuccessResponse<OrderAssistResultDto>> {
+    const data = await this.aiAssistantService.generateOrderAssist(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Order assist content generated successfully',
       data,
     }
   }

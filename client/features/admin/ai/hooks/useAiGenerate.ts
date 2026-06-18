@@ -11,6 +11,9 @@ import type {
   LoyaltyRuleCopyResult,
   LeadFollowUpIntent,
   LeadFollowUpResult,
+  OrderAssistContext,
+  OrderAssistResult,
+  OrderEmailTemplate,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
@@ -133,6 +136,17 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<LeadFollowUpResult>("/ai/generate/lead-follow-up", payload);
 
+  const generateOrderAssist = (payload: {
+    context: OrderAssistContext;
+    orderSummary: string;
+    customerName: string;
+    customerEmail?: string;
+    orderStatus: string;
+    paymentStatus?: string;
+    emailTemplate?: OrderEmailTemplate;
+    tone?: string;
+  }) => withGenerate<OrderAssistResult>("/ai/generate/order-assist", payload);
+
   return {
     configured,
     loading,
@@ -147,5 +161,6 @@ export function useAiGenerate() {
     generateMarketingDescription,
     generateLoyaltyCopy,
     generateLeadFollowUp,
+    generateOrderAssist,
   };
 }
