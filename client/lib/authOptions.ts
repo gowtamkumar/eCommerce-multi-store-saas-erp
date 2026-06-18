@@ -210,39 +210,61 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+let refreshInFlight: Promise<Record<string, unknown>> | null = null;
+let refreshBlockedUntil = 0;
+
 async function refreshAccessToken(token: any) {
-  try {
-    // Use internal Docker service name for server-side
-
-    const res = await fetch(`${nestApiUrl}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: token.id,
-        refreshToken: token.refreshToken,
-      }),
-    });
-
-    const refreshedTokens = await res.json();
-
-    if (!res.ok) {
-      throw refreshedTokens;
-    }
-
-    return {
-      ...token,
-      accessToken: refreshedTokens.data.accessToken,
-      refreshToken: refreshedTokens.data.refreshToken ?? token.refreshToken, // Fallback to old refresh token if not rotated
-      accessTokenExpires: Math.floor(Date.now() / 1000) + 900, // 15 minutes
-    };
-  } catch (error) {
-    console.error("RefreshAccessTokenError", error);
-
+  if (Date.now() < refreshBlockedUntil) {
     return {
       ...token,
       error: "RefreshAccessTokenError",
     };
   }
+
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${nestApiUrl}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: token.id,
+          refreshToken: token.refreshToken,
+        }),
+      });
+
+      const refreshedTokens = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          refreshBlockedUntil = Date.now() + 60_000;
+        }
+        throw refreshedTokens;
+      }
+
+      return {
+        ...token,
+        accessToken: refreshedTokens.data.accessToken,
+        refreshToken: refreshedTokens.data.refreshToken ?? token.refreshToken,
+        accessTokenExpires: Math.floor(Date.now() / 1000) + 900,
+        error: undefined,
+      };
+    } catch (error) {
+      console.error("RefreshAccessTokenError", error);
+
+      return {
+        ...token,
+        error: "RefreshAccessTokenError",
+      };
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
 }

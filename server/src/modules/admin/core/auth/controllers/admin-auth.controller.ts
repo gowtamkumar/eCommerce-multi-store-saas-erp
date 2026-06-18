@@ -20,7 +20,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
-import { Throttle } from '@nestjs/throttler'
+// import { Throttle, SkipThrottle } from '@nestjs/throttler'
 
 @Controller('admin')
 export class AdminAuthController {
@@ -28,7 +28,7 @@ export class AdminAuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/login')
   @Audit({ entity: 'Auth', action: 'LOGIN' })
   async login(
@@ -146,6 +146,8 @@ export class AdminAuthController {
     }
   }
 
+  // @SkipThrottle({ sensitive: true, transactional: true, promo: true })
+  // @Throttle({ standard: { limit: 60, ttl: 60000 } })
   @Post('/refresh')
   @PublicDuringExpiration()
   async refresh(

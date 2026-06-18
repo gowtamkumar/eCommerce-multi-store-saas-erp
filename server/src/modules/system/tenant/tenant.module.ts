@@ -13,6 +13,7 @@ import { Global, Module } from '@nestjs/common'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+import { AiModule } from '@/modules/admin/ai/ai.module'
 
 @Global()
 @Module({
@@ -24,6 +25,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     UserModule,
     RbacModule,
     NotificationModule,
+    AiModule,
   ],
   controllers: [TenantController, OnboardController],
   providers: [TenantService, TenantRepository],

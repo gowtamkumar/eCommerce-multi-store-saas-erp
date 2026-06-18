@@ -1,4 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { TenantAiConfig } from '@/common/types/tenant-ai-config.types'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
 import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
@@ -29,6 +30,9 @@ export class TenantEntity extends BaseEntity {
 
   @Column({ name: 'ssl_enabled', default: false })
   sslEnabled: boolean
+
+  @Column({ type: 'jsonb', name: 'ai_config', nullable: true })
+  aiConfig?: TenantAiConfig | null
 
   @Column({ name: 'active_subscription_id', type: 'uuid', nullable: true })
   activeSubscriptionId: string | null

@@ -11,7 +11,7 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
+// import { Throttle } from '@nestjs/throttler'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'

@@ -20,7 +20,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { Throttle } from '@nestjs/throttler'
+// import { Throttle } from '@nestjs/throttler'
 import {
   AddEmployeeDocumentDto,
   ApproveLeaveDto,
@@ -241,7 +241,7 @@ export class HrmController {
 
   @Post('employees/:id/check-in')
   @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
-  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
+  // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   async checkIn(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -260,7 +260,7 @@ export class HrmController {
 
   @Post('employees/:id/check-out')
   @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
-  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
+  // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   async checkOut(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

@@ -28,6 +28,7 @@ import {
 } from './custom-domain.util'
 import { InvalidSubdomainError, normalizeSubdomain } from './reserved-subdomains.util'
 import { CreateTenantDto } from './dto/create-tenant.dto'
+import { UpdateTenantAiConfigDto } from './dto/tenant-ai-config.dto'
 import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantEntity } from './entities/tenant.entity'
@@ -35,6 +36,11 @@ import { TenantDomainEntity } from './entities/tenant-domain.entity'
 import { TenantSubscriptionEntity } from './entities/tenant-subscription.entity'
 import { TenantFeatureEntity } from './entities/tenant-feature.entity'
 import { TenantRepository } from './tenant.repository'
+import {
+  mergeTenantAiConfigUpdate,
+  normalizeTenantAiConfig,
+  toTenantAiConfigResponse,
+} from './utils/tenant-ai.util'
 import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
 import { DEFAULT_CHART_OF_ACCOUNTS } from '@/modules/admin/operations/finance/accounting/constants/default-coa'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
@@ -810,6 +816,25 @@ export class TenantService {
     }
 
     return { success: true }
+  }
+
+  async getTenantAiConfig(tenantId: string) {
+    const tenant = await this.findOneTenants(tenantId)
+    return toTenantAiConfigResponse(tenant.aiConfig || null)
+  }
+
+  async updateTenantAiConfig(tenantId: string, dto: UpdateTenantAiConfigDto) {
+    const tenant = await this.findOneTenants(tenantId)
+    const merged = mergeTenantAiConfigUpdate(tenant.aiConfig || null, dto)
+    const updated = await this.tenantRepository.updateAndSave(tenant, {
+      aiConfig: merged,
+    })
+    await this.invalidateTenantCache(
+      tenantId,
+      tenant.subdomain,
+      tenant.domains?.map((d) => d.hostname),
+    )
+    return toTenantAiConfigResponse(updated.aiConfig || null)
   }
 
   private async invalidateTenantCache(

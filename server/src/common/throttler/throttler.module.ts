@@ -1,9 +1,9 @@
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { APP_GUARD } from '@nestjs/core'
+// import { APP_GUARD } from '@nestjs/core'
 import { ThrottlerModule } from '@nestjs/throttler'
-import { CustomThrottlerGuard } from './throttler.guard'
+// import { CustomThrottlerGuard } from './throttler.guard'
 
 @Module({
   imports: [
@@ -40,10 +40,11 @@ import { CustomThrottlerGuard } from './throttler.guard'
     }),
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: CustomThrottlerGuard,
-    },
+    // Global rate limiting disabled — re-enable APP_GUARD when ready for production.
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: CustomThrottlerGuard,
+    // },
   ],
 })
 export class AppThrottlerModule {}

@@ -15,6 +15,7 @@ import { AdminModule } from '@/modules/admin/core/admin.module'
 import { AuthModule } from '@/modules/admin/core/auth/auth.module'
 import { CustomerModule } from '@/modules/admin/customer/customer.module'
 import { MarketingModule } from '@/modules/admin/marketing/marketing.module'
+import { AiModule } from '@/modules/admin/ai/ai.module'
 import { OperationsModule } from '@/modules/admin/operations/operations.module'
 import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
 import { SalesModule } from '@/modules/admin/sales/sales.module'
@@ -61,6 +62,7 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     CustomerModule,
     ContentModule,
     MarketingModule,
+    AiModule,
     OperationsModule,
 
     // Other Features

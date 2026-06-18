@@ -10,7 +10,7 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
+// import { Throttle, SkipThrottle } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { Audit } from '@/common/decorators/audit.decorator'
@@ -27,7 +27,7 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/register')
   @Audit({ entity: 'Auth', action: 'REGISTER' })
   async register(
@@ -58,6 +58,8 @@ export class AuthController {
     }
   }
 
+  // @SkipThrottle({ sensitive: true, transactional: true, promo: true })
+  // @Throttle({ standard: { limit: 60, ttl: 60000 } })
   @Post('/refresh')
   @PublicDuringExpiration()
   async refresh(
@@ -160,7 +162,7 @@ export class AuthController {
     }
   }
 
-  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/forgot-password')
   async forgotPassword(
     @RequestContext() ctx: RequestContextDto,

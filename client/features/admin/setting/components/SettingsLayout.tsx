@@ -27,6 +27,7 @@ export function SettingsLayout({ children }: { children: React.ReactNode }) {
         singleProductPage: { title: "Product Detail UI", description: "Configure the layout of individual product pages", showSave: true },
         offersPage: { title: "Offers Page UI", description: "Manage the look and feel of your promotional pages", showSave: true },
         sms: { title: "SMS Configuration", description: "Connect your SMS gateway for notifications", showSave: true },
+        ai: { title: "AI Configuration", description: "Connect OpenRouter, OpenAI, or any compatible AI provider", showSave: false },
         billing: { title: "Subscription & Billing", description: "Manage your plan, billing cycle and invoices", showSave: false },
         system: { title: "System & Performance", description: "Monitor store health and manage cache", showSave: false },
         organization: { title: "Organization & Identity", description: "Manage your branches, warehouses and storage locations", showSave: false },
@@ -42,7 +43,7 @@ export function SettingsLayout({ children }: { children: React.ReactNode }) {
         );
     }
 
-    const isCustomLayoutTab = ['billing', 'system', 'organization', 'domain'].includes(currentTab);
+    const isCustomLayoutTab = ['billing', 'system', 'organization', 'domain', 'ai'].includes(currentTab);
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -5,6 +5,7 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  Bot,
   Briefcase,
   Building2,
   Calendar,
@@ -101,6 +102,12 @@ export const storeSettings = [
     label: "SMS Configuration",
     href: "/admin/settings/sms",
     feature: "sms",
+  },
+  {
+    icon: Bot,
+    label: "AI Configuration",
+    href: "/admin/settings/ai",
+    feature: "settings",
   },
   {
     icon: CreditCard,

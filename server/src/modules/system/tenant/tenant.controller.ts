@@ -18,15 +18,24 @@ import {
   Post,
   Query,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
+// import { Throttle } from '@nestjs/throttler'
 import { plainToInstance } from 'class-transformer'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
 import { UpdateCustomDomainDto } from './dto/update-custom-domain.dto'
+import {
+  TenantAiConfigResponseDto,
+  TestTenantAiConfigDto,
+  UpdateTenantAiConfigDto,
+} from './dto/tenant-ai-config.dto'
 import { TenantResponseDto } from './dto/tenant-response.dto'
 import { TenantEntity } from './entities/tenant.entity'
 import { CreateTenantResponseDto, TenantService } from './tenant.service'
+import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 
 /**
  * Convert a raw TenantEntity (which can carry internal/sensitive columns and
@@ -58,7 +67,10 @@ function toPublicTenantResponse(tenant: TenantEntity): TenantResponseDto {
 @Controller('tenants')
 export class TenantController {
   private readonly logger = new Logger(TenantController.name)
-  constructor(private readonly tenantService: TenantService) {}
+  constructor(
+    private readonly tenantService: TenantService,
+    private readonly tenantAiClientService: TenantAiClientService,
+  ) {}
 
   @Post()
   async create(
@@ -131,7 +143,7 @@ export class TenantController {
 
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
-  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
+  // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Patch('custom-domain')
   @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_REQUEST' })
   async updateCustomDomain(
@@ -154,7 +166,7 @@ export class TenantController {
 
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
-  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('custom-domain/verify/:domainId')
   @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_VERIFY' })
   async verifyCustomDomain(
@@ -204,6 +216,66 @@ export class TenantController {
       statusCode: 200,
       message: 'Primary custom domain set successfully',
       data: toTenantResponse(tenant),
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @RequireFeature('settings')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  @Get('ai-config')
+  async getAiConfig(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<TenantAiConfigResponseDto>> {
+    const data = await this.tenantService.getTenantAiConfig(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'AI configuration retrieved successfully',
+      data,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @RequireFeature('settings')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  @Patch('ai-config')
+  @Audit({ entity: 'Tenant', action: 'AI_CONFIG_UPDATE' })
+  async updateAiConfig(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() body: UpdateTenantAiConfigDto,
+  ): Promise<BaseApiSuccessResponse<TenantAiConfigResponseDto>> {
+    const data = await this.tenantService.updateTenantAiConfig(ctx.tenantId, body)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'AI configuration updated successfully',
+      data,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @RequireFeature('settings')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  @Post('ai-config/test')
+  @HttpCode(200)
+  async testAiConfig(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() body: TestTenantAiConfigDto,
+  ): Promise<BaseApiSuccessResponse<{ reply: string; model: string; totalTokens: number }>> {
+    const result = await this.tenantAiClientService.testConnection(
+      ctx.tenantId,
+      body.prompt || 'Reply with exactly: OK',
+    )
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'AI connection successful',
+      data: {
+        reply: result.content,
+        model: result.model,
+        totalTokens: result.totalTokens,
+      },
     }
   }
 }
