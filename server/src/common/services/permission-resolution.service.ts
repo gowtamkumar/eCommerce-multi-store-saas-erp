@@ -264,6 +264,11 @@ export class PermissionResolutionService {
     this.logger.debug(`[Cache] Invalidated permission manifest for user=${userId}`)
   }
 
+  async invalidateTenantPermissionCaches(): Promise<void> {
+    await this.cacheService.delCacheByPattern('rbac:manifest:*')
+    this.logger.log('[Cache] Invalidated all RBAC permission manifests')
+  }
+
   // ─────────────────────────────────────────────────────────────────
   // Internal: Collect All Role-Based Permissions (flat, no inheritance)
   // ─────────────────────────────────────────────────────────────────

@@ -5,12 +5,14 @@ import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
+import { DEFAULT_ROLE_DEFINITIONS } from './default-role-definitions'
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
+  OnApplicationBootstrap,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, In, Repository } from 'typeorm'
@@ -32,7 +34,7 @@ export interface UpdateRoleDto {
  * Enforces the rule that system roles (isSystemRole=true) cannot be modified or deleted.
  */
 @Injectable()
-export class RoleManagementService {
+export class RoleManagementService implements OnApplicationBootstrap {
   private readonly logger = new Logger(RoleManagementService.name)
 
   constructor(
@@ -48,6 +50,76 @@ export class RoleManagementService {
     private readonly auditLogService: AuditLogService,
     private readonly permissionResolutionService: PermissionResolutionService,
   ) {}
+
+  async onApplicationBootstrap(): Promise<void> {
+    const systemInserted = await this.syncSystemRolePermissions()
+    const defaultInserted = await this.syncDefaultRolePermissions()
+    if (systemInserted + defaultInserted > 0) {
+      await this.invalidateAllPermissionCaches()
+    }
+  }
+
+  /**
+   * Tenant "Super Admin" system roles are provisioned at signup with a snapshot of
+   * permissions. Keep them in sync when new platform permissions are introduced.
+   */
+  async syncSystemRolePermissions(): Promise<number> {
+    const result = await this.roleRepo.manager.query(`
+      INSERT INTO "role_permissions" ("role_id", "permission_id")
+      SELECT r.id, p.id
+      FROM "roles" r
+      CROSS JOIN "permissions" p
+      WHERE r."is_system_role" = true
+        AND NOT EXISTS (
+          SELECT 1 FROM "role_permissions" rp
+          WHERE rp."role_id" = r.id AND rp."permission_id" = p.id
+        )
+    `)
+
+    const inserted = typeof result?.[1] === 'number' ? result[1] : 0
+    if (inserted > 0) {
+      this.logger.log(`Synced ${inserted} permission link(s) onto system roles`)
+    }
+    return inserted
+  }
+
+  /**
+   * Ensure seeded default roles retain their expected permission sets.
+   */
+  async syncDefaultRolePermissions(): Promise<number> {
+    let inserted = 0
+
+    for (const def of DEFAULT_ROLE_DEFINITIONS) {
+      const result = await this.roleRepo.manager.query(
+        `
+        INSERT INTO "role_permissions" ("role_id", "permission_id")
+        SELECT r.id, p.id
+        FROM "roles" r
+        INNER JOIN "permissions" p ON p.code = ANY($1::text[])
+        WHERE r.name = $2
+          AND r."is_system_role" = false
+          AND NOT EXISTS (
+            SELECT 1 FROM "role_permissions" rp
+            WHERE rp."role_id" = r.id AND rp."permission_id" = p.id
+          )
+      `,
+        [def.permCodes, def.name],
+      )
+
+      if (typeof result?.[1] === 'number') {
+        inserted += result[1]
+      }
+    }
+
+    if (inserted > 0) {
+      this.logger.log(`Synced ${inserted} permission link(s) onto default roles`)
+    }
+    return inserted
+  }
+
+  private async invalidateAllPermissionCaches(): Promise<void> {
+    await this.permissionResolutionService.invalidateTenantPermissionCaches()
+  }
 
   // ─────────────────────────────────────────────────────────────────
   // Role CRUD
@@ -234,188 +306,7 @@ export class RoleManagementService {
     const repo = getTransactionalRepo(RoleEntity, this.roleRepo, manager)
     const permRepo = getTransactionalRepo(PermissionEntity, this.permissionRepo, manager)
 
-    const defaultRoleDefs: Array<{
-      name: string
-      description: string
-      permCodes: string[]
-    }> = [
-      {
-        name: 'Branch Manager',
-        description: 'Full operational control across the tenant.',
-        permCodes: [
-          // POS
-          'pos:create-sale',
-          'pos:manage-shifts',
-          'pos:override-price',
-          'pos:apply-discount',
-          'pos:void-transaction',
-          'pos:refund-sale',
-          'pos:manage-cash-drawer',
-          'pos:view-reports',
-          // Catalog
-          'catalog:read',
-          'catalog:write',
-          'catalog:publish',
-          'catalog:featured',
-          // Inventory
-          'inventory:read',
-          'inventory:write',
-          'inventory:adjust',
-          'inventory:transfer',
-          'inventory:cycle-count',
-          'inventory:report',
-          // Procurement
-          'purchasing:read',
-          'purchasing:write',
-          'purchasing:approve',
-          'purchasing:receive-grn',
-          'supplier:manage',
-          'supplier:view-pricing',
-          // Sales & Orders
-          'orders:read',
-          'orders:write',
-          'orders:cancel',
-          'orders:approve',
-          'orders:export',
-          'returns:read',
-          'returns:write',
-          'returns:approve',
-          // HRM (Operations)
-          'hrm:clock-attendance',
-          'hrm:view-attendance-report',
-          'hrm:manage-employees',
-          'hrm:approve-leave',
-          'hrm:manage-documents',
-          // Finance & Accounting
-          'finance:read-ledger',
-          'finance:write-expense',
-          'accounting:read',
-          'accounting:write',
-          'invoices:manage',
-          // Reporting
-          'reports:read',
-          'reports:export',
-          'reports:schedule',
-          // Team & CRM
-          'users:read',
-          'users:invite',
-          'crm:read',
-          'crm:write',
-          'crm:segment',
-          // Logistics
-          'fulfillment:manage',
-          // Settings
-          'settings:manage',
-          'ai:use',
-        ],
-      },
-      {
-        name: 'Accountant',
-        description: 'Financial, general ledger, and reconciliation control.',
-        permCodes: [
-          'finance:read-ledger',
-          'finance:write-expense',
-          'finance:post-journal',
-          'finance:reverse-journal',
-          'finance:close-period',
-          'finance:manage-budget',
-          'accounting:read',
-          'accounting:write',
-          'accounting:manage-coa',
-          'invoices:manage',
-          'invoices:approve',
-          'payments:read',
-          'payments:write',
-          'payments:reconcile',
-          'reports:read',
-          'reports:view-financial',
-          'reports:export',
-          'purchasing:read',
-          'supplier:view-pricing',
-        ],
-      },
-      {
-        name: 'Sales Associate',
-        description: 'Standard retail sales and checkout operator.',
-        permCodes: [
-          'pos:create-sale',
-          'inventory:read',
-          'orders:read',
-          'orders:write',
-          'returns:read',
-          'catalog:read',
-          'crm:read',
-          'payments:read',
-          'hrm:clock-attendance',
-        ],
-      },
-      {
-        name: 'HR Manager',
-        description: 'Comprehensive human resources, employee file, and payroll management.',
-        permCodes: [
-          'hrm:clock-attendance',
-          'hrm:correct-attendance',
-          'hrm:view-attendance-report',
-          'hrm:process-payroll',
-          'hrm:approve-payroll',
-          'hrm:view-payslip',
-          'hrm:manage-employees',
-          'hrm:delete-employee',
-          'hrm:approve-leave',
-          'hrm:manage-documents',
-          'users:read',
-          'reports:read',
-        ],
-      },
-      {
-        name: 'Procurement Officer',
-        description: 'Purchase orders, stock receipts, and supplier contract manager.',
-        permCodes: [
-          'purchasing:read',
-          'purchasing:write',
-          'purchasing:approve',
-          'purchasing:receive-grn',
-          'inventory:read',
-          'supplier:manage',
-          'supplier:view-pricing',
-          'reports:read',
-        ],
-      },
-      {
-        name: 'Inventory Manager',
-        description: 'Warehouse movement, stock adjustments, and carrier logistics controller.',
-        permCodes: [
-          'inventory:read',
-          'inventory:write',
-          'inventory:adjust',
-          'inventory:transfer',
-          'inventory:cycle-count',
-          'inventory:report',
-          'catalog:read',
-          'reports:read',
-          'fulfillment:manage',
-          'logistics:manage',
-          'shipping:manage',
-        ],
-      },
-      {
-        name: 'Viewer',
-        description: 'Full read-only auditing and observation access.',
-        permCodes: [
-          'catalog:read',
-          'inventory:read',
-          'purchasing:read',
-          'orders:read',
-          'returns:read',
-          'payments:read',
-          'finance:read-ledger',
-          'accounting:read',
-          'crm:read',
-          'reports:read',
-          'users:read',
-        ],
-      },
-    ]
+    const defaultRoleDefs = DEFAULT_ROLE_DEFINITIONS
 
     const savedRoles: RoleEntity[] = []
 
