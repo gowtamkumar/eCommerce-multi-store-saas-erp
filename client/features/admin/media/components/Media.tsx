@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import Pagination from '@/components/shared/Pagination';
 import { fetchAPI } from '@/services/api';
-import { Check, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2, X } from 'lucide-react';
+import { Check, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Sparkles, Trash2, X } from 'lucide-react';
+import type { MediaItem } from '../type';
 import { useMediaDashboard } from '../hooks/useMediaDashboard';
+import MediaAiAssistModal from './MediaAiAssistModal';
 import { formatSize } from '../utils/mediaHelpers';
 
 export default function Media() {
+    const [aiItem, setAiItem] = useState<MediaItem | null>(null);
     const {
         media,
         loading,
@@ -176,6 +180,13 @@ export default function Media() {
                                     />
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3">
                                         <button
+                                            type="button"
+                                            onClick={() => setAiItem(item)}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-violet-600 text-white rounded-lg text-xs font-bold hover:bg-violet-700 transition-colors transform translate-y-2 group-hover:translate-y-0"
+                                        >
+                                            <Sparkles className="w-3 h-3" /> AI Assist
+                                        </button>
+                                        <button
                                             onClick={() => handleCopyToClipboard(item.url, item._id)}
                                             className="flex items-center gap-2 px-3 py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors transform translate-y-2 group-hover:translate-y-0"
                                         >
@@ -233,6 +244,13 @@ export default function Media() {
                 message={confirmModal.message}
                 isDangerous={confirmModal.isDangerous}
             />
+
+            {aiItem && (
+                <MediaAiAssistModal
+                    item={aiItem}
+                    onClose={() => setAiItem(null)}
+                />
+            )}
         </div>
     );
 }

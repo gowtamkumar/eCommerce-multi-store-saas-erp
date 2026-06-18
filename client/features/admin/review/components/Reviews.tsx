@@ -1,13 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import Pagination from '@/components/shared/Pagination';
 import { ReviewStatus } from '@/lib/enums/review-status.enum';
 import { Loader2, Search, Star, X } from 'lucide-react';
+import type { AdminReview } from '../types';
 import { useReviewDashboard } from '../hooks/useReviewDashboard';
+import ReviewAiAssistModal from './ReviewAiAssistModal';
 import { ReviewCard } from './ReviewCard';
 
 export default function Reviews() {
+    const [aiReview, setAiReview] = useState<AdminReview | null>(null);
     const {
         reviews,
         loading,
@@ -87,6 +91,7 @@ export default function Reviews() {
                                 key={review.id}
                                 review={review}
                                 onAction={handleAction}
+                                onOpenAiAssist={setAiReview}
                             />
                         ))
                     )}
@@ -113,6 +118,13 @@ export default function Reviews() {
                 confirmText="Delete"
                 isDangerous
             />
+
+            {aiReview && (
+                <ReviewAiAssistModal
+                    review={aiReview}
+                    onClose={() => setAiReview(null)}
+                />
+            )}
         </div>
     );
 }

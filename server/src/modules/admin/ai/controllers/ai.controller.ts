@@ -27,9 +27,33 @@ import {
 } from '../dto/generate-marketing-description.dto'
 import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
+  GenerateMediaAssistDto,
+  MediaAssistResultDto,
+} from '../dto/generate-media-assist.dto'
+import {
+  GeneratePriceBookRationaleDto,
+  PriceBookRationaleResultDto,
+} from '../dto/generate-price-book-rationale.dto'
+import {
+  GenerateAbandonedCartMessageDto,
+  AbandonedCartMessageResultDto,
+} from '../dto/generate-abandoned-cart-message.dto'
+import {
+  GenerateReviewAssistDto,
+  ReviewAssistResultDto,
+} from '../dto/generate-review-assist.dto'
+import {
   GenerateReturnAssistDto,
   ReturnAssistResultDto,
 } from '../dto/generate-return-assist.dto'
+import {
+  GenerateCustomerProfileDto,
+  CustomerProfileResultDto,
+} from '../dto/generate-customer-profile.dto'
+import {
+  GenerateSupportReplyDto,
+  SupportReplyResultDto,
+} from '../dto/generate-support-reply.dto'
 import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
@@ -288,6 +312,102 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Return explanation letter generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/support-reply')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateSupportReply(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateSupportReplyDto,
+  ): Promise<BaseApiSuccessResponse<SupportReplyResultDto>> {
+    const data = await this.aiAssistantService.generateSupportReply(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Support reply generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/customer-profile')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CRM_READ)
+  async generateCustomerProfile(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateCustomerProfileDto,
+  ): Promise<BaseApiSuccessResponse<CustomerProfileResultDto>> {
+    const data = await this.aiAssistantService.generateCustomerProfile(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Customer profile insights generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/review-assist')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CATALOG_READ)
+  async generateReviewAssist(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateReviewAssistDto,
+  ): Promise<BaseApiSuccessResponse<ReviewAssistResultDto>> {
+    const data = await this.aiAssistantService.generateReviewAssist(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Review moderation assist generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/abandoned-cart-message')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.ORDERS_READ)
+  async generateAbandonedCartMessage(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateAbandonedCartMessageDto,
+  ): Promise<BaseApiSuccessResponse<AbandonedCartMessageResultDto>> {
+    const data = await this.aiAssistantService.generateAbandonedCartMessage(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Abandoned cart message generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/price-book-rationale')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CATALOG_READ)
+  async generatePriceBookRationale(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GeneratePriceBookRationaleDto,
+  ): Promise<BaseApiSuccessResponse<PriceBookRationaleResultDto>> {
+    const data = await this.aiAssistantService.generatePriceBookRationale(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Price book rationale generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/media-assist')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CONTENT_MANAGE)
+  async generateMediaAssist(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateMediaAssistDto,
+  ): Promise<BaseApiSuccessResponse<MediaAssistResultDto>> {
+    const data = await this.aiAssistantService.generateMediaAssist(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Media assist content generated successfully',
       data,
     }
   }

@@ -3,6 +3,7 @@
 import React from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { useSupportChat } from "../hooks/useSupportChat";
+import { SupportReplyAiAssist } from "./SupportReplyAiAssist";
 
 export default function SupportChat() {
   const {
@@ -150,10 +151,19 @@ export default function SupportChat() {
             </div>
 
             {/* Input Footer */}
-            <form
-              onSubmit={handleSendMessage}
-              className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center space-x-3"
-            >
+            <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="px-4 pt-3">
+                <SupportReplyAiAssist
+                  conversation={selectedConv}
+                  messages={messages}
+                  disabled={loadingMessages}
+                  onApply={setInputMessage}
+                />
+              </div>
+              <form
+                onSubmit={handleSendMessage}
+                className="p-4 flex items-center space-x-3"
+              >
               <input
                 type="text"
                 value={inputMessage}
@@ -169,7 +179,8 @@ export default function SupportChat() {
                 <span>Send</span>
                 <Send className="w-4 h-4" />
               </button>
-            </form>
+              </form>
+            </div>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8">

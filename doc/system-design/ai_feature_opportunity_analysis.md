@@ -111,19 +111,19 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | Dashboard | `/admin` | Natural-language KPI questions | ✅ | `DashboardCopilot` — read-only KPI snapshot |
 | Orders | `/admin/orders` | Status explanation, customer email draft | ✅ | `OrderAiAssistModal` on list + order detail |
 | Returns | `/admin/returns` | Refund explanation letter | ✅ | Draft only |
-| Customers | `/admin/customers` | Support summary, segment labels | ⬜ | Read-only profile summary |
-| Live chat | `/admin/support` | Suggested replies | ⬜ | FAQ + order lookup context |
-| Reviews | `/admin/reviews` | Reply draft, toxicity flag | ⬜ | Moderation assist |
-| Active carts | `/admin/carts` | Abandoned cart message | 🔒 | Event-driven (Phase C) |
+| Customers | `/admin/customers` | Support summary, segment labels | ✅ | Read-only profile summary |
+| Live chat | `/admin/support` | Suggested replies | ✅ | FAQ + order lookup context |
+| Reviews | `/admin/reviews` | Reply draft, toxicity flag | ✅ | Moderation assist |
+| Active carts | `/admin/carts` | Abandoned cart message | ✅ | Draft only (manual); `cart.abandoned` automation Phase C |
 
 ### 3.3 Admin — Catalog & Media
 
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
 | Products | `/admin/products` | Full listing copy | ✅ | Image alt-text from filename |
-| Price books | `/admin/price-books` | Pricing rationale notes | ⬜ | Low priority |
-| Media library | `/admin/media` | Alt text, file naming | ⬜ | Vision model optional |
-| Reviews (catalog) | `/admin/reviews` | See above | ⬜ | — |
+| Price books | `/admin/price-books` | Pricing rationale notes | ✅ | Internal draft notes only |
+| Media library | `/admin/media` | Alt text, file naming | ✅ | Vision optional (OpenAI-compatible) |
+| Reviews (catalog) | `/admin/reviews` | See above | ✅ | — |
 
 ### 3.4 Admin — Operations & Inventory
 
@@ -347,7 +347,7 @@ Reuse existing endpoints and `useAiGenerate`; no new infrastructure.
 |---|---------|------------|
 | 1 | `ai_jobs` + BullMQ processor | Infra |
 | 2 | `product.created` → background SEO draft | Events |
-| 3 | `cart.abandoned` → message draft | Events + marketing |
+| 3 | `cart.abandoned` → message draft | Events + marketing — admin manual draft ✅ at `/admin/carts` |
 | 4 | Supplier invoice OCR | File upload + vision model |
 | 5 | AR collection email drafts | Finance overdue query |
 | 6 | Demand forecasting (read-only) | Reports + historical orders |

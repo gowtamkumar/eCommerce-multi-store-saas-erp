@@ -1,11 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import CustomerList from './CustomerList';
 import CustomerForm from './CustomerForm';
+import CustomerProfileAiModal from './CustomerProfileAiModal';
+import type { User } from '../type';
 import { useCustomerDashboard } from '../hooks/useCustomerDashboard';
 
 export default function Customer() {
+    const [aiUser, setAiUser] = useState<User | null>(null);
     const {
         users,
         loading,
@@ -34,6 +38,7 @@ export default function Customer() {
                 onDelete={handleDelete}
                 onEdit={handleEdit}
                 onAdd={handleAdd}
+                onOpenAiProfile={setAiUser}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
             />
@@ -53,6 +58,13 @@ export default function Customer() {
                 message={confirmModal.message}
                 isDangerous={confirmModal.isDangerous}
             />
+
+            {aiUser && (
+                <CustomerProfileAiModal
+                    user={aiUser}
+                    onClose={() => setAiUser(null)}
+                />
+            )}
         </div>
     );
 }

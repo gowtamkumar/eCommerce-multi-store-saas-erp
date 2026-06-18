@@ -32,6 +32,7 @@ export interface CustomerListProps {
     onDelete: (id: string) => void;
     onEdit: (user: User) => void;
     onAdd: () => void;
+    onOpenAiProfile?: (user: User) => void;
     searchQuery: string;
     onSearchChange: (value: string) => void;
 }

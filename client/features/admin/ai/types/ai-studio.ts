@@ -93,6 +93,48 @@ export interface ReturnAssistResult {
   emailBody: string;
 }
 
+export interface SupportReplyResult {
+  suggestedReply: string;
+}
+
+export interface CustomerProfileResult {
+  supportSummary: string;
+  segmentLabels: string[];
+}
+
+export type ToxicityLevel = "none" | "low" | "medium" | "high";
+
+export interface ReviewAssistResult {
+  publicReply: string;
+  toxicityLevel: ToxicityLevel;
+  toxicityReason: string;
+  needsAttention: boolean;
+}
+
+export type AbandonedCartMessageTemplate =
+  | "gentle_reminder"
+  | "incentive"
+  | "urgency"
+  | "win_back"
+  | "general";
+
+export interface AbandonedCartMessageResult {
+  emailSubject: string;
+  emailBody: string;
+  smsText?: string;
+}
+
+export interface PriceBookRationaleResult {
+  rationaleNotes: string;
+  usageGuidance: string;
+}
+
+export interface MediaAssistResult {
+  altText: string;
+  suggestedFilename: string;
+  visionUsed?: boolean;
+}
+
 export interface CatalogContentResult {
   description: string;
   seoTitle: string;

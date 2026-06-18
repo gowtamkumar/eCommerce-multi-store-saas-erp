@@ -3,7 +3,7 @@
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { UserStatus } from '@/lib/enums/user-status.enum';
-import { AlertTriangle, Building2, CreditCard, Edit2, History, Plus, Search, Trash2, User as UserIcon } from 'lucide-react';
+import { AlertTriangle, Building2, CreditCard, Edit2, History, Plus, Search, Sparkles, Trash2, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { CustomerListProps, User } from '../type';
@@ -16,6 +16,7 @@ export default function CustomerList({
     onDelete,
     onEdit,
     onAdd,
+    onOpenAiProfile,
     searchQuery,
     onSearchChange
 }: CustomerListProps) {
@@ -103,6 +104,16 @@ export default function CustomerList({
             className: 'text-right',
             cell: (user) => (
                 <div className="flex justify-end gap-1 items-center">
+                    {onOpenAiProfile && (
+                        <button
+                            type="button"
+                            onClick={() => onOpenAiProfile(user)}
+                            className="p-2 text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-all"
+                            title="AI profile insights"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                        </button>
+                    )}
                     <Link
                         href={`/admin/reports/customer-ledger?customerId=${user.id}`}
                         className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-all"
@@ -129,7 +140,7 @@ export default function CustomerList({
                 </div>
             ),
         },
-    ], [onDelete, onEdit]);
+    ], [onDelete, onEdit, onOpenAiProfile]);
 
     return (
         <div className="space-y-6">

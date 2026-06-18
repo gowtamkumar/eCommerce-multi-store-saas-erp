@@ -16,6 +16,13 @@ import type {
   OrderEmailTemplate,
   ReturnAssistResult,
   ReturnLetterTemplate,
+  SupportReplyResult,
+  CustomerProfileResult,
+  ReviewAssistResult,
+  AbandonedCartMessageResult,
+  AbandonedCartMessageTemplate,
+  PriceBookRationaleResult,
+  MediaAssistResult,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
@@ -160,6 +167,59 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<ReturnAssistResult>("/ai/generate/return-assist", payload);
 
+  const generateSupportReply = (payload: {
+    conversationSummary: string;
+    customerName: string;
+    customerEmail?: string;
+    faqSummary?: string;
+    orderSummary?: string;
+    tone?: string;
+  }) => withGenerate<SupportReplyResult>("/ai/generate/support-reply", payload);
+
+  const generateCustomerProfile = (payload: {
+    customerSummary: string;
+    ordersSummary?: string;
+    returnsSummary?: string;
+    walletSummary?: string;
+    loyaltySummary?: string;
+    tone?: string;
+  }) => withGenerate<CustomerProfileResult>("/ai/generate/customer-profile", payload);
+
+  const generateReviewAssist = (payload: {
+    reviewSummary: string;
+    reviewerName: string;
+    rating: number;
+    reviewStatus?: string;
+    productName?: string;
+    tone?: string;
+  }) => withGenerate<ReviewAssistResult>("/ai/generate/review-assist", payload);
+
+  const generateAbandonedCartMessage = (payload: {
+    cartSummary: string;
+    customerName: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    messageTemplate?: AbandonedCartMessageTemplate;
+    brandName?: string;
+    tone?: string;
+  }) => withGenerate<AbandonedCartMessageResult>("/ai/generate/abandoned-cart-message", payload);
+
+  const generatePriceBookRationale = (payload: {
+    priceBookSummary: string;
+    catalogSummary?: string;
+    tone?: string;
+  }) => withGenerate<PriceBookRationaleResult>("/ai/generate/price-book-rationale", payload);
+
+  const generateMediaAssist = (payload: {
+    mediaSummary: string;
+    filename: string;
+    mimetype?: string;
+    imageUrl?: string;
+    useVision?: boolean;
+    contextHint?: string;
+    tone?: string;
+  }) => withGenerate<MediaAssistResult>("/ai/generate/media-assist", payload);
+
   return {
     configured,
     loading,
@@ -176,5 +236,11 @@ export function useAiGenerate() {
     generateLeadFollowUp,
     generateOrderAssist,
     generateReturnAssist,
+    generateSupportReply,
+    generateCustomerProfile,
+    generateReviewAssist,
+    generateAbandonedCartMessage,
+    generatePriceBookRationale,
+    generateMediaAssist,
   };
 }

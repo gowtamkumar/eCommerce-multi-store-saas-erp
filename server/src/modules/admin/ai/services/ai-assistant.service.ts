@@ -23,9 +23,33 @@ import {
 } from '../dto/generate-marketing-description.dto'
 import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
+  GenerateReviewAssistDto,
+  ReviewAssistResultDto,
+} from '../dto/generate-review-assist.dto'
+import {
   GenerateReturnAssistDto,
   ReturnAssistResultDto,
 } from '../dto/generate-return-assist.dto'
+import {
+  GenerateMediaAssistDto,
+  MediaAssistResultDto,
+} from '../dto/generate-media-assist.dto'
+import {
+  GeneratePriceBookRationaleDto,
+  PriceBookRationaleResultDto,
+} from '../dto/generate-price-book-rationale.dto'
+import {
+  AbandonedCartMessageResultDto,
+  GenerateAbandonedCartMessageDto,
+} from '../dto/generate-abandoned-cart-message.dto'
+import {
+  GenerateCustomerProfileDto,
+  CustomerProfileResultDto,
+} from '../dto/generate-customer-profile.dto'
+import {
+  GenerateSupportReplyDto,
+  SupportReplyResultDto,
+} from '../dto/generate-support-reply.dto'
 import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
@@ -608,6 +632,267 @@ Return exactly this JSON shape:
     return this.parseJsonResponse<ReturnAssistResultDto>(result.content, {
       emailSubject: 'Update on your return request',
       emailBody: result.content,
+    })
+  }
+
+  async generateSupportReply(
+    tenantId: string,
+    dto: GenerateSupportReplyDto,
+  ): Promise<SupportReplyResultDto> {
+    const prompt = `Draft a live-chat reply for a support agent as JSON only (no markdown fences).
+Customer: ${dto.customerName}
+${dto.customerEmail ? `Customer email: ${dto.customerEmail}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: friendly, helpful, and concise — suitable for live chat'}
+
+Recent conversation:
+${dto.conversationSummary}
+
+${dto.faqSummary ? `Relevant store FAQs (use for policy answers; do not contradict):\n${dto.faqSummary}` : 'No FAQ context provided.'}
+
+${dto.orderSummary ? `Customer order lookup:\n${dto.orderSummary}` : 'No order context provided.'}
+
+Return exactly this JSON shape:
+{
+  "suggestedReply": "string (1-3 short paragraphs or bullet points, plain text, ready to send in chat — address the visitor's latest message; cite order status or FAQ only when supported by context; do not invent tracking numbers, refunds, or policies)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You draft live support chat replies for e-commerce stores. Respond with valid JSON only, no extra text. Never promise refunds, shipping dates, or order changes not stated in the context. Keep replies conversational and brief.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.55 },
+    )
+
+    return this.parseJsonResponse<SupportReplyResultDto>(result.content, {
+      suggestedReply: result.content,
+    })
+  }
+
+  async generateCustomerProfile(
+    tenantId: string,
+    dto: GenerateCustomerProfileDto,
+  ): Promise<CustomerProfileResultDto> {
+    const prompt = `Analyze this customer profile for a support and CRM team as JSON only (no markdown fences).
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: factual, concise, and actionable'}
+
+Customer profile:
+${dto.customerSummary}
+
+${dto.ordersSummary ? `Order history:\n${dto.ordersSummary}` : 'No order history provided.'}
+
+${dto.returnsSummary ? `Return history:\n${dto.returnsSummary}` : 'No return history provided.'}
+
+${dto.walletSummary ? `Wallet / store credit:\n${dto.walletSummary}` : 'No wallet data provided.'}
+
+${dto.loyaltySummary ? `Loyalty program:\n${dto.loyaltySummary}` : 'No loyalty data provided.'}
+
+Return exactly this JSON shape:
+{
+  "supportSummary": "string (3-5 short bullet points as plain text with line breaks — read-only briefing for support agents: who they are, purchase behavior, credit/wallet/loyalty status, and anything to watch for; do not invent data not in context)",
+  "segmentLabels": ["string (3-6 short segment tags, e.g. B2B, Repeat buyer, Credit hold, At-risk — each max 4 words)"]
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You produce read-only customer support briefings and segment labels for e-commerce CRM. Respond with valid JSON only, no extra text. Never change customer data or recommend automated actions — insights only.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.45 },
+    )
+
+    return this.parseJsonResponse<CustomerProfileResultDto>(result.content, {
+      supportSummary: result.content,
+      segmentLabels: [],
+    })
+  }
+
+  async generateReviewAssist(
+    tenantId: string,
+    dto: GenerateReviewAssistDto,
+  ): Promise<ReviewAssistResultDto> {
+    const prompt = `Moderate a product review and draft a public store reply as JSON only (no markdown fences).
+Reviewer: ${dto.reviewerName}
+Rating: ${dto.rating}/5
+${dto.reviewStatus ? `Moderation status: ${dto.reviewStatus}` : ''}
+${dto.productName ? `Product: ${dto.productName}` : ''}
+${dto.tone ? `Reply tone: ${dto.tone}` : 'Reply tone: warm, professional, and brand-safe'}
+
+Review details:
+${dto.reviewSummary}
+
+Return exactly this JSON shape:
+{
+  "publicReply": "string (2-4 sentences, customer-facing public reply thanking the reviewer and addressing their feedback when relevant — draft only, admin posts manually)",
+  "toxicityLevel": "none | low | medium | high",
+  "toxicityReason": "string (1 sentence explaining toxicity/policy concern, or 'No concerns' if none)",
+  "needsAttention": "boolean (true if toxicity is medium/high, contains harassment, hate speech, spam, or likely fake review signals)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You assist e-commerce review moderation. Respond with valid JSON only, no extra text. Flag toxicity conservatively; human moderators make final decisions. Never auto-approve or reject reviews.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.4 },
+    )
+
+    return this.parseJsonResponse<ReviewAssistResultDto>(result.content, {
+      publicReply: result.content,
+      toxicityLevel: 'none',
+      toxicityReason: 'Unable to assess',
+      needsAttention: false,
+    })
+  }
+
+  async generateAbandonedCartMessage(
+    tenantId: string,
+    dto: GenerateAbandonedCartMessageDto,
+  ): Promise<AbandonedCartMessageResultDto> {
+    const templateLabels: Record<string, string> = {
+      gentle_reminder: 'friendly reminder that items are still in their cart',
+      incentive: 'nudge with a soft incentive to complete checkout (do not invent coupon codes)',
+      urgency: 'polite urgency about cart items without false scarcity',
+      win_back: 'win-back message for a customer who has not checked out',
+      general: 'general abandoned cart recovery message',
+    }
+    const template = dto.messageTemplate || 'gentle_reminder'
+
+    const prompt = `Draft an abandoned cart recovery message as JSON only (no markdown fences).
+Customer: ${dto.customerName}
+${dto.customerEmail ? `Email: ${dto.customerEmail}` : ''}
+${dto.customerPhone ? `Phone: ${dto.customerPhone}` : ''}
+${dto.brandName ? `Store/brand: ${dto.brandName}` : ''}
+Message style: ${templateLabels[template] || templateLabels.general}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: warm, helpful, and not pushy'}
+
+Cart details:
+${dto.cartSummary}
+
+Return exactly this JSON shape:
+{
+  "emailSubject": "string (max 80 chars, personalized)",
+  "emailBody": "string (2-4 short paragraphs, plain text with line breaks, no HTML — mention cart items only when in context; draft only, admin sends manually)",
+  "smsText": "string (optional short SMS, max 160 chars)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write abandoned cart recovery emails and SMS for e-commerce stores. Respond with valid JSON only, no extra text. Never invent discounts, coupon codes, or checkout links not in context.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.6 },
+    )
+
+    return this.parseJsonResponse<AbandonedCartMessageResultDto>(result.content, {
+      emailSubject: 'You left something in your cart',
+      emailBody: result.content,
+      smsText: '',
+    })
+  }
+
+  async generatePriceBookRationale(
+    tenantId: string,
+    dto: GeneratePriceBookRationaleDto,
+  ): Promise<PriceBookRationaleResultDto> {
+    const prompt = `Write internal pricing rationale notes for a commerce team as JSON only (no markdown fences).
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: clear, practical, and finance-friendly'}
+
+Price book:
+${dto.priceBookSummary}
+
+${dto.catalogSummary ? `Other price books in catalog:\n${dto.catalogSummary}` : 'No other price book context provided.'}
+
+Return exactly this JSON shape:
+{
+  "rationaleNotes": "string (3-5 bullet points as plain text with line breaks — why this price book exists, intended audience, pricing strategy, and validity implications; internal only)",
+  "usageGuidance": "string (1-2 sentences on when sales/ops should apply this book vs others; do not invent product prices)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You document B2B and retail price book strategy for ERP teams. Respond with valid JSON only, no extra text. Notes are internal — not customer-facing.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.45 },
+    )
+
+    return this.parseJsonResponse<PriceBookRationaleResultDto>(result.content, {
+      rationaleNotes: result.content,
+      usageGuidance: '',
+    })
+  }
+
+  async generateMediaAssist(
+    tenantId: string,
+    dto: GenerateMediaAssistDto,
+  ): Promise<MediaAssistResultDto> {
+    const isImage = dto.mimetype?.startsWith('image/') ?? false
+    const useVision = Boolean(dto.useVision && dto.imageUrl && isImage)
+
+    const prompt = `Suggest accessibility alt text and an SEO-friendly filename for a media library asset as JSON only (no markdown fences).
+Current filename: ${dto.filename}
+${dto.mimetype ? `MIME type: ${dto.mimetype}` : ''}
+${dto.contextHint ? `Usage context: ${dto.contextHint}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: descriptive and concise'}
+
+File details:
+${dto.mediaSummary}
+
+${useVision ? 'Analyze the attached image when describing visible content.' : 'No vision analysis — infer from filename and metadata only.'}
+
+Return exactly this JSON shape:
+{
+  "altText": "string (max 125 chars, accessibility-focused, describes the image content)",
+  "suggestedFilename": "string (lowercase kebab-case with extension, SEO-friendly, no timestamp prefix, e.g. blue-cotton-tshirt-front.jpg)",
+  "visionUsed": ${useVision ? 'true' : 'false'}
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write image alt text and SEO filenames for e-commerce media libraries. Respond with valid JSON only, no extra text. Do not invent brand names or products not visible or implied.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      {
+        temperature: 0.4,
+        imageUrl: useVision ? dto.imageUrl : undefined,
+      },
+    )
+
+    return this.parseJsonResponse<MediaAssistResultDto>(result.content, {
+      altText: '',
+      suggestedFilename: dto.filename,
+      visionUsed: useVision,
     })
   }
 

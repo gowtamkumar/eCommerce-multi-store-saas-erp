@@ -1,15 +1,17 @@
 import { memo } from 'react';
-import { Star, Trash2, Box } from 'lucide-react';
+import { Star, Trash2, Box, Sparkles } from 'lucide-react';
 import { ReviewStatus } from '@/lib/enums/review-status.enum';
 import { AdminReview } from '../types';
 import { getReviewerName, getReviewerEmail } from '../utils/reviewHelpers';
 
 export const ReviewCard = memo(({
     review,
-    onAction
+    onAction,
+    onOpenAiAssist,
 }: {
     review: AdminReview;
     onAction: (id: string, action: ReviewStatus | 'delete') => void;
+    onOpenAiAssist?: (review: AdminReview) => void;
 }) => {
     return (
         <div className="p-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
@@ -46,6 +48,16 @@ export const ReviewCard = memo(({
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {onOpenAiAssist && (
+                        <button
+                            type="button"
+                            onClick={() => onOpenAiAssist(review)}
+                            className="p-2 text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-all"
+                            title="AI moderation assist"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                        </button>
+                    )}
                     {review.status !== ReviewStatus.APPROVED && (
                         <button
                             onClick={() => onAction(review.id, ReviewStatus.APPROVED)}

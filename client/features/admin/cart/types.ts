@@ -1,3 +1,9 @@
+export interface CartItemSummary {
+    productName?: string;
+    quantity: number;
+    basePrice?: number;
+}
+
 export interface CartSummary {
     id: string;
     customerName: string;
@@ -6,4 +12,5 @@ export interface CartSummary {
     itemCount: number;
     totalAmount?: number;
     updatedAt?: string;
+    items?: CartItemSummary[];
 }

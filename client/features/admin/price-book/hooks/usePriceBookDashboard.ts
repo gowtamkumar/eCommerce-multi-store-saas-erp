@@ -5,23 +5,12 @@ import { fetchAPI } from "@/services/api";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+import type { PriceBook } from "../types";
+
 export function usePriceBookDashboard() {
   const { settings } = useSettings();
   const globalCurrency = settings?.currency || "BDT";
 
-  // Define a type for a price book record
-  interface PriceBook {
-    id: string;
-    name: string;
-    code: string;
-    type: string;
-    currency: string;
-    isActive: boolean;
-    validFrom?: string;
-    validTo?: string;
-  }
-
-  // Form data mirrors PriceBook without the id (id is only present for editing)
   type PriceBookForm = Omit<PriceBook, "id">;
 
   const [priceBooks, setPriceBooks] = useState<PriceBook[]>([]);

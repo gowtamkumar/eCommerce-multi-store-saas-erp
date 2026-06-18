@@ -42,7 +42,12 @@ export class TenantAiClientService {
   async chatCompletion(
     tenantId: string,
     messages: AiChatMessage[],
-    options?: { model?: string; maxTokens?: number; temperature?: number },
+    options?: {
+      model?: string
+      maxTokens?: number
+      temperature?: number
+      imageUrl?: string
+    },
   ): Promise<AiCompletionResult> {
     const config = await this.getConfigForTenant(tenantId)
     this.assertConfigReady(config)
@@ -50,17 +55,82 @@ export class TenantAiClientService {
     const model = options?.model || config.defaultModel!
     const maxTokens = options?.maxTokens ?? config.maxTokens ?? 1024
     const temperature = options?.temperature ?? config.temperature ?? 0.7
+    const payloadMessages = this.withOptionalVisionMessage(messages, options?.imageUrl)
 
     switch (config.provider) {
       case AiProviderType.ANTHROPIC:
-        return this.chatAnthropic(config, messages, model, maxTokens, temperature)
+        return this.chatAnthropic(config, payloadMessages, model, maxTokens, temperature)
       case AiProviderType.GOOGLE:
-        return this.chatGoogle(config, messages, model, maxTokens, temperature)
+        return this.chatGoogle(config, payloadMessages, model, maxTokens, temperature)
       case AiProviderType.AZURE_OPENAI:
-        return this.chatAzureOpenAi(config, messages, model, maxTokens, temperature)
+        return this.chatAzureOpenAi(
+          config,
+          payloadMessages,
+          model,
+          maxTokens,
+          temperature,
+          options?.imageUrl,
+        )
       default:
-        return this.chatOpenAiCompatible(config, messages, model, maxTokens, temperature)
+        return this.chatOpenAiCompatible(
+          config,
+          payloadMessages,
+          model,
+          maxTokens,
+          temperature,
+          options?.imageUrl,
+        )
     }
+  }
+
+  private withOptionalVisionMessage(
+    messages: AiChatMessage[],
+    imageUrl?: string,
+  ): AiChatMessage[] {
+    if (!imageUrl) return messages
+
+    const lastUserIndex = [...messages].reverse().findIndex((m) => m.role === 'user')
+    if (lastUserIndex < 0) return messages
+
+    const index = messages.length - 1 - lastUserIndex
+    const target = messages[index]
+    return messages.map((message, i) =>
+      i === index
+        ? {
+            ...message,
+            content: `${message.content}\n\n[Image URL for vision analysis: ${imageUrl}]`,
+          }
+        : message,
+    )
+  }
+
+  private buildOpenAiMessages(
+    messages: AiChatMessage[],
+    imageUrl?: string,
+  ): Array<{ role: string; content: string | Array<Record<string, unknown>> }> {
+    if (!imageUrl) {
+      return messages
+    }
+
+    const lastUserIndex = [...messages].reverse().findIndex((m) => m.role === 'user')
+    if (lastUserIndex < 0) {
+      return messages
+    }
+
+    const index = messages.length - 1 - lastUserIndex
+    return messages.map((message, i) => {
+      if (i !== index || message.role !== 'user') {
+        return message
+      }
+
+      return {
+        role: message.role,
+        content: [
+          { type: 'text', text: message.content },
+          { type: 'image_url', image_url: { url: imageUrl } },
+        ],
+      }
+    })
   }
 
   async testConnection(
@@ -105,6 +175,7 @@ export class TenantAiClientService {
     model: string,
     maxTokens: number,
     temperature: number,
+    imageUrl?: string,
   ): Promise<AiCompletionResult> {
     const baseUrl = (config.baseUrl || '').replace(/\/$/, '')
     if (!baseUrl) {
@@ -129,7 +200,12 @@ export class TenantAiClientService {
     try {
       const { data } = await axios.post(
         `${baseUrl}/chat/completions`,
-        { model, messages, max_tokens: maxTokens, temperature },
+        {
+          model,
+          messages: this.buildOpenAiMessages(messages, imageUrl),
+          max_tokens: maxTokens,
+          temperature,
+        },
         { headers, timeout: 60_000 },
       )
 
@@ -268,6 +344,7 @@ export class TenantAiClientService {
     model: string,
     maxTokens: number,
     temperature: number,
+    imageUrl?: string,
   ): Promise<AiCompletionResult> {
     const baseUrl = (config.baseUrl || '').replace(/\/$/, '')
     if (!baseUrl) {
@@ -279,7 +356,12 @@ export class TenantAiClientService {
     try {
       const { data } = await axios.post(
         `${baseUrl}/chat/completions`,
-        { model, messages, max_tokens: maxTokens, temperature },
+        {
+          model,
+          messages: this.buildOpenAiMessages(messages, imageUrl),
+          max_tokens: maxTokens,
+          temperature,
+        },
         {
           params: { 'api-version': apiVersion },
           headers: {

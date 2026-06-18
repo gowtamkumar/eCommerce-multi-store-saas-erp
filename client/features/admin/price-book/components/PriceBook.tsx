@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Scale, 
@@ -12,13 +12,17 @@ import {
     Check, 
     ShieldAlert, 
     Clock,
-    Info
+    Info,
+    Sparkles,
 } from 'lucide-react';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import { usePriceBookDashboard } from '../hooks/usePriceBookDashboard';
 import { generateCode, getTypeHelperText } from '../utils/priceBookHelpers';
+import PriceBookRationaleModal from './PriceBookRationaleModal';
+import type { PriceBook } from '../types';
 
 export default function PriceBooks() {
+    const [aiBook, setAiBook] = useState<PriceBook | null>(null);
     const {
         priceBooks,
         loading,
@@ -107,6 +111,14 @@ export default function PriceBooks() {
                                     <BadgeDollarSign className="w-6 h-6 text-brand-600" />
                                 </div>
                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        type="button"
+                                        onClick={() => setAiBook(book)}
+                                        className="p-2 text-violet-500 hover:text-violet-700 transition-colors"
+                                        title="AI pricing rationale"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                    </button>
                                     <button 
                                         onClick={() => openEditModal(book)} 
                                         className="p-2 text-slate-400 hover:text-brand-600 transition-colors"
@@ -362,6 +374,14 @@ export default function PriceBooks() {
                 message={confirmModal.message}
                 isDangerous={true}
             />
+
+            {aiBook && (
+                <PriceBookRationaleModal
+                    book={aiBook}
+                    allBooks={priceBooks}
+                    onClose={() => setAiBook(null)}
+                />
+            )}
         </div>
     );
 }

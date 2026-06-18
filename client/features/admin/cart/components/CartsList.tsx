@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Search, ShoppingBag } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Search, ShoppingBag, Sparkles } from 'lucide-react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { useSettings } from '@/hooks/SettingsContext';
 import { useCartsDashboard } from '../hooks/useCartsDashboard';
+import CartAbandonedMessageModal from './CartAbandonedMessageModal';
 import { CartSummary } from '../types';
 
 export default function CartsList() {
+    const [aiCart, setAiCart] = useState<CartSummary | null>(null);
     const { formatPrice } = useSettings();
     const {
         carts,
@@ -73,6 +75,22 @@ export default function CartsList() {
                 timeStyle: 'short'
             }) : '-',
         },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (cart) => (
+                <button
+                    type="button"
+                    onClick={() => setAiCart(cart)}
+                    className="p-2 text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-all"
+                    title="AI abandoned cart message"
+                >
+                    <Sparkles className="w-4 h-4" />
+                </button>
+            ),
+        },
     ], [formatPrice]);
 
     return (
@@ -116,6 +134,13 @@ export default function CartsList() {
                     onPageChange: handlePageChange,
                 }}
             />
+
+            {aiCart && (
+                <CartAbandonedMessageModal
+                    cart={aiCart}
+                    onClose={() => setAiCart(null)}
+                />
+            )}
         </div>
     );
 }
