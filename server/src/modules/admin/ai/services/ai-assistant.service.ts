@@ -2,6 +2,12 @@ import { maskApiKey, normalizeTenantAiConfig } from '@/modules/system/tenant/uti
 import { Injectable } from '@nestjs/common'
 import { AiChatDto } from '../dto/ai-chat.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
+import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
+import {
+  GenerateMarketingDescriptionDto,
+  MarketingDescriptionResultDto,
+} from '../dto/generate-marketing-description.dto'
+import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
 import {
   GenerateProductContentDto,
   ProductContentResultDto,
@@ -96,6 +102,20 @@ Return exactly this JSON shape:
     dto: GenerateCampaignCopyDto,
   ): Promise<CampaignCopyResultDto> {
     const channel = dto.channel || 'both'
+    const fields: string[] = []
+    if (channel === 'email' || channel === 'both') {
+      fields.push('"emailSubject": "string",', '"emailBody": "string (HTML with p/br only)",')
+    }
+    if (channel === 'sms' || channel === 'both') {
+      fields.push('"smsText": "string (max 160 chars)",')
+    }
+    if (channel === 'push') {
+      fields.push(
+        '"pushTitle": "string (max 50 chars)",',
+        '"pushBody": "string (max 120 chars)",',
+      )
+    }
+
     const prompt = `Generate marketing campaign copy as JSON only (no markdown fences).
 Campaign: ${dto.campaignName}
 ${dto.audience ? `Audience: ${dto.audience}` : ''}
@@ -105,8 +125,7 @@ Channel: ${channel}
 
 Return exactly this JSON shape:
 {
-  ${channel === 'email' || channel === 'both' ? '"emailSubject": "string",\n  "emailBody": "string (HTML with p/br only)",' : ''}
-  ${channel === 'sms' || channel === 'both' ? '"smsText": "string (max 160 chars)"' : ''}
+  ${fields.join('\n  ')}
 }`
 
     const result = await this.aiClient.chatCompletion(
@@ -115,7 +134,7 @@ Return exactly this JSON shape:
         {
           role: 'system',
           content:
-            'You are an expert email and SMS marketer. Respond with valid JSON only, no extra text.',
+            'You are an expert email, SMS, and push notification marketer. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
       ],
@@ -123,6 +142,101 @@ Return exactly this JSON shape:
     )
 
     return this.parseJsonResponse<CampaignCopyResultDto>(result.content, {})
+  }
+
+  async generateFaq(tenantId: string, dto: GenerateFaqDto): Promise<FaqContentResultDto> {
+    const prompt = `Generate an FAQ entry as JSON only (no markdown fences).
+Topic: ${dto.topic}
+${dto.category ? `Category: ${dto.category}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: helpful and clear'}
+
+Return exactly this JSON shape:
+{
+  "question": "string (clear customer-facing question)",
+  "answer": "string (2-4 sentences, plain text)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You are an e-commerce support writer. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.5 },
+    )
+
+    return this.parseJsonResponse<FaqContentResultDto>(result.content, {
+      question: dto.topic,
+      answer: result.content,
+    })
+  }
+
+  async generatePageSeo(tenantId: string, dto: GeneratePageSeoDto): Promise<PageSeoResultDto> {
+    const prompt = `Generate SEO metadata for a store page as JSON only (no markdown fences).
+Page title: ${dto.pageTitle}
+${dto.keywords ? `Keywords: ${dto.keywords}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: professional'}
+
+Return exactly this JSON shape:
+{
+  "metaTitle": "string (max 60 chars)",
+  "metaDescription": "string (max 155 chars)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content: 'You are an SEO specialist. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.5 },
+    )
+
+    return this.parseJsonResponse<PageSeoResultDto>(result.content, {
+      metaTitle: dto.pageTitle,
+      metaDescription: '',
+    })
+  }
+
+  async generateMarketingDescription(
+    tenantId: string,
+    dto: GenerateMarketingDescriptionDto,
+  ): Promise<MarketingDescriptionResultDto> {
+    const context = dto.context === 'coupon' ? 'discount coupon' : 'promotional offer'
+    const prompt = `Write a short marketing description as JSON only (no markdown fences).
+Name: ${dto.name}
+${dto.offerSummary ? `Offer details: ${dto.offerSummary}` : ''}
+Context: ${context}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: enticing and clear'}
+
+Return exactly this JSON shape:
+{
+  "description": "string (1-2 sentences, max 200 chars, customer-facing)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You are an e-commerce marketer. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.6 },
+    )
+
+    return this.parseJsonResponse<MarketingDescriptionResultDto>(result.content, {
+      description: result.content.slice(0, 200),
+    })
   }
 
   private parseJsonResponse<T>(content: string, fallback: T): T {

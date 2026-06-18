@@ -19,10 +19,10 @@ export class GenerateCampaignCopyDto {
   @MaxLength(500)
   offerDetails?: string
 
-  @ApiPropertyOptional({ enum: ['email', 'sms', 'both'] })
+  @ApiPropertyOptional({ enum: ['email', 'sms', 'both', 'push'] })
   @IsOptional()
-  @IsIn(['email', 'sms', 'both'])
-  channel?: 'email' | 'sms' | 'both'
+  @IsIn(['email', 'sms', 'both', 'push'])
+  channel?: 'email' | 'sms' | 'both' | 'push'
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -40,4 +40,10 @@ export class CampaignCopyResultDto {
 
   @ApiPropertyOptional()
   smsText?: string
+
+  @ApiPropertyOptional()
+  pushTitle?: string
+
+  @ApiPropertyOptional()
+  pushBody?: string
 }

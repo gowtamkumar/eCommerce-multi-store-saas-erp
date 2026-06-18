@@ -4,6 +4,7 @@ import type { PageData } from '@/types/customizer';
 import { Search } from 'lucide-react';
 import DebouncedInput from '../DebouncedInput';
 import SectionHeading from './SectionHeading';
+import { PageSeoAiAssist } from './PageSeoAiAssist';
 
 interface SeoFieldsSectionProps {
   data: PageData;
@@ -22,6 +23,14 @@ export default function SeoFieldsSection({ data, onChange }: SeoFieldsSectionPro
   return (
     <section className="space-y-4">
       <SectionHeading icon={Search} label="Search Engine Optimization" />
+
+      <PageSeoAiAssist
+        pageTitle={data.title || ''}
+        onApply={(result) => {
+          onChange('metaTitle', result.metaTitle);
+          onChange('metaDescription', result.metaDescription);
+        }}
+      />
 
       <div className="space-y-4">
         <div className="space-y-1.5">

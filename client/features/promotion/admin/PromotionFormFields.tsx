@@ -1,5 +1,6 @@
 'use client';
 
+import { DescriptionAiButton } from '@/features/admin/ai/components/DescriptionAiButton';
 import { PromotionTargetType } from '@/lib/enums/promotion-target-type.enum';
 import { PromotionType } from '@/lib/enums/promotion-type.enum';
 import { Calendar, Check, Copy, Percent } from 'lucide-react';
@@ -33,6 +34,13 @@ const PromotionFormFields: React.FC<PromotionFormFieldsProps> = ({
         : formData.targetType === PromotionTargetType.SPECIFIC_CATEGORY
             ? categories
             : products;
+
+    const offerSummary =
+        formData.promotionType === PromotionType.FREE_SHIPPING
+            ? 'Free shipping'
+            : formData.promotionType === PromotionType.PERCENTAGE
+              ? `${formData.value}% off`
+              : `${currency} ${formData.value} off`;
 
     return (
         <>
@@ -91,7 +99,15 @@ const PromotionFormFields: React.FC<PromotionFormFieldsProps> = ({
                     </div>
                 </div>
                 <div className="space-y-2 col-span-1 md:col-span-2">
-                    <label className={labelClass}>Description (Optional)</label>
+                    <div className="flex items-center justify-between">
+                        <label className={labelClass}>Description (Optional)</label>
+                        <DescriptionAiButton
+                            name={formData.name}
+                            offerSummary={offerSummary}
+                            context="promotion"
+                            onApply={(description) => onFieldChange('description', description)}
+                        />
+                    </div>
                     <input
                         type="text"
                         value={formData.description}

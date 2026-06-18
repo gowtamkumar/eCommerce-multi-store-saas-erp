@@ -9,6 +9,12 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common'
 import { AiChatDto } from '../dto/ai-chat.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
+import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
+import {
+  GenerateMarketingDescriptionDto,
+  MarketingDescriptionResultDto,
+} from '../dto/generate-marketing-description.dto'
+import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
 import {
   GenerateProductContentDto,
   ProductContentResultDto,
@@ -85,6 +91,54 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Campaign copy generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/faq')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateFaq(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateFaqDto,
+  ): Promise<BaseApiSuccessResponse<FaqContentResultDto>> {
+    const data = await this.aiAssistantService.generateFaq(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'FAQ content generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/page-seo')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generatePageSeo(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GeneratePageSeoDto,
+  ): Promise<BaseApiSuccessResponse<PageSeoResultDto>> {
+    const data = await this.aiAssistantService.generatePageSeo(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Page SEO generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/marketing-description')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateMarketingDescription(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateMarketingDescriptionDto,
+  ): Promise<BaseApiSuccessResponse<MarketingDescriptionResultDto>> {
+    const data = await this.aiAssistantService.generateMarketingDescription(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Marketing description generated successfully',
       data,
     }
   }

@@ -1,5 +1,6 @@
 'use client';
 
+import { DescriptionAiButton } from '@/features/admin/ai/components/DescriptionAiButton';
 import { DiscountType } from '@/lib/enums/discount-type.enum';
 import { Calendar, Percent, RefreshCw } from 'lucide-react';
 import type { CouponFormFieldsProps } from '../types';
@@ -13,6 +14,13 @@ export default function CouponFormFields({
     onChange,
     onGenerateCode,
 }: CouponFormFieldsProps) {
+    const offerSummary =
+        formData.discountType === DiscountType.FREE_SHIPPING
+            ? 'Free shipping'
+            : formData.discountType === DiscountType.PERCENTAGE
+              ? `${formData.amount}% off`
+              : `${currency} ${formData.amount} off`;
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
@@ -54,7 +62,15 @@ export default function CouponFormFields({
                     </div>
                 </div>
                 <div className="space-y-2 col-span-1 md:col-span-2">
-                    <label className="text-sm font-semibold text-slate-900 dark:text-white">Description (Optional)</label>
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-slate-900 dark:text-white">Description (Optional)</label>
+                        <DescriptionAiButton
+                            name={formData.code || ''}
+                            offerSummary={offerSummary}
+                            context="coupon"
+                            onApply={(description) => onChange('description', description)}
+                        />
+                    </div>
                     <input
                         type="text"
                         value={formData.description || ''}

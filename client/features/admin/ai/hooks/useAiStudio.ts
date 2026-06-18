@@ -87,7 +87,7 @@ export function useAiStudio() {
     campaignName: string;
     audience?: string;
     offerDetails?: string;
-    channel?: "email" | "sms" | "both";
+    channel?: "email" | "sms" | "both" | "push";
     tone?: string;
   }): Promise<CampaignCopyResult | null> => {
     setCampaignLoading(true);

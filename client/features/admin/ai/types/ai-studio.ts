@@ -26,4 +26,20 @@ export interface CampaignCopyResult {
   emailSubject?: string;
   emailBody?: string;
   smsText?: string;
+  pushTitle?: string;
+  pushBody?: string;
+}
+
+export interface FaqContentResult {
+  question: string;
+  answer: string;
+}
+
+export interface PageSeoResult {
+  metaTitle: string;
+  metaDescription: string;
+}
+
+export interface MarketingDescriptionResult {
+  description: string;
 }

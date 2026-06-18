@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import type { FAQFormProps } from '../type';
+import { FaqAiAssist } from './FaqAiAssist';
 
 export default function FAQForm({ faqId, initialData }: FAQFormProps) {
     const router = useRouter();
@@ -64,6 +65,17 @@ export default function FAQForm({ faqId, initialData }: FAQFormProps) {
             onSubmit={handleSubmit}
             className="space-y-6 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700"
         >
+            <FaqAiAssist
+                category={formData.category}
+                onApply={(result) =>
+                    setFormData((prev) => ({
+                        ...prev,
+                        question: result.question,
+                        answer: result.answer,
+                    }))
+                }
+            />
+
             {/* Question */}
             <div>
                 <label

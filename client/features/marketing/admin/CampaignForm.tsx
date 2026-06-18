@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { Campaign, CampaignType } from '../types';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
+import { CampaignAiAssist } from './CampaignAiAssist';
 
 // Dynamically import RichEditor as it's quite heavy
 const RichEditor = dynamic(() => import('@/components/shared/RichEditor'), { ssr: false });
@@ -119,6 +120,27 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                                 ))}
                             </div>
                         )}
+
+                        <CampaignAiAssist
+                            campaignName={formData.name}
+                            channel={activeTab}
+                            onApply={(result) => {
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    ...(activeTab === CampaignType.EMAIL && {
+                                        subject: result.emailSubject || prev.subject,
+                                        htmlContent: result.emailBody || prev.htmlContent,
+                                    }),
+                                    ...(activeTab === CampaignType.SMS && {
+                                        text: result.smsText || prev.text,
+                                    }),
+                                    ...(activeTab === CampaignType.PUSH && {
+                                        title: result.pushTitle || prev.title,
+                                        body: result.pushBody || prev.body,
+                                    }),
+                                }));
+                            }}
+                        />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Left Column: Basic Info */}
