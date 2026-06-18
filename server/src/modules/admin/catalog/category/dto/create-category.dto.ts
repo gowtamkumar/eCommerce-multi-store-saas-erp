@@ -20,5 +20,15 @@ export class CreateCategoryDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  metaTitle?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  metaDescription?: string
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   image?: string
 }

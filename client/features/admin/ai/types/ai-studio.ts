@@ -43,3 +43,19 @@ export interface PageSeoResult {
 export interface MarketingDescriptionResult {
   description: string;
 }
+
+export interface CatalogContentResult {
+  description: string;
+  seoTitle: string;
+  seoDescription: string;
+}
+
+export type PageBlockType = "heading" | "paragraph" | "button" | "text-block";
+
+export interface PageBlockContentResult {
+  text?: string;
+  headline?: string;
+  subline?: string;
+  html?: string;
+  link?: string;
+}

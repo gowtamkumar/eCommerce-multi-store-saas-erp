@@ -43,8 +43,8 @@ const contentBlocks: BlockDefinition[] = [
     defaultSettings: () => ({ text: 'Heading', level: 'h2' }),
     defaultStyles: () => ({ paddingTop: 0, paddingBottom: 0 }),
     Runtime: ({ settings, styles }) => <Heading settings={settings} styles={styles} />,
-    ContentEditor: ({ section, onUpdate }) => (
-      <SimpleContentEditor section={section} onUpdate={onUpdate} />
+    ContentEditor: ({ section, onUpdate, pageTitle }) => (
+      <SimpleContentEditor section={section} onUpdate={onUpdate} pageTitle={pageTitle} />
     ),
   },
   {
@@ -55,8 +55,8 @@ const contentBlocks: BlockDefinition[] = [
     defaultSettings: () => ({ text: 'Lorem ipsum dolor sit amet.' }),
     defaultStyles: () => ({ paddingTop: 0, paddingBottom: 0 }),
     Runtime: ({ settings, styles }) => <Paragraph settings={settings} styles={styles} />,
-    ContentEditor: ({ section, onUpdate }) => (
-      <SimpleContentEditor section={section} onUpdate={onUpdate} />
+    ContentEditor: ({ section, onUpdate, pageTitle }) => (
+      <SimpleContentEditor section={section} onUpdate={onUpdate} pageTitle={pageTitle} />
     ),
   },
   {
@@ -69,8 +69,8 @@ const contentBlocks: BlockDefinition[] = [
     Runtime: ({ settings, styles }) => (
       <TextBlock html={settings?.html} headline={settings?.headline} styles={styles} />
     ),
-    ContentEditor: ({ section, onUpdate }) => (
-      <SimpleContentEditor section={section} onUpdate={onUpdate} />
+    ContentEditor: ({ section, onUpdate, pageTitle }) => (
+      <SimpleContentEditor section={section} onUpdate={onUpdate} pageTitle={pageTitle} />
     ),
   },
   {
@@ -89,8 +89,8 @@ const contentBlocks: BlockDefinition[] = [
         link={settings?.link}
       />
     ),
-    ContentEditor: ({ section, onUpdate }) => (
-      <SimpleContentEditor section={section} onUpdate={onUpdate} />
+    ContentEditor: ({ section, onUpdate, pageTitle }) => (
+      <SimpleContentEditor section={section} onUpdate={onUpdate} pageTitle={pageTitle} />
     ),
   },
   {

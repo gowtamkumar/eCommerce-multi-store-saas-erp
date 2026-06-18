@@ -9,12 +9,20 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common'
 import { AiChatDto } from '../dto/ai-chat.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
+import {
+  CatalogContentResultDto,
+  GenerateCatalogContentDto,
+} from '../dto/generate-catalog-content.dto'
 import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
 import {
   GenerateMarketingDescriptionDto,
   MarketingDescriptionResultDto,
 } from '../dto/generate-marketing-description.dto'
 import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
+import {
+  GeneratePageBlockContentDto,
+  PageBlockContentResultDto,
+} from '../dto/generate-page-block-content.dto'
 import {
   GenerateProductContentDto,
   ProductContentResultDto,
@@ -79,6 +87,22 @@ export class AiController {
     }
   }
 
+  @Post('generate/catalog-content')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateCatalogContent(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateCatalogContentDto,
+  ): Promise<BaseApiSuccessResponse<CatalogContentResultDto>> {
+    const data = await this.aiAssistantService.generateCatalogContent(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Catalog content generated successfully',
+      data,
+    }
+  }
+
   @Post('generate/campaign-copy')
   @HttpCode(200)
   @RequirePermissions(SystemPermissions.AI_USE)
@@ -123,6 +147,22 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Page SEO generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/page-block-content')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generatePageBlockContent(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GeneratePageBlockContentDto,
+  ): Promise<BaseApiSuccessResponse<PageBlockContentResultDto>> {
+    const data = await this.aiAssistantService.generatePageBlockContent(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Page block content generated successfully',
       data,
     }
   }

@@ -25,6 +25,7 @@ export interface ContentEditorProps {
   settings: Record<string, any>;
   viewMode: 'desktop' | 'tablet' | 'mobile';
   resources: EditorResources;
+  pageTitle?: string;
   onUpdate: (key: string, value: unknown) => void;
   updateArrayItem: (key: string, itemId: string, value: any) => void;
   addArrayItem: (key: string, defaultItem: any) => void;

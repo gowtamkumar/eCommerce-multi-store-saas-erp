@@ -92,14 +92,14 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | AI configuration | `/admin/settings/ai` | Provider setup | ✅ | — |
 | AI Studio | `/admin/ai` | Sandbox for chat & generation | ✅ | Add FAQ/page/marketing tabs |
 | Products | `/admin/products/new` | Descriptions + SEO | ✅ | Bulk generate, variant copy |
-| Categories | `/admin/categories` | Name → description + SEO | ⬜ | Reuse product-content pattern |
-| Brands | `/admin/brands` | Brand story + SEO | ⬜ | Short description generator |
+| Categories | `/admin/categories` | Name → description + SEO | ✅ | `CatalogAiAssist` + `metaTitle` / `metaDescription` |
+| Brands | `/admin/brands` | Brand story + SEO | ✅ | `CatalogAiAssist` + `metaTitle` / `metaDescription` |
 | Campaigns | `/admin/campaigns` | Email/SMS/push copy | ✅ | Audience-aware variants |
 | Coupons | `/admin/coupons` | Customer-facing description | ✅ | Suggest code names (optional) |
 | Promotions | `/admin/promotions` | Offer description | ✅ | — |
 | FAQs | `/admin/faqs` | Q&A from topic | ✅ | Bulk import from doc/PDF |
 | Page builder — SEO | Page customizer | Meta title/description | ✅ | — |
-| Page builder — blocks | Page customizer sections | Headings, paragraphs, CTAs | ⬜ | `generate/page-block-content` |
+| Page builder — blocks | Page customizer sections | Headings, paragraphs, CTAs | ✅ | `PageBlockAiAssist` on heading/paragraph/button/text-block |
 | Store SEO settings | `/admin/settings/marketing` | Site-wide meta defaults | ⬜ | Global SEO suggestions |
 | Loyalty program | `/admin/marketing/loyalty` | Rule explanations, email copy | ⬜ | Campaign-style copy |
 | Newsletter / leads | `/admin/leads` | Follow-up email drafts | ⬜ | Lead nurture sequences |
@@ -335,9 +335,9 @@ Reuse existing endpoints and `useAiGenerate`; no new infrastructure.
 
 | # | Feature | Surface | Effort |
 |---|---------|---------|--------|
-| 1 | Category description assist | `CategoryForm` | S |
-| 2 | Brand description assist | `BrandForm` | S |
-| 3 | Page block content assist | `SimpleContentEditor` | M |
+| 1 | Category description assist | `CategoryForm` | ✅ Done |
+| 2 | Brand description assist | `BrandForm` | ✅ Done |
+| 3 | Page block content assist | `SimpleContentEditor` | ✅ Done |
 | 4 | AI Studio: FAQ + page SEO tabs | `AiStudio.tsx` | S |
 | 5 | Review reply draft | `ReviewCard` | S |
 
@@ -430,7 +430,7 @@ Track per tenant after each phase:
 | Layer | Coverage today | Highest-impact next |
 |-------|----------------|---------------------|
 | **Marketing & content** | ~80% of copy workflows | Page blocks, loyalty copy |
-| **Catalog** | Products only | Categories, brands, alt text |
+| **Catalog** | Products, categories, brands | Alt text, bulk import |
 | **Support & CRM** | 0% | Suggested chat replies |
 | **Operations / inventory** | 0% | Read-only anomaly narratives |
 | **Procurement / finance** | 0% | OCR + AR drafts (async) |

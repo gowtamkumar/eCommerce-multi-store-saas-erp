@@ -6,9 +6,7 @@ import type { Brand, BrandFormProps } from '../type';
 import { generateSlug } from '@/lib/generate-slug';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
-
-
-
+import { CatalogAiAssist } from '@/features/admin/ai/components/CatalogAiAssist';
 export default function BrandForm({ isOpen, onClose, onSubmit, initialData }: BrandFormProps) {
     const [formData, setFormData] = useState<Brand>({} as Brand);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +70,21 @@ export default function BrandForm({ isOpen, onClose, onSubmit, initialData }: Br
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50 text-slate-500 font-mono text-xs"
                         />
                     </div>
+
+                    <CatalogAiAssist
+                        entityType="brand"
+                        name={formData.name || ''}
+                        description={formData.description}
+                        onApply={(result) =>
+                            setFormData((prev) => ({
+                                ...prev,
+                                description: result.description,
+                                metaTitle: result.seoTitle,
+                                metaDescription: result.seoDescription,
+                            }))
+                        }
+                    />
+
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Website URL</label>
                         <input
@@ -92,6 +105,33 @@ export default function BrandForm({ isOpen, onClose, onSubmit, initialData }: Br
                             rows={3}
                         />
                     </div>
+
+                    <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-700">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SEO</p>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Meta Title</label>
+                            <input
+                                type="text"
+                                value={formData.metaTitle || ''}
+                                onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                                placeholder="Search engine title"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">{formData.metaTitle?.length || 0} / 60 chars</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Meta Description</label>
+                            <textarea
+                                value={formData.metaDescription || ''}
+                                onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                                placeholder="What this brand offers..."
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 resize-none text-sm"
+                                rows={2}
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">{formData.metaDescription?.length || 0} / 155 chars</p>
+                        </div>
+                    </div>
+
                     {/* Brand Logo */}
                     <div>
                         <ImageUploadField

@@ -308,6 +308,7 @@ export default function CustomizerEditor({ pageId, initialData, themeTokens }: C
                 section={selectedSection}
                 allSections={data.content.sections}
                 viewMode={viewMode}
+                pageTitle={data.title}
                 onClose={handleClosePanel}
                 onUpdate={handleUpdateSection}
               />

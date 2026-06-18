@@ -12,11 +12,12 @@ interface SettingsPanelProps {
   section: CustomizerSection;
   allSections: CustomizerSection[];
   viewMode: 'desktop' | 'tablet' | 'mobile';
+  pageTitle?: string;
   onUpdate: (section: CustomizerSection) => void;
   onClose: () => void;
 }
 
-const SettingsPanel = React.memo(({ section, allSections, viewMode, onUpdate, onClose }: SettingsPanelProps) => {
+const SettingsPanel = React.memo(({ section, allSections, viewMode, pageTitle, onUpdate, onClose }: SettingsPanelProps) => {
   const resources = useCustomizerData();
   const isStructural = useMemo(() => isStructuralType(section.type), [section.type]);
   const definition = useMemo(() => getBlockDefinition(section.type), [section.type]);
@@ -207,6 +208,7 @@ const SettingsPanel = React.memo(({ section, allSections, viewMode, onUpdate, on
                 settings={settings}
                 viewMode={viewMode}
                 resources={resources}
+                pageTitle={pageTitle}
                 onUpdate={updateSetting}
                 updateArrayItem={updateArrayItem}
                 addArrayItem={addArrayItem}

@@ -2,12 +2,20 @@ import { maskApiKey, normalizeTenantAiConfig } from '@/modules/system/tenant/uti
 import { Injectable } from '@nestjs/common'
 import { AiChatDto } from '../dto/ai-chat.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
+import {
+  CatalogContentResultDto,
+  GenerateCatalogContentDto,
+} from '../dto/generate-catalog-content.dto'
 import { FaqContentResultDto, GenerateFaqDto } from '../dto/generate-faq.dto'
 import {
   GenerateMarketingDescriptionDto,
   MarketingDescriptionResultDto,
 } from '../dto/generate-marketing-description.dto'
 import { GeneratePageSeoDto, PageSeoResultDto } from '../dto/generate-page-seo.dto'
+import {
+  GeneratePageBlockContentDto,
+  PageBlockContentResultDto,
+} from '../dto/generate-page-block-content.dto'
 import {
   GenerateProductContentDto,
   ProductContentResultDto,
@@ -94,6 +102,45 @@ Return exactly this JSON shape:
       seoTitle: dto.productName,
       seoDescription: '',
       tags: [],
+    })
+  }
+
+  async generateCatalogContent(
+    tenantId: string,
+    dto: GenerateCatalogContentDto,
+  ): Promise<CatalogContentResultDto> {
+    const entityLabel = dto.entityType === 'category' ? 'product category' : 'brand'
+    const prompt = `Generate ${entityLabel} page content as JSON only (no markdown fences).
+${entityLabel.charAt(0).toUpperCase() + entityLabel.slice(1)} name: ${dto.name}
+${dto.context ? `Context: ${dto.context}` : ''}
+${dto.keywords ? `Keywords: ${dto.keywords}` : ''}
+${dto.existingDescription ? `Existing description to improve: ${dto.existingDescription}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: professional'}
+
+Return exactly this JSON shape:
+{
+  "description": "string (2-3 sentences, plain text, customer-facing)",
+  "seoTitle": "string (max 60 chars)",
+  "seoDescription": "string (max 155 chars)"
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You are an expert e-commerce SEO copywriter. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.6 },
+    )
+
+    return this.parseJsonResponse<CatalogContentResultDto>(result.content, {
+      description: result.content,
+      seoTitle: dto.name,
+      seoDescription: '',
     })
   }
 
@@ -203,6 +250,48 @@ Return exactly this JSON shape:
       metaTitle: dto.pageTitle,
       metaDescription: '',
     })
+  }
+
+  async generatePageBlockContent(
+    tenantId: string,
+    dto: GeneratePageBlockContentDto,
+  ): Promise<PageBlockContentResultDto> {
+    const jsonShapes: Record<GeneratePageBlockContentDto['blockType'], string> = {
+      heading: '"text": "string (concise headline, max 80 chars)"',
+      paragraph: '"text": "string (2-4 sentences, plain text)"',
+      button:
+        '"text": "string (CTA label, max 30 chars)",\n  "link": "string (relative path like /shop, /offers, or #)"',
+      'text-block':
+        '"headline": "string (hero headline)",\n  "subline": "string (short tagline, optional)",\n  "html": "string (2-3 paragraphs, HTML with p tags only)"',
+    }
+
+    const prompt = `Generate storefront page block copy as JSON only (no markdown fences).
+Block type: ${dto.blockType}
+${dto.pageTitle ? `Page title: ${dto.pageTitle}` : ''}
+${dto.topic ? `Topic: ${dto.topic}` : ''}
+${dto.keywords ? `Keywords: ${dto.keywords}` : ''}
+${dto.existingText ? `Existing text to improve: ${dto.existingText}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: professional and engaging'}
+
+Return exactly this JSON shape:
+{
+  ${jsonShapes[dto.blockType]}
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You are an expert e-commerce landing page copywriter. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.65 },
+    )
+
+    return this.parseJsonResponse<PageBlockContentResultDto>(result.content, {})
   }
 
   async generateMarketingDescription(

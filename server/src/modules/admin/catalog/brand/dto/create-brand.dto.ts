@@ -15,6 +15,14 @@ export class CreateBrandDto {
 
   @IsString()
   @IsOptional()
+  metaTitle?: string
+
+  @IsString()
+  @IsOptional()
+  metaDescription?: string
+
+  @IsString()
+  @IsOptional()
   image?: string
 
   @IsString()

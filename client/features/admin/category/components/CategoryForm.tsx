@@ -6,6 +6,7 @@ import type { Category, CategoryFormProps } from '../type';
 import { generateSlug } from '@/lib/generate-slug';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
+import { CatalogAiAssist } from '@/features/admin/ai/components/CatalogAiAssist';
 
 export default function CategoryForm({ isOpen, onClose, onSubmit, initialData, allCategories = [] }: CategoryFormProps) {
     const [formData, setFormData] = useState<Category>({ name: '', slug: '', description: '', isActive: true });
@@ -31,6 +32,7 @@ export default function CategoryForm({ isOpen, onClose, onSubmit, initialData, a
 
     // Exclude current category from parent options (can't be its own parent)
     const parentOptions = allCategories.filter(c => c.id !== initialData?.id);
+    const parentName = parentOptions.find((c) => c.id === formData.parentId)?.name;
 
     if (!isOpen) return null;
 
@@ -108,6 +110,21 @@ export default function CategoryForm({ isOpen, onClose, onSubmit, initialData, a
                         </div>
                     </div>
 
+                    <CatalogAiAssist
+                        entityType="category"
+                        name={formData.name || ''}
+                        context={parentName ? `Parent category: ${parentName}` : undefined}
+                        description={formData.description}
+                        onApply={(result) =>
+                            setFormData((prev) => ({
+                                ...prev,
+                                description: result.description,
+                                metaTitle: result.seoTitle,
+                                metaDescription: result.seoDescription,
+                            }))
+                        }
+                    />
+
                     {/* Description */}
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Description</label>
@@ -116,8 +133,34 @@ export default function CategoryForm({ isOpen, onClose, onSubmit, initialData, a
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             placeholder="Briefly describe what's in this category..."
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                            rows={2}
+                            rows={3}
                         />
+                    </div>
+
+                    <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-700">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SEO</p>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Meta Title</label>
+                            <input
+                                type="text"
+                                value={formData.metaTitle || ''}
+                                onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                                placeholder="Search engine title"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">{formData.metaTitle?.length || 0} / 60 chars</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Meta Description</label>
+                            <textarea
+                                value={formData.metaDescription || ''}
+                                onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                                placeholder="What shoppers find in this category..."
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 resize-none text-sm"
+                                rows={2}
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">{formData.metaDescription?.length || 0} / 155 chars</p>
+                        </div>
                     </div>
 
                     {/* Category Image */}

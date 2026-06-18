@@ -5,9 +5,12 @@ import toast from "react-hot-toast";
 import { fetchAPI } from "@/services/api";
 import type {
   CampaignCopyResult,
+  CatalogContentResult,
   FaqContentResult,
   MarketingDescriptionResult,
   PageSeoResult,
+  PageBlockContentResult,
+  PageBlockType,
   ProductContentResult,
 } from "../types/ai-studio";
 
@@ -54,6 +57,15 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<ProductContentResult>("/ai/generate/product-content", payload);
 
+  const generateCatalogContent = (payload: {
+    entityType: "category" | "brand";
+    name: string;
+    context?: string;
+    keywords?: string;
+    existingDescription?: string;
+    tone?: string;
+  }) => withGenerate<CatalogContentResult>("/ai/generate/catalog-content", payload);
+
   const generateCampaignCopy = (payload: {
     campaignName: string;
     audience?: string;
@@ -71,6 +83,15 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<PageSeoResult>("/ai/generate/page-seo", payload);
 
+  const generatePageBlockContent = (payload: {
+    blockType: PageBlockType;
+    pageTitle?: string;
+    topic?: string;
+    keywords?: string;
+    existingText?: string;
+    tone?: string;
+  }) => withGenerate<PageBlockContentResult>("/ai/generate/page-block-content", payload);
+
   const generateMarketingDescription = (payload: {
     name: string;
     offerSummary?: string;
@@ -83,9 +104,11 @@ export function useAiGenerate() {
     loading,
     refreshStatus: checkStatus,
     generateProductContent,
+    generateCatalogContent,
     generateCampaignCopy,
     generateFaq,
     generatePageSeo,
+    generatePageBlockContent,
     generateMarketingDescription,
   };
 }

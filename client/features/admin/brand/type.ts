@@ -3,6 +3,8 @@ export interface Brand {
     name: string;
     slug: string;
     description: string;
+    metaTitle?: string;
+    metaDescription?: string;
     image?: string;
     website?: string;
     productCount?: number;

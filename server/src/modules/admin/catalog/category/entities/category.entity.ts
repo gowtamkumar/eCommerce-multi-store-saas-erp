@@ -17,6 +17,12 @@ export class CategoryEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description: string
 
+  @Column({ type: 'varchar', length: 255, name: 'meta_title', nullable: true })
+  metaTitle: string
+
+  @Column({ type: 'varchar', length: 500, name: 'meta_description', nullable: true })
+  metaDescription: string
+
   @Column({ type: 'varchar', length: 500, nullable: true })
   image: string
 
