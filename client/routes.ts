@@ -31,6 +31,7 @@ import {
   Share2,
   ShieldCheck,
   ShoppingBag,
+  Sparkles,
   Star,
   Tag,
   TrendingUp,
@@ -607,6 +608,12 @@ export const navGroups = [
         feature: "marketing",
       },
       {
+        icon: Sparkles,
+        label: "AI Studio",
+        href: "/admin/ai",
+        feature: "ai",
+      },
+      {
         icon: Award,
         label: "Loyalty & Referrals",
         href: "/admin/marketing/loyalty",
@@ -736,6 +743,7 @@ const FEATURE_DISPLAY_MAP: Record<string, { label: string; icon: any }> = {
   catalog: { label: "Product Catalog", icon: Package },
   orders: { label: "Order Management", icon: ClipboardList },
   marketing: { label: "Marketing Campaigns", icon: Megaphone },
+  ai: { label: "AI Studio", icon: Sparkles },
   finance: { label: "Finance & Accounts", icon: Wallet },
   hrm: { label: "HRM & Payroll", icon: Users },
   inventory: { label: "Inventory Control", icon: Warehouse },

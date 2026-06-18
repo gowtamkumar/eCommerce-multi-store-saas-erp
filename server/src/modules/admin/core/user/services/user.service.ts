@@ -875,6 +875,25 @@ export class UserService implements OnApplicationBootstrap {
         action: 'publish',
         riskLevel: RiskLevel.MEDIUM,
       },
+      // ─── AI ────────────────────────────────────────────────────
+      {
+        code: 'ai:use',
+        name: 'Use AI Tools',
+        description: 'Can use AI assistant, product copy, and campaign generation',
+        module: 'AI',
+        feature: 'ai',
+        action: 'use',
+        riskLevel: RiskLevel.LOW,
+      },
+      {
+        code: 'ai:manage',
+        name: 'Manage AI Configuration',
+        description: 'Can configure AI provider settings and API keys',
+        module: 'AI',
+        feature: 'ai',
+        action: 'manage',
+        riskLevel: RiskLevel.MEDIUM,
+      },
     ]
 
     for (const p of permissionsToSeed) {

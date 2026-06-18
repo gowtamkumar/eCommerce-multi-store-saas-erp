@@ -132,6 +132,10 @@ export const SystemPermissions = {
   // ─── Content ─────────────────────────────────────────────────────────────────
   CONTENT_MANAGE: 'content:manage',
   CONTENT_PUBLISH: 'content:publish', // Publish public-facing content
+
+  // ─── AI ──────────────────────────────────────────────────────────────────────
+  AI_USE: 'ai:use',
+  AI_MANAGE: 'ai:manage',
 } as const
 
 export type SystemPermissionCode = (typeof SystemPermissions)[keyof typeof SystemPermissions]

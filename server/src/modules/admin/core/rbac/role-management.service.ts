@@ -306,6 +306,7 @@ export class RoleManagementService {
           'fulfillment:manage',
           // Settings
           'settings:manage',
+          'ai:use',
         ],
       },
       {
