@@ -25,6 +25,7 @@ import { AiProcessor } from '@/modules/admin/ai/queue/ai.processor'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 import { ProductEmbeddingEntity } from './entities/product-embedding.entity'
 import { StorefrontSearchEventEntity } from './entities/storefront-search-event.entity'
+import { StorefrontAssistantEventEntity } from './entities/storefront-assistant-event.entity'
 import { ProductEmbeddingService } from './services/product-embedding.service'
 import { ProductQaService } from './services/product-qa.service'
 import { StorefrontAssistantService } from './services/storefront-assistant.service'
@@ -38,6 +39,7 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
       ProductAttributeEntity,
       ProductEmbeddingEntity,
       StorefrontSearchEventEntity,
+      StorefrontAssistantEventEntity,
     ]),
     BullModule.registerQueue({ name: 'product' }),
     BullModule.registerQueue({ name: 'ai' }),

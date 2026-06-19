@@ -358,6 +358,29 @@ export function AiSetting() {
           </div>
         </div>
 
+        {embeddingStatus?.assistantAnalytics ? (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 px-4 py-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Assistant Chats ({embeddingStatus.assistantAnalytics.days}d)</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white mt-1 italic">
+                {embeddingStatus.assistantAnalytics.chatCount} sessions
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 px-4 py-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Product Q&A ({embeddingStatus.assistantAnalytics.days}d)</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white mt-1 italic">
+                {embeddingStatus.assistantAnalytics.qaCount} queries
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 px-4 py-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Live Handoffs ({embeddingStatus.assistantAnalytics.days}d)</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white mt-1 italic font-mono">
+                {embeddingStatus.assistantAnalytics.handoffCount} escalations
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid gap-3 md:grid-cols-1">
           <StorefrontToggle
             checked={form.storefront.shoppingAssistantEnabled}

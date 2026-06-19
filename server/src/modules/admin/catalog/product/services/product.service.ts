@@ -314,9 +314,16 @@ export class ProductService {
           (await this.productEmbeddingService.canUseHybridSearch(tenantId))
 
         if (useHybrid) {
-          const result = await this.findAllProductsHybrid(tenantId, filterDto, ctx)
-          void this.productEmbeddingService.recordSearchEvent(tenantId, 'hybrid', result.total)
-          return result
+          try {
+            const result = await this.findAllProductsHybrid(tenantId, filterDto, ctx)
+            void this.productEmbeddingService.recordSearchEvent(tenantId, 'hybrid', result.total)
+            return result
+          } catch (error) {
+            this.logger.error(
+              `Hybrid search failed for tenant ${tenantId}. Falling back to keyword search.`,
+              error,
+            )
+          }
         }
 
         const [products, total] = await this.productRepository.findAllWithFilters(

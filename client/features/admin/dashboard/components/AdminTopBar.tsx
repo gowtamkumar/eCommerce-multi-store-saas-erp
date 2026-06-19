@@ -31,6 +31,7 @@ interface AdminTopBarProps {
     session: any;
     onMenuClick: () => void;
     onLogout: () => void;
+    onCopilotClick?: () => void;
 }
 
 export default function AdminTopBar({
@@ -39,6 +40,7 @@ export default function AdminTopBar({
     session,
     onMenuClick,
     onLogout,
+    onCopilotClick,
 }: AdminTopBarProps) {
     const pathname = usePathname();
     const router = useRouter();

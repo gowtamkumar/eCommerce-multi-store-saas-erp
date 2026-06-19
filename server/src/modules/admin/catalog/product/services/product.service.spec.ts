@@ -77,6 +77,21 @@ describe('ProductService', () => {
           provide: SuperAdminCrossTenantRepository,
           useValue: {},
         },
+        {
+          provide: require('./product-embedding.service').ProductEmbeddingService,
+          useValue: {
+            canUseHybridSearch: jest.fn().mockResolvedValue(false),
+            recordSearchEvent: jest.fn(),
+          },
+        },
+        {
+          provide: require('../../../ai/services/ai-job.service').AiJobService,
+          useValue: {},
+        },
+        {
+          provide: require('../../category/category.repository').CategoryRepository,
+          useValue: {},
+        },
       ],
     }).compile()
 

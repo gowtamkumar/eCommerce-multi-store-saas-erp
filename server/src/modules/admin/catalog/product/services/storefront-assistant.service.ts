@@ -74,7 +74,7 @@ Rules:
 - Do not invent products, prices, discounts, shipping policies, or return policies.
 - You cannot add items to cart, checkout, change prices, or access orders/accounts.
 - For order tracking, payment issues, returns, account access, or complaints, set suggestLiveChatHandoff to true and briefly mention they can tap "Talk to a human" for live support.
-- You cannot add items to cart, checkout, change prices, or access orders/accounts.
+- Detect the language of the shopper's message and respond in the same language (e.g. if the shopper asks in Spanish, reply in Spanish, if in German, reply in German).
 - Keep answers concise (2-6 sentences), friendly, plain text (no HTML).
 
 Store context:
@@ -122,13 +122,16 @@ Return exactly this JSON shape:
         suggestLiveChatHandoff: false,
       })
 
+      const suggestLiveChatHandoff = !!parsed.suggestLiveChatHandoff
+      void this.productEmbeddingService.recordAssistantEvent(tenantId, 'chat', suggestLiveChatHandoff)
+
       return {
         answer: parsed.answer,
         suggestedFollowUps: (parsed.suggestedFollowUps || []).slice(0, 3),
         productLinks: (parsed.productLinks || [])
           .filter((link) => link?.name && link?.slug)
           .slice(0, 4),
-        suggestLiveChatHandoff: !!parsed.suggestLiveChatHandoff,
+        suggestLiveChatHandoff,
       }
     } catch (error) {
       this.logger.error(`Shopping assistant chat failed for tenant ${tenantId}`, error)

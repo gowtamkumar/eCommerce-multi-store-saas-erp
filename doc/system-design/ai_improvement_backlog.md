@@ -316,10 +316,10 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Recruitment job copy | — | [x] |
 | Performance review phrase bank | — | [x] |
 | Payslip explanation draft | — | [x] |
-| Leave policy → FAQ generation | P3 | [ ] |
-| Interview screening questions (dedicated flow) | P3 | [ ] |
-| Sensitive-module AI opt-out in settings | P2 | [ ] |
-| Separate `ai:use` scope for HRM/finance | P2 | [ ] |
+| Leave policy → FAQ generation | P3 | [x] |
+| Interview screening questions (dedicated flow) | P3 | [x] |
+| Sensitive-module AI opt-out in settings | P2 | [x] |
+| Separate `ai:use` scope for HRM/finance | P2 | [x] |
 
 ---
 
@@ -333,9 +333,9 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Storefront AI toggles in tenant settings | — | [x] |
 | Explicit server reject when `tenantId` missing | P1 | [ ] |
 | Localhost `store_tenant_id` fallback documented | — | [x] |
-| Search ranking tuning / fallback UX | P2 | [ ] |
-| Assistant usage analytics | P2 | [ ] |
-| Multilingual prompts | P3 | [ ] |
+| Search ranking tuning / fallback UX | P2 | [x] |
+| Assistant usage analytics | P2 | [x] |
+| Multilingual prompts | P3 | [x] |
 | AI changes prices / checkout | — | 🔒 Never |
 
 ---

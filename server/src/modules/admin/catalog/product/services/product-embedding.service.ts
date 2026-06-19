@@ -16,6 +16,7 @@ import {
   StorefrontSearchEventEntity,
   StorefrontSearchMode,
 } from '../entities/storefront-search-event.entity'
+import { StorefrontAssistantEventEntity } from '../entities/storefront-assistant-event.entity'
 import { ProductRepository } from '../repositories/product.repository'
 import { StorefrontAiConfigService } from './storefront-ai-config.service'
 import { cosineSimilarity, mergeHybridProductIds } from '../utils/semantic-search.util'
@@ -34,6 +35,8 @@ export class ProductEmbeddingService {
     private readonly productRepo: Repository<ProductEntity>,
     @InjectRepository(StorefrontSearchEventEntity)
     private readonly searchEventRepo: Repository<StorefrontSearchEventEntity>,
+    @InjectRepository(StorefrontAssistantEventEntity)
+    private readonly assistantEventRepo: Repository<StorefrontAssistantEventEntity>,
     private readonly productRepository: ProductRepository,
     private readonly tenantAiClient: TenantAiClientService,
     private readonly storefrontAiConfig: StorefrontAiConfigService,
@@ -76,16 +79,30 @@ export class ProductEmbeddingService {
       keywordSearches: number
       hybridSearches: number
     }
+    assistantAnalytics: {
+      days: number
+      chatCount: number
+      qaCount: number
+      handoffCount: number
+    }
   }> {
-    const [indexedCount, activeProductCount, hybridSearchReady, config, flags, searchAnalytics] =
-      await Promise.all([
-        this.embeddingRepo.count({ where: { tenantId } }),
-        this.productRepo.count({ where: { tenantId, status: ProductStatus.ACTIVE } }),
-        this.canUseHybridSearch(tenantId),
-        this.tenantAiClient.getConfigForTenant(tenantId),
-        this.storefrontAiConfig.getStorefrontFlags(tenantId),
-        this.getSearchAnalytics(tenantId, 30),
-      ])
+    const [
+      indexedCount,
+      activeProductCount,
+      hybridSearchReady,
+      config,
+      flags,
+      searchAnalytics,
+      assistantAnalytics,
+    ] = await Promise.all([
+      this.embeddingRepo.count({ where: { tenantId } }),
+      this.productRepo.count({ where: { tenantId, status: ProductStatus.ACTIVE } }),
+      this.canUseHybridSearch(tenantId),
+      this.tenantAiClient.getConfigForTenant(tenantId),
+      this.storefrontAiConfig.getStorefrontFlags(tenantId),
+      this.getSearchAnalytics(tenantId, 30),
+      this.getAssistantAnalytics(tenantId, 30),
+    ])
 
     const embeddingsSupported = providerSupportsEmbeddings(config.provider)
     const embeddingWarning = resolveEmbeddingConfigWarning({
@@ -103,6 +120,7 @@ export class ProductEmbeddingService {
       embeddingsSupported,
       embeddingWarning,
       searchAnalytics,
+      assistantAnalytics,
     }
   }
 
@@ -261,6 +279,67 @@ export class ProductEmbeddingService {
     }
 
     return { days: safeDays, keywordSearches, hybridSearches }
+  }
+
+  async recordAssistantEvent(
+    tenantId: string,
+    type: 'chat' | 'qa',
+    liveChatHandoff: boolean,
+  ): Promise<void> {
+    try {
+      await this.assistantEventRepo.insert({
+        tenantId,
+        type,
+        liveChatHandoff,
+      })
+    } catch (error) {
+      this.logger.warn(`Failed to record storefront assistant event for tenant ${tenantId}`, error)
+    }
+  }
+
+  async getAssistantAnalytics(
+    tenantId: string,
+    days = 30,
+  ): Promise<{
+    days: number
+    chatCount: number
+    qaCount: number
+    handoffCount: number
+  }> {
+    const safeDays = Math.min(Math.max(days, 1), 90)
+    const since = new Date()
+    since.setUTCDate(since.getUTCDate() - safeDays)
+    since.setUTCHours(0, 0, 0, 0)
+
+    const rows = await this.assistantEventRepo
+      .createQueryBuilder('event')
+      .select('event.type', 'type')
+      .addSelect('COUNT(*)', 'count')
+      .addSelect(
+        'SUM(CASE WHEN event.live_chat_handoff = true THEN 1 ELSE 0 END)',
+        'handoff_count',
+      )
+      .where('event.tenant_id = :tenantId', { tenantId })
+      .andWhere('event.created_at >= :since', { since })
+      .groupBy('event.type')
+      .getRawMany<{ type: string; count: string; handoff_count: string }>()
+
+    let chatCount = 0
+    let qaCount = 0
+    let handoffCount = 0
+
+    for (const row of rows) {
+      const count = Number(row.count) || 0
+      const handoffs = Number(row.handoff_count) || 0
+      handoffCount += handoffs
+      if (row.type === 'chat') {
+        chatCount = count
+      } else if (row.type === 'qa') {
+        qaCount = count
+      }
+    }
+
+    return { days: safeDays, chatCount, qaCount, handoffCount }
   }
 
   buildSearchDocument(product: ProductEntity): string {
@@ -424,7 +503,7 @@ export class ProductEmbeddingService {
         productId: row.productId,
         score: cosineSimilarity(vector, row.embedding),
       }))
-      .filter((row) => row.score > 0)
+      .filter((row) => row.score >= 0.65)
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
 

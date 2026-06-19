@@ -12,6 +12,7 @@ import {
 } from '../dto/ask-product-question.dto'
 import { ProductService } from './product.service'
 import { StorefrontAiConfigService } from './storefront-ai-config.service'
+import { ProductEmbeddingService } from './product-embedding.service'
 import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
 import {
   buildProductRagContext,
@@ -26,6 +27,7 @@ export class ProductQaService {
     private readonly productService: ProductService,
     private readonly tenantAiClient: TenantAiClientService,
     private readonly storefrontAiConfig: StorefrontAiConfigService,
+    private readonly productEmbeddingService: ProductEmbeddingService,
   ) {}
 
   async isProductQaAvailable(tenantId: string): Promise<boolean> {
@@ -66,6 +68,7 @@ export class ProductQaService {
 If the answer is not supported by the context, say you do not have that information and suggest contacting store support.
 Do not invent specifications, warranties, shipping policies, compatibility, or discounts.
 Do not change prices or offer promotions. Describe listed price/discount only when asked.
+Detect the language of the shopper's question and respond in the same language (e.g. if the shopper asks in Spanish, reply in Spanish, if in German, reply in German).
 Keep the answer concise (2-5 sentences), friendly, and shopper-facing plain text (no HTML).
 
 Product context:
@@ -104,10 +107,14 @@ Return exactly this JSON shape:
         usageContext: { endpoint: 'products/slug/ask' },
       })
 
-      return this.parseJsonResponse<ProductQaResultDto>(result.content, {
+      const parsed = this.parseJsonResponse<ProductQaResultDto>(result.content, {
         answer: result.content.trim(),
         suggestedFollowUps: [],
       })
+
+      void this.productEmbeddingService.recordAssistantEvent(tenantId, 'qa', false)
+
+      return parsed
     } catch (error) {
       this.logger.error(`Product Q&A failed for tenant ${tenantId}, slug ${slug}`, error)
       throw error

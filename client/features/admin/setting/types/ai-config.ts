@@ -84,6 +84,12 @@ export interface EmbeddingIndexStatus {
     keywordSearches: number
     hybridSearches: number
   }
+  assistantAnalytics?: {
+    days: number
+    chatCount: number
+    qaCount: number
+    handoffCount: number
+  }
 }
 
 export function getEmbeddingFormWarning(form: TenantAiConfigForm): string | null {
