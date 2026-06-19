@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, X } from 'lucide-react';
 import { useReceiveInvoiceForm } from '../hooks/useReceiveInvoiceForm';
 import type { ReceiveInvoiceModalProps } from '../types';
+import { InvoiceOcrAssist } from './InvoiceOcrAssist';
 
 export default function ReceiveInvoiceModal({
   isOpen,
@@ -31,11 +32,12 @@ export default function ReceiveInvoiceModal({
     setQty,
     unitPrice,
     setUnitPrice,
-    addedItems,
-    handleAddItem,
-    handleRemoveItem,
-    handleCreateInvoice,
-  } = useReceiveInvoiceForm(onSuccess, onClose);
+        addedItems,
+        handleAddItem,
+        handleRemoveItem,
+        handleCreateInvoice,
+        setAddedItems,
+    } = useReceiveInvoiceForm(onSuccess, onClose);
 
   return (
     <AnimatePresence>
@@ -45,7 +47,7 @@ export default function ReceiveInvoiceModal({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white dark:bg-slate-800 w-full max-w-xl rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
+            className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
           >
             <div className="flex justify-between items-center p-8 border-b border-slate-50 dark:border-slate-700">
               <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-tight">
@@ -61,6 +63,18 @@ export default function ReceiveInvoiceModal({
             </div>
 
             <form onSubmit={handleCreateInvoice} className="p-8 space-y-4 max-h-[70vh] overflow-y-auto">
+              <InvoiceOcrAssist
+                suppliers={suppliers}
+                products={products}
+                purchaseOrders={purchaseOrders}
+                selectedPoId={selectedPoId}
+                setInvoiceNumber={setInvoiceNumber}
+                setSelectedSupplierId={setSelectedSupplierId}
+                setInvoiceDate={setInvoiceDate}
+                setDueDate={setDueDate}
+                setAddedItems={setAddedItems}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">

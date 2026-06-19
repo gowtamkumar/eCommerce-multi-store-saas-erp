@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, FileText, Save, X } from "lucide-react";
 import { CreateRequisitionModalProps } from "../types";
 import { useCreateRequisitionModal } from "../hooks/useCreateRequisitionModal";
+import { RequisitionJustificationAiAssist } from "./RequisitionJustificationAiAssist";
 
 export default function CreateRequisitionModal({
   isOpen,
@@ -26,8 +27,33 @@ export default function CreateRequisitionModal({
     addedItems,
     handleAddItem,
     handleRemoveItem,
+    applyJustificationResult,
     handleCreatePR,
   } = useCreateRequisitionModal(onSuccess, isOpen);
+
+  const draftItemsForAi = useMemo(() => {
+    const items = addedItems.map((item) => ({
+      productName: item.name,
+      quantity: item.quantity,
+      notes: item.notes,
+    }));
+
+    if (
+      selectedProductId &&
+      !addedItems.some((item) => String(item.productId) === String(selectedProductId))
+    ) {
+      const product = products.find((p) => String(p.id) === String(selectedProductId));
+      if (product) {
+        items.push({
+          productName: product.name,
+          quantity: selectedQty,
+          notes: selectedNotes,
+        });
+      }
+    }
+
+    return items;
+  }, [addedItems, selectedProductId, selectedQty, selectedNotes, products]);
 
   return (
     <AnimatePresence>
@@ -53,6 +79,13 @@ export default function CreateRequisitionModal({
             </div>
 
             <form onSubmit={handleCreatePR} className="p-8 space-y-5">
+              <RequisitionJustificationAiAssist
+                requiredDate={requiredDate}
+                items={draftItemsForAi}
+                existingJustification={justification}
+                onApply={applyJustificationResult}
+              />
+
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                   Justification / Requisition Reason

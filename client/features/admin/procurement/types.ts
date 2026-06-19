@@ -75,7 +75,16 @@ export interface RFQ {
   deadlineDate: string;
   status: string;
   prId?: string;
-  purchaseRequisition?: { prNumber: string; justification?: string };
+  purchaseRequisition?: {
+    prNumber: string;
+    justification?: string;
+    requiredDate?: string;
+    items?: Array<{
+      quantity: number;
+      notes?: string;
+      product?: { name: string };
+    }>;
+  };
   createdBy?: { name: string };
   quotations: Quotation[];
 }

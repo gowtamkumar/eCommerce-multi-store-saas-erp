@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Receipt, X } from 'lucide-react';
 import type { CreateDebitNoteModalProps } from '../types';
 import { useCreateDebitNoteForm } from '../hooks/useCreateDebitNoteForm';
+import DebitNoteDisputePanel from './DebitNoteDisputePanel';
+import { buildDraftDebitNoteSummary } from '../lib/buildDebitNoteDisputeContext';
 
 export default function CreateDebitNoteModal({
   isOpen,
@@ -27,6 +29,21 @@ export default function CreateDebitNoteModal({
     handleCreateDebitNote,
   } = useCreateDebitNoteForm(onSuccess, onClose);
 
+  const debitNoteSummary = useMemo(
+    () =>
+      buildDraftDebitNoteSummary(
+        {
+          supplierId: selectedSupplierId,
+          purchaseOrderId: selectedPoId,
+          amount,
+          reason,
+        },
+        suppliers,
+        purchaseOrders,
+      ),
+    [selectedSupplierId, selectedPoId, amount, reason, suppliers, purchaseOrders],
+  );
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -35,7 +52,7 @@ export default function CreateDebitNoteModal({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white dark:bg-slate-800 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
+            className="bg-white dark:bg-slate-800 w-full max-w-xl rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden"
           >
             <div className="flex justify-between items-center p-8 border-b border-slate-50 dark:border-slate-700">
               <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-tight">
@@ -51,7 +68,13 @@ export default function CreateDebitNoteModal({
               </button>
             </div>
 
-            <form onSubmit={handleCreateDebitNote} className="p-8 space-y-5">
+            <form onSubmit={handleCreateDebitNote} className="p-8 space-y-5 max-h-[75vh] overflow-y-auto">
+              <DebitNoteDisputePanel
+                debitNoteSummary={debitNoteSummary}
+                disabled={!selectedSupplierId || !amount}
+                onApplyReason={setReason}
+              />
+
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                   Supplier Entity

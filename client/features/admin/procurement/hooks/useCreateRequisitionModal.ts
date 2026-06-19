@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { fetchAPI } from "@/services/api";
 import { createRequisition } from "@/services/procurement";
 import { Product } from "@/features/admin/product/types";
+import type { RequisitionJustificationResult } from "@/features/admin/ai/types/ai-studio";
 
 interface AddedItem {
   productId: string;
@@ -61,6 +62,16 @@ export function useCreateRequisitionModal(onSuccess: () => void, isOpen: boolean
 
   const handleRemoveItem = (index: number) => {
     setAddedItems(addedItems.filter((_, i) => i !== index));
+  };
+
+  const applyJustificationResult = (result: RequisitionJustificationResult) => {
+    setJustification(result.justificationText);
+    setAddedItems((prev) =>
+      prev.map((item, index) => ({
+        ...item,
+        notes: result.lineNotes[index]?.trim() || item.notes,
+      })),
+    );
   };
 
   const handleCreatePR = async (e: React.FormEvent) => {
@@ -132,6 +143,7 @@ export function useCreateRequisitionModal(onSuccess: () => void, isOpen: boolean
     addedItems,
     handleAddItem,
     handleRemoveItem,
+    applyJustificationResult,
     handleCreatePR,
   };
 }

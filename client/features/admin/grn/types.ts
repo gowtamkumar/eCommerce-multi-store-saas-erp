@@ -2,7 +2,7 @@ import { GrnStatus } from '@/lib/enums/grn-status.enum';
 
 export interface GrnItem {
   product?: { name: string };
-  variant?: { name: string };
+  variant?: { name?: string; sku?: string; combination?: Record<string, string> };
   orderedQty: number;
   receivedQty: number;
   unitCost: number;

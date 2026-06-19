@@ -27,6 +27,34 @@ import {
 } from '../dto/generate-marketing-description.dto'
 import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
+  GenerateArCollectionDraftDto,
+  ArCollectionDraftResultDto,
+} from '../dto/generate-ar-collection-draft.dto'
+import {
+  GenerateSupplierProfileSummaryDto,
+  SupplierProfileSummaryResultDto,
+} from '../dto/generate-supplier-profile-summary.dto'
+import {
+  GenerateDebitNoteDisputeDto,
+  DebitNoteDisputeResultDto,
+} from '../dto/generate-debit-note-dispute.dto'
+import {
+  GenerateGrnDiscrepancyNotesDto,
+  GrnDiscrepancyNotesResultDto,
+} from '../dto/generate-grn-discrepancy-notes.dto'
+import {
+  GenerateInvoiceOcrDto,
+  InvoiceOcrResultDto,
+} from '../dto/generate-invoice-ocr.dto'
+import {
+  GeneratePoCoverLetterDto,
+  PoCoverLetterResultDto,
+} from '../dto/generate-po-cover-letter.dto'
+import {
+  GenerateRequisitionJustificationDto,
+  RequisitionJustificationResultDto,
+} from '../dto/generate-requisition-justification.dto'
+import {
   GenerateBatchWasteReductionDto,
   BatchWasteReductionResultDto,
 } from '../dto/generate-batch-waste-reduction.dto'
@@ -508,6 +536,118 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Batch waste reduction tips generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/requisition-justification')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.PURCHASING_READ)
+  async generateRequisitionJustification(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateRequisitionJustificationDto,
+  ): Promise<BaseApiSuccessResponse<RequisitionJustificationResultDto>> {
+    const data = await this.aiAssistantService.generateRequisitionJustification(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Requisition justification generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/po-cover-letter')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.PURCHASING_READ)
+  async generatePoCoverLetter(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GeneratePoCoverLetterDto,
+  ): Promise<BaseApiSuccessResponse<PoCoverLetterResultDto>> {
+    const data = await this.aiAssistantService.generatePoCoverLetter(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'PO cover letter generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/grn-discrepancy-notes')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.INVENTORY_READ)
+  async generateGrnDiscrepancyNotes(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateGrnDiscrepancyNotesDto,
+  ): Promise<BaseApiSuccessResponse<GrnDiscrepancyNotesResultDto>> {
+    const data = await this.aiAssistantService.generateGrnDiscrepancyNotes(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'GRN discrepancy notes generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/invoice-ocr')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.PURCHASING_WRITE)
+  async generateInvoiceOcr(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateInvoiceOcrDto,
+  ): Promise<BaseApiSuccessResponse<InvoiceOcrResultDto>> {
+    const data = await this.aiAssistantService.generateInvoiceOcr(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Invoice OCR extraction completed successfully',
+      data,
+    }
+  }
+
+  @Post('generate/debit-note-dispute')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.PURCHASING_READ)
+  async generateDebitNoteDispute(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateDebitNoteDisputeDto,
+  ): Promise<BaseApiSuccessResponse<DebitNoteDisputeResultDto>> {
+    const data = await this.aiAssistantService.generateDebitNoteDispute(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Debit note dispute letter generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/supplier-profile-summary')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.SUPPLIER_MANAGE)
+  async generateSupplierProfileSummary(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateSupplierProfileSummaryDto,
+  ): Promise<BaseApiSuccessResponse<SupplierProfileSummaryResultDto>> {
+    const data = await this.aiAssistantService.generateSupplierProfileSummary(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Supplier profile summary generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/ar-collection-draft')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.ACCOUNTING_READ)
+  async generateArCollectionDraft(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateArCollectionDraftDto,
+  ): Promise<BaseApiSuccessResponse<ArCollectionDraftResultDto>> {
+    const data = await this.aiAssistantService.generateArCollectionDraft(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'AR collection email draft generated successfully',
       data,
     }
   }

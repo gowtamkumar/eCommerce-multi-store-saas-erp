@@ -19,7 +19,8 @@ import Link from 'next/link';
 import React, { useMemo } from 'react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { getGrnStatusBadge } from './GrnListPage';
-import { GrnData, GrnItem, GrnDetailPageProps } from '@/features/admin/grn/types';
+import { GrnItem, GrnDetailPageProps } from '@/features/admin/grn/types';
+import GrnDiscrepancyNotesPanel from './GrnDiscrepancyNotesPanel';
 
 
 export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }: GrnDetailPageProps) {
@@ -152,6 +153,8 @@ export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }:
                             {grn.notes || 'No specific notes provided for this shipment.'}
                         </p>
                     </div>
+
+                    <GrnDiscrepancyNotesPanel grn={grn} />
                 </div>
 
                 {/* Right Column: Metadata & Summary */}

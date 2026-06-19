@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
 import {
-    ArrowLeft, Calendar, CreditCard, FileText,
+    ArrowLeft, Calendar, CreditCard,
     History, Landmark, Package, Plus, Truck,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -13,6 +13,8 @@ import { getPaymentStatusBadge, getStatusBadge } from './comonfun';
 import { usePurchaseOrderDetails } from '../hooks/usePurchaseOrderDetails';
 import ReceiveProductsModal from './ReceiveProductsModal';
 import RecordPaymentModal from './RecordPaymentModal';
+import PoCoverLetterPanel from './PoCoverLetterPanel';
+import { buildPoSummary } from '../lib/buildPoCoverLetterContext';
 
 export default function PurchaseOrderDetails() {
     const { formatPrice } = useSettings();
@@ -30,6 +32,8 @@ export default function PurchaseOrderDetails() {
         handleReceive,
         handleRecordPayment,
     } = usePurchaseOrderDetails();
+
+    const poSummary = useMemo(() => buildPoSummary(order || {}), [order]);
 
     const columns = useMemo<DataTableColumn<any>[]>(() => [
         {
@@ -281,15 +285,10 @@ export default function PurchaseOrderDetails() {
                         </div>
                     </div>
 
-                    <div className="bg-slate-900 text-slate-400 rounded-3xl p-8 space-y-6">
-                        <h4 className="font-black text-white flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-brand-400" /> Ledger Note
-                        </h4>
-                        <p className="text-xs font-medium italic opacity-60 leading-relaxed">
-                            System-generated audit: This purchase order represents a significant inventory intake.
-                            Ensure all items are physically verified against the packing list upon arrival.
-                        </p>
-                    </div>
+                    <PoCoverLetterPanel
+                        purchaseOrderSummary={poSummary}
+                        variant="dark"
+                    />
                 </div>
             </div>
 

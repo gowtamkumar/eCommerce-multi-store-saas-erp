@@ -172,5 +172,6 @@ export function useReceiveInvoiceForm(onSuccess: () => void, onClose: () => void
         handleAddItem,
         handleRemoveItem,
         handleCreateInvoice,
+        setAddedItems,
     };
 }

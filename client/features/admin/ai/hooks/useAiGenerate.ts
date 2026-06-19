@@ -28,6 +28,13 @@ import type {
   CycleCountVarianceResult,
   PackingSlipNotesResult,
   BatchWasteReductionResult,
+  RequisitionJustificationResult,
+  PoCoverLetterResult,
+  GrnDiscrepancyNotesResult,
+  InvoiceOcrResult,
+  DebitNoteDisputeResult,
+  SupplierProfileSummaryResult,
+  ArCollectionDraftResult,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
@@ -259,6 +266,53 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<BatchWasteReductionResult>("/ai/generate/batch-waste-reduction", payload);
 
+  const generateRequisitionJustification = (payload: {
+    requisitionSummary: string;
+    existingJustification?: string;
+    tone?: string;
+  }) => withGenerate<RequisitionJustificationResult>("/ai/generate/requisition-justification", payload);
+
+  const generatePoCoverLetter = (payload: {
+    purchaseOrderSummary: string;
+    existingCoverLetter?: string;
+    tone?: string;
+  }) => withGenerate<PoCoverLetterResult>("/ai/generate/po-cover-letter", payload);
+
+  const generateGrnDiscrepancyNotes = (payload: {
+    grnSummary: string;
+    discrepancySummary: string;
+    existingNotes?: string;
+    tone?: string;
+  }) => withGenerate<GrnDiscrepancyNotesResult>("/ai/generate/grn-discrepancy-notes", payload);
+
+  const generateInvoiceOcr = (payload: {
+    invoiceSummary: string;
+    invoiceText?: string;
+    imageUrl?: string;
+    mimetype?: string;
+    useVision?: boolean;
+    poContextSummary?: string;
+  }) => withGenerate<InvoiceOcrResult>("/ai/generate/invoice-ocr", payload);
+
+  const generateDebitNoteDispute = (payload: {
+    debitNoteSummary: string;
+    existingDisputeLetter?: string;
+    tone?: string;
+  }) => withGenerate<DebitNoteDisputeResult>("/ai/generate/debit-note-dispute", payload);
+
+  const generateSupplierProfileSummary = (payload: {
+    supplierSummary: string;
+    existingSummary?: string;
+    tone?: string;
+  }) => withGenerate<SupplierProfileSummaryResult>("/ai/generate/supplier-profile-summary", payload);
+
+  const generateArCollectionDraft = (payload: {
+    customerSummary: string;
+    overdueInvoicesSummary: string;
+    existingDraft?: string;
+    tone?: string;
+  }) => withGenerate<ArCollectionDraftResult>("/ai/generate/ar-collection-draft", payload);
+
   return {
     configured,
     loading,
@@ -286,5 +340,12 @@ export function useAiGenerate() {
     generateCycleCountVariance,
     generatePackingSlipNotes,
     generateBatchWasteReduction,
+    generateRequisitionJustification,
+    generatePoCoverLetter,
+    generateGrnDiscrepancyNotes,
+    generateInvoiceOcr,
+    generateDebitNoteDispute,
+    generateSupplierProfileSummary,
+    generateArCollectionDraft,
   };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -8,12 +8,19 @@ import {
   Check
 } from 'lucide-react';
 import type { DebitNoteDetailDrawerProps } from '../types';
+import DebitNoteDisputePanel from './DebitNoteDisputePanel';
+import { buildDebitNoteSummary } from '../lib/buildDebitNoteDisputeContext';
 
 export default function DebitNoteDetailDrawer({
   note,
   onClose,
   onApprove,
 }: DebitNoteDetailDrawerProps) {
+  const debitNoteSummary = useMemo(
+    () => (note ? buildDebitNoteSummary(note) : ''),
+    [note],
+  );
+
   return (
     <AnimatePresence>
       {note && (
@@ -70,6 +77,8 @@ export default function DebitNoteDetailDrawer({
                   {note.reason}
                 </p>
               </div>
+
+              <DebitNoteDisputePanel debitNoteSummary={debitNoteSummary} />
 
               {note.status === 'APPROVED' && (
                 <div className="p-4 bg-emerald-50/10 border border-emerald-200 rounded-2xl flex items-start gap-3">

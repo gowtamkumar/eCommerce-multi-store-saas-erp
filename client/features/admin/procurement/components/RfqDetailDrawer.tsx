@@ -4,6 +4,7 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Award, Send, X } from "lucide-react";
 import { RfqDetailDrawerProps } from "../types";
+import RfqSupplierEmailPanel from "./RfqSupplierEmailPanel";
 
 export default function RfqDetailDrawer({
   rfq,
@@ -51,6 +52,8 @@ export default function RfqDetailDrawer({
                   </p>
                 )}
               </div>
+
+              <RfqSupplierEmailPanel rfq={rfq} />
 
               <div className="space-y-4">
                 <div className="flex justify-between items-center">

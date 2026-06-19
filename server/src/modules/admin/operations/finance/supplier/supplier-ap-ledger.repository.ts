@@ -72,17 +72,23 @@ export class SupplierAPLedgerRepository {
     const balances = new Map<string, number>()
     if (supplierIds.length === 0) return balances
 
-    // DISTINCT ON returns the first row per supplier given the ORDER BY,
-    // i.e. the most recent ledger entry for each supplier.
-    const rows = await this.repository
-      .createQueryBuilder('ap')
-      .select('DISTINCT ON (ap.supplierId) ap.supplierId', 'supplierId')
-      .addSelect('ap.balanceAfter', 'balanceAfter')
-      .where('ap.supplierId IN (:...supplierIds)', { supplierIds })
-      .andWhere('ap.tenantId = :tenantId', { tenantId })
-      .orderBy('ap.supplierId')
-      .addOrderBy('ap.createdAt', 'DESC')
-      .getRawMany<{ supplierId: string; balanceAfter: string }>()
+    // DISTINCT ON must immediately follow SELECT — TypeORM's query builder
+    // mis-orders columns when DISTINCT ON is embedded in .select() + .addSelect().
+    const rows = await this.repository.manager.query<
+      Array<{ supplierId: string; balanceAfter: string }>
+    >(
+      `
+        SELECT DISTINCT ON (ap.supplier_id)
+          ap.supplier_id AS "supplierId",
+          ap.balance_after AS "balanceAfter"
+        FROM supplier_ap_ledger ap
+        WHERE ap.supplier_id = ANY($1::uuid[])
+          AND ap.tenant_id = $2::uuid
+          AND ap.deleted_at IS NULL
+        ORDER BY ap.supplier_id ASC, ap.created_at DESC
+      `,
+      [supplierIds, tenantId],
+    )
 
     for (const row of rows) {
       balances.set(row.supplierId, Number(row.balanceAfter))

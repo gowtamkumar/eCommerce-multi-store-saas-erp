@@ -160,6 +160,61 @@ export interface BatchWasteReductionResult {
   priorityActions: string[];
 }
 
+export interface RequisitionJustificationResult {
+  justificationText: string;
+  lineNotes: string[];
+}
+
+export interface PoCoverLetterResult {
+  coverLetter: string;
+  termsNotes: string;
+}
+
+export interface GrnDiscrepancyNotesResult {
+  discrepancyNotes: string;
+  lineHighlights: string[];
+  supplierFollowUp: string;
+}
+
+export interface InvoiceOcrLineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal?: number;
+  sku?: string;
+}
+
+export interface InvoiceOcrResult {
+  invoiceNumber?: string;
+  supplierName?: string;
+  invoiceDate?: string;
+  dueDate?: string;
+  currency?: string;
+  subtotal?: number;
+  taxAmount?: number;
+  totalAmount?: number;
+  lineItems: InvoiceOcrLineItem[];
+  extractionNotes: string;
+  visionUsed?: boolean;
+  unmatchedWarnings?: string[];
+}
+
+export interface DebitNoteDisputeResult {
+  disputeLetter: string;
+  internalNotes: string;
+}
+
+export interface SupplierProfileSummaryResult {
+  profileSummary: string;
+  supplierTags: string[];
+}
+
+export interface ArCollectionDraftResult {
+  emailSubject: string;
+  emailBody: string;
+  internalNotes: string;
+}
+
 export interface CatalogContentResult {
   description: string;
   seoTitle: string;

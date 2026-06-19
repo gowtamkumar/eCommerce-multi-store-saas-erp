@@ -1,9 +1,11 @@
 'use client';
 
 import { Building, Loader2, Mail, MapPin, Phone, Save, User, X } from 'lucide-react';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { SupplierModalProps } from '../types';
 import { useSupplierModal } from '../hooks/useSupplierModal';
+import SupplierProfileSummaryPanel from './SupplierProfileSummaryPanel';
+import { buildSupplierSummary } from '../lib/buildSupplierProfileSummaryContext';
 
 export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: SupplierModalProps) {
     const {
@@ -14,11 +16,16 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
         handleSubmit,
     } = useSupplierModal({ isOpen, onClose, onSuccess, supplier });
 
+    const supplierSummaryKey = useMemo(
+        () => buildSupplierSummary(formData, categories, supplier),
+        [formData, categories, supplier],
+    );
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center p-6 border-b border-slate-50 dark:border-slate-700">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Building className="w-5 h-5 text-brand-500" />
@@ -29,7 +36,14 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+                    <SupplierProfileSummaryPanel
+                        key={supplierSummaryKey}
+                        formData={formData}
+                        categories={categories}
+                        supplier={supplier}
+                    />
+
                     <div className="grid grid-cols-3 gap-4">
                         <div className="col-span-2">
                             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">

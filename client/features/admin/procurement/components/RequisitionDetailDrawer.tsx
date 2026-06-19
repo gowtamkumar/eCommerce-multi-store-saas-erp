@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, FileSpreadsheet, Trash2 } from "lucide-react";
 import { RequisitionDetailDrawerProps } from "../types";
+import type { RequisitionJustificationResult } from "@/features/admin/ai/types/ai-studio";
+import { RequisitionJustificationReadOnly } from "./RequisitionJustificationReadOnly";
 
 export default function RequisitionDetailDrawer({
   pr,
@@ -12,6 +14,12 @@ export default function RequisitionDetailDrawer({
   onDeletePR,
   onOpenConvertModal,
 }: RequisitionDetailDrawerProps) {
+  const [draftResult, setDraftResult] = useState<RequisitionJustificationResult | null>(null);
+
+  useEffect(() => {
+    setDraftResult(null);
+  }, [pr?.id]);
+
   return (
     <AnimatePresence>
       {pr && (
@@ -62,6 +70,41 @@ export default function RequisitionDetailDrawer({
                   </span>
                 </div>
               </div>
+
+              <RequisitionJustificationReadOnly pr={pr} onApply={setDraftResult} />
+
+              {draftResult ? (
+                <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                      Suggested justification
+                    </p>
+                    <p className="text-sm text-slate-800 dark:text-slate-100 font-semibold">
+                      {draftResult.justificationText}
+                    </p>
+                  </div>
+                  {draftResult.lineNotes.some((note) => note.trim()) ? (
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                        Suggested line notes
+                      </p>
+                      <ul className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
+                        {pr.items?.map((item, index) =>
+                          draftResult.lineNotes[index]?.trim() ? (
+                            <li key={item.id}>
+                              <span className="font-bold">{item.product?.name}:</span>{" "}
+                              {draftResult.lineNotes[index]}
+                            </li>
+                          ) : null,
+                        )}
+                      </ul>
+                    </div>
+                  ) : null}
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Draft only — does not update the requisition record.
+                  </p>
+                </div>
+              ) : null}
 
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">

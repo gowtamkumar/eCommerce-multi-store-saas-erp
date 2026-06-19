@@ -6,6 +6,8 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { usePurchaseOrderForm } from '../hooks/usePurchaseOrderForm';
+import PoCoverLetterPanel from './PoCoverLetterPanel';
+import { buildDraftPoSummary } from '../lib/buildPoCoverLetterContext';
 
 export default function PurchaseOrderForm() {
     const { formatPrice } = useSettings();
@@ -23,6 +25,11 @@ export default function PurchaseOrderForm() {
         updateItem,
         handleSubmit,
     } = usePurchaseOrderForm();
+
+    const poSummary = useMemo(
+        () => buildDraftPoSummary(formData, suppliers, totalAmount),
+        [formData, suppliers, totalAmount],
+    );
 
     const columns = useMemo<DataTableColumn<any>[]>(() => [
         {
@@ -293,6 +300,11 @@ export default function PurchaseOrderForm() {
                             </div>
                         </div>
                     </div>
+
+                    <PoCoverLetterPanel
+                        purchaseOrderSummary={poSummary}
+                        disabled={!formData.supplierId || formData.items.length === 0}
+                    />
                 </div>
             </div>
         </form>

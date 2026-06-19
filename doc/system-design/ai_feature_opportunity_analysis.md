@@ -139,13 +139,13 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
-| Requisitions | `/admin/procurement/requisitions` | Justification text | ⬜ | Draft line notes |
-| RFQs | `/admin/procurement/rfqs` | Supplier email body | ⬜ | Campaign-copy pattern |
-| Purchase orders | `/admin/procurement/purchases` | PO cover letter | ⬜ | Low priority |
-| GRN | `/admin/procurement/grn` | Receipt discrepancy notes | ⬜ | Low priority |
-| Supplier invoices | `/admin/procurement/invoices` | **Invoice OCR** | 🔒 | Phase C — extract lines → draft |
-| Debit notes | `/admin/procurement/debit-notes` | Dispute letter draft | ⬜ | Medium priority |
-| Suppliers | `/admin/procurement/suppliers` | Supplier profile summary | ⬜ | Low priority |
+| Requisitions | `/admin/procurement/requisitions` | Justification text | ✅ | Draft line notes |
+| RFQs | `/admin/procurement/rfqs` | Supplier email body | ✅ | Campaign-copy pattern |
+| Purchase orders | `/admin/procurement/purchases` | PO cover letter | ✅ | Low priority |
+| GRN | `/admin/procurement/grn` | Receipt discrepancy notes | ✅ | Low priority |
+| Supplier invoices | `/admin/procurement/invoices` | **Invoice OCR** | ✅ | Phase C — extract lines → draft (sync vision; no job queue) |
+| Debit notes | `/admin/procurement/debit-notes` | Dispute letter draft | ✅ | Medium priority |
+| Suppliers | `/admin/procurement/suppliers` | Supplier profile summary | ✅ | Low priority |
 
 ### 3.6 Admin — Finance
 
