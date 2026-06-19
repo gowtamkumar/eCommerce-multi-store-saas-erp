@@ -353,9 +353,14 @@ export class TenantService {
 
   async findByCustomDomain(customDomain: string): Promise<TenantEntity | null> {
     const cacheKey = `${this.CACHE_PREFIX}customdomain:${customDomain}`
-    const cached = await this.cacheService.getCache<TenantEntity>(cacheKey)
-    const hydratedCached = this.hydrateTenant(cached)
-    if (hydratedCached) return hydratedCached
+    const cached = await this.cacheService.getCache<any>(cacheKey)
+    if (cached) {
+      if (cached.id === '__NOT_FOUND__') {
+        return null
+      }
+      const hydratedCached = this.hydrateTenant(cached)
+      if (hydratedCached) return hydratedCached
+    }
 
     const domainRecord = await this.dataSource.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
@@ -374,6 +379,9 @@ export class TenantService {
       await this.cacheService.setCache(cacheKey, tenant, 3600)
       return tenant
     }
+
+    // Cache negative lookup (e.g. invalid domains) for 3 minutes (180 seconds) to prevent DoS on database
+    await this.cacheService.setCache(cacheKey, { id: '__NOT_FOUND__' }, 180)
     return null
   }
 

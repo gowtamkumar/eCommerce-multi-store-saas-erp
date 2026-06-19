@@ -67,6 +67,9 @@ describe('TenantService', () => {
     }
     dataSource = {
       transaction: jest.fn().mockImplementation((cb) => cb(mockManager)),
+      getRepository: jest.fn().mockReturnValue({
+        findOne: jest.fn(),
+      }),
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -131,6 +134,75 @@ describe('TenantService', () => {
       expect(cacheService.delCache).toHaveBeenCalledWith('tenant:id:tenant-1')
       expect(cacheService.delCache).toHaveBeenCalledWith('rbac:manifest:tenant-1:user-1')
       expect(cacheService.delCache).toHaveBeenCalledWith('rbac:manifest:tenant-1:user-2')
+    })
+  })
+
+  describe('findByCustomDomain', () => {
+    it('should return cached tenant if present in cache', async () => {
+      const mockTenant = { id: 'tenant-1', storeName: 'Test Store' } as any
+      cacheService.getCache.mockResolvedValue(mockTenant)
+
+      const result = await service.findByCustomDomain('test.com')
+
+      expect(cacheService.getCache).toHaveBeenCalledWith('tenant:customdomain:test.com')
+      expect(result).toBeDefined()
+      expect(result?.storeName).toBe('Test Store')
+    })
+
+    it('should return null immediately if cache contains __NOT_FOUND__ sentinel', async () => {
+      cacheService.getCache.mockResolvedValue({ id: '__NOT_FOUND__' })
+
+      const result = await service.findByCustomDomain('invalid.com')
+
+      expect(result).toBeNull()
+      expect(dataSource.getRepository).not.toHaveBeenCalled()
+    })
+
+    it('should query DB and cache tenant if active domain is found', async () => {
+      cacheService.getCache.mockResolvedValue(null)
+      const mockDomainRecord = {
+        status: 'active',
+        tenant: { id: 'tenant-1', storeName: 'Test Store' },
+      }
+      const findOneMock = jest.fn().mockResolvedValue(mockDomainRecord)
+      dataSource.getRepository = jest.fn().mockReturnValue({ findOne: findOneMock })
+      cacheService.setCache = jest.fn()
+
+      const result = await service.findByCustomDomain('test.com')
+
+      expect(findOneMock).toHaveBeenCalledWith({
+        where: { hostname: 'test.com' },
+        relations: {
+          tenant: {
+            domains: true,
+            activeSubscription: {
+              subscriptionPlan: true,
+            },
+          },
+        },
+      })
+      expect(cacheService.setCache).toHaveBeenCalledWith(
+        'tenant:customdomain:test.com',
+        mockDomainRecord.tenant,
+        3600,
+      )
+      expect(result?.storeName).toBe('Test Store')
+    })
+
+    it('should cache negative lookup for 3 minutes if domain is not found', async () => {
+      cacheService.getCache.mockResolvedValue(null)
+      const findOneMock = jest.fn().mockResolvedValue(null)
+      dataSource.getRepository = jest.fn().mockReturnValue({ findOne: findOneMock })
+      cacheService.setCache = jest.fn()
+
+      const result = await service.findByCustomDomain('nonexistent.com')
+
+      expect(result).toBeNull()
+      expect(cacheService.setCache).toHaveBeenCalledWith(
+        'tenant:customdomain:nonexistent.com',
+        { id: '__NOT_FOUND__' },
+        180,
+      )
     })
   })
 })
