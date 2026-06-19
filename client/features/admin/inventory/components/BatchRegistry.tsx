@@ -9,6 +9,7 @@ import {
 import { useBatchRegistry, ProductBatch, BatchStatus } from '../hooks/useBatchRegistry';
 import { useCreateBatch } from '../hooks/useCreateBatch';
 import { useEditBatch } from '../hooks/useEditBatch';
+import BatchWasteReductionPanel from './BatchWasteReductionPanel';
 
 const getDaysRemaining = (expiryDateStr: string) => {
   const diffTime = new Date(expiryDateStr).getTime() - new Date().getTime();
@@ -223,6 +224,15 @@ export default function BatchRegistry() {
           <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-mono">{stats.expired}</p>
         </div>
       </div>
+
+      <BatchWasteReductionPanel
+        batches={batches}
+        stats={stats}
+        totalItems={totalItems}
+        statusFilter={statusFilter}
+        expiringSoonFilter={expiringSoonFilter}
+        disabled={loading}
+      />
 
       {/* Filter and Search Section */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">

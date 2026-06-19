@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowLeftRight,
@@ -19,7 +19,13 @@ import {
     X
 } from 'lucide-react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
+import type { StockTransferReasonResult } from '@/features/admin/ai/types/ai-studio';
 import { useStockTransfer, StockTransferDoc } from '../hooks/useStockTransfer';
+import { StockTransferReasonAiAssist } from './StockTransferReasonAiAssist';
+import {
+    buildDraftTransferSummary,
+    buildTransferDocSummary,
+} from '../lib/buildStockTransferReasonContext';
 
 const getStatusStyle = (status: string) => {
     switch (status) {
@@ -76,6 +82,23 @@ export default function StockTransfer() {
         handleReceive,
         handleCancel,
     } = useStockTransfer();
+
+    const [draftAuditSummary, setDraftAuditSummary] = useState('');
+    const [detailReasonResult, setDetailReasonResult] = useState<StockTransferReasonResult | null>(null);
+
+    const draftTransferSummary = useMemo(
+        () => buildDraftTransferSummary(warehouses, sourceId, destId, newLines),
+        [warehouses, sourceId, destId, newLines],
+    );
+
+    const detailTransferSummary = useMemo(
+        () => (selectedTransfer ? buildTransferDocSummary(selectedTransfer) : ''),
+        [selectedTransfer],
+    );
+
+    React.useEffect(() => {
+        setDetailReasonResult(null);
+    }, [selectedTransfer?.id]);
 
     const columns = useMemo<DataTableColumn<StockTransferDoc>[]>(() => [
         {
@@ -294,15 +317,41 @@ export default function StockTransfer() {
                             </div>
                         </div>
 
-                        <div className="mt-4">
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5">Remarks / Reason</label>
-                            <input
-                                type="text"
-                                value={remarks}
-                                onChange={e => setRemarks(e.target.value)}
-                                placeholder="e.g. Replenishing stock for campaign, moving damageables..."
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm"
+                        <div className="mt-4 space-y-4">
+                            <StockTransferReasonAiAssist
+                                transferSummary={draftTransferSummary}
+                                existingRemarks={remarks}
+                                disabled={!sourceId || !destId || newLines.length === 0}
+                                onApply={(result) => {
+                                    setRemarks(result.reasonNotes);
+                                    setDraftAuditSummary(result.auditSummary);
+                                }}
                             />
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5">Remarks / Reason</label>
+                                <input
+                                    type="text"
+                                    value={remarks}
+                                    onChange={e => setRemarks(e.target.value)}
+                                    placeholder="e.g. Replenishing stock for campaign, moving damageables..."
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm"
+                                />
+                            </div>
+
+                            {draftAuditSummary ? (
+                                <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                        Internal audit notes
+                                    </p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                                        {draftAuditSummary}
+                                    </p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-3">
+                                        Not saved to the transfer document — copy if needed for records.
+                                    </p>
+                                </div>
+                            ) : null}
                         </div>
                     </div>
 
@@ -440,6 +489,40 @@ export default function StockTransfer() {
                                                 <p className="text-sm text-slate-700 dark:text-slate-300 mt-1 font-semibold">{selectedTransfer.remarks}</p>
                                             </div>
                                         )}
+
+                                        <StockTransferReasonAiAssist
+                                            transferSummary={detailTransferSummary}
+                                            existingRemarks={selectedTransfer.remarks || undefined}
+                                            onApply={(result) => {
+                                                setDetailReasonResult(result);
+                                            }}
+                                        />
+
+                                        {detailReasonResult ? (
+                                            <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 p-4 space-y-3">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                        Suggested remarks
+                                                    </p>
+                                                    <p className="text-sm text-slate-700 dark:text-slate-200 font-semibold">
+                                                        {detailReasonResult.reasonNotes}
+                                                    </p>
+                                                </div>
+                                                {detailReasonResult.auditSummary ? (
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                            Internal audit notes
+                                                        </p>
+                                                        <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                                                            {detailReasonResult.auditSummary}
+                                                        </p>
+                                                    </div>
+                                                ) : null}
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                    Draft only — does not update the transfer document.
+                                                </p>
+                                            </div>
+                                        ) : null}
 
                                         {/* Products Table */}
                                         <div className="space-y-3">

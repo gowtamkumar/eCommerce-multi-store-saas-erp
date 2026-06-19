@@ -23,6 +23,11 @@ import type {
   AbandonedCartMessageTemplate,
   PriceBookRationaleResult,
   MediaAssistResult,
+  InventoryAnomalyResult,
+  StockTransferReasonResult,
+  CycleCountVarianceResult,
+  PackingSlipNotesResult,
+  BatchWasteReductionResult,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
@@ -220,6 +225,40 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<MediaAssistResult>("/ai/generate/media-assist", payload);
 
+  const generateInventoryAnomaly = (payload: {
+    statsSummary: string;
+    stockSummary: string;
+    recentMovementsSummary?: string;
+    activeFilter?: string;
+    tone?: string;
+  }) => withGenerate<InventoryAnomalyResult>("/ai/generate/inventory-anomaly", payload);
+
+  const generateStockTransferReason = (payload: {
+    transferSummary: string;
+    existingRemarks?: string;
+    tone?: string;
+  }) => withGenerate<StockTransferReasonResult>("/ai/generate/stock-transfer-reason", payload);
+
+  const generateCycleCountVariance = (payload: {
+    countSummary: string;
+    varianceSummary: string;
+    recentMovementsSummary?: string;
+    tone?: string;
+  }) => withGenerate<CycleCountVarianceResult>("/ai/generate/cycle-count-variance", payload);
+
+  const generatePackingSlipNotes = (payload: {
+    fulfillmentSummary: string;
+    orderSummary?: string;
+    tone?: string;
+  }) => withGenerate<PackingSlipNotesResult>("/ai/generate/packing-slip-notes", payload);
+
+  const generateBatchWasteReduction = (payload: {
+    statsSummary: string;
+    batchSummary: string;
+    activeFilter?: string;
+    tone?: string;
+  }) => withGenerate<BatchWasteReductionResult>("/ai/generate/batch-waste-reduction", payload);
+
   return {
     configured,
     loading,
@@ -242,5 +281,10 @@ export function useAiGenerate() {
     generateAbandonedCartMessage,
     generatePriceBookRationale,
     generateMediaAssist,
+    generateInventoryAnomaly,
+    generateStockTransferReason,
+    generateCycleCountVariance,
+    generatePackingSlipNotes,
+    generateBatchWasteReduction,
   };
 }

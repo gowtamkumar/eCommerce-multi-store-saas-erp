@@ -135,6 +135,31 @@ export interface MediaAssistResult {
   visionUsed?: boolean;
 }
 
+export interface InventoryAnomalyResult {
+  narrative: string;
+  anomalyHighlights: string[];
+}
+
+export interface StockTransferReasonResult {
+  reasonNotes: string;
+  auditSummary: string;
+}
+
+export interface CycleCountVarianceResult {
+  narrative: string;
+  varianceHighlights: string[];
+}
+
+export interface PackingSlipNotesResult {
+  packingSlipNotes: string;
+  handlingNotes: string;
+}
+
+export interface BatchWasteReductionResult {
+  wasteReductionTips: string;
+  priorityActions: string[];
+}
+
 export interface CatalogContentResult {
   description: string;
   seoTitle: string;

@@ -15,6 +15,7 @@ import {
     ChevronRight,
 } from 'lucide-react';
 import { useCycleCount } from '../hooks/useCycleCount';
+import CycleCountVariancePanel from './CycleCountVariancePanel';
 
 export default function CycleCount() {
     const {
@@ -85,6 +86,14 @@ export default function CycleCount() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <CycleCountVariancePanel
+                warehouses={warehouses}
+                warehouseId={warehouseId}
+                countRef={countRef}
+                lines={lines}
+                disabled={loading}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Count Setup */}

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import FulfillmentPackingSlipPanel from './FulfillmentPackingSlipPanel';
 
 export default function FulfillmentDetailPage({ task, onStart, onPick, onPack, onShip, isProcessing }: any) {
     const [pickingQuantities, setPickingQuantities] = useState<Record<string, number>>({});
@@ -83,6 +84,8 @@ export default function FulfillmentDetailPage({ task, onStart, onPick, onPack, o
                     />
                 </div>
             </div>
+
+            <FulfillmentPackingSlipPanel task={task} />
 
             {/* Picking List */}
             <div className="space-y-4">

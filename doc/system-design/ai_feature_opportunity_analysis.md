@@ -129,11 +129,11 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
-| Inventory dashboard | `/admin/inventory` | Anomaly explanation | ⬜ | Read-only narrative |
-| Stock transfers | `/admin/stock-transfers` | Transfer reason notes | ⬜ | Low priority |
-| Cycle count | `/admin/cycle-count` | Variance explanation | ⬜ | Read-only |
-| Fulfillment | `/admin/fulfillment` | Packing slip notes | ⬜ | Low priority |
-| Batches / expiry | `/admin/batches` | Waste reduction tips | 🔒 | Forecasting tie-in |
+| Inventory dashboard | `/admin/inventory` | Anomaly explanation | ✅ | Read-only narrative |
+| Stock transfers | `/admin/stock-transfers` | Transfer reason notes | ✅ | Low priority |
+| Cycle count | `/admin/cycle-count` | Variance explanation | ✅ | Read-only |
+| Fulfillment | `/admin/fulfillment` | Packing slip notes | ✅ | Low priority |
+| Batches / expiry | `/admin/batches` | Waste reduction tips | ✅ | Heuristic forecasting tie-in (read-only) |
 
 ### 3.5 Admin — Procurement (SCM)
 
@@ -432,7 +432,7 @@ Track per tenant after each phase:
 | **Marketing & content** | ~95% of copy workflows | — |
 | **Catalog** | Products, categories, brands | Alt text, bulk import |
 | **Support & CRM** | 0% | Suggested chat replies |
-| **Operations / inventory** | 0% | Read-only anomaly narratives |
+| **Operations / inventory** | 100% | Read-only anomaly narratives |
 | **Procurement / finance** | 0% | OCR + AR drafts (async) |
 | **HRM** | 0% | Job descriptions |
 | **Storefront** | 0% | Semantic search, product Q&A |

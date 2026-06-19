@@ -27,6 +27,26 @@ import {
 } from '../dto/generate-marketing-description.dto'
 import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
+  GenerateBatchWasteReductionDto,
+  BatchWasteReductionResultDto,
+} from '../dto/generate-batch-waste-reduction.dto'
+import {
+  GeneratePackingSlipNotesDto,
+  PackingSlipNotesResultDto,
+} from '../dto/generate-packing-slip-notes.dto'
+import {
+  GenerateCycleCountVarianceDto,
+  CycleCountVarianceResultDto,
+} from '../dto/generate-cycle-count-variance.dto'
+import {
+  GenerateStockTransferReasonDto,
+  StockTransferReasonResultDto,
+} from '../dto/generate-stock-transfer-reason.dto'
+import {
+  GenerateInventoryAnomalyDto,
+  InventoryAnomalyResultDto,
+} from '../dto/generate-inventory-anomaly.dto'
+import {
   GenerateMediaAssistDto,
   MediaAssistResultDto,
 } from '../dto/generate-media-assist.dto'
@@ -408,6 +428,86 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Media assist content generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/inventory-anomaly')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.INVENTORY_READ)
+  async generateInventoryAnomaly(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateInventoryAnomalyDto,
+  ): Promise<BaseApiSuccessResponse<InventoryAnomalyResultDto>> {
+    const data = await this.aiAssistantService.generateInventoryAnomaly(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Inventory anomaly narrative generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/stock-transfer-reason')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.INVENTORY_READ)
+  async generateStockTransferReason(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateStockTransferReasonDto,
+  ): Promise<BaseApiSuccessResponse<StockTransferReasonResultDto>> {
+    const data = await this.aiAssistantService.generateStockTransferReason(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Stock transfer reason notes generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/cycle-count-variance')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.INVENTORY_READ)
+  async generateCycleCountVariance(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateCycleCountVarianceDto,
+  ): Promise<BaseApiSuccessResponse<CycleCountVarianceResultDto>> {
+    const data = await this.aiAssistantService.generateCycleCountVariance(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Cycle count variance explanation generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/packing-slip-notes')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.FULFILLMENT_MANAGE)
+  async generatePackingSlipNotes(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GeneratePackingSlipNotesDto,
+  ): Promise<BaseApiSuccessResponse<PackingSlipNotesResultDto>> {
+    const data = await this.aiAssistantService.generatePackingSlipNotes(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Packing slip notes generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/batch-waste-reduction')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.INVENTORY_READ)
+  async generateBatchWasteReduction(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateBatchWasteReductionDto,
+  ): Promise<BaseApiSuccessResponse<BatchWasteReductionResultDto>> {
+    const data = await this.aiAssistantService.generateBatchWasteReduction(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Batch waste reduction tips generated successfully',
       data,
     }
   }
