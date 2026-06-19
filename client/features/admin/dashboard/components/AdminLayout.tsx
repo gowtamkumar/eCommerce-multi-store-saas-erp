@@ -13,6 +13,7 @@ import { ComponentType, useCallback, useEffect, useMemo, useState } from 'react'
 import AdminBreadcrumbs from './AdminBreadcrumbs';
 import AdminTopBar from './AdminTopBar';
 import CommandPalette, { recordRecentPage } from './CommandPalette';
+import GlobalCopilotSidebar from './dashboard/GlobalCopilotSidebar';
 
 const FAVORITES_KEY = 'admin:favorites';
 const EXPANDED_GROUPS_KEY = 'admin:expandedGroups';
@@ -84,10 +85,27 @@ export default function AdminLayout({
     const [favorites, setFavorites] = useState<string[]>(
         () => readStoredJson<string[]>(FAVORITES_KEY, []),
     );
+    const [isCopilotOpen, setIsCopilotOpen] = useState(false);
     const { data: session, status } = useSession() as {
         data: AdminSession | null;
         status: 'loading' | 'authenticated' | 'unauthenticated';
     };
+
+    const hasAiUse = useMemo(() => {
+        const rawRole = session?.user?.role || '';
+        const userRole = typeof rawRole === 'string' ? rawRole.toLowerCase() : '';
+        const sessionFeatures = session?.user?.features || [];
+        const tokenFeatures = decodeJwtPayload<{ features?: string[] }>(
+            session?.user?.accessToken,
+        )?.features;
+        const features =
+            sessionFeatures.length > 0
+                ? sessionFeatures
+                : Array.isArray(tokenFeatures)
+                  ? tokenFeatures
+                  : [];
+        return userRole === UserRole.SUPER_ADMIN || features.includes('*') || features.includes('ai:use');
+    }, [session]);
 
     // Global ⌘K / Ctrl+K to open the command palette.
     useEffect(() => {
@@ -568,6 +586,7 @@ export default function AdminLayout({
                         session={session}
                         onMenuClick={() => setIsMobileMenuOpen(true)}
                         onLogout={handleLogout}
+                        onCopilotClick={hasAiUse ? () => setIsCopilotOpen(!isCopilotOpen) : undefined}
                     />
                 )}
 
@@ -582,6 +601,12 @@ export default function AdminLayout({
                 open={isPaletteOpen}
                 onClose={() => setIsPaletteOpen(false)}
                 groups={roleFilteredNavGroups}
+            />
+
+            {/* Global copilot sidebar */}
+            <GlobalCopilotSidebar
+                isOpen={isCopilotOpen}
+                onClose={() => setIsCopilotOpen(false)}
             />
         </div>
     );

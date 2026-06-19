@@ -360,7 +360,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 |------|----------|--------|
 | Dashboard KPI copilot | — | [x] |
 | Read-only tool registry (orders, stock, reports) | P3 | [x] |
-| Global copilot sidebar | P3 | [ ] |
+| Global copilot sidebar | P3 | [x] |
 | Write tools (any ERP mutation) | — | 🔒 Never without audit |
 
 ---
