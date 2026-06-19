@@ -241,6 +241,26 @@ export interface TaxRuleExplanationResult {
   complianceReminders: string[];
 }
 
+export interface RecruitmentJobCopyResult {
+  jobDescription: string;
+  requirements: string[];
+  screeningQuestions: string[];
+}
+
+export interface PerformanceReviewPhrasesResult {
+  strengthsPhrases: string[];
+  developmentPhrases: string[];
+  summaryPhrases: string[];
+  usageNotes: string[];
+}
+
+export interface PayslipExplanationResult {
+  emailSubject: string;
+  employeeMessage: string;
+  breakdownBullets: string[];
+  internalNotes: string[];
+}
+
 export interface CatalogContentResult {
   description: string;
   seoTitle: string;

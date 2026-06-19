@@ -10,6 +10,7 @@ import {
   PerformanceReviewForm,
 } from '../../hooks/usePerformanceManager';
 import { ScoreStars } from './performanceUi';
+import PerformanceReviewPhraseAiAssist from './PerformanceReviewPhraseAiAssist';
 
 interface CreatePerformanceReviewModalProps {
   open: boolean;
@@ -116,6 +117,19 @@ export default function CreatePerformanceReviewModal({
             </div>
           </FormField>
         </div>
+
+        <PerformanceReviewPhraseAiAssist
+          reviewForm={reviewForm}
+          employees={employees}
+          onInsertPhrase={(phrase) =>
+            updateReviewForm(
+              'comments',
+              reviewForm.comments.trim()
+                ? `${reviewForm.comments.trim()}\n\n${phrase}`
+                : phrase,
+            )
+          }
+        />
 
         <FormField label="Manager Comments">
           <textarea

@@ -43,6 +43,18 @@ import {
   TaxRuleExplanationResultDto,
 } from '../dto/generate-tax-rule-explanation.dto'
 import {
+  GenerateRecruitmentJobCopyDto,
+  RecruitmentJobCopyResultDto,
+} from '../dto/generate-recruitment-job-copy.dto'
+import {
+  GeneratePerformanceReviewPhrasesDto,
+  PerformanceReviewPhrasesResultDto,
+} from '../dto/generate-performance-review-phrases.dto'
+import {
+  GeneratePayslipExplanationDto,
+  PayslipExplanationResultDto,
+} from '../dto/generate-payslip-explanation.dto'
+import {
   GenerateArCollectionDraftDto,
   ArCollectionDraftResultDto,
 } from '../dto/generate-ar-collection-draft.dto'
@@ -728,6 +740,54 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Tax rule explanation generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/recruitment-job-copy')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.HRM_EMPLOYEE_MANAGE)
+  async generateRecruitmentJobCopy(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateRecruitmentJobCopyDto,
+  ): Promise<BaseApiSuccessResponse<RecruitmentJobCopyResultDto>> {
+    const data = await this.aiAssistantService.generateRecruitmentJobCopy(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Recruitment job copy generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/performance-review-phrases')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.HRM_EMPLOYEE_MANAGE)
+  async generatePerformanceReviewPhrases(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GeneratePerformanceReviewPhrasesDto,
+  ): Promise<BaseApiSuccessResponse<PerformanceReviewPhrasesResultDto>> {
+    const data = await this.aiAssistantService.generatePerformanceReviewPhrases(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Performance review phrase bank generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/payslip-explanation')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.HRM_PAYROLL_PROCESS)
+  async generatePayslipExplanation(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GeneratePayslipExplanationDto,
+  ): Promise<BaseApiSuccessResponse<PayslipExplanationResultDto>> {
+    const data = await this.aiAssistantService.generatePayslipExplanation(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payslip explanation generated successfully',
       data,
     }
   }

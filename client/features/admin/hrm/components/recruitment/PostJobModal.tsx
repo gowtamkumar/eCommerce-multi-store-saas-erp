@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 import Modal from '@/components/shared/Modal';
 import FormField, { fieldControlClass } from '@/components/shared/FormField';
 import { JobFormData, RecruitmentDepartment } from '../../hooks/useRecruitmentManager';
+import RecruitmentJobCopyAiAssist from './RecruitmentJobCopyAiAssist';
 
 interface PostJobModalProps {
   open: boolean;
@@ -76,7 +77,19 @@ export default function PostJobModal({
         </FormField>
       </div>
 
-      <div className="space-y-6">
+      <RecruitmentJobCopyAiAssist
+        jobFormData={jobFormData}
+        departments={departments}
+        onApply={(result) =>
+          setJobFormData((prev) => ({
+            ...prev,
+            description: result.jobDescription,
+            requirements: result.requirements.join('\n'),
+          }))
+        }
+      />
+
+      <div className="space-y-6 mt-6">
         <FormField label="Job Description">
           <textarea
             value={jobFormData.description}

@@ -48,6 +48,18 @@ import {
   TaxRuleExplanationResultDto,
 } from '../dto/generate-tax-rule-explanation.dto'
 import {
+  GenerateRecruitmentJobCopyDto,
+  RecruitmentJobCopyResultDto,
+} from '../dto/generate-recruitment-job-copy.dto'
+import {
+  GeneratePerformanceReviewPhrasesDto,
+  PerformanceReviewPhrasesResultDto,
+} from '../dto/generate-performance-review-phrases.dto'
+import {
+  GeneratePayslipExplanationDto,
+  PayslipExplanationResultDto,
+} from '../dto/generate-payslip-explanation.dto'
+import {
   GenerateArCollectionDraftDto,
   ArCollectionDraftResultDto,
 } from '../dto/generate-ar-collection-draft.dto'
@@ -1668,6 +1680,181 @@ Return exactly this JSON shape:
       applicabilityNotes: [],
       complianceReminders: [],
     })
+  }
+
+  async generateRecruitmentJobCopy(
+    tenantId: string,
+    dto: GenerateRecruitmentJobCopyDto,
+  ): Promise<RecruitmentJobCopyResultDto> {
+    const prompt = `Write recruitment HR copy for a job posting as JSON only (no markdown fences).
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: professional, inclusive, and clear — suitable for e-commerce / retail / operations hiring'}
+
+Job context:
+${dto.jobSummary}
+
+${dto.existingDraft ? `Existing draft (refine or replace):\n${dto.existingDraft}` : 'No existing draft.'}
+
+Return exactly this JSON shape:
+{
+  "jobDescription": "string (3-5 short paragraphs as plain text with line breaks — role overview, responsibilities, team context, and what success looks like; align with provided title/department/location/salary only)",
+  "requirements": ["string (5-8 bullet-style must-have requirements, one per item — skills, experience, tools)"],
+  "screeningQuestions": ["string (4-6 interview screening questions HR can ask applicants — behavioral and role-specific, one per item)"]
+}
+
+Draft only — HR reviews before publishing. Do not invent benefits or compensation not in context.`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write job descriptions and HR screening questions for e-commerce and retail teams. Respond with valid JSON only, no extra text. Draft copy only — never publish jobs or contact candidates automatically.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.5 },
+    )
+
+    const parsed = this.parseJsonResponse<RecruitmentJobCopyResultDto>(result.content, {
+      jobDescription: result.content,
+      requirements: [],
+      screeningQuestions: [],
+    })
+
+    return {
+      jobDescription: parsed.jobDescription?.trim() || '',
+      requirements: Array.isArray(parsed.requirements)
+        ? parsed.requirements.map((item) => String(item).trim()).filter(Boolean)
+        : [],
+      screeningQuestions: Array.isArray(parsed.screeningQuestions)
+        ? parsed.screeningQuestions.map((item) => String(item).trim()).filter(Boolean)
+        : [],
+    }
+  }
+
+  async generatePerformanceReviewPhrases(
+    tenantId: string,
+    dto: GeneratePerformanceReviewPhrasesDto,
+  ): Promise<PerformanceReviewPhrasesResultDto> {
+    const focusGuide =
+      dto.focus === 'strengths'
+        ? 'Emphasize strengthsPhrases and summaryPhrases; keep developmentPhrases brief.'
+        : dto.focus === 'development'
+          ? 'Emphasize developmentPhrases and constructive summaryPhrases; keep strengthsPhrases brief.'
+          : 'Balance strengths and development phrases equally.'
+
+    const prompt = `Generate a performance review phrase bank for HR managers as JSON only (no markdown fences).
+
+CRITICAL PRIVACY RULES:
+- Context intentionally excludes employee names, emails, IDs, and other direct identifiers — do NOT invent or reference personal names.
+- Write generic, reusable manager-facing phrases suitable for the role/department/score/KPI context only.
+- Professional, respectful, and constructive — suitable for formal HR records.
+- Draft only — manager selects/edits phrases manually before submitting a review.
+
+Focus: ${dto.focus || 'balanced'}
+${focusGuide}
+
+Review context (minimized — no PII):
+${dto.reviewSummary}
+
+${dto.existingDraft ? `Existing manager comment draft (refine tone only, do not add PII):\n${dto.existingDraft}` : 'No existing comment draft.'}
+
+Return exactly this JSON shape:
+{
+  "strengthsPhrases": ["string (4-6 short bullet-style positive observation phrases, one line each)"],
+  "developmentPhrases": ["string (3-5 constructive growth-area phrases, one line each — specific but not harsh)"],
+  "summaryPhrases": ["string (2-3 short closing summary sentences manager can adapt)"],
+  "usageNotes": ["string (1-2 reminders e.g. personalize before sharing, avoid copying verbatim without context)"]
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write performance review phrase banks for HR managers in e-commerce and retail. Respond with valid JSON only, no extra text. Never include employee names or identifying details. Draft phrases only — never submit reviews automatically.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.45 },
+    )
+
+    const parsed = this.parseJsonResponse<PerformanceReviewPhrasesResultDto>(result.content, {
+      strengthsPhrases: [],
+      developmentPhrases: [],
+      summaryPhrases: [result.content],
+      usageNotes: [],
+    })
+
+    const normalize = (items: unknown) =>
+      Array.isArray(items) ? items.map((item) => String(item).trim()).filter(Boolean) : []
+
+    return {
+      strengthsPhrases: normalize(parsed.strengthsPhrases),
+      developmentPhrases: normalize(parsed.developmentPhrases),
+      summaryPhrases: normalize(parsed.summaryPhrases),
+      usageNotes: normalize(parsed.usageNotes),
+    }
+  }
+
+  async generatePayslipExplanation(
+    tenantId: string,
+    dto: GeneratePayslipExplanationDto,
+  ): Promise<PayslipExplanationResultDto> {
+    const prompt = `Write an employee-facing payslip explanation message as JSON only (no markdown fences).
+
+CRITICAL RULES:
+- Template fill only — explain ONLY payslip amounts and line items provided in context.
+- Do NOT invent earnings, deductions, tax rates, or dates not in the payslip context.
+- Use a friendly, professional tone suitable for email or portal message to the employee.
+- Reference specific figures from context when explaining basic pay, allowances, deductions, and net pay.
+- Do not include bank account numbers, national IDs, or other sensitive identifiers.
+- Draft only — HR sends manually; never disburse pay or modify payroll automatically.
+
+Payslip context (from payroll system):
+${dto.payslipSummary}
+
+${dto.existingDraft ? `Existing draft (refine or replace):\n${dto.existingDraft}` : 'No existing draft.'}
+
+Return exactly this JSON shape:
+{
+  "emailSubject": "string (max 80 chars — e.g. Your [period] payslip summary)",
+  "employeeMessage": "string (3-5 short paragraphs as plain text with line breaks — employee-facing explanation of how net pay was calculated, referencing context figures)",
+  "breakdownBullets": ["string (4-8 bullet-style lines mapping major earnings/deduction components to amounts from context)"],
+  "internalNotes": ["string (1-2 HR-only reminders e.g. verify figures before sending, employee may reply with questions)"]
+}`
+
+    const result = await this.aiClient.chatCompletion(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write employee payslip explanation messages for HR/payroll teams. Respond with valid JSON only, no extra text. Use only figures supplied in context. Draft only — never change payroll or send email automatically.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.35 },
+    )
+
+    const parsed = this.parseJsonResponse<PayslipExplanationResultDto>(result.content, {
+      emailSubject: 'Your payslip summary',
+      employeeMessage: result.content,
+      breakdownBullets: [],
+      internalNotes: [],
+    })
+
+    const normalize = (items: unknown) =>
+      Array.isArray(items) ? items.map((item) => String(item).trim()).filter(Boolean) : []
+
+    return {
+      emailSubject: parsed.emailSubject?.trim() || 'Your payslip summary',
+      employeeMessage: parsed.employeeMessage?.trim() || '',
+      breakdownBullets: normalize(parsed.breakdownBullets),
+      internalNotes: normalize(parsed.internalNotes),
+    }
   }
 
   async generateMarketingDescription(

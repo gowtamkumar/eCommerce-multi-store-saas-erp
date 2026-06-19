@@ -162,9 +162,9 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
-| Recruitment | `/admin/hrm/recruitment` | Job description, screening questions | ⬜ | HR copy generator |
-| Performance | `/admin/hrm/performance` | Review phrase bank | ⬜ | Sensitive — draft only |
-| Payroll | `/admin/hrm/payroll` | Payslip explanation to employee | ⬜ | Template fill |
+| Recruitment | `/admin/hrm/recruitment` | **Job description, screening questions** | ✅ | Phase C — post job modal (sync draft; screening Qs copy-only) |
+| Performance | `/admin/hrm/performance` | **Review phrase bank** | ✅ | Phase C — new review modal (PII-minimized; draft only) |
+| Payroll | `/admin/hrm/payroll` | **Payslip explanation to employee** | ✅ | Phase C — slip drawer (template fill from DB; draft only) |
 | Leave policies | `/admin/hrm/leaves` | Policy FAQ generation | ⬜ | Link to store FAQ |
 
 ### 3.8 Storefront (customer-facing)
@@ -434,7 +434,7 @@ Track per tenant after each phase:
 | **Support & CRM** | 0% | Suggested chat replies |
 | **Operations / inventory** | 100% | Read-only anomaly narratives |
 | **Procurement / finance** | 0% | OCR + AR drafts (async) |
-| **HRM** | 0% | Job descriptions |
+| **HRM** | Partial | Job descriptions, screening questions, review phrase bank, payslip explanations |
 | **Storefront** | 0% | Semantic search, product Q&A |
 | **Platform infra** | Sync API only | Jobs queue, embeddings, metering |
 

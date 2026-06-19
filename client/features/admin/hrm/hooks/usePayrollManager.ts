@@ -29,6 +29,26 @@ export interface PayrollSlip {
   totalAllowances: number;
   totalDeductions: number;
   netSalary: number;
+  details?: {
+    allowances?: Array<{ type: string; amount: number }>;
+    deductions?: Array<{ type: string; amount: number }>;
+    overtimePay?: number;
+    leaveDeductions?: number;
+    lateDeductions?: number;
+    incomeTax?: number;
+    overtimeHours?: number;
+    lateMinutes?: number;
+    unpaidLeaveDays?: number;
+    unpaidAbsenceDays?: number;
+    inactiveDays?: number;
+    holidayDays?: number;
+    weeklyOffDays?: number;
+    activeDays?: number;
+    workingDays?: number;
+    unpaidLeaveDeductions?: number;
+    unpaidAbsenceDeductions?: number;
+    inactiveDeductions?: number;
+  };
   employee?: {
     user?: { name: string; email: string };
     department?: { name: string };

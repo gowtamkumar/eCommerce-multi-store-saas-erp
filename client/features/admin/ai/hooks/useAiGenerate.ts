@@ -39,6 +39,9 @@ import type {
   ExpenseCategorySuggestResult,
   ReportExecutiveSummaryResult,
   TaxRuleExplanationResult,
+  RecruitmentJobCopyResult,
+  PerformanceReviewPhrasesResult,
+  PayslipExplanationResult,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
@@ -341,6 +344,23 @@ export function useAiGenerate() {
     existingDraft?: string;
   }) => withGenerate<TaxRuleExplanationResult>("/ai/generate/tax-rule-explanation", payload);
 
+  const generateRecruitmentJobCopy = (payload: {
+    jobSummary: string;
+    existingDraft?: string;
+    tone?: string;
+  }) => withGenerate<RecruitmentJobCopyResult>("/ai/generate/recruitment-job-copy", payload);
+
+  const generatePerformanceReviewPhrases = (payload: {
+    reviewSummary: string;
+    focus?: "balanced" | "strengths" | "development";
+    existingDraft?: string;
+  }) => withGenerate<PerformanceReviewPhrasesResult>("/ai/generate/performance-review-phrases", payload);
+
+  const generatePayslipExplanation = (payload: {
+    payslipSummary: string;
+    existingDraft?: string;
+  }) => withGenerate<PayslipExplanationResult>("/ai/generate/payslip-explanation", payload);
+
   return {
     configured,
     loading,
@@ -379,5 +399,8 @@ export function useAiGenerate() {
     generateExpenseCategorySuggest,
     generateReportExecutiveSummary,
     generateTaxRuleExplanation,
+    generateRecruitmentJobCopy,
+    generatePerformanceReviewPhrases,
+    generatePayslipExplanation,
   };
 }
