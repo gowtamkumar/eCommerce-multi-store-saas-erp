@@ -10,10 +10,12 @@ import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.module'
 import { AddonCatalogModule } from '../addon-catalog/addon-catalog.module'
+import { PlatformModule } from '../platform/platform.module'
 import { SuperAdminTenantsController } from './controllers/super-admin-tenants.controller'
 import { SuperAdminUsersController } from './controllers/super-admin-users.controller'
 import { SuperAdminBillingController } from './controllers/super-admin-billing.controller'
 import { SuperAdminPlatformController } from './controllers/super-admin-platform.controller'
+import { SuperAdminAiController } from './controllers/super-admin-ai.controller'
 import { TrafficService } from './traffic.service'
 import { SuperAdminService } from './super-admin.service'
 import { SuperAdminCrossTenantRepository } from './repositories/super-admin-cross-tenant.repository'
@@ -32,6 +34,7 @@ import { TrafficRepository } from './traffic.repository'
     AddonCatalogModule,
     AuthModule,
     AuditLogModule,
+    PlatformModule,
     TypeOrmModule.forFeature([TenantTrafficEntity]),
   ],
   controllers: [
@@ -39,6 +42,7 @@ import { TrafficRepository } from './traffic.repository'
     SuperAdminUsersController,
     SuperAdminBillingController,
     SuperAdminPlatformController,
+    SuperAdminAiController,
   ],
   providers: [
     TrafficService,

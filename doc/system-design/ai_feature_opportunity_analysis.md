@@ -180,8 +180,8 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | AI need | Status | Notes |
 |------|---------|--------|-------|
-| Plan descriptions | ⬜ | Marketing copy for SaaS plans |
-| Tenant health | ⬜ | Churn risk narrative (aggregate only) |
+| Plan descriptions | ✅ | Marketing copy for SaaS plans; configure provider at **Platform Settings → AI** |
+| Tenant health | ✅ | Churn risk narrative from aggregate metrics (`POST /super-admin/ai/generate/tenant-health-narrative`) |
 | Support tooling | ⬜ | Separate from tenant BYOK |
 
 ---

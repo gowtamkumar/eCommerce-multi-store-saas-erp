@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, Infinity, Layers, Loader2, X } from 'lucide-re
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { PlanDescriptionAiAssist } from './PlanDescriptionAiAssist';
 
 interface PlanFormProps {
     initialData?: any;
@@ -74,6 +75,18 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
             setFeatures(prev => [...new Set([...prev, ...groupFeatures])]);
         }
     };
+
+    const formatQuota = (value: number, label: string) =>
+        value === -1 ? `unlimited ${label}` : `${value} ${label}`;
+
+    const quotaSummary = [
+        formatQuota(unlimitedQuotas.maxBranches ? -1 : formData.maxBranches, 'branches'),
+        formatQuota(unlimitedQuotas.maxWarehouses ? -1 : formData.maxWarehouses, 'warehouses'),
+        formatQuota(unlimitedQuotas.maxStaffUsers ? -1 : formData.maxStaffUsers, 'staff users'),
+        formatQuota(unlimitedQuotas.maxProducts ? -1 : formData.maxProducts, 'products'),
+        formatQuota(unlimitedQuotas.maxMonthlyOrders ? -1 : formData.maxMonthlyOrders, 'monthly orders'),
+        formatQuota(unlimitedQuotas.maxStorageMb ? -1 : formData.maxStorageMb, 'MB storage'),
+    ].join(', ');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -222,6 +235,20 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                         </div>
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Tier Narrative</label>
+                            <PlanDescriptionAiAssist
+                                input={{
+                                    planName: formData.name,
+                                    currency: formData.currency,
+                                    monthlyPrice: Number(formData.monthlyPrice),
+                                    yearlyPrice: Number(formData.yearlyPrice),
+                                    trialPeriodDays: Number(formData.trialPeriodDays),
+                                    isPopular: formData.isPopular,
+                                    features,
+                                    existingDescription: formData.description || undefined,
+                                    quotaSummary,
+                                }}
+                                onApply={(description) => setFormData({ ...formData, description })}
+                            />
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}

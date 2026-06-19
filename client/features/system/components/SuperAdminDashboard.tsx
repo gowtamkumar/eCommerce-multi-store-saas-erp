@@ -9,6 +9,7 @@ import FinanceSnapshot from './dashboard/FinanceSnapshot';
 import PlanDistribution from './dashboard/PlanDistribution';
 import PlatformTrafficChart from './dashboard/PlatformTrafficChart';
 import TopStoresTable from './dashboard/TopStoresTable';
+import { TenantHealthAiPanel } from './dashboard/TenantHealthAiPanel';
 
 export default function SuperAdminDashboard({
   stats: initialStats,
@@ -43,6 +44,8 @@ export default function SuperAdminDashboard({
       />
 
       <ActionCenter stats={stats} billing={billing} />
+
+      <TenantHealthAiPanel days={days} />
 
       <KpiCards stats={stats} isRefreshing={isRefreshing} />
 

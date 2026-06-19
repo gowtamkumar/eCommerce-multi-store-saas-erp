@@ -13,6 +13,7 @@ import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subs
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
+import { TenantHealthAggregate } from './types/tenant-health.types'
 
 @Injectable()
 export class SuperAdminService {
@@ -293,6 +294,121 @@ export class SuperAdminService {
       }))
 
     return churned
+  }
+
+  async getTenantHealthAggregate(days?: number): Promise<TenantHealthAggregate> {
+    const periodDays = Number(days) || 7
+    const now = new Date()
+    const trialExpiryHorizon = new Date(now)
+    trialExpiryHorizon.setDate(trialExpiryHorizon.getDate() + 7)
+
+    const [overview, billing, tenants, bulkAnalytics] = await Promise.all([
+      this.getOverview(periodDays),
+      this.getBillingOverview(),
+      this.dataSource.getRepository(TenantEntity).find({
+        relations: { activeSubscription: { subscriptionPlan: true } },
+      }),
+      this.tenantService.getBulkTenantAnalytics(),
+    ])
+
+    const byPlanTier: Record<string, number> = {}
+    const bySubscriptionStatus: Record<string, number> = {}
+    let trialsExpiringWithin7Days = 0
+    let pastDueCount = 0
+    let atRiskSubscriptionCount = 0
+
+    for (const tenant of tenants) {
+      const planName = tenant.subscriptionPlan?.name?.trim() || 'Unassigned'
+      byPlanTier[planName] = (byPlanTier[planName] || 0) + 1
+
+      const subStatus = tenant.subscriptionStatus || 'none'
+      bySubscriptionStatus[subStatus] = (bySubscriptionStatus[subStatus] || 0) + 1
+
+      if (subStatus === SubscriptionStatus.PAST_DUE) {
+        pastDueCount += 1
+      }
+
+      if (
+        subStatus === SubscriptionStatus.PAST_DUE ||
+        subStatus === SubscriptionStatus.EXPIRED ||
+        subStatus === SubscriptionStatus.CANCELED ||
+        tenant.status === TenantStatus.SUSPENDED
+      ) {
+        atRiskSubscriptionCount += 1
+      }
+
+      if (subStatus === SubscriptionStatus.TRIAL && tenant.subscriptionEndsAt) {
+        const endsAt = new Date(tenant.subscriptionEndsAt)
+        if (endsAt >= now && endsAt <= trialExpiryHorizon) {
+          trialsExpiringWithin7Days += 1
+        }
+      }
+    }
+
+    const activeTenantAnalytics = bulkAnalytics.filter(
+      (row) => (row.status || '').toLowerCase() === TenantStatus.ACTIVE,
+    )
+    const orderCounts = activeTenantAnalytics.map((row) => row.stats?.orders || 0)
+    const tenantsWithZeroOrders = orderCounts.filter((count) => count === 0).length
+    const tenantsWithZeroProducts = activeTenantAnalytics.filter(
+      (row) => (row.stats?.products || 0) === 0,
+    ).length
+    const lowActivityTenantCount = activeTenantAnalytics.filter(
+      (row) => (row.stats?.orders || 0) === 0 && (row.stats?.products || 0) === 0,
+    ).length
+
+    const sortedOrderCounts = [...orderCounts].sort((a, b) => a - b)
+    const medianOrdersPerActiveTenant =
+      sortedOrderCounts.length === 0
+        ? 0
+        : sortedOrderCounts.length % 2 === 1
+          ? sortedOrderCounts[(sortedOrderCounts.length - 1) / 2]
+          : Math.round(
+              (sortedOrderCounts[sortedOrderCounts.length / 2 - 1] +
+                sortedOrderCounts[sortedOrderCounts.length / 2]) /
+                2,
+            )
+
+    const traffic = overview.traffic || []
+    const requestsInPeriod = traffic.reduce(
+      (acc: number, row: { requestCount?: number }) => acc + (row.requestCount || 0),
+      0,
+    )
+
+    const tenantStats = await this.tenantService.tenantOverview()
+
+    return {
+      periodDays,
+      generatedAt: now.toISOString(),
+      tenants: {
+        total: tenantStats.totalTenants,
+        active: tenantStats.activeTenants,
+        suspended: tenantStats.suspendedTenants,
+        archived: tenantStats.archivedTenants,
+        byPlanTier,
+        bySubscriptionStatus,
+        trialsExpiringWithin7Days,
+        pastDueCount,
+      },
+      billing: {
+        mrr: billing.mrr,
+        totalRevenue: billing.totalRevenue,
+        failedPayments: billing.failedCount,
+        pendingInvoices: billing.pendingCount,
+        atRiskSubscriptionCount,
+      },
+      engagement: {
+        totalUsers: overview.totalUsers || 0,
+        totalOrders: overview.totalOrders || 0,
+        totalProducts: overview.totalProducts || 0,
+        tenantsWithZeroOrders,
+        tenantsWithZeroProducts,
+        lowActivityTenantCount,
+        medianOrdersPerActiveTenant,
+      },
+      trends: overview.trends || {},
+      traffic: { requestsInPeriod },
+    }
   }
 
   async getInvoicesForExport(): Promise<SubscriptionInvoiceEntity[]> {

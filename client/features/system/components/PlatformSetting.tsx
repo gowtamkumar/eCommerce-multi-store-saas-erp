@@ -2,12 +2,15 @@
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/superAdminApi';
-import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard, Search } from 'lucide-react';
+import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard, Search, Bot } from 'lucide-react';
+import { PlatformAiSetting } from './PlatformAiSetting';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GlobalSetting() {
+    const searchParams = useSearchParams();
     const [settings, setSettings] = useState<any>(null);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [loading, setLoading] = useState(true);
@@ -20,6 +23,13 @@ export default function GlobalSetting() {
     const [tenantsList, setTenantsList] = useState<any[]>([]);
     const [showGlobalConfirm, setShowGlobalConfirm] = useState(false);
     const [showTenantConfirm, setShowTenantConfirm] = useState(false);
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         async function loadSettings() {
@@ -148,6 +158,7 @@ export default function GlobalSetting() {
                     { id: 'features', label: 'Features', icon: Zap },
                     { id: 'footer', label: 'Footer', icon: Shield },
                     { id: 'seo', label: 'SEO & Meta', icon: Search },
+                    { id: 'ai', label: 'AI', icon: Bot },
                     { id: 'system', label: 'System & Cache', icon: Database },
                 ].map(tab => (
                     <button
@@ -693,6 +704,10 @@ export default function GlobalSetting() {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {activeTab === 'ai' && (
+                    <PlatformAiSetting />
                 )}
 
                 {/* System & Cache Tab */}
