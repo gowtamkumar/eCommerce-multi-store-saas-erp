@@ -1,6 +1,6 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ProductStatus } from '@/common/enums/product-status.enum'
-import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -8,13 +8,15 @@ import { EntityManager, In, Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
 
 @Injectable()
-export class ProductRepository {
+export class ProductRepository extends BaseTenantRepository<ProductEntity> {
   private readonly logger = new Logger(ProductRepository.name)
 
   constructor(
     @InjectRepository(ProductEntity)
-    private readonly repo: Repository<ProductEntity>,
-  ) {}
+    repo: Repository<ProductEntity>,
+  ) {
+    super(ProductEntity, repo)
+  }
 
   async findAllWithFilters(filterDto: any, tenantId: string): Promise<[ProductEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
@@ -306,7 +308,7 @@ export class ProductRepository {
     data: any,
     manager?: EntityManager,
   ): Promise<ProductEntity> {
-    const repo = getTransactionalRepo(ProductEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
 
     // When updating raw IDs (categoryId, brandId, supplierId), we must
     // remove the corresponding relation objects if they are already loaded.
@@ -326,7 +328,7 @@ export class ProductRepository {
     newCost: number,
     manager?: EntityManager,
   ): Promise<void> {
-    const repo = getTransactionalRepo(ProductEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     await repo.update({ id, tenantId }, { averageCost: newCost })
   }
 

@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindOptionsWhere, Repository } from 'typeorm'
@@ -7,13 +8,15 @@ import type { PaginatedResult } from '../hrm.repository'
 const DEFAULT_LIMIT = 20
 
 @Injectable()
-export class HrmLeaveRepository {
+export class HrmLeaveRepository extends BaseTenantRepository<LeaveRequestEntity> {
   constructor(
     @InjectRepository(LeaveRequestEntity)
     public readonly leaveRequestRepo: Repository<LeaveRequestEntity>,
     @InjectRepository(LeaveQuotaEntity)
     public readonly leaveQuotaRepo: Repository<LeaveQuotaEntity>,
-  ) {}
+  ) {
+    super(LeaveRequestEntity, leaveRequestRepo)
+  }
 
   async createLeaveRequest(data: Partial<LeaveRequestEntity>): Promise<LeaveRequestEntity> {
     return this.leaveRequestRepo.save(this.leaveRequestRepo.create(data))

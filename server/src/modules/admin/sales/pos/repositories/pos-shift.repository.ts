@@ -1,16 +1,18 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { PosShiftEntity, PosShiftStatus } from '../entities/pos-shift.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { getTransactionalRepo } from '@/common/utils/repository.util'
 
 @Injectable()
-export class PosShiftRepository {
+export class PosShiftRepository extends BaseTenantRepository<PosShiftEntity> {
   constructor(
     @InjectRepository(PosShiftEntity)
-    private readonly repo: Repository<PosShiftEntity>,
-  ) {}
+    repo: Repository<PosShiftEntity>,
+  ) {
+    super(PosShiftEntity, repo)
+}
 
   async findAll(tenantId: string): Promise<PosShiftEntity[]> {
     return this.repo.find({
@@ -28,7 +30,7 @@ export class PosShiftRepository {
     tenantId: string,
     manager?: EntityManager,
   ): Promise<PosShiftEntity | null> {
-    const repository = getTransactionalRepo(PosShiftEntity, this.repo, manager)
+    const repository = this.txRepo(manager)
     return repository.findOne({
       where: { id, tenantId },
       relations: {
@@ -52,7 +54,7 @@ export class PosShiftRepository {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<PosShiftEntity> {
-    const repository = getTransactionalRepo(PosShiftEntity, this.repo, manager)
+    const repository = this.txRepo(manager)
     const shift = repository.create({
       ...data,
       tenantId: ctx.tenantId,
@@ -61,7 +63,7 @@ export class PosShiftRepository {
   }
 
   async update(shift: PosShiftEntity, data: any, manager?: EntityManager): Promise<PosShiftEntity> {
-    const repository = getTransactionalRepo(PosShiftEntity, this.repo, manager)
+    const repository = this.txRepo(manager)
     Object.assign(shift, data)
     return repository.save(shift) as any
   }

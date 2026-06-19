@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { ABANDONED_CART_IDLE_HOURS } from '@/common/constants/abandoned-cart.constants'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,11 +7,13 @@ import { CartEntity } from './entities/cart.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class CartRepository {
+export class CartRepository extends BaseTenantRepository<CartEntity> {
   constructor(
     @InjectRepository(CartEntity)
-    private readonly repo: Repository<CartEntity>,
-  ) {}
+    repo: Repository<CartEntity>,
+  ) {
+    super(CartEntity, repo)
+}
 
   async findByUserId(userId: string, tenantId: string): Promise<CartEntity | null> {
     return await this.repo.findOne({

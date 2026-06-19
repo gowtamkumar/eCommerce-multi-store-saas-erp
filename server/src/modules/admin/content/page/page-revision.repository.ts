@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,11 +8,13 @@ import { PageRevisionEntity } from './entities/page-revision.entity'
 const MAX_REVISIONS_PER_PAGE = 30
 
 @Injectable()
-export class PageRevisionRepository {
+export class PageRevisionRepository extends BaseTenantRepository<PageRevisionEntity> {
   constructor(
     @InjectRepository(PageRevisionEntity)
-    private readonly repo: Repository<PageRevisionEntity>,
-  ) {}
+    repo: Repository<PageRevisionEntity>,
+  ) {
+    super(PageRevisionEntity, repo)
+}
 
   async createSnapshot(
     payload: Partial<PageRevisionEntity>,

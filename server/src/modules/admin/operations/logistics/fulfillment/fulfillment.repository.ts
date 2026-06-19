@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,13 +6,15 @@ import { FulfillmentTaskEntity } from './entities/fulfillment-task.entity'
 import { FulfillmentItemEntity } from './entities/fulfillment-item.entity'
 
 @Injectable()
-export class FulfillmentRepository {
+export class FulfillmentRepository extends BaseTenantRepository<FulfillmentTaskEntity> {
   constructor(
     @InjectRepository(FulfillmentTaskEntity)
     private readonly taskRepository: Repository<FulfillmentTaskEntity>,
     @InjectRepository(FulfillmentItemEntity)
     private readonly itemRepository: Repository<FulfillmentItemEntity>,
-  ) {}
+  ) {
+    super(FulfillmentTaskEntity, taskRepository)
+  }
 
   async createTask(task: Partial<FulfillmentTaskEntity>): Promise<FulfillmentTaskEntity> {
     const newEntry = this.taskRepository.create(task)

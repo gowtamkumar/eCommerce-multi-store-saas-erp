@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,14 +6,16 @@ import { QuotationEntity, QuotationStatus } from '../entities/quotation.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class QuotationRepository {
+export class QuotationRepository extends BaseTenantRepository<QuotationEntity> {
   constructor(
     @InjectRepository(QuotationEntity)
-    private readonly repo: Repository<QuotationEntity>,
-  ) {}
+    repo: Repository<QuotationEntity>,
+  ) {
+    super(QuotationEntity, repo)
+}
 
   private getRepo(manager?: EntityManager): Repository<QuotationEntity> {
-    return getTransactionalRepo(QuotationEntity, this.repo, manager)
+    return this.txRepo(manager)
   }
 
   async createAndSave(

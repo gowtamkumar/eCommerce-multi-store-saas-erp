@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,11 +6,13 @@ import { ProductVariantEntity } from '../entities/variant.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class ProductVariantRepository {
+export class ProductVariantRepository extends BaseTenantRepository<ProductVariantEntity> {
   constructor(
     @InjectRepository(ProductVariantEntity)
-    private readonly repo: Repository<ProductVariantEntity>,
-  ) {}
+    repo: Repository<ProductVariantEntity>,
+  ) {
+    super(ProductVariantEntity, repo)
+  }
 
   async findCombinationsForProducts(tenantId: string, categoryId?: string) {
     const variantQuery = this.repo
@@ -34,7 +36,7 @@ export class ProductVariantRepository {
     tenantId: string,
     manager?: any,
   ): Promise<ProductVariantEntity | null> {
-    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     return repo.findOne({ where: { id, tenantId } })
   }
 
@@ -44,7 +46,7 @@ export class ProductVariantRepository {
     ctx: RequestContextDto,
     manager?: any,
   ): Promise<ProductVariantEntity> {
-    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     const variant = repo.create({
       ...variantDto,
       productId,
@@ -61,7 +63,7 @@ export class ProductVariantRepository {
     ctx: RequestContextDto,
     manager?: any,
   ): Promise<ProductVariantEntity> {
-    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
 
     // ERP FIX: Never update stock via the product edit form.
     const { stock, ...updateData } = variantDto
@@ -81,7 +83,7 @@ export class ProductVariantRepository {
     newCost: number,
     manager?: any,
   ): Promise<void> {
-    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     await repo.update({ id, tenantId }, { averageCost: newCost })
   }
 
@@ -91,13 +93,13 @@ export class ProductVariantRepository {
     manager?: any,
     withDeleted: boolean = false,
   ): Promise<ProductVariantEntity | null> {
-    const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     return repo.findOne({ where: { sku, tenantId }, withDeleted })
   }
 
   async deleteByIds(ids: string[], manager?: any): Promise<void> {
     if (ids.length > 0) {
-      const repo = getTransactionalRepo(ProductVariantEntity, this.repo, manager)
+      const repo = this.txRepo(manager)
       await repo.softDelete(ids)
     }
   }

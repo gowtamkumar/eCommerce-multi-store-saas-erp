@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,14 +6,16 @@ import { RfqEntity, RFQStatus } from '../entities/rfq.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class RfqRepository {
+export class RfqRepository extends BaseTenantRepository<RfqEntity> {
   constructor(
     @InjectRepository(RfqEntity)
-    private readonly repo: Repository<RfqEntity>,
-  ) {}
+    repo: Repository<RfqEntity>,
+  ) {
+    super(RfqEntity, repo)
+}
 
   private getRepo(manager?: EntityManager): Repository<RfqEntity> {
-    return getTransactionalRepo(RfqEntity, this.repo, manager)
+    return this.txRepo(manager)
   }
 
   async generateRFQNumber(tenantId: string, manager?: EntityManager): Promise<string> {

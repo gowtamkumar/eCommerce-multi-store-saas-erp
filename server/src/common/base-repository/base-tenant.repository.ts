@@ -1,4 +1,5 @@
 import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BadRequestException } from '@nestjs/common'
 import {
   EntityManager,
   FindManyOptions,
@@ -24,7 +25,7 @@ export interface PaginatedResult<T> {
 }
 
 /** Minimum shape for tenant-scoped persistence (BaseEntity and BaseTenantEntity both qualify). */
-export type TenantScopedEntity = { id: string; tenantId: string }
+export type TenantScopedEntity = { id: string; tenantId?: string }
 
 /**
  * Tenant-scoped repository base.
@@ -36,12 +37,29 @@ export abstract class BaseTenantRepository<T extends TenantScopedEntity> {
     protected readonly repo: Repository<T>,
   ) {}
 
+  /**
+   * Enforces strict validation of tenant ID parameter.
+   * Throws BadRequestException on missing, empty, or invalid placeholder values.
+   */
+  protected validateTenantId(tenantId: string): void {
+    if (
+      !tenantId ||
+      typeof tenantId !== 'string' ||
+      tenantId.trim() === '' ||
+      tenantId === 'undefined' ||
+      tenantId === 'null'
+    ) {
+      throw new BadRequestException('Invalid or missing tenant context')
+    }
+  }
+
   /** Returns transactional repository when manager is provided, otherwise the default repo. */
   protected txRepo(manager?: EntityManager): Repository<T> {
     return getTransactionalRepo(this.entity, this.repo, manager)
   }
 
   async findByIdScoped(id: string, tenantId: string, manager?: EntityManager): Promise<T | null> {
+    this.validateTenantId(tenantId)
     return this.txRepo(manager).findOne({
       where: { id, tenantId } as FindOptionsWhere<T>,
     })
@@ -52,6 +70,7 @@ export abstract class BaseTenantRepository<T extends TenantScopedEntity> {
     options?: Omit<FindManyOptions<T>, 'where'> & { where?: FindOptionsWhere<T> },
     manager?: EntityManager,
   ): Promise<T[]> {
+    this.validateTenantId(tenantId)
     const where = { tenantId, ...(options?.where ?? {}) } as FindOptionsWhere<T>
     return this.txRepo(manager).find({
       ...options,
@@ -60,6 +79,7 @@ export abstract class BaseTenantRepository<T extends TenantScopedEntity> {
   }
 
   async countScoped(tenantId: string, manager?: EntityManager): Promise<number> {
+    this.validateTenantId(tenantId)
     return this.txRepo(manager).count({
       where: { tenantId } as FindOptionsWhere<T>,
     })
@@ -77,6 +97,7 @@ export abstract class BaseTenantRepository<T extends TenantScopedEntity> {
     tenantId: string,
     alias: string,
   ): SelectQueryBuilder<T> {
+    this.validateTenantId(tenantId)
     return qb.andWhere(`${alias}.tenantId = :tenantId`, { tenantId })
   }
 
@@ -128,6 +149,7 @@ export abstract class BaseTenantRepository<T extends TenantScopedEntity> {
     },
     manager?: EntityManager,
   ): Promise<PaginatedResult<T>> {
+    this.validateTenantId(tenantId)
     const page = Math.max(1, Number(options.page) || 1)
     const limit = Math.max(1, Number(options.limit) || 10)
     const skip = (page - 1) * limit

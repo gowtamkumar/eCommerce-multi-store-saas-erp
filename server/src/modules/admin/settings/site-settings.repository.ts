@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { SiteSettingsEntity } from './entities/site-settings.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class SiteSettingsRepository {
+export class SiteSettingsRepository extends BaseTenantRepository<SiteSettingsEntity> {
   constructor(
     @InjectRepository(SiteSettingsEntity)
-    private readonly repo: Repository<SiteSettingsEntity>,
-  ) {}
+    repo: Repository<SiteSettingsEntity>,
+  ) {
+    super(SiteSettingsEntity, repo)
+}
 
   async findByTenantId(tenantId: string): Promise<SiteSettingsEntity | null> {
     return await this.repo.findOne({ where: { tenantId } })

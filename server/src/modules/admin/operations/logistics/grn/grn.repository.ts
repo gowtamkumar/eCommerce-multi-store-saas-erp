@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -10,13 +11,15 @@ import { PaginationDto } from '@/common/dto/pagination.dto'
 import { GrnStatus } from '@/common/enums/grn-status.enum'
 
 @Injectable()
-export class GrnRepository {
+export class GrnRepository extends BaseTenantRepository<GoodsReceivedNoteEntity> {
   constructor(
     @InjectRepository(GoodsReceivedNoteEntity)
     private readonly repository: Repository<GoodsReceivedNoteEntity>,
     @InjectRepository(GrnItemEntity)
     private readonly itemRepository: Repository<GrnItemEntity>,
-  ) {}
+  ) {
+    super(GoodsReceivedNoteEntity, repository)
+  }
 
   async createAndSave(
     dto: CreateGrnDto & { status?: GrnStatus },

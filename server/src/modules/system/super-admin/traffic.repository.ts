@@ -1,14 +1,17 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Raw, Repository } from 'typeorm'
 import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
 
 @Injectable()
-export class TrafficRepository {
+export class TrafficRepository extends BaseTenantRepository<TenantTrafficEntity> {
   constructor(
     @InjectRepository(TenantTrafficEntity)
-    private readonly repo: Repository<TenantTrafficEntity>,
-  ) {}
+    repo: Repository<TenantTrafficEntity>,
+  ) {
+    super(TenantTrafficEntity, repo)
+}
 
   async upsertTraffic(tenantId: string, date: Date): Promise<void> {
     await this.repo.query(

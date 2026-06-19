@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindOptionsWhere, LessThanOrEqual, Repository } from 'typeorm'
@@ -12,7 +13,7 @@ import type { PaginatedResult } from '../hrm.repository'
 const DEFAULT_LIMIT = 20
 
 @Injectable()
-export class HrmEmployeeRepository {
+export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> {
   constructor(
     @InjectRepository(EmployeeEntity)
     public readonly employeeRepo: Repository<EmployeeEntity>,
@@ -26,7 +27,9 @@ export class HrmEmployeeRepository {
     public readonly taxBracketRepo: Repository<TaxBracketEntity>,
     @InjectRepository(EmployeeIdSequenceEntity)
     public readonly employeeIdSeqRepo: Repository<EmployeeIdSequenceEntity>,
-  ) {}
+  ) {
+    super(EmployeeEntity, employeeRepo)
+  }
 
   // --- Employee ---
   async createEmployee(data: Partial<EmployeeEntity>): Promise<EmployeeEntity> {

@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,11 +7,13 @@ import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class InvoiceRepository {
+export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
   constructor(
     @InjectRepository(InvoiceEntity)
-    private readonly repo: Repository<InvoiceEntity>,
-  ) {}
+    repo: Repository<InvoiceEntity>,
+  ) {
+    super(InvoiceEntity, repo)
+}
 
   async checkInvoiceNumberExists(invoiceNumber: string, tenantId: string): Promise<boolean> {
     const exists = await this.repo.findOne({ where: { invoiceNumber, tenantId } })

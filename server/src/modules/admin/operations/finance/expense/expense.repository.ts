@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -15,11 +16,13 @@ interface FindAllOptions {
 }
 
 @Injectable()
-export class ExpenseRepository {
+export class ExpenseRepository extends BaseTenantRepository<ExpenseEntity> {
   constructor(
     @InjectRepository(ExpenseEntity)
-    private readonly repo: Repository<ExpenseEntity>,
-  ) {}
+    repo: Repository<ExpenseEntity>,
+  ) {
+    super(ExpenseEntity, repo)
+}
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<ExpenseEntity> {
     const expense = this.repo.create({

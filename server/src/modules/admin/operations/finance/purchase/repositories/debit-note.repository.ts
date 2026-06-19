@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,14 +6,16 @@ import { DebitNoteEntity, DebitNoteStatus } from '../entities/debit-note.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class DebitNoteRepository {
+export class DebitNoteRepository extends BaseTenantRepository<DebitNoteEntity> {
   constructor(
     @InjectRepository(DebitNoteEntity)
-    private readonly repo: Repository<DebitNoteEntity>,
-  ) {}
+    repo: Repository<DebitNoteEntity>,
+  ) {
+    super(DebitNoteEntity, repo)
+}
 
   private getRepo(manager?: EntityManager): Repository<DebitNoteEntity> {
-    return getTransactionalRepo(DebitNoteEntity, this.repo, manager)
+    return this.txRepo(manager)
   }
 
   async generateDebitNoteNumber(tenantId: string, manager?: EntityManager): Promise<string> {

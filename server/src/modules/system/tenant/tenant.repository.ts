@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { Repository } from 'typeorm'
 import { TenantEntity } from './entities/tenant.entity'
@@ -7,11 +8,13 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantDomainEntity } from './entities/tenant-domain.entity'
 
 @Injectable()
-export class TenantRepository {
+export class TenantRepository extends BaseTenantRepository<TenantEntity> {
   constructor(
     @InjectRepository(TenantEntity)
-    private readonly repo: Repository<TenantEntity>,
-  ) {}
+    repo: Repository<TenantEntity>,
+  ) {
+    super(TenantEntity, repo)
+}
 
   /**
    * Find a tenant by ID

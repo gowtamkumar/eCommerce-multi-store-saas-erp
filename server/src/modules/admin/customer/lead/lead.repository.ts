@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -5,11 +6,13 @@ import { Repository } from 'typeorm'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class LeadRepository {
+export class LeadRepository extends BaseTenantRepository<LeadEntity> {
   constructor(
     @InjectRepository(LeadEntity)
-    private readonly repo: Repository<LeadEntity>,
-  ) {}
+    repo: Repository<LeadEntity>,
+  ) {
+    super(LeadEntity, repo)
+}
 
   async findAllWithFilters(
     filterDto: any,

@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,14 +6,16 @@ import { EntityManager, Repository } from 'typeorm'
 import { SupplierPaymentEntity } from '../entities/supplier-payment.entity'
 
 @Injectable()
-export class SupplierPaymentRepository {
+export class SupplierPaymentRepository extends BaseTenantRepository<SupplierPaymentEntity> {
   constructor(
     @InjectRepository(SupplierPaymentEntity)
-    private readonly repo: Repository<SupplierPaymentEntity>,
-  ) {}
+    repo: Repository<SupplierPaymentEntity>,
+  ) {
+    super(SupplierPaymentEntity, repo)
+}
 
   private getRepo(manager?: EntityManager): Repository<SupplierPaymentEntity> {
-    return getTransactionalRepo(SupplierPaymentEntity, this.repo, manager)
+    return this.txRepo(manager)
   }
 
   async createAndSave(

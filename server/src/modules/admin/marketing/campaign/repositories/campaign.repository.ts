@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { CampaignEntity } from '../entities/campaign.entity'
 import { CampaignStatus } from '../enums/campaign-status.enum'
 
 @Injectable()
-export class CampaignRepository {
+export class CampaignRepository extends BaseTenantRepository<CampaignEntity> {
   constructor(
     @InjectRepository(CampaignEntity)
-    private readonly repo: Repository<CampaignEntity>,
-  ) {}
+    repo: Repository<CampaignEntity>,
+  ) {
+    super(CampaignEntity, repo)
+}
 
   /**
    * Atomic status transition — only flips the row if the current status

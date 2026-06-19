@@ -1,16 +1,18 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { PosDrawerTransactionEntity } from '../entities/pos-drawer-transaction.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { getTransactionalRepo } from '@/common/utils/repository.util'
 
 @Injectable()
-export class PosDrawerTransactionRepository {
+export class PosDrawerTransactionRepository extends BaseTenantRepository<PosDrawerTransactionEntity> {
   constructor(
     @InjectRepository(PosDrawerTransactionEntity)
-    private readonly repo: Repository<PosDrawerTransactionEntity>,
-  ) {}
+    repo: Repository<PosDrawerTransactionEntity>,
+  ) {
+    super(PosDrawerTransactionEntity, repo)
+}
 
   async findAllForShift(shiftId: string, tenantId: string): Promise<PosDrawerTransactionEntity[]> {
     return this.repo.find({
@@ -27,7 +29,7 @@ export class PosDrawerTransactionRepository {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<PosDrawerTransactionEntity> {
-    const repository = getTransactionalRepo(PosDrawerTransactionEntity, this.repo, manager)
+    const repository = this.txRepo(manager)
     const tx = repository.create({
       ...data,
       tenantId: ctx.tenantId,

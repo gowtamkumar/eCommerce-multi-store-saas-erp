@@ -1,14 +1,17 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { PlatformSettingsEntity } from './entities/platform-settings.entity'
 
 @Injectable()
-export class PlatformSettingsRepository {
+export class PlatformSettingsRepository extends BaseTenantRepository<PlatformSettingsEntity> {
   constructor(
     @InjectRepository(PlatformSettingsEntity)
-    private readonly repo: Repository<PlatformSettingsEntity>,
-  ) {}
+    repo: Repository<PlatformSettingsEntity>,
+  ) {
+    super(PlatformSettingsEntity, repo)
+}
 
   async findSettings(): Promise<PlatformSettingsEntity | null> {
     return await this.repo.findOne({ where: {} })

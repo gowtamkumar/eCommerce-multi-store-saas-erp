@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { BranchEntity } from '../entities/branch.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class BranchRepository {
+export class BranchRepository extends BaseTenantRepository<BranchEntity> {
   constructor(
     @InjectRepository(BranchEntity)
-    private readonly repo: Repository<BranchEntity>,
-  ) {}
+    repo: Repository<BranchEntity>,
+  ) {
+    super(BranchEntity, repo)
+}
 
   async findAll(tenantId: string): Promise<BranchEntity[]> {
     return this.repo.find({ where: { tenantId } })

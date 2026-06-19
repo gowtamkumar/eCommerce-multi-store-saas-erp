@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { CartItemEntity } from './entities/cart-item.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class CartItemRepository {
+export class CartItemRepository extends BaseTenantRepository<CartItemEntity> {
   constructor(
     @InjectRepository(CartItemEntity)
-    private readonly repo: Repository<CartItemEntity>,
-  ) {}
+    repo: Repository<CartItemEntity>,
+  ) {
+    super(CartItemEntity, repo)
+}
 
   async findByIdWithCart(id: string, tenantId: string): Promise<CartItemEntity | null> {
     return await this.repo.findOne({

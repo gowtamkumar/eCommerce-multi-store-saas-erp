@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Between, FindOptionsWhere, Repository, ILike } from 'typeorm'
@@ -5,11 +6,13 @@ import { AuditLogEntity } from './entities/audit-log.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class AuditLogRepository {
+export class AuditLogRepository extends BaseTenantRepository<AuditLogEntity> {
   constructor(
     @InjectRepository(AuditLogEntity)
-    private readonly repo: Repository<AuditLogEntity>,
-  ) {}
+    repo: Repository<AuditLogEntity>,
+  ) {
+    super(AuditLogEntity, repo)
+}
 
   async createAndSave(ctx: RequestContextDto, data: any): Promise<void> {
     const entry = this.repo.create({

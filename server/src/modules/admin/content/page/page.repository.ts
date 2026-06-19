@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PageStatus } from '@/common/enums/page-status.enum'
 import { Injectable } from '@nestjs/common'
@@ -6,12 +7,14 @@ import { DataSource, Repository } from 'typeorm'
 import { PageEntity } from './entities/page.entity'
 
 @Injectable()
-export class PageRepository {
+export class PageRepository extends BaseTenantRepository<PageEntity> {
   constructor(
     @InjectRepository(PageEntity)
-    private readonly repo: Repository<PageEntity>,
+    repo: Repository<PageEntity>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) {
+    super(PageEntity, repo)
+  }
 
   async findBySlug(
     slug: string,

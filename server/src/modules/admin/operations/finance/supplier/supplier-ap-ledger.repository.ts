@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,11 +7,13 @@ import { SupplierAPLedgerEntity } from './entities/supplier-ap-ledger.entity'
 import { SupplierAPReferenceType } from './enums/supplier-ap-Refernce-type.enum'
 
 @Injectable()
-export class SupplierAPLedgerRepository {
+export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPLedgerEntity> {
   constructor(
     @InjectRepository(SupplierAPLedgerEntity)
     private readonly repository: Repository<SupplierAPLedgerEntity>,
-  ) {}
+  ) {
+    super(SupplierAPLedgerEntity, repository)
+  }
 
   async createEntry(
     data: {

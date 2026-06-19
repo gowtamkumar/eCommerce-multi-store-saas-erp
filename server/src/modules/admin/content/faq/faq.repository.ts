@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { FaqStatus } from '@/common/enums/faq-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,11 +7,13 @@ import { FaqEntity } from './entities/faq.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class FaqRepository {
+export class FaqRepository extends BaseTenantRepository<FaqEntity> {
   constructor(
     @InjectRepository(FaqEntity)
-    private readonly repo: Repository<FaqEntity>,
-  ) {}
+    repo: Repository<FaqEntity>,
+  ) {
+    super(FaqEntity, repo)
+  }
 
   async findAllWithFilters(
     filterDto: any,
@@ -100,7 +102,7 @@ export class FaqRepository {
     manager?: any,
   ): Promise<FaqEntity[]> {
     if (!faqs || faqs.length === 0) return []
-    const repo = getTransactionalRepo(FaqEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     const entities = faqs.map((faq) =>
       repo.create({ ...faq, productId, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity),
     )
@@ -108,7 +110,7 @@ export class FaqRepository {
   }
 
   async deleteByProductId(productId: string, tenantId: string, manager?: any): Promise<void> {
-    const repo = getTransactionalRepo(FaqEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     await repo.softDelete({ productId, tenantId })
   }
 }

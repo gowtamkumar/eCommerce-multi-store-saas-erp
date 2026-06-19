@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -9,11 +10,13 @@ import { OrderReturnEntity } from '../entities/order-return.entity'
 import { ReturnType } from '@/common/enums/refund-method.enum'
 
 @Injectable()
-export class OrderReturnRepository {
+export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntity> {
   constructor(
     @InjectRepository(OrderReturnEntity)
-    private readonly repo: Repository<OrderReturnEntity>,
-  ) {}
+    repo: Repository<OrderReturnEntity>,
+  ) {
+    super(OrderReturnEntity, repo)
+}
 
   async createAndSaveReturn(dto: any, ctx: RequestContextDto): Promise<OrderReturnEntity> {
     const returnRequest = this.repo.create({

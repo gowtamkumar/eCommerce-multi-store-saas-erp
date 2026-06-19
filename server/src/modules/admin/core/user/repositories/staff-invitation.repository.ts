@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { InvitationStatus, StaffInvitationEntity } from '../entities/staff-invit
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class StaffInvitationRepository {
+export class StaffInvitationRepository extends BaseTenantRepository<StaffInvitationEntity> {
   constructor(
     @InjectRepository(StaffInvitationEntity)
-    private readonly repo: Repository<StaffInvitationEntity>,
-  ) {}
+    repo: Repository<StaffInvitationEntity>,
+  ) {
+    super(StaffInvitationEntity, repo)
+}
 
   async expireOldInvitations(email: string, tenantId: string): Promise<void> {
     await this.repo.update(

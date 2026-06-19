@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -5,11 +6,13 @@ import { Repository } from 'typeorm'
 import { PageReusableBlockEntity } from './entities/page-reusable-block.entity'
 
 @Injectable()
-export class PageReusableBlockRepository {
+export class PageReusableBlockRepository extends BaseTenantRepository<PageReusableBlockEntity> {
   constructor(
     @InjectRepository(PageReusableBlockEntity)
-    private readonly repo: Repository<PageReusableBlockEntity>,
-  ) {}
+    repo: Repository<PageReusableBlockEntity>,
+  ) {
+    super(PageReusableBlockEntity, repo)
+}
 
   async create(
     payload: Partial<PageReusableBlockEntity>,

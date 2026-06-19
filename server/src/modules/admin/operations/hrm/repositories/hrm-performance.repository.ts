@@ -1,14 +1,17 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { PerformanceReviewEntity } from '../entities/performance.entity'
 
 @Injectable()
-export class HrmPerformanceRepository {
+export class HrmPerformanceRepository extends BaseTenantRepository<PerformanceReviewEntity> {
   constructor(
     @InjectRepository(PerformanceReviewEntity)
     private readonly performanceReviewRepo: Repository<PerformanceReviewEntity>,
-  ) {}
+  ) {
+    super(PerformanceReviewEntity, performanceReviewRepo)
+  }
 
   async createPerformanceReview(
     data: Partial<PerformanceReviewEntity>,

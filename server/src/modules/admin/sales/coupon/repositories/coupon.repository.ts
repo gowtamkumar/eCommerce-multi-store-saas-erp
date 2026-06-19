@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, ILike, Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { CouponEntity } from '../entities/coupon.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class CouponRepository {
+export class CouponRepository extends BaseTenantRepository<CouponEntity> {
   constructor(
     @InjectRepository(CouponEntity)
-    private readonly repo: Repository<CouponEntity>,
-  ) {}
+    repo: Repository<CouponEntity>,
+  ) {
+    super(CouponEntity, repo)
+}
 
   /**
    * Atomically reserve one coupon usage slot.

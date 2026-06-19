@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Between, FindOptionsWhere, In, Repository } from 'typeorm'
@@ -9,7 +10,7 @@ import type { PaginatedResult } from '../hrm.repository'
 const DEFAULT_LIMIT = 20
 
 @Injectable()
-export class HrmAttendanceRepository {
+export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
   constructor(
     @InjectRepository(ShiftEntity)
     private readonly shiftRepo: Repository<ShiftEntity>,
@@ -19,7 +20,9 @@ export class HrmAttendanceRepository {
     private readonly attendanceEventRepo: Repository<AttendanceEventEntity>,
     @InjectRepository(AttendanceSessionEntity)
     public readonly attendanceSessionRepo: Repository<AttendanceSessionEntity>,
-  ) {}
+  ) {
+    super(ShiftEntity, shiftRepo)
+  }
 
   // --- Shifts ---
   async createShift(data: Partial<ShiftEntity>): Promise<ShiftEntity> {

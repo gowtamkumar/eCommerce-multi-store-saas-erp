@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -9,7 +10,7 @@ import {
 } from '../entities/recruitment.entity'
 
 @Injectable()
-export class HrmRecruitmentRepository {
+export class HrmRecruitmentRepository extends BaseTenantRepository<JobPostingEntity> {
   constructor(
     @InjectRepository(JobPostingEntity)
     public readonly jobPostingRepo: Repository<JobPostingEntity>,
@@ -17,7 +18,9 @@ export class HrmRecruitmentRepository {
     public readonly applicantRepo: Repository<ApplicantEntity>,
     @InjectRepository(InterviewEntity)
     private readonly interviewRepo: Repository<InterviewEntity>,
-  ) {}
+  ) {
+    super(JobPostingEntity, jobPostingRepo)
+  }
 
   async createJobPosting(data: Partial<JobPostingEntity>): Promise<JobPostingEntity> {
     return this.jobPostingRepo.save(this.jobPostingRepo.create(data))

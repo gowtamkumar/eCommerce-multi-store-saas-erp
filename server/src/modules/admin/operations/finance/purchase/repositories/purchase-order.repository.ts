@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -8,14 +8,16 @@ import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-stat
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PurchaseOrderRepository {
+export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderEntity> {
   constructor(
     @InjectRepository(PurchaseOrderEntity)
-    private readonly repo: Repository<PurchaseOrderEntity>,
-  ) {}
+    repo: Repository<PurchaseOrderEntity>,
+  ) {
+    super(PurchaseOrderEntity, repo)
+}
 
   private getRepo(manager?: EntityManager): Repository<PurchaseOrderEntity> {
-    return getTransactionalRepo(PurchaseOrderEntity, this.repo, manager)
+    return this.txRepo(manager)
   }
 
   async createAndSave(

@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { PromotionEntity } from '../entities/promotion.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PromotionRepository {
+export class PromotionRepository extends BaseTenantRepository<PromotionEntity> {
   constructor(
     @InjectRepository(PromotionEntity)
-    private readonly repo: Repository<PromotionEntity>,
-  ) {}
+    repo: Repository<PromotionEntity>,
+  ) {
+    super(PromotionEntity, repo)
+}
 
   async findActivePromotions(tenantId: string, now: Date): Promise<PromotionEntity[]> {
     return await this.repo

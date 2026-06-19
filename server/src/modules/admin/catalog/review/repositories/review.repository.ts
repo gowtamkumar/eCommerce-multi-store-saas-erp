@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,11 +7,13 @@ import { ReviewEntity } from '../entities/review.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class ReviewRepository {
+export class ReviewRepository extends BaseTenantRepository<ReviewEntity> {
   constructor(
     @InjectRepository(ReviewEntity)
-    private readonly repo: Repository<ReviewEntity>,
-  ) {}
+    repo: Repository<ReviewEntity>,
+  ) {
+    super(ReviewEntity, repo)
+}
 
   async findAllWithFilters(
     filterDto: any,

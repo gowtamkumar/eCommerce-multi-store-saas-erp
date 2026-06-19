@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { FileEntity } from './entities/file.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class FileRepository {
+export class FileRepository extends BaseTenantRepository<FileEntity> {
   constructor(
     @InjectRepository(FileEntity)
-    private readonly repo: Repository<FileEntity>,
-  ) {}
+    repo: Repository<FileEntity>,
+  ) {
+    super(FileEntity, repo)
+}
 
   async findAllByTenant(where: any): Promise<FileEntity[]> {
     return await this.repo.find({ where, order: { createdAt: 'DESC' } })

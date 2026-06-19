@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,11 +6,13 @@ import { PosRegisterEntity } from '../entities/pos-register.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PosRegisterRepository {
+export class PosRegisterRepository extends BaseTenantRepository<PosRegisterEntity> {
   constructor(
     @InjectRepository(PosRegisterEntity)
-    private readonly repo: Repository<PosRegisterEntity>,
-  ) {}
+    repo: Repository<PosRegisterEntity>,
+  ) {
+    super(PosRegisterEntity, repo)
+}
 
   async findAll(tenantId: string): Promise<PosRegisterEntity[]> {
     return this.repo.find({

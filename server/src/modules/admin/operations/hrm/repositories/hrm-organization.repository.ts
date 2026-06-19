@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -5,13 +6,15 @@ import { DepartmentEntity } from '../entities/department.entity'
 import { DesignationEntity } from '../entities/designation.entity'
 
 @Injectable()
-export class HrmOrganizationRepository {
+export class HrmOrganizationRepository extends BaseTenantRepository<DepartmentEntity> {
   constructor(
     @InjectRepository(DepartmentEntity)
     private readonly departmentRepo: Repository<DepartmentEntity>,
     @InjectRepository(DesignationEntity)
     private readonly designationRepo: Repository<DesignationEntity>,
-  ) {}
+  ) {
+    super(DepartmentEntity, departmentRepo)
+  }
 
   // --- Department ---
   async createDepartment(data: Partial<DepartmentEntity>): Promise<DepartmentEntity> {

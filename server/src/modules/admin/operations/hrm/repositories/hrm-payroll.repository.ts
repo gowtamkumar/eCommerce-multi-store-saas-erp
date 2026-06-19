@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { PayrollBatchStatus } from '@/common/enums/hrm/hrm-enums'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -5,13 +6,15 @@ import { Not, Repository } from 'typeorm'
 import { PayrollBatchEntity, PayrollSlipEntity } from '../entities/payroll.entity'
 
 @Injectable()
-export class HrmPayrollRepository {
+export class HrmPayrollRepository extends BaseTenantRepository<PayrollBatchEntity> {
   constructor(
     @InjectRepository(PayrollBatchEntity)
     public readonly payrollBatchRepo: Repository<PayrollBatchEntity>,
     @InjectRepository(PayrollSlipEntity)
     private readonly payrollSlipRepo: Repository<PayrollSlipEntity>,
-  ) {}
+  ) {
+    super(PayrollBatchEntity, payrollBatchRepo)
+  }
 
   async findActivePayrollBatchForPeriod(
     tenantId: string,

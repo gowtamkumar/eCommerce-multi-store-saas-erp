@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { Injectable } from '@nestjs/common'
@@ -7,11 +8,13 @@ import { FilterUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
 
 @Injectable()
-export class UserRepository {
+export class UserRepository extends BaseTenantRepository<UserEntity> {
   constructor(
     @InjectRepository(UserEntity)
-    private readonly repo: Repository<UserEntity>,
-  ) {}
+    repo: Repository<UserEntity>,
+  ) {
+    super(UserEntity, repo)
+  }
 
   async findAllWithFilters(
     filterUserDto: FilterUserDto,

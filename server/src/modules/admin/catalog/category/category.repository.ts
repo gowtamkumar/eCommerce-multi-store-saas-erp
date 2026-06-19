@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,11 +7,13 @@ import { ProductEntity } from '../product/entities/product.entity'
 import { CategoryEntity } from './entities/category.entity'
 
 @Injectable()
-export class CategoryRepository {
+export class CategoryRepository extends BaseTenantRepository<CategoryEntity> {
   constructor(
     @InjectRepository(CategoryEntity)
-    private readonly repo: Repository<CategoryEntity>,
-  ) {}
+    repo: Repository<CategoryEntity>,
+  ) {
+    super(CategoryEntity, repo)
+  }
 
   async findBySlug(slug: string, tenantId: string): Promise<CategoryEntity | null> {
     return this.repo.findOne({ where: { slug, tenantId } })

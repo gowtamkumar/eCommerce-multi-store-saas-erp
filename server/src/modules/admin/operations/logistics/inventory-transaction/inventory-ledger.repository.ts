@@ -1,4 +1,4 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
+import { BaseTenantRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { Injectable } from '@nestjs/common'
@@ -8,11 +8,13 @@ import { EntityManager, Repository } from 'typeorm'
 import { InventoryLedgerEntity } from './entities/inventory-ledger.entity'
 
 @Injectable()
-export class InventoryLedgerRepository {
+export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLedgerEntity> {
   constructor(
     @InjectRepository(InventoryLedgerEntity)
-    private readonly repo: Repository<InventoryLedgerEntity>,
-  ) {}
+    repo: Repository<InventoryLedgerEntity>,
+  ) {
+    super(InventoryLedgerEntity, repo)
+}
 
   /**
    * Acquires a Postgres transaction-scoped advisory lock keyed by
@@ -76,7 +78,7 @@ export class InventoryLedgerRepository {
     tenantId: string,
     manager?: any,
   ): Promise<number> {
-    const repo = getTransactionalRepo(InventoryLedgerEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     const where: Record<string, any> = { productId, tenantId }
     if (variantId) where.variantId = variantId
     if (warehouseId) where.warehouseId = warehouseId
@@ -107,7 +109,7 @@ export class InventoryLedgerRepository {
     ctx: RequestContextDto,
     manager?: any,
   ): Promise<InventoryLedgerEntity> {
-    const repo = getTransactionalRepo(InventoryLedgerEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
     const transaction = repo.create({
       ...dto,
       tenantId: ctx.tenantId,
@@ -167,7 +169,7 @@ export class InventoryLedgerRepository {
     warehouseId?: string | null,
     manager?: any,
   ): Promise<number> {
-    const repo = getTransactionalRepo(InventoryLedgerEntity, this.repo, manager)
+    const repo = this.txRepo(manager)
 
     const query = repo
       .createQueryBuilder('ledger')

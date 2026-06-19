@@ -1,3 +1,4 @@
+import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,11 +7,13 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { generateSupplierCode } from './utils/supplier-code.util'
 
 @Injectable()
-export class SupplierRepository {
+export class SupplierRepository extends BaseTenantRepository<SupplierEntity> {
   constructor(
     @InjectRepository(SupplierEntity)
-    private readonly repo: Repository<SupplierEntity>,
-  ) {}
+    repo: Repository<SupplierEntity>,
+  ) {
+    super(SupplierEntity, repo)
+}
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<SupplierEntity> {
     const { category, categoryId, ...rest } = dto
