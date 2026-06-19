@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Eye, EyeOff, Loader2, Sparkles, Zap } from "lucide-react";
+import { Bot, Eye, EyeOff, Loader2, Search, Sparkles, Zap } from "lucide-react";
 import { useState } from "react";
 import { useAiConfig } from "../hooks/useAiConfig";
 import { AI_API_KEY_UNCHANGED, AI_PROVIDER_OPTIONS } from "../types/ai-config";
@@ -51,11 +51,14 @@ export function AiSetting() {
     loading,
     saving,
     testing,
+    reindexing,
+    embeddingStatus,
     form,
     setForm,
     apiKeyPreview,
     saveConfig,
     testConnection,
+    reindexCatalogEmbeddings,
     applyProviderPreset,
   } = useAiConfig();
 
@@ -238,6 +241,56 @@ export function AiSetting() {
           />
         </div>
       </div>
+
+      {form.enabled && form.embeddingModel ? (
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">
+              <Search className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-bold text-slate-900 dark:text-white">Storefront semantic search</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Index active products for hybrid keyword + vector search on the storefront catalog.
+                Re-run after bulk catalog changes.
+              </p>
+            </div>
+          </div>
+
+          {embeddingStatus ? (
+            <div className="grid gap-3 sm:grid-cols-3 text-sm">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
+                <p className="text-slate-500">Indexed products</p>
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  {embeddingStatus.indexedCount} / {embeddingStatus.activeProductCount}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
+                <p className="text-slate-500">Embedding model</p>
+                <p className="font-mono text-xs font-semibold text-slate-900 dark:text-white truncate">
+                  {embeddingStatus.embeddingModel || form.embeddingModel}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
+                <p className="text-slate-500">Hybrid search</p>
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  {embeddingStatus.hybridSearchReady ? "Active on storefront" : "Not ready — reindex catalog"}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={reindexCatalogEmbeddings}
+            disabled={reindexing || !form.enabled}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl transition-all disabled:opacity-60"
+          >
+            {reindexing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            Reindex product catalog
+          </button>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
         <button

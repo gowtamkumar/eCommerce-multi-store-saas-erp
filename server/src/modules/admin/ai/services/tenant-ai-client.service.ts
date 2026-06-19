@@ -22,6 +22,12 @@ export interface AiCompletionResult {
   totalTokens: number
 }
 
+export interface AiEmbeddingResult {
+  embeddings: number[][]
+  model: string
+  totalTokens: number
+}
+
 @Injectable()
 export class TenantAiClientService {
   private readonly logger = new Logger(TenantAiClientService.name)
@@ -141,6 +147,32 @@ export class TenantAiClientService {
       maxTokens: 32,
       temperature: 0,
     })
+  }
+
+  async createEmbeddings(tenantId: string, inputs: string[]): Promise<AiEmbeddingResult> {
+    const config = await this.getConfigForTenant(tenantId)
+    this.assertConfigReady(config)
+
+    const model = config.embeddingModel?.trim()
+    if (!model) {
+      throw new ServiceUnavailableException('AI embedding model is not configured')
+    }
+
+    const normalizedInputs = inputs.map((input) => input.trim()).filter(Boolean)
+    if (normalizedInputs.length === 0) {
+      throw new ServiceUnavailableException('No text provided for embedding')
+    }
+
+    switch (config.provider) {
+      case AiProviderType.GOOGLE:
+        return this.embedGoogle(config, normalizedInputs, model)
+      case AiProviderType.ANTHROPIC:
+        throw new ServiceUnavailableException('Embeddings are not supported for Anthropic')
+      case AiProviderType.AZURE_OPENAI:
+        return this.embedAzureOpenAi(config, normalizedInputs, model)
+      default:
+        return this.embedOpenAiCompatible(config, normalizedInputs, model)
+    }
   }
 
   private assertConfigReady(config: TenantAiConfig): void {
@@ -384,6 +416,157 @@ export class TenantAiClientService {
         promptTokens: data.usage?.prompt_tokens ?? 0,
         completionTokens: data.usage?.completion_tokens ?? 0,
         totalTokens: data.usage?.total_tokens ?? 0,
+      }
+    } catch (error) {
+      this.handleProviderError('unknown', error)
+    }
+  }
+
+  private async embedOpenAiCompatible(
+    config: TenantAiConfig,
+    inputs: string[],
+    model: string,
+  ): Promise<AiEmbeddingResult> {
+    const baseUrl = (config.baseUrl || '').replace(/\/$/, '')
+    if (!baseUrl) {
+      throw new ServiceUnavailableException('AI base URL is not configured')
+    }
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json',
+      ...(config.extraHeaders || {}),
+    }
+
+    if (config.provider === AiProviderType.OPENROUTER) {
+      if (config.siteUrl) {
+        headers['HTTP-Referer'] = config.siteUrl
+      }
+      if (config.siteName) {
+        headers['X-Title'] = config.siteName
+      }
+    }
+
+    try {
+      const { data } = await axios.post(
+        `${baseUrl}/embeddings`,
+        {
+          model,
+          input: inputs,
+        },
+        { headers, timeout: 120_000 },
+      )
+
+      const embeddings = (data?.data || [])
+        .sort((a: { index: number }, b: { index: number }) => a.index - b.index)
+        .map((item: { embedding: number[] }) => item.embedding)
+
+      if (embeddings.length !== inputs.length) {
+        throw new ServiceUnavailableException('AI provider returned incomplete embeddings')
+      }
+
+      return {
+        embeddings,
+        model: data.model || model,
+        totalTokens: data.usage?.total_tokens ?? 0,
+      }
+    } catch (error) {
+      this.handleProviderError('unknown', error)
+    }
+  }
+
+  private async embedAzureOpenAi(
+    config: TenantAiConfig,
+    inputs: string[],
+    model: string,
+  ): Promise<AiEmbeddingResult> {
+    const baseUrl = (config.baseUrl || '').replace(/\/$/, '')
+    if (!baseUrl) {
+      throw new ServiceUnavailableException('Azure deployment base URL is not configured')
+    }
+
+    const apiVersion = config.apiVersion || '2024-08-01-preview'
+
+    try {
+      const { data } = await axios.post(
+        `${baseUrl}/embeddings`,
+        {
+          model,
+          input: inputs,
+        },
+        {
+          params: { 'api-version': apiVersion },
+          headers: {
+            'api-key': config.apiKey!,
+            'Content-Type': 'application/json',
+            ...(config.extraHeaders || {}),
+          },
+          timeout: 120_000,
+        },
+      )
+
+      const embeddings = (data?.data || [])
+        .sort((a: { index: number }, b: { index: number }) => a.index - b.index)
+        .map((item: { embedding: number[] }) => item.embedding)
+
+      if (embeddings.length !== inputs.length) {
+        throw new ServiceUnavailableException('AI provider returned incomplete embeddings')
+      }
+
+      return {
+        embeddings,
+        model: data.model || model,
+        totalTokens: data.usage?.total_tokens ?? 0,
+      }
+    } catch (error) {
+      this.handleProviderError('unknown', error)
+    }
+  }
+
+  private async embedGoogle(
+    config: TenantAiConfig,
+    inputs: string[],
+    model: string,
+  ): Promise<AiEmbeddingResult> {
+    const baseUrl = (
+      config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta'
+    ).replace(/\/$/, '')
+
+    try {
+      const embeddings: number[][] = []
+      let totalTokens = 0
+
+      for (const input of inputs) {
+        const { data } = await axios.post(
+          `${baseUrl}/models/${model}:embedContent`,
+          {
+            content: {
+              parts: [{ text: input }],
+            },
+          },
+          {
+            params: { key: config.apiKey },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(config.extraHeaders || {}),
+            },
+            timeout: 120_000,
+          },
+        )
+
+        const values = data?.embedding?.values
+        if (!Array.isArray(values) || values.length === 0) {
+          throw new ServiceUnavailableException('AI provider returned an empty embedding')
+        }
+
+        embeddings.push(values)
+        totalTokens += data.usageMetadata?.totalTokenCount ?? 0
+      }
+
+      return {
+        embeddings,
+        model,
+        totalTokens,
       }
     } catch (error) {
       this.handleProviderError('unknown', error)

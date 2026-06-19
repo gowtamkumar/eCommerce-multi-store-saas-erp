@@ -33,6 +33,13 @@ export function useAiConfig() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [reindexing, setReindexing] = useState(false);
+  const [embeddingStatus, setEmbeddingStatus] = useState<{
+    indexedCount: number;
+    activeProductCount: number;
+    hybridSearchReady: boolean;
+    embeddingModel?: string;
+  } | null>(null);
   const [form, setForm] = useState<TenantAiConfigForm>(DEFAULT_AI_CONFIG_FORM);
   const [apiKeyPreview, setApiKeyPreview] = useState<string | null>(null);
 
@@ -54,6 +61,23 @@ export function useAiConfig() {
   useEffect(() => {
     loadConfig();
   }, [loadConfig]);
+
+  const loadEmbeddingStatus = useCallback(async () => {
+    try {
+      const res = await fetchAPI("/products/embeddings/status");
+      if (res.data) {
+        setEmbeddingStatus(res.data);
+      }
+    } catch {
+      setEmbeddingStatus(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading && form.enabled) {
+      loadEmbeddingStatus();
+    }
+  }, [loading, form.enabled, loadEmbeddingStatus]);
 
   const saveConfig = async () => {
     setSaving(true);
@@ -146,15 +170,36 @@ export function useAiConfig() {
     }));
   };
 
+  const reindexCatalogEmbeddings = async () => {
+    setReindexing(true);
+    try {
+      const res = await fetchAPI("/products/embeddings/reindex", {
+        method: "POST",
+      });
+      const summary = res.data;
+      toast.success(
+        `Catalog indexed: ${summary?.indexed ?? 0} updated, ${summary?.skipped ?? 0} unchanged`,
+      );
+      await loadEmbeddingStatus();
+    } catch {
+      toast.error("Failed to reindex product catalog for semantic search");
+    } finally {
+      setReindexing(false);
+    }
+  };
+
   return {
     loading,
     saving,
     testing,
+    reindexing,
+    embeddingStatus,
     form,
     setForm,
     apiKeyPreview,
     saveConfig,
     testConnection,
+    reindexCatalogEmbeddings,
     applyProviderPreset,
     refreshConfig: loadConfig,
   };

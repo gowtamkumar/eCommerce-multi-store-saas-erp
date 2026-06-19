@@ -171,7 +171,7 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | Surface | AI need | Status | Suggested capability |
 |------|---------|---------|--------|-------------------|
-| Product search | Storefront catalog | **Semantic / vector search** | 🔒 | Phase D — embeddings |
+| Product search | Storefront catalog | **Semantic / vector search** | ✅ | Phase D — hybrid keyword + vector (`GET /products?q=`); reindex at `/admin/settings` AI |
 | Product pages | PDP | Q&A widget (“Ask about this product”) | ⬜ | RAG on product fields |
 | Chat widget | Storefront | Shopping assistant | ⬜ | Read catalog + FAQ; no checkout |
 | Checkout | Cart / checkout | — | ❌ | **No AI price or discount changes** |
@@ -356,8 +356,8 @@ Reuse existing endpoints and `useAiGenerate`; no new infrastructure.
 
 | # | Feature |
 |---|---------|
-| 1 | Embedding pipeline per tenant |
-| 2 | Storefront semantic search API |
+| 1 | Embedding pipeline per tenant | ✅ `product_embeddings` + admin reindex |
+| 2 | Storefront semantic search API | ✅ Hybrid search on `GET /products?q=` |
 | 3 | Admin copilot (read-only tools) | ✅ Dashboard KPI copilot started |
 | 4 | Support chat with RAG (FAQ + orders) |
 | 5 | Token metering / usage dashboard |
@@ -393,7 +393,7 @@ Before expanding AI beyond inline forms:
 | `ai_jobs` table | ⬜ | OCR, bulk, events |
 | BullMQ `ai` queue | ⬜ | Async work |
 | Domain event hooks | ⬜ | Abandoned cart, product.created |
-| Embedding API in `TenantAiClientService` | ⬜ | Semantic search |
+| Embedding API in `TenantAiClientService` | ✅ | Semantic search |
 | Token usage audit log | ⬜ | Billing, quotas |
 | `ai:manage` policy UI | ⬜ | Sensitive modules (HRM, finance) |
 
@@ -435,8 +435,8 @@ Track per tenant after each phase:
 | **Operations / inventory** | 100% | Read-only anomaly narratives |
 | **Procurement / finance** | 0% | OCR + AR drafts (async) |
 | **HRM** | Partial | Job descriptions, screening questions, review phrase bank, payslip explanations |
-| **Storefront** | 0% | Semantic search, product Q&A |
-| **Platform infra** | Sync API only | Jobs queue, embeddings, metering |
+| **Storefront** | Partial | Semantic search live; product Q&A next |
+| **Platform infra** | Embeddings + sync API | Jobs queue, metering |
 
 AI should continue to expand **where humans write repetitive text** or **need read-only explanations** — not where the ERP enforces invariants (stock, money, permissions).
 

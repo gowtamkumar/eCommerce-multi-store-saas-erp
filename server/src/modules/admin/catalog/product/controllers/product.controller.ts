@@ -13,6 +13,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Logger,
   Param,
   Patch,
@@ -27,6 +28,12 @@ import { FilterProductDto } from '../dto/filter-product.dto'
 import { ProductResponseDto } from '../dto/product-response.dto'
 import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductService } from '../services/product.service'
+import { ProductQaService } from '../services/product-qa.service'
+import {
+  AskProductQuestionDto,
+  ProductQaResultDto,
+  StorefrontAiStatusDto,
+} from '../dto/ask-product-question.dto'
 
 @UseGuards(SubscriptionGuard)
 @RequireFeature('catalog')
@@ -37,6 +44,7 @@ export class ProductController {
   constructor(
     private readonly productService: ProductService,
     private readonly reviewService: ReviewService,
+    private readonly productQaService: ProductQaService,
   ) {}
 
   @Post()
@@ -79,6 +87,53 @@ export class ProductController {
     }
   }
 
+  @Get('storefront-ai/status')
+  @Public()
+  async getStorefrontAiStatus(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<StorefrontAiStatusDto>> {
+    const data = await this.productQaService.getStorefrontStatus(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Storefront AI status retrieved',
+      data,
+    }
+  }
+
+  @Get('embeddings/status')
+  @UseGuards(JwtAuthGuard)
+  @RequireFeature('ai')
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CATALOG_READ)
+  async getEmbeddingIndexStatus(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.productService.getEmbeddingIndexStatus(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Product embedding index status retrieved',
+      data,
+    }
+  }
+
+  @Post('embeddings/reindex')
+  @UseGuards(JwtAuthGuard)
+  @RequireFeature('ai')
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'ProductEmbedding', action: 'REINDEX' })
+  async reindexProductEmbeddings(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.productService.reindexProductEmbeddings(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Product catalog embeddings reindexed',
+      data,
+    }
+  }
+
   @Get('filters')
   @Public()
   async getFilterOptions(
@@ -108,6 +163,23 @@ export class ProductController {
       statusCode: 200,
       message: `Latest products retrieved`,
       data: result,
+    }
+  }
+
+  @Post('slug/:slug/ask')
+  @Public()
+  @HttpCode(200)
+  async askAboutProduct(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('slug') slug: string,
+    @Body() dto: AskProductQuestionDto,
+  ): Promise<BaseApiSuccessResponse<ProductQaResultDto>> {
+    const data = await this.productQaService.askAboutProduct(ctx.tenantId, slug, dto, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Product answer generated',
+      data,
     }
   }
 

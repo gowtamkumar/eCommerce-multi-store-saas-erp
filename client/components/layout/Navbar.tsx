@@ -87,9 +87,9 @@ const Navbar = () => {
       }
 
       try {
-        const res = await fetchAPI(`/products?search=${encodeURIComponent(searchQuery)}&limit=6&status=active`);
+        const res = await fetchAPI(`/products?q=${encodeURIComponent(searchQuery)}&limit=6&status=active`);
         if (res.success) {
-          setSearchResults(res.data?.products || []);
+          setSearchResults(res.data || []);
         }
       } catch (error) {
         console.error("Search error:", error);

@@ -20,10 +20,20 @@ import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog
 import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
 import { FaqModule } from '@/modules/admin/content/faq/faq.module'
 import { BrandModule } from '../brand/brand.module'
+import { AiModule } from '@/modules/admin/ai/ai.module'
+import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
+import { ProductEmbeddingEntity } from './entities/product-embedding.entity'
+import { ProductEmbeddingService } from './services/product-embedding.service'
+import { ProductQaService } from './services/product-qa.service'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProductEntity, ProductVariantEntity, ProductAttributeEntity]),
+    TypeOrmModule.forFeature([
+      ProductEntity,
+      ProductVariantEntity,
+      ProductAttributeEntity,
+      ProductEmbeddingEntity,
+    ]),
     BullModule.registerQueue({ name: 'product' }),
     ReviewModule,
     CacheModule,
@@ -34,6 +44,8 @@ import { BrandModule } from '../brand/brand.module'
     AddonCatalogModule,
     FaqModule,
     BrandModule,
+    AiModule,
+    RbacModule,
   ],
   controllers: [ProductController],
   providers: [
@@ -43,7 +55,16 @@ import { BrandModule } from '../brand/brand.module'
     ProductVariantRepository,
     ProductAttributeRepository,
     SuperAdminCrossTenantRepository,
+    ProductEmbeddingService,
+    ProductQaService,
   ],
-  exports: [ProductService, ProductRepository, ProductVariantRepository, ProductAttributeRepository],
+  exports: [
+    ProductService,
+    ProductRepository,
+    ProductVariantRepository,
+    ProductAttributeRepository,
+    ProductEmbeddingService,
+    ProductQaService,
+  ],
 })
 export class ProductModule {}

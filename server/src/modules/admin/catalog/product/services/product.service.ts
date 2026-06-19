@@ -32,6 +32,7 @@ import { ProductVariantRepository } from '../repositories/variant.repository'
 import { generateEAN13, generateProductSku, generateVariantSku } from '../utils/catalog-id.util'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
+import { ProductEmbeddingService } from './product-embedding.service'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -53,6 +54,7 @@ export class ProductService {
     private readonly addonCatalogService: AddonCatalogService,
     @InjectQueue('product') private readonly productQueue: Queue,
     private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
+    private readonly productEmbeddingService: ProductEmbeddingService,
   ) {}
 
   private async assertProductQuotaAvailable(tenantId: string): Promise<void> {
@@ -289,6 +291,14 @@ export class ProductService {
     return this.cache.rememberCache(
       cacheKey,
       async () => {
+        const useHybrid =
+          Boolean(filterDto.q?.trim()) &&
+          (await this.productEmbeddingService.canUseHybridSearch(tenantId))
+
+        if (useHybrid) {
+          return this.findAllProductsHybrid(tenantId, filterDto, ctx)
+        }
+
         const [products, total] = await this.productRepository.findAllWithFilters(
           filterDto,
           tenantId,
@@ -300,6 +310,46 @@ export class ProductService {
       60, // 60-second TTL — short enough to reflect stock/price updates
       tenantId,
     )
+  }
+
+  private async findAllProductsHybrid(
+    tenantId: string,
+    filterDto: FilterProductDto,
+    ctx: RequestContextDto,
+  ): Promise<{ products: AugmentedProduct[]; total: number }> {
+    const page = Math.max(1, parseInt(String(filterDto.page)) || 1)
+    const limit = Math.max(1, parseInt(String(filterDto.limit)) || 10)
+
+    const mergedIds = await this.productEmbeddingService.hybridSearchProductIds(
+      tenantId,
+      filterDto,
+    )
+    const pageIds = mergedIds.slice((page - 1) * limit, page * limit)
+    const products = await this.productRepository.findByIdsWithFilters(
+      pageIds,
+      filterDto,
+      tenantId,
+    )
+    const populated = await this.populateProductsStock(products, tenantId)
+    const productsWithPromotions = await this.attachPromotionsMany(populated, ctx)
+
+    const [, keywordTotal] = await this.productRepository.findAllWithFilters(
+      { ...filterDto, page: 1, limit: 1 },
+      tenantId,
+    )
+
+    return {
+      products: productsWithPromotions,
+      total: Math.max(keywordTotal, mergedIds.length),
+    }
+  }
+
+  async getEmbeddingIndexStatus(tenantId: string) {
+    return this.productEmbeddingService.getIndexStatus(tenantId)
+  }
+
+  async reindexProductEmbeddings(tenantId: string) {
+    return this.productEmbeddingService.reindexTenantCatalog(tenantId)
   }
 
   async getFilterOptions(ctx: RequestContextDto, categoryId?: string): Promise<any> {

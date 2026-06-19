@@ -121,6 +121,100 @@ export class ProductRepository {
       .getManyAndCount()
   }
 
+  async findByIdsWithFilters(
+    ids: string[],
+    filterDto: any,
+    tenantId: string,
+  ): Promise<ProductEntity[]> {
+    if (ids.length === 0) {
+      return []
+    }
+
+    const { status, categoryId, brandId, exclude, lowStock } = filterDto
+
+    const query = this.repo
+      .createQueryBuilder('product')
+      .leftJoin('product.category', 'category')
+      .leftJoin('product.brand', 'brand')
+      .where('product.tenantId = :tenantId', { tenantId })
+      .andWhere('product.id IN (:...ids)', { ids })
+      .select([
+        'product.id',
+        'product.name',
+        'product.slug',
+        'product.price',
+        'product.discountAmount',
+        'product.discountType',
+        'product.images',
+        'product.lowStockThreshold',
+        'product.status',
+        'product.createdAt',
+        'category.id',
+        'category.name',
+        'brand.id',
+        'brand.name',
+      ])
+
+    if (status) query.andWhere('product.status = :status', { status })
+    if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
+    if (brandId) query.andWhere('product.brandId = :brandId', { brandId })
+    if (exclude) query.andWhere('product.id != :exclude', { exclude })
+
+    if (lowStock === 'true') {
+      const stockSubquery = `COALESCE((
+        SELECT SUM(il.quantity)
+        FROM inventory_ledger il
+        WHERE il.product_id = product.id
+          AND il.tenant_id = :tenantId
+      ), 0)`
+      query.andWhere(`${stockSubquery} <= product.low_stock_threshold`)
+    }
+
+    const finalPriceExpr = `CASE 
+      WHEN product.discount_type = 'percentage' 
+      THEN (product.price * (1 - product.discount_amount / 100)) * (1 + COALESCE(product.tax_rate, 0) / 100)
+      WHEN product.discount_type = 'fixed' 
+      THEN (product.price - product.discount_amount) * (1 + COALESCE(product.tax_rate, 0) / 100)
+      ELSE product.price * (1 + COALESCE(product.tax_rate, 0) / 100)
+    END`
+
+    if (filterDto.minPrice !== undefined && filterDto.minPrice !== null) {
+      query.andWhere(`${finalPriceExpr} >= :minPrice`, { minPrice: Number(filterDto.minPrice) })
+    }
+    if (filterDto.maxPrice !== undefined && filterDto.maxPrice !== null) {
+      query.andWhere(`${finalPriceExpr} <= :maxPrice`, { maxPrice: Number(filterDto.maxPrice) })
+    }
+
+    if (filterDto.attributes) {
+      try {
+        const attrFilters = JSON.parse(filterDto.attributes)
+        const filteredEntries = Object.entries(attrFilters).filter(
+          ([_, v]) => Array.isArray(v) && (v as any).length > 0,
+        )
+
+        if (filteredEntries.length > 0) {
+          let existsQuery = `SELECT 1 FROM product_variants v WHERE v.product_id = product.id`
+          const params: Record<string, any> = {}
+
+          filteredEntries.forEach(([key, values], index) => {
+            existsQuery += ` AND v.combination->>'key${index}' IN (:...values${index})`
+            params[`key${index}`] = key
+            params[`values${index}`] = values
+          })
+
+          query.andWhere(`EXISTS (${existsQuery})`, params)
+        }
+      } catch (e) {
+        this.logger.error('Failed to parse attributes filter', e)
+      }
+    }
+
+    query.orderBy('array_position(ARRAY[:...orderedIds]::uuid[], product.id)', 'ASC')
+    query.setParameter('orderedIds', ids)
+
+    return query.getMany()
+  }
+
   async getPriceRange(tenantId: string, categoryId?: string) {
     const finalPriceExpr = `CASE 
       WHEN product.discount_type = 'percentage' 

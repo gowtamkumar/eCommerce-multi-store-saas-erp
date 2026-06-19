@@ -1,0 +1,258 @@
+import { ProductStatus } from '@/common/enums/product-status.enum'
+import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
+import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { createHash } from 'crypto'
+import { In, Repository } from 'typeorm'
+import { FilterProductDto } from '../dto/filter-product.dto'
+import { ProductEmbeddingEntity } from '../entities/product-embedding.entity'
+import { ProductEntity } from '../entities/product.entity'
+import { ProductRepository } from '../repositories/product.repository'
+import { cosineSimilarity, mergeHybridProductIds } from '../utils/semantic-search.util'
+
+const EMBEDDING_BATCH_SIZE = 20
+const HYBRID_CANDIDATE_LIMIT = 200
+
+@Injectable()
+export class ProductEmbeddingService {
+  private readonly logger = new Logger(ProductEmbeddingService.name)
+
+  constructor(
+    @InjectRepository(ProductEmbeddingEntity)
+    private readonly embeddingRepo: Repository<ProductEmbeddingEntity>,
+    @InjectRepository(ProductEntity)
+    private readonly productRepo: Repository<ProductEntity>,
+    private readonly productRepository: ProductRepository,
+    private readonly tenantAiClient: TenantAiClientService,
+    private readonly permissionResolution: PermissionResolutionService,
+  ) {}
+
+  async canUseHybridSearch(tenantId: string): Promise<boolean> {
+    if (!(await this.permissionResolution.isFeatureEnabledForTenant(tenantId, 'ai'))) {
+      return false
+    }
+
+    try {
+      const config = await this.tenantAiClient.getConfigForTenant(tenantId)
+      if (!config.enabled || !config.apiKey?.trim() || !config.embeddingModel?.trim()) {
+        return false
+      }
+
+      const count = await this.embeddingRepo.count({ where: { tenantId } })
+      return count > 0
+    } catch {
+      return false
+    }
+  }
+
+  async getIndexStatus(tenantId: string): Promise<{
+    indexedCount: number
+    activeProductCount: number
+    hybridSearchReady: boolean
+    embeddingModel?: string
+  }> {
+    const [indexedCount, activeProductCount, hybridSearchReady, config] = await Promise.all([
+      this.embeddingRepo.count({ where: { tenantId } }),
+      this.productRepo.count({ where: { tenantId, status: ProductStatus.ACTIVE } }),
+      this.canUseHybridSearch(tenantId),
+      this.tenantAiClient.getConfigForTenant(tenantId),
+    ])
+
+    return {
+      indexedCount,
+      activeProductCount,
+      hybridSearchReady,
+      embeddingModel: config.embeddingModel,
+    }
+  }
+
+  buildSearchDocument(product: ProductEntity): string {
+    const attributeText = (product.attributes || [])
+      .map((attribute) => `${attribute.name}: ${(attribute.values || []).join(', ')}`)
+      .join('\n')
+
+    const parts = [
+      product.name,
+      product.shortDescription,
+      product.description?.slice(0, 2000),
+      product.sku,
+      product.category?.name,
+      product.brand?.name,
+      product.metaTitle,
+      product.metaDescription,
+      attributeText,
+    ].filter(Boolean)
+
+    return parts.join('\n').slice(0, 8000)
+  }
+
+  async reindexTenantCatalog(tenantId: string): Promise<{
+    indexed: number
+    skipped: number
+    failed: number
+  }> {
+    const config = await this.tenantAiClient.getConfigForTenant(tenantId)
+    if (!config.enabled || !config.apiKey?.trim() || !config.embeddingModel?.trim()) {
+      throw new ServiceUnavailableException('AI embeddings are not configured for this store')
+    }
+
+    const products = await this.productRepo.find({
+      where: { tenantId, status: ProductStatus.ACTIVE },
+      relations: { category: true, brand: true, attributes: true },
+      order: { createdAt: 'ASC' },
+    })
+
+    let indexed = 0
+    let skipped = 0
+    let failed = 0
+
+    for (let offset = 0; offset < products.length; offset += EMBEDDING_BATCH_SIZE) {
+      const batch = products.slice(offset, offset + EMBEDDING_BATCH_SIZE)
+      const pending: Array<{ product: ProductEntity; content: string; contentHash: string }> = []
+
+      for (const product of batch) {
+        const content = this.buildSearchDocument(product)
+        const contentHash = createHash('sha256').update(content).digest('hex')
+        const existing = await this.embeddingRepo.findOne({
+          where: { tenantId, productId: product.id },
+        })
+
+        if (
+          existing &&
+          existing.contentHash === contentHash &&
+          existing.embeddingModel === config.embeddingModel
+        ) {
+          skipped += 1
+          continue
+        }
+
+        pending.push({ product, content, contentHash })
+      }
+
+      if (pending.length === 0) {
+        continue
+      }
+
+      try {
+        const result = await this.tenantAiClient.createEmbeddings(
+          tenantId,
+          pending.map((item) => item.content),
+        )
+
+        for (let i = 0; i < pending.length; i += 1) {
+          const item = pending[i]
+          const embedding = result.embeddings[i]
+          if (!embedding?.length) {
+            failed += 1
+            continue
+          }
+
+          await this.embeddingRepo.upsert(
+            {
+              tenantId,
+              productId: item.product.id,
+              contentHash: item.contentHash,
+              embeddingModel: result.model,
+              embedding,
+            },
+            ['tenantId', 'productId'],
+          )
+          indexed += 1
+        }
+      } catch (error) {
+        this.logger.error(`Failed embedding batch for tenant ${tenantId}`, error)
+        failed += pending.length
+      }
+    }
+
+    return { indexed, skipped, failed }
+  }
+
+  async searchProductIds(
+    tenantId: string,
+    query: string,
+    limit: number,
+    filterDto: FilterProductDto = {},
+  ): Promise<string[]> {
+    const trimmedQuery = query.trim()
+    if (!trimmedQuery) {
+      return []
+    }
+
+    const queryEmbedding = await this.tenantAiClient.createEmbeddings(tenantId, [trimmedQuery])
+    const vector = queryEmbedding.embeddings[0]
+    if (!vector?.length) {
+      return []
+    }
+
+    const qb = this.embeddingRepo
+      .createQueryBuilder('embedding')
+      .innerJoin(
+        'products',
+        'product',
+        'product.id = embedding.product_id AND product.tenant_id = embedding.tenant_id',
+      )
+      .where('embedding.tenant_id = :tenantId', { tenantId })
+      .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+      .select(['embedding.productId', 'embedding.embedding'])
+
+    if (filterDto.categoryId) {
+      qb.andWhere('product.category_id = :categoryId', { categoryId: filterDto.categoryId })
+    }
+    if (filterDto.brandId) {
+      qb.andWhere('product.brand_id = :brandId', { brandId: filterDto.brandId })
+    }
+
+    const rows = await qb.getMany()
+    const ranked = rows
+      .map((row) => ({
+        productId: row.productId,
+        score: cosineSimilarity(vector, row.embedding),
+      }))
+      .filter((row) => row.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+
+    return ranked.map((row) => row.productId)
+  }
+
+  async hybridSearchProductIds(
+    tenantId: string,
+    filterDto: FilterProductDto,
+    candidateLimit = HYBRID_CANDIDATE_LIMIT,
+  ): Promise<string[]> {
+    const query = filterDto.q?.trim()
+    if (!query) {
+      return []
+    }
+
+    const keywordFilter = {
+      ...filterDto,
+      page: 1,
+      limit: candidateLimit,
+    }
+
+    const [keywordResults, semanticIds] = await Promise.all([
+      this.productRepository.findAllWithFilters(keywordFilter, tenantId),
+      this.searchProductIds(tenantId, query, candidateLimit, filterDto),
+    ])
+
+    return mergeHybridProductIds(
+      keywordResults[0].map((product) => product.id),
+      semanticIds,
+      candidateLimit,
+    )
+  }
+
+  async removeEmbeddingsForProducts(tenantId: string, productIds: string[]): Promise<void> {
+    if (productIds.length === 0) {
+      return
+    }
+
+    await this.embeddingRepo.delete({
+      tenantId,
+      productId: In(productIds),
+    })
+  }
+}
