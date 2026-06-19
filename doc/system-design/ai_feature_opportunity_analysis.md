@@ -24,21 +24,27 @@
 
 This platform treats AI as a **draft-and-approve productivity layer** on top of a deterministic ERP core ([ERP Master Design — Phase 7](erp_master_system_design.md#phase-7--future-aiapi-extension-separate-doc)). Tenants bring their own API keys; the platform does not host a shared LLM.
 
-**Today (Phase A + B complete):**
+**Today (through Phase D + platform infra):**
 
 - Configuration, multi-provider client, permissions, plan gating
 - AI Studio (chat + product/campaign labs)
-- Inline assist on **8 admin surfaces**: products, campaigns, FAQs, page SEO, coupons, promotions
+- Inline assist on **40+ admin surfaces** (catalog, marketing, sales, support, procurement, finance, HRM)
+- Storefront: hybrid semantic search, product Q&A, shopping assistant
+- Platform AI: plan copy, tenant health narrative, support ticket summary, onboarding hints
+- Infrastructure: `ai_jobs` + BullMQ, token usage logs, usage dashboard, rate limits, integration tests
+- Embeddings: auto-sync on product save, background reindex, search analytics
+- Automation: product SEO draft job, abandoned-cart draft job, async invoice OCR, demand forecast job
+- Copilot: dashboard KPI snapshot + admin read-only tools (`listOrders`, `getStockLevel`, etc.)
 
 **Biggest gaps (highest ROI next):**
 
 | Gap | Why it matters |
 |-----|----------------|
-| **Catalog taxonomy copy** (categories, brands) | Same pain as products; high volume, repetitive SEO text |
-| **Page builder block content** | SEO is done; hero/paragraph/button copy still manual |
-| **Support chat assist** | Agents answer the same questions; FAQ + order context can speed replies |
-| **Review moderation / reply drafts** | Trust & engagement; low risk if draft-only |
-| **Async ERP jobs** (OCR, forecasting, AR drafts) | High value but needs `ai_jobs` queue + event hooks |
+| **AI Studio tabs** (FAQ, page SEO, store SEO) | Reuse existing endpoints; self-serve experimentation |
+| **Support conversation summary** | Agent handoff; complements reply assist |
+| **Bulk product import descriptions** | High volume; needs async `ai_jobs` batch |
+| **Global copilot sidebar** | Cross-module access outside dashboard |
+| **E2E storefront AI smoke** | CI confidence for public `x-tenant-id` routes |
 
 ---
 
@@ -108,13 +114,13 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
-| Dashboard | `/admin` | Natural-language KPI questions | ✅ | `DashboardCopilot` — read-only KPI snapshot |
+| Dashboard | `/admin` | Natural-language KPI questions | ✅ | `DashboardCopilot` + **AdminCopilot** (read-only tools) |
 | Orders | `/admin/orders` | Status explanation, customer email draft | ✅ | `OrderAiAssistModal` on list + order detail |
 | Returns | `/admin/returns` | Refund explanation letter | ✅ | Draft only |
 | Customers | `/admin/customers` | Support summary, segment labels | ✅ | Read-only profile summary |
 | Live chat | `/admin/support` | Suggested replies | ✅ | FAQ + order lookup context |
 | Reviews | `/admin/reviews` | Reply draft, toxicity flag | ✅ | Moderation assist |
-| Active carts | `/admin/carts` | Abandoned cart message | ✅ | Draft only (manual); `cart.abandoned` automation Phase C |
+| Active carts | `/admin/carts` | Abandoned cart message | ✅ | Manual draft + BullMQ `cart.abandoned` automation (no auto-send) |
 
 ### 3.3 Admin — Catalog & Media
 
@@ -143,7 +149,7 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | RFQs | `/admin/procurement/rfqs` | Supplier email body | ✅ | Campaign-copy pattern |
 | Purchase orders | `/admin/procurement/purchases` | PO cover letter | ✅ | Low priority |
 | GRN | `/admin/procurement/grn` | Receipt discrepancy notes | ✅ | Low priority |
-| Supplier invoices | `/admin/procurement/invoices` | **Invoice OCR** | ✅ | Phase C — extract lines → draft (sync vision; no job queue) |
+| Supplier invoices | `/admin/procurement/invoices` | **Invoice OCR** | ✅ | Sync + **async** job (`POST /ai/jobs/invoice-ocr`); extract lines → draft |
 | Debit notes | `/admin/procurement/debit-notes` | Dispute letter draft | ✅ | Medium priority |
 | Suppliers | `/admin/procurement/suppliers` | Supplier profile summary | ✅ | Low priority |
 
@@ -184,7 +190,7 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 |------|---------|--------|-------|
 | Plan descriptions | ✅ | Marketing copy for SaaS plans; configure provider at **Platform Settings → AI** |
 | Tenant health | ✅ | Churn risk narrative from aggregate metrics (`POST /super-admin/ai/generate/tenant-health-narrative`) |
-| Support tooling | ⬜ | Separate from tenant BYOK |
+| Support tooling | ✅ | Ticket summary + onboarding hints (`POST /super-admin/ai/generate/*`); Super Admin dashboard panel |
 
 ---
 
@@ -198,8 +204,8 @@ Use the same patterns already proven in Phase B:
 | **Inline button** | Single optional field | `DescriptionAiButton` on coupon/promotion |
 | **AI Studio tab** | Experimentation, no form context | `AiStudio.tsx` tabs |
 | **Chat panel** | Open-ended questions | `AiChatPanel` |
-| **Async job** | OCR, bulk, post-create SEO | Not built — needs `ai_jobs` + BullMQ |
-| **Copilot sidebar** | Cross-module questions | Phase D — tool-calling read APIs |
+| **Async job** | OCR, bulk, post-create SEO | ✅ `ai_jobs` + BullMQ `ai` queue (`automation_dispatch`, `ocr`, `bulk_seo`, …) |
+| **Copilot sidebar** | Cross-module questions | ✅ Dashboard KPI + admin copilot with read-only tools; global sidebar ⬜ |
 
 ### Recommended reuse
 
@@ -300,7 +306,7 @@ These **require**:
 | Report narrator | “Why did margin drop this month?” | P&L + sales APIs (read-only) |
 | Anomaly callout | “Stock for SKU X is unusually low” | Warehouse stock report |
 
-**Phase D:** Admin copilot with **read-only** tools first (`listOrders`, `getStockLevel`); write tools only after audit trail exists.
+**Status:** Admin copilot with **read-only** tools is live (`POST /ai/copilot/admin`); write tools only after audit trail exists.
 
 ---
 
@@ -345,24 +351,25 @@ Reuse existing endpoints and `useAiGenerate`; no new infrastructure.
 
 ### Phase C — ERP integration (3–5 sprints)
 
-| # | Feature | Depends on |
-|---|---------|------------|
-| 1 | `ai_jobs` + BullMQ processor | Infra |
-| 2 | `product.created` → background SEO draft | Events |
-| 3 | `cart.abandoned` → message draft | Events + marketing — admin manual draft ✅ at `/admin/carts` |
-| 4 | Supplier invoice OCR | File upload + vision model |
-| 5 | AR collection email drafts | Finance overdue query |
-| 6 | Demand forecasting (read-only) | Reports + historical orders |
+| # | Feature | Depends on | Status |
+|---|---------|------------|--------|
+| 1 | `ai_jobs` + BullMQ processor | Infra | ✅ |
+| 2 | `product.created` → background SEO draft | BullMQ | ✅ |
+| 3 | `cart.abandoned` → message draft | BullMQ + marketing | ✅ |
+| 4 | Supplier invoice OCR (async) | File upload + vision | ✅ |
+| 5 | AR collection email drafts | Finance overdue query | ✅ (sync draft) |
+| 6 | Demand forecasting (read-only) | Reports + historical orders | ✅ (scheduled job) |
 
 ### Phase D — Search & copilot (5+ sprints)
 
-| # | Feature |
-|---|---------|
-| 1 | Embedding pipeline per tenant | ✅ `product_embeddings` + admin reindex |
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | Embedding pipeline per tenant | ✅ `product_embeddings` + admin reindex + auto-sync |
 | 2 | Storefront semantic search API | ✅ Hybrid search on `GET /products?q=` |
-| 3 | Admin copilot (read-only tools) | ✅ Dashboard KPI copilot started |
-| 4 | Support chat with RAG (FAQ + orders) |
-| 5 | Token metering / usage dashboard |
+| 3 | Admin copilot (read-only tools) | ✅ `DashboardCopilot` + `POST /ai/copilot/admin` |
+| 4 | Support chat with RAG (FAQ + orders) | ✅ Reply assist with context |
+| 5 | Token metering / usage dashboard | ✅ `ai_usage_logs` + Settings → AI dashboard |
+| 6 | Global copilot sidebar | ⬜ |
 
 **Effort key:** S = small (< 1 day), M = medium (2–3 days), L = large (1+ week)
 
@@ -392,11 +399,11 @@ Before expanding AI beyond inline forms:
 | `tenants.ai_config` + BYOK | ✅ | Everything |
 | `ai:use` permission + plan feature `ai` | ✅ | Everything |
 | `useAiGenerate` + `AiInlineBar` | ✅ | New inline surfaces |
-| `ai_jobs` table | ⬜ | OCR, bulk, events |
-| BullMQ `ai` queue | ⬜ | Async work |
-| Domain event hooks | ⬜ | Abandoned cart, product.created |
+| `ai_jobs` table | ✅ | OCR, bulk, automation dispatch |
+| BullMQ `ai` queue | ✅ | Async work |
+| BullMQ automation dispatch | ✅ | `product.created`, `cart.abandoned` |
 | Embedding API in `TenantAiClientService` | ✅ | Semantic search |
-| Token usage audit log | ⬜ | Billing, quotas |
+| Token usage audit log | ✅ | Billing, quotas, usage dashboard |
 | `ai:manage` policy UI | ⬜ | Sensitive modules (HRM, finance) |
 
 ---
@@ -412,7 +419,7 @@ Track per tenant after each phase:
 | FAQ coverage (active entries) | ↑ with AI lowering effort |
 | Support first-response time | ↓ with suggested replies |
 | AI feature adoption (% tenants with `configured: true`) | ↑ via onboarding prompt |
-| Token cost per tenant | Visible in future usage dashboard |
+| Token cost per tenant | Visible in Settings → AI usage dashboard |
 
 ---
 
@@ -432,14 +439,15 @@ Track per tenant after each phase:
 
 | Layer | Coverage today | Highest-impact next |
 |-------|----------------|---------------------|
-| **Marketing & content** | ~95% inline assists | AI Studio tabs, event automation |
-| **Catalog** | Products, categories, brands, media | Embedding lifecycle, bulk import |
-| **Support & CRM** | Reply assist, profile, leads | Conversation summary, handoff |
-| **Operations / inventory** | Anomaly, transfer, cycle count, fulfillment, batches | Demand forecast (async) |
-| **Procurement / finance** | Sync drafts + invoice OCR | Async OCR, 3-way match explain |
-| **HRM** | Job copy, review phrases, payslip explain | Leave policy FAQ, sensitive opt-out |
-| **Storefront** | Semantic search, Q&A, assistant | Tenant assert, usage analytics |
-| **Platform infra** | Embeddings + sync API + platform AI | **Jobs queue, token metering, tests** |
+| **Marketing & content** | ✅ Inline assists across campaigns, coupons, pages, loyalty, leads | AI Studio FAQ/page/store SEO tabs |
+| **Catalog** | ✅ Copy assists, media alt-text, embeddings + auto-sync, hybrid search | Bulk import descriptions, variant copy |
+| **Support & CRM** | ✅ Reply assist, profiles, reviews, cart drafts (manual + automated) | Conversation summary, intent tags |
+| **Operations / inventory** | ✅ Anomaly, transfer, cycle count, fulfillment, batches; demand forecast job | Global copilot sidebar |
+| **Procurement / finance** | ✅ Sync drafts + async invoice OCR job | 3-way match explanation |
+| **HRM** | ✅ Job copy, review phrases, payslip explain | Leave policy FAQ, sensitive-module opt-out |
+| **Storefront** | ✅ Hybrid search, Q&A, assistant, tenant guards, search analytics | Multilingual prompts, assistant analytics |
+| **Copilot** | ✅ Dashboard KPI + admin read-only tools (`listOrders`, `getStockLevel`, …) | Global sidebar (cross-route) |
+| **Platform & infra** | ✅ `ai_jobs`, BullMQ, token metering UI, platform AI + support tooling | E2E storefront smoke, churn trend narratives |
 
 **Detailed checklists:** [ai_improvement_backlog.md](ai_improvement_backlog.md)
 
@@ -447,4 +455,4 @@ AI should continue to expand **where humans write repetitive text** or **need re
 
 ---
 
-*Last updated: 2026-06-18 — reflects full admin AI rollout, storefront Phase D, and platform AI.*
+*Last updated: 2026-06-19 — reflects P0–P3 infra, embeddings, automation, copilot, and platform support AI.*

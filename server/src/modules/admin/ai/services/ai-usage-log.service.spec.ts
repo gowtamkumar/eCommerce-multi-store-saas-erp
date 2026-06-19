@@ -61,5 +61,46 @@ describe('AiUsageLogService', () => {
     expect(summary.totalTokens).toBe(0)
     expect(summary.totalRequests).toBe(0)
     expect(summary.days).toBe(7)
+    expect(summary.byEndpoint).toEqual([])
+  })
+
+  it('aggregates usage by endpoint and day', async () => {
+    const qb = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([
+        {
+          operation: 'chat',
+          endpoint: 'ai/chat',
+          totalTokens: 100,
+          createdAt: new Date('2026-06-18T10:00:00Z'),
+        },
+        {
+          operation: 'chat',
+          endpoint: 'ai/generate/faq',
+          totalTokens: 50,
+          createdAt: new Date('2026-06-18T12:00:00Z'),
+        },
+        {
+          operation: 'embedding',
+          endpoint: 'embeddings/sync',
+          totalTokens: 200,
+          createdAt: new Date('2026-06-19T08:00:00Z'),
+        },
+      ]),
+    }
+    repo.createQueryBuilder.mockReturnValue(qb as never)
+
+    const summary = await service.getSummary('tenant-1', 30)
+
+    expect(summary.totalTokens).toBe(350)
+    expect(summary.totalRequests).toBe(3)
+    expect(summary.byEndpoint).toEqual([
+      { endpoint: 'embeddings/sync', totalTokens: 200, requestCount: 1 },
+      { endpoint: 'ai/chat', totalTokens: 100, requestCount: 1 },
+      { endpoint: 'ai/generate/faq', totalTokens: 50, requestCount: 1 },
+    ])
+    expect(summary.byDay).toHaveLength(2)
   })
 })

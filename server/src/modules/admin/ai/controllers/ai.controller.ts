@@ -9,8 +9,10 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { SkipThrottle, Throttle } from '@nestjs/throttler'
+import { AiJobType } from '@/common/enums/ai-job-type.enum'
 import { AiChatDto } from '../dto/ai-chat.dto'
 import { DashboardCopilotDto } from '../dto/dashboard-copilot.dto'
+import { AdminCopilotDto, AdminCopilotResponseDto } from '../dto/admin-copilot.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
 import {
   CatalogContentResultDto,
@@ -133,6 +135,10 @@ import {
   SupportReplyResultDto,
 } from '../dto/generate-support-reply.dto'
 import {
+  GenerateSupportConversationSummaryDto,
+  SupportConversationSummaryResultDto,
+} from '../dto/generate-support-conversation-summary.dto'
+import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
 } from '../dto/generate-page-block-content.dto'
@@ -145,6 +151,7 @@ import { GenerateStoreSeoDto, StoreSeoResultDto } from '../dto/generate-store-se
 import { AiUsageSummaryDto } from '../dto/ai-usage.dto'
 import { AiAssistantService } from '../services/ai-assistant.service'
 import { AiJobService, AiJobResponseDto } from '../services/ai-job.service'
+import { AdminCopilotService } from '../services/admin-copilot.service'
 import { AiUsageLogService } from '../services/ai-usage-log.service'
 
 @Controller('ai')
@@ -156,6 +163,7 @@ export class AiController {
     private readonly aiAssistantService: AiAssistantService,
     private readonly aiUsageLogService: AiUsageLogService,
     private readonly aiJobService: AiJobService,
+    private readonly adminCopilotService: AdminCopilotService,
   ) {}
 
   @Get('status')
@@ -207,6 +215,22 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Dashboard copilot response generated successfully',
+      data,
+    }
+  }
+
+  @Post('copilot/admin')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async askAdminCopilot(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: AdminCopilotDto,
+  ): Promise<BaseApiSuccessResponse<AdminCopilotResponseDto>> {
+    const data = await this.adminCopilotService.ask(ctx, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Admin copilot response generated successfully',
       data,
     }
   }
@@ -415,6 +439,25 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'Support reply generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/support-conversation-summary')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async generateSupportConversationSummary(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateSupportConversationSummaryDto,
+  ): Promise<BaseApiSuccessResponse<SupportConversationSummaryResultDto>> {
+    const data = await this.aiAssistantService.generateSupportConversationSummary(
+      ctx.tenantId,
+      dto,
+    )
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Support conversation summary generated successfully',
       data,
     }
   }
@@ -831,6 +874,81 @@ export class AiController {
       statusCode: 202,
       message: 'Embedding reindex job queued',
       data: this.aiJobService.toResponse(job),
+    }
+  }
+
+  @Post('jobs/invoice-ocr')
+  @HttpCode(202)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.PURCHASING_WRITE)
+  async enqueueInvoiceOcr(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateInvoiceOcrDto,
+  ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
+    const job = await this.aiJobService.enqueueInvoiceOcr(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 202,
+      message: 'Invoice OCR job queued',
+      data: this.aiJobService.toResponse(job),
+    }
+  }
+
+  @Post('jobs/demand-forecast')
+  @HttpCode(202)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.INVENTORY_READ)
+  async enqueueDemandForecast(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
+    const job = await this.aiJobService.enqueueDemandForecast(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 202,
+      message: 'Demand forecast job queued',
+      data: this.aiJobService.toResponse(job),
+    }
+  }
+
+  @Get('jobs/latest')
+  @SkipThrottle()
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async getLatestJob(
+    @RequestContext() ctx: RequestContextDto,
+    @Query('type') type: AiJobType,
+    @Query('cartId') cartId?: string,
+    @Query('productId') productId?: string,
+  ): Promise<BaseApiSuccessResponse<AiJobResponseDto | null>> {
+    let payloadKey: string | null = null
+    let payloadValue: string | null = null
+
+    if (type === AiJobType.CART_ABANDONED_DRAFT && cartId) {
+      payloadKey = 'cartId'
+      payloadValue = cartId
+    } else if (type === AiJobType.BULK_SEO && productId) {
+      payloadKey = 'productId'
+      payloadValue = productId
+    }
+
+    if (!payloadKey || !payloadValue) {
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'No matching job lookup parameters',
+        data: null,
+      }
+    }
+
+    const job = await this.aiJobService.findLatestByPayload(
+      ctx.tenantId,
+      type,
+      payloadKey,
+      payloadValue,
+    )
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: job ? 'Latest AI job retrieved successfully' : 'No completed job found',
+      data: job ? this.aiJobService.toResponse(job) : null,
     }
   }
 

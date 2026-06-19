@@ -1,4 +1,9 @@
 import { ProductStatus } from '@/common/enums/product-status.enum'
+import {
+  providerSupportsEmbeddings,
+  resolveEmbeddingConfigWarning,
+} from '@/common/utils/embedding-provider.util'
+import { AiJobService } from '@/modules/admin/ai/services/ai-job.service'
 import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,6 +12,10 @@ import { In, Repository } from 'typeorm'
 import { FilterProductDto } from '../dto/filter-product.dto'
 import { ProductEmbeddingEntity } from '../entities/product-embedding.entity'
 import { ProductEntity } from '../entities/product.entity'
+import {
+  StorefrontSearchEventEntity,
+  StorefrontSearchMode,
+} from '../entities/storefront-search-event.entity'
 import { ProductRepository } from '../repositories/product.repository'
 import { StorefrontAiConfigService } from './storefront-ai-config.service'
 import { cosineSimilarity, mergeHybridProductIds } from '../utils/semantic-search.util'
@@ -23,9 +32,12 @@ export class ProductEmbeddingService {
     private readonly embeddingRepo: Repository<ProductEmbeddingEntity>,
     @InjectRepository(ProductEntity)
     private readonly productRepo: Repository<ProductEntity>,
+    @InjectRepository(StorefrontSearchEventEntity)
+    private readonly searchEventRepo: Repository<StorefrontSearchEventEntity>,
     private readonly productRepository: ProductRepository,
     private readonly tenantAiClient: TenantAiClientService,
     private readonly storefrontAiConfig: StorefrontAiConfigService,
+    private readonly aiJobService: AiJobService,
   ) {}
 
   async hasSemanticSearchIndex(tenantId: string): Promise<boolean> {
@@ -57,20 +69,198 @@ export class ProductEmbeddingService {
     activeProductCount: number
     hybridSearchReady: boolean
     embeddingModel?: string
+    embeddingsSupported: boolean
+    embeddingWarning: string | null
+    searchAnalytics: {
+      days: number
+      keywordSearches: number
+      hybridSearches: number
+    }
   }> {
-    const [indexedCount, activeProductCount, hybridSearchReady, config] = await Promise.all([
-      this.embeddingRepo.count({ where: { tenantId } }),
-      this.productRepo.count({ where: { tenantId, status: ProductStatus.ACTIVE } }),
-      this.canUseHybridSearch(tenantId),
-      this.tenantAiClient.getConfigForTenant(tenantId),
-    ])
+    const [indexedCount, activeProductCount, hybridSearchReady, config, flags, searchAnalytics] =
+      await Promise.all([
+        this.embeddingRepo.count({ where: { tenantId } }),
+        this.productRepo.count({ where: { tenantId, status: ProductStatus.ACTIVE } }),
+        this.canUseHybridSearch(tenantId),
+        this.tenantAiClient.getConfigForTenant(tenantId),
+        this.storefrontAiConfig.getStorefrontFlags(tenantId),
+        this.getSearchAnalytics(tenantId, 30),
+      ])
+
+    const embeddingsSupported = providerSupportsEmbeddings(config.provider)
+    const embeddingWarning = resolveEmbeddingConfigWarning({
+      enabled: config.enabled,
+      provider: config.provider,
+      embeddingModel: config.embeddingModel,
+      semanticSearchEnabled: flags.semanticSearchEnabled,
+    })
 
     return {
       indexedCount,
       activeProductCount,
       hybridSearchReady,
       embeddingModel: config.embeddingModel,
+      embeddingsSupported,
+      embeddingWarning,
+      searchAnalytics,
     }
+  }
+
+  async canAutoSyncEmbeddings(tenantId: string): Promise<boolean> {
+    try {
+      const [providerReady, flags, config] = await Promise.all([
+        this.storefrontAiConfig.isProviderReady(tenantId),
+        this.storefrontAiConfig.getStorefrontFlags(tenantId),
+        this.tenantAiClient.getConfigForTenant(tenantId),
+      ])
+
+      return (
+        providerReady &&
+        flags.semanticSearchEnabled &&
+        providerSupportsEmbeddings(config.provider) &&
+        Boolean(config.embeddingModel?.trim())
+      )
+    } catch {
+      return false
+    }
+  }
+
+  async scheduleProductEmbeddingSync(tenantId: string, productId: string): Promise<void> {
+    if (!(await this.canAutoSyncEmbeddings(tenantId))) {
+      return
+    }
+
+    try {
+      await this.aiJobService.enqueueEmbeddingBatch(tenantId, [productId])
+    } catch (error) {
+      this.logger.warn(`Failed to queue embedding sync for product ${productId}`, error)
+    }
+  }
+
+  async enqueueCatalogReindex(tenantId: string) {
+    return this.aiJobService.enqueueEmbeddingReindex(tenantId)
+  }
+
+  async syncProductEmbeddings(
+    tenantId: string,
+    productIds: string[],
+  ): Promise<{ indexed: number; skipped: number; failed: number; removed: number }> {
+    const uniqueIds = [...new Set(productIds.filter(Boolean))]
+    if (uniqueIds.length === 0) {
+      return { indexed: 0, skipped: 0, failed: 0, removed: 0 }
+    }
+
+    const config = await this.tenantAiClient.getConfigForTenant(tenantId)
+    if (!config.enabled || !config.apiKey?.trim() || !config.embeddingModel?.trim()) {
+      throw new ServiceUnavailableException('AI embeddings are not configured for this store')
+    }
+
+    if (!providerSupportsEmbeddings(config.provider)) {
+      throw new ServiceUnavailableException('Embeddings are not supported for this AI provider')
+    }
+
+    const products = await this.productRepo.find({
+      where: { tenantId, id: In(uniqueIds) },
+      relations: { category: true, brand: true, attributes: true },
+    })
+
+    const foundIds = new Set(products.map((product) => product.id))
+    const missingIds = uniqueIds.filter((id) => !foundIds.has(id))
+
+    let indexed = 0
+    let skipped = 0
+    let failed = 0
+    let removed = 0
+
+    if (missingIds.length > 0) {
+      await this.removeEmbeddingsForProducts(tenantId, missingIds)
+      removed += missingIds.length
+    }
+
+    const pending: Array<{ product: ProductEntity; content: string; contentHash: string }> = []
+
+    for (const product of products) {
+      if (product.status !== ProductStatus.ACTIVE) {
+        await this.removeEmbeddingsForProducts(tenantId, [product.id])
+        removed += 1
+        continue
+      }
+
+      const content = this.buildSearchDocument(product)
+      const contentHash = createHash('sha256').update(content).digest('hex')
+      const existing = await this.embeddingRepo.findOne({
+        where: { tenantId, productId: product.id },
+      })
+
+      if (
+        existing &&
+        existing.contentHash === contentHash &&
+        existing.embeddingModel === config.embeddingModel
+      ) {
+        skipped += 1
+        continue
+      }
+
+      pending.push({ product, content, contentHash })
+    }
+
+    if (pending.length > 0) {
+      const batchResult = await this.upsertEmbeddingBatch(tenantId, pending, config.embeddingModel!)
+      indexed += batchResult.indexed
+      failed += batchResult.failed
+    }
+
+    return { indexed, skipped, failed, removed }
+  }
+
+  async recordSearchEvent(
+    tenantId: string,
+    mode: StorefrontSearchMode,
+    resultCount: number,
+  ): Promise<void> {
+    try {
+      await this.searchEventRepo.insert({
+        tenantId,
+        mode,
+        resultCount: Math.max(0, resultCount),
+      })
+    } catch (error) {
+      this.logger.warn(`Failed to record storefront search event for tenant ${tenantId}`, error)
+    }
+  }
+
+  async getSearchAnalytics(tenantId: string, days = 30): Promise<{
+    days: number
+    keywordSearches: number
+    hybridSearches: number
+  }> {
+    const safeDays = Math.min(Math.max(days, 1), 90)
+    const since = new Date()
+    since.setUTCDate(since.getUTCDate() - safeDays)
+    since.setUTCHours(0, 0, 0, 0)
+
+    const rows = await this.searchEventRepo
+      .createQueryBuilder('event')
+      .select('event.mode', 'mode')
+      .addSelect('COUNT(*)', 'count')
+      .where('event.tenant_id = :tenantId', { tenantId })
+      .andWhere('event.created_at >= :since', { since })
+      .groupBy('event.mode')
+      .getRawMany<{ mode: StorefrontSearchMode; count: string }>()
+
+    let keywordSearches = 0
+    let hybridSearches = 0
+
+    for (const row of rows) {
+      const count = Number(row.count) || 0
+      if (row.mode === 'hybrid') {
+        hybridSearches = count
+      } else if (row.mode === 'keyword') {
+        keywordSearches = count
+      }
+    }
+
+    return { days: safeDays, keywordSearches, hybridSearches }
   }
 
   buildSearchDocument(product: ProductEntity): string {
@@ -140,39 +330,55 @@ export class ProductEmbeddingService {
         continue
       }
 
-      try {
-        const result = await this.tenantAiClient.createEmbeddings(
-          tenantId,
-          pending.map((item) => item.content),
-        )
-
-        for (let i = 0; i < pending.length; i += 1) {
-          const item = pending[i]
-          const embedding = result.embeddings[i]
-          if (!embedding?.length) {
-            failed += 1
-            continue
-          }
-
-          await this.embeddingRepo.upsert(
-            {
-              tenantId,
-              productId: item.product.id,
-              contentHash: item.contentHash,
-              embeddingModel: result.model,
-              embedding,
-            },
-            ['tenantId', 'productId'],
-          )
-          indexed += 1
-        }
-      } catch (error) {
-        this.logger.error(`Failed embedding batch for tenant ${tenantId}`, error)
-        failed += pending.length
-      }
+      const batchResult = await this.upsertEmbeddingBatch(tenantId, pending, config.embeddingModel!)
+      indexed += batchResult.indexed
+      failed += batchResult.failed
     }
 
     return { indexed, skipped, failed }
+  }
+
+  private async upsertEmbeddingBatch(
+    tenantId: string,
+    pending: Array<{ product: ProductEntity; content: string; contentHash: string }>,
+    embeddingModel: string,
+  ): Promise<{ indexed: number; failed: number }> {
+    let indexed = 0
+    let failed = 0
+
+    try {
+      const result = await this.tenantAiClient.createEmbeddings(
+        tenantId,
+        pending.map((item) => item.content),
+        { usageContext: { endpoint: 'embeddings/sync' } },
+      )
+
+      for (let i = 0; i < pending.length; i += 1) {
+        const item = pending[i]
+        const embedding = result.embeddings[i]
+        if (!embedding?.length) {
+          failed += 1
+          continue
+        }
+
+        await this.embeddingRepo.upsert(
+          {
+            tenantId,
+            productId: item.product.id,
+            contentHash: item.contentHash,
+            embeddingModel: result.model || embeddingModel,
+            embedding,
+          },
+          ['tenantId', 'productId'],
+        )
+        indexed += 1
+      }
+    } catch (error) {
+      this.logger.error(`Failed embedding batch for tenant ${tenantId}`, error)
+      failed += pending.length
+    }
+
+    return { indexed, failed }
   }
 
   async searchProductIds(
@@ -186,7 +392,9 @@ export class ProductEmbeddingService {
       return []
     }
 
-    const queryEmbedding = await this.tenantAiClient.createEmbeddings(tenantId, [trimmedQuery])
+    const queryEmbedding = await this.tenantAiClient.createEmbeddings(tenantId, [trimmedQuery], {
+      usageContext: { endpoint: 'embeddings/query' },
+    })
     const vector = queryEmbedding.embeddings[0]
     if (!vector?.length) {
       return []

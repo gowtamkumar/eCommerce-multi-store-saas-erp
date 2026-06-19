@@ -43,6 +43,34 @@ export class TenantAiStorefrontConfigResponseDto {
   semanticSearchEnabled: boolean
 }
 
+export class UpdateTenantAiAutomationConfigDto {
+  @ApiPropertyOptional({ description: 'Queue SEO draft when product is created without meta fields' })
+  @IsOptional()
+  @IsBoolean()
+  productSeoOnCreate?: boolean
+
+  @ApiPropertyOptional({ description: 'Draft abandoned cart recovery messages (no auto-send)' })
+  @IsOptional()
+  @IsBoolean()
+  abandonedCartDraft?: boolean
+
+  @ApiPropertyOptional({ description: 'Weekly read-only demand / reorder suggestions' })
+  @IsOptional()
+  @IsBoolean()
+  demandForecastEnabled?: boolean
+}
+
+export class TenantAiAutomationConfigResponseDto {
+  @ApiProperty()
+  productSeoOnCreate: boolean
+
+  @ApiProperty()
+  abandonedCartDraft: boolean
+
+  @ApiProperty()
+  demandForecastEnabled: boolean
+}
+
 export class UpdateTenantAiConfigDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -120,6 +148,12 @@ export class UpdateTenantAiConfigDto {
   @ValidateNested()
   @Type(() => UpdateTenantAiStorefrontConfigDto)
   storefront?: UpdateTenantAiStorefrontConfigDto
+
+  @ApiPropertyOptional({ type: UpdateTenantAiAutomationConfigDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateTenantAiAutomationConfigDto)
+  automation?: UpdateTenantAiAutomationConfigDto
 }
 
 export class TenantAiConfigResponseDto {
@@ -164,6 +198,9 @@ export class TenantAiConfigResponseDto {
 
   @ApiProperty({ type: TenantAiStorefrontConfigResponseDto })
   storefront: TenantAiStorefrontConfigResponseDto
+
+  @ApiProperty({ type: TenantAiAutomationConfigResponseDto })
+  automation: TenantAiAutomationConfigResponseDto
 }
 
 export class TestTenantAiConfigDto {

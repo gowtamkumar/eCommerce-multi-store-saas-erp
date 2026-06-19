@@ -46,6 +46,7 @@ export class AiUsageLogService {
       .getMany()
 
     const byOperationMap = new Map<string, { totalTokens: number; requestCount: number }>()
+    const byEndpointMap = new Map<string, { totalTokens: number; requestCount: number }>()
     const byDayMap = new Map<string, { totalTokens: number; requestCount: number }>()
 
     let totalTokens = 0
@@ -58,6 +59,12 @@ export class AiUsageLogService {
       op.requestCount += 1
       byOperationMap.set(log.operation, op)
 
+      const endpointKey = log.endpoint || 'unknown'
+      const ep = byEndpointMap.get(endpointKey) ?? { totalTokens: 0, requestCount: 0 }
+      ep.totalTokens += log.totalTokens
+      ep.requestCount += 1
+      byEndpointMap.set(endpointKey, ep)
+
       const dateKey = log.createdAt.toISOString().slice(0, 10)
       const day = byDayMap.get(dateKey) ?? { totalTokens: 0, requestCount: 0 }
       day.totalTokens += log.totalTokens
@@ -65,12 +72,24 @@ export class AiUsageLogService {
       byDayMap.set(dateKey, day)
     }
 
+    const sortByTokens = (
+      entries: Array<[string, { totalTokens: number; requestCount: number }]>,
+    ) =>
+      entries
+        .sort((a, b) => b[1].totalTokens - a[1].totalTokens)
+        .map(([key, stats]) => ({ key, ...stats }))
+
     return {
       days: safeDays,
       totalTokens,
       totalRequests: logs.length,
-      byOperation: [...byOperationMap.entries()].map(([operation, stats]) => ({
-        operation,
+      byOperation: sortByTokens([...byOperationMap.entries()]).map(({ key, ...stats }) => ({
+        operation: key,
+        totalTokens: stats.totalTokens,
+        requestCount: stats.requestCount,
+      })),
+      byEndpoint: sortByTokens([...byEndpointMap.entries()]).map(({ key, ...stats }) => ({
+        endpoint: key,
         totalTokens: stats.totalTokens,
         requestCount: stats.requestCount,
       })),

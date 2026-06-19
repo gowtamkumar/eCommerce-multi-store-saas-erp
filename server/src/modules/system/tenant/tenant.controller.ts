@@ -36,6 +36,7 @@ import { CreateTenantResponseDto, TenantService } from './tenant.service'
 import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { ModuleRef } from '@nestjs/core'
 
 /**
  * Convert a raw TenantEntity (which can carry internal/sensitive columns and
@@ -69,7 +70,7 @@ export class TenantController {
   private readonly logger = new Logger(TenantController.name)
   constructor(
     private readonly tenantService: TenantService,
-    private readonly tenantAiClientService: TenantAiClientService,
+    private readonly moduleRef: ModuleRef,
   ) {}
 
   @Post()
@@ -263,7 +264,8 @@ export class TenantController {
     @RequestContext() ctx: RequestContextDto,
     @Body() body: TestTenantAiConfigDto,
   ): Promise<BaseApiSuccessResponse<{ reply: string; model: string; totalTokens: number }>> {
-    const result = await this.tenantAiClientService.testConnection(
+    const tenantAiClientService = this.moduleRef.get(TenantAiClientService, { strict: false })
+    const result = await tenantAiClientService.testConnection(
       ctx.tenantId,
       body.prompt || 'Reply with exactly: OK',
     )

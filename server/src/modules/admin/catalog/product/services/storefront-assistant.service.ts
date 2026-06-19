@@ -110,6 +110,7 @@ Return exactly this JSON shape:
       const result = await this.tenantAiClient.chatCompletion(tenantId, messages, {
         temperature: 0.35,
         maxTokens: 900,
+        usageContext: { endpoint: 'products/storefront-ai/chat' },
       })
 
       const parsed = this.parseJsonResponse<StorefrontAssistantChatResultDto>(result.content, {

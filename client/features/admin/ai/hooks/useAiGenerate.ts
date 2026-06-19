@@ -17,6 +17,7 @@ import type {
   ReturnAssistResult,
   ReturnLetterTemplate,
   SupportReplyResult,
+  SupportConversationSummaryResult,
   CustomerProfileResult,
   ReviewAssistResult,
   AbandonedCartMessageResult,
@@ -194,6 +195,19 @@ export function useAiGenerate() {
     orderSummary?: string;
     tone?: string;
   }) => withGenerate<SupportReplyResult>("/ai/generate/support-reply", payload);
+
+  const generateSupportConversationSummary = (payload: {
+    conversationSummary: string;
+    customerName: string;
+    customerEmail?: string;
+    faqSummary?: string;
+    orderSummary?: string;
+    tone?: string;
+  }) =>
+    withGenerate<SupportConversationSummaryResult>(
+      "/ai/generate/support-conversation-summary",
+      payload,
+    );
 
   const generateCustomerProfile = (payload: {
     customerSummary: string;
@@ -378,6 +392,7 @@ export function useAiGenerate() {
     generateOrderAssist,
     generateReturnAssist,
     generateSupportReply,
+    generateSupportConversationSummary,
     generateCustomerProfile,
     generateReviewAssist,
     generateAbandonedCartMessage,

@@ -4,6 +4,7 @@ import React from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { useSupportChat } from "../hooks/useSupportChat";
 import { SupportReplyAiAssist } from "./SupportReplyAiAssist";
+import { SupportHandoffSummaryAssist } from "./SupportHandoffSummaryAssist";
 
 export default function SupportChat() {
   const {
@@ -106,10 +107,17 @@ export default function SupportChat() {
                 </div>
               </div>
 
-              <span className="flex items-center text-xs text-green-500 bg-green-50 dark:bg-green-950/30 px-3 py-1 rounded-full font-medium">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                Active Room
-              </span>
+              <div className="flex items-center gap-3">
+                <SupportHandoffSummaryAssist
+                  conversation={selectedConv}
+                  messages={messages}
+                  disabled={loadingMessages}
+                />
+                <span className="flex items-center text-xs text-green-500 bg-green-50 dark:bg-green-950/30 px-3 py-1 rounded-full font-medium">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Active Room
+                </span>
+              </div>
             </div>
 
             {/* Message History */}

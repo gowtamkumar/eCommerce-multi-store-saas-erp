@@ -30,6 +30,7 @@ import { ProductAttributeRepository } from '../repositories/attribute.repository
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
 import { generateEAN13, generateProductSku, generateVariantSku } from '../utils/catalog-id.util'
+import { AiJobService } from '@/modules/admin/ai/services/ai-job.service'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
 import { ProductEmbeddingService } from './product-embedding.service'
@@ -55,6 +56,7 @@ export class ProductService {
     @InjectQueue('product') private readonly productQueue: Queue,
     private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
     private readonly productEmbeddingService: ProductEmbeddingService,
+    private readonly aiJobService: AiJobService,
   ) {}
 
   private async assertProductQuotaAvailable(tenantId: string): Promise<void> {
@@ -291,12 +293,15 @@ export class ProductService {
     return this.cache.rememberCache(
       cacheKey,
       async () => {
+        const hasSearchQuery = Boolean(filterDto.q?.trim())
         const useHybrid =
-          Boolean(filterDto.q?.trim()) &&
+          hasSearchQuery &&
           (await this.productEmbeddingService.canUseHybridSearch(tenantId))
 
         if (useHybrid) {
-          return this.findAllProductsHybrid(tenantId, filterDto, ctx)
+          const result = await this.findAllProductsHybrid(tenantId, filterDto, ctx)
+          void this.productEmbeddingService.recordSearchEvent(tenantId, 'hybrid', result.total)
+          return result
         }
 
         const [products, total] = await this.productRepository.findAllWithFilters(
@@ -305,6 +310,9 @@ export class ProductService {
         )
         const populated = await this.populateProductsStock(products, tenantId)
         const productsWithPromotions = await this.attachPromotionsMany(populated, ctx)
+        if (hasSearchQuery) {
+          void this.productEmbeddingService.recordSearchEvent(tenantId, 'keyword', total)
+        }
         return { products: productsWithPromotions, total }
       },
       60, // 60-second TTL — short enough to reflect stock/price updates
@@ -350,6 +358,10 @@ export class ProductService {
 
   async reindexProductEmbeddings(tenantId: string) {
     return this.productEmbeddingService.reindexTenantCatalog(tenantId)
+  }
+
+  async enqueueProductEmbeddingsReindex(tenantId: string) {
+    return this.productEmbeddingService.enqueueCatalogReindex(tenantId)
   }
 
   async getFilterOptions(ctx: RequestContextDto, categoryId?: string): Promise<any> {
@@ -525,7 +537,15 @@ export class ProductService {
     await this.cache.delCacheByPattern('products:latest:*', tenantId)
     await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
 
-    return await this.findOneProduct(savedProduct.id, ctx)
+    const created = await this.findOneProduct(savedProduct.id, ctx)
+    void this.productEmbeddingService.scheduleProductEmbeddingSync(tenantId, created.id)
+    void this.aiJobService.enqueueProductCreatedAutomation(tenantId, {
+      productId: created.id,
+      productName: created.name,
+      category: created.category?.name,
+      hasSeoFields: Boolean(created.metaTitle?.trim() || created.metaDescription?.trim()),
+    })
+    return created
   }
 
   async updateProduct(
@@ -695,7 +715,9 @@ export class ProductService {
     await this.cache.delCacheByPattern('products:latest:*', tenantId)
     await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
 
-    return await this.findOneProduct(id, ctx)
+    const updated = await this.findOneProduct(id, ctx)
+    void this.productEmbeddingService.scheduleProductEmbeddingSync(tenantId, updated.id)
+    return updated
   }
 
   async removeProduct(
@@ -705,6 +727,7 @@ export class ProductService {
     this.logger.log(`${this.removeProduct.name} Service Called`)
     const tenantId = ctx.tenantId
     const product = await this.findOneProduct(id, ctx)
+    await this.productEmbeddingService.removeEmbeddingsForProducts(tenantId, [id])
     await this.productRepository.removeProduct(product as any as ProductEntity)
 
     await this.cache.delCache(`product:${id}`, tenantId)

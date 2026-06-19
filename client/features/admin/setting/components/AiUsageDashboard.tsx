@@ -2,7 +2,7 @@
 
 import {
   AI_USAGE_PERIOD_OPTIONS,
-  formatAiUsageOperation,
+  formatAiUsageEndpoint,
   formatTokenCount,
   type AiUsageSummary,
 } from "../types/ai-usage";
@@ -136,13 +136,28 @@ export function AiUsageDashboard({
             </div>
           </div>
 
-          {summary.byOperation.length > 0 ? (
+          {(summary.byEndpoint?.length ?? 0) > 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">By endpoint</p>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {summary.byEndpoint.map((row) => (
+                  <UsageBar
+                    key={row.endpoint}
+                    label={formatAiUsageEndpoint(row.endpoint)}
+                    value={row.totalTokens}
+                    max={summary.totalTokens}
+                    sublabel={`${row.requestCount} req`}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : summary.byOperation.length > 0 ? (
             <div className="space-y-3">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">By type</p>
               {summary.byOperation.map((row) => (
                 <UsageBar
                   key={row.operation}
-                  label={formatAiUsageOperation(row.operation)}
+                  label={row.operation}
                   value={row.totalTokens}
                   max={summary.totalTokens}
                   sublabel={`${row.requestCount} req`}

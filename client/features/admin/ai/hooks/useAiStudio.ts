@@ -7,7 +7,10 @@ import type {
   AiChatMessage,
   AiStatus,
   CampaignCopyResult,
+  FaqContentResult,
+  PageSeoResult,
   ProductContentResult,
+  StoreSeoResult,
 } from "../types/ai-studio";
 
 export function useAiStudio() {
@@ -16,6 +19,9 @@ export function useAiStudio() {
   const [chatLoading, setChatLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
   const [campaignLoading, setCampaignLoading] = useState(false);
+  const [faqLoading, setFaqLoading] = useState(false);
+  const [pageSeoLoading, setPageSeoLoading] = useState(false);
+  const [storeSeoLoading, setStoreSeoLoading] = useState(false);
   const [messages, setMessages] = useState<AiChatMessage[]>([]);
 
   const loadStatus = useCallback(async () => {
@@ -106,6 +112,70 @@ export function useAiStudio() {
     }
   };
 
+  const generateFaq = async (payload: {
+    topic: string;
+    category?: string;
+    tone?: string;
+  }): Promise<FaqContentResult | null> => {
+    setFaqLoading(true);
+    try {
+      const res = await fetchAPI("/ai/generate/faq", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      toast.success("FAQ generated");
+      return res.data;
+    } catch {
+      toast.error("Failed to generate FAQ");
+      return null;
+    } finally {
+      setFaqLoading(false);
+    }
+  };
+
+  const generatePageSeo = async (payload: {
+    pageTitle: string;
+    keywords?: string;
+    tone?: string;
+  }): Promise<PageSeoResult | null> => {
+    setPageSeoLoading(true);
+    try {
+      const res = await fetchAPI("/ai/generate/page-seo", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      toast.success("Page SEO generated");
+      return res.data;
+    } catch {
+      toast.error("Failed to generate page SEO");
+      return null;
+    } finally {
+      setPageSeoLoading(false);
+    }
+  };
+
+  const generateStoreSeo = async (payload: {
+    brandName: string;
+    keywords?: string;
+    existingDescription?: string;
+    tone?: string;
+  }): Promise<StoreSeoResult | null> => {
+    setStoreSeoLoading(true);
+    try {
+      const res = await fetchAPI("/ai/generate/store-seo", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      toast.success("Store SEO generated");
+      return res.data;
+    } catch {
+      toast.error("Failed to generate store SEO");
+      return null;
+    } finally {
+      setStoreSeoLoading(false);
+    }
+  };
+
   const clearChat = () => setMessages([]);
 
   return {
@@ -114,11 +184,17 @@ export function useAiStudio() {
     chatLoading,
     productLoading,
     campaignLoading,
+    faqLoading,
+    pageSeoLoading,
+    storeSeoLoading,
     messages,
     sendChat,
     clearChat,
     generateProductContent,
     generateCampaignCopy,
+    generateFaq,
+    generatePageSeo,
+    generateStoreSeo,
     refreshStatus: loadStatus,
   };
 }

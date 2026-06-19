@@ -7,6 +7,7 @@ import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import ActionCenter from './dashboard/ActionCenter';
 import CommandCenter from './dashboard/CommandCenter';
 import DashboardCopilot from './dashboard/DashboardCopilot';
+import AdminCopilot from './dashboard/AdminCopilot';
 import DashboardHeader from './dashboard/DashboardHeader';
 import ErrorBanner from './dashboard/ErrorBanner';
 import FinanceSnapshot from './dashboard/FinanceSnapshot';
@@ -53,6 +54,8 @@ export default function AdminDashboard() {
             />
 
             <DashboardCopilot period={period} />
+
+            <AdminCopilot />
 
             <ActionCenter stats={stats} loading={loading} formatPrice={formatPrice} />
 

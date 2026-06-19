@@ -8,6 +8,14 @@ import { TenantHealthAggregate } from '@/modules/system/super-admin/types/tenant
 import {
   TenantHealthNarrativeResultDto,
 } from '@/modules/system/super-admin/dto/tenant-health.dto'
+import {
+  GenerateOnboardingHintsDto,
+  OnboardingHintsResultDto,
+} from '../dto/generate-onboarding-hints.dto'
+import {
+  GenerateSupportTicketSummaryDto,
+  SupportTicketSummaryResultDto,
+} from '../dto/generate-support-ticket-summary.dto'
 
 @Injectable()
 export class PlatformAiService {
@@ -104,6 +112,90 @@ Return exactly this JSON shape:
       riskLevel: 'moderate',
       keySignals: [],
       recommendedActions: [],
+    })
+  }
+
+  async generateSupportTicketSummary(
+    dto: GenerateSupportTicketSummaryDto,
+  ): Promise<SupportTicketSummaryResultDto> {
+    const prompt = `Summarize a platform support ticket for a Super Admin operator as JSON only (no markdown fences).
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: clear, neutral, and actionable'}
+
+Conversation / ticket notes:
+${dto.conversationText}
+
+${dto.tenantContext ? `Tenant context:\n${dto.tenantContext}` : 'No tenant context provided.'}
+${dto.issueSummary ? `Issue reference:\n${dto.issueSummary}` : ''}
+
+Return exactly this JSON shape:
+{
+  "ticketSummary": "string (3-5 sentences for internal handoff — facts only from transcript)",
+  "customerIntentTags": ["string (max 6 short intent labels e.g. billing, onboarding, bug)"],
+  "suggestedNextSteps": ["string (max 5 concrete support steps — no auto-actions)"],
+  "escalationHint": "string (when to escalate to engineering or billing, 1-2 sentences)"
+}
+
+Rules: Do not invent order ids, emails, or tenant facts not in the input. Draft for human agents only.`
+
+    const result = await this.platformAiClient.chatCompletion(
+      [
+        {
+          role: 'system',
+          content:
+            'You summarize B2B SaaS support tickets for platform operators. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.35, maxTokens: 900 },
+    )
+
+    return this.parseJsonResponse<SupportTicketSummaryResultDto>(result.content, {
+      ticketSummary: result.content.slice(0, 800),
+      customerIntentTags: [],
+      suggestedNextSteps: [],
+      escalationHint: 'Review transcript manually before replying.',
+    })
+  }
+
+  async generateOnboardingHints(
+    dto: GenerateOnboardingHintsDto,
+  ): Promise<OnboardingHintsResultDto> {
+    const prompt = `Write onboarding guidance for a new merchant on a multi-tenant e-commerce / ERP SaaS platform as JSON only (no markdown fences).
+Store name: ${dto.storeName}
+${dto.subdomain ? `Subdomain: ${dto.subdomain}` : ''}
+${dto.planName ? `Plan: ${dto.planName}` : ''}
+${dto.enabledFeatures ? `Enabled modules: ${dto.enabledFeatures}` : ''}
+${dto.merchantProfile ? `Merchant profile: ${dto.merchantProfile}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: welcoming and practical'}
+
+Audience: store owner setting up their tenant for the first time.
+Do not invent integrations or features not implied by enabled modules.
+
+Return exactly this JSON shape:
+{
+  "welcomeSummary": "string (2-3 sentences)",
+  "setupChecklist": ["string (max 8 ordered setup steps for week 1)"],
+  "firstWeekTips": ["string (max 5 tips)"],
+  "supportResourcesHint": "string (where to get help — docs, settings, support — generic platform wording)"
+}`
+
+    const result = await this.platformAiClient.chatCompletion(
+      [
+        {
+          role: 'system',
+          content:
+            'You write merchant onboarding playbooks for e-commerce SaaS platforms. Respond with valid JSON only, no extra text.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      { temperature: 0.55, maxTokens: 900 },
+    )
+
+    return this.parseJsonResponse<OnboardingHintsResultDto>(result.content, {
+      welcomeSummary: result.content.slice(0, 400),
+      setupChecklist: [],
+      firstWeekTips: [],
+      supportResourcesHint: 'Use in-app documentation and platform support for help.',
     })
   }
 

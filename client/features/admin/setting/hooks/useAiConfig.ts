@@ -7,7 +7,9 @@ import {
   AI_API_KEY_UNCHANGED,
   AI_PROVIDER_OPTIONS,
   DEFAULT_AI_CONFIG_FORM,
+  DEFAULT_AUTOMATION_AI_CONFIG,
   DEFAULT_STOREFRONT_AI_CONFIG,
+  EmbeddingIndexStatus,
   StorefrontAiStatus,
   TenantAiConfigForm,
   TenantAiConfigResponse,
@@ -32,6 +34,10 @@ function mapResponseToForm(data: TenantAiConfigResponse): TenantAiConfigForm {
       ...DEFAULT_STOREFRONT_AI_CONFIG,
       ...data.storefront,
     },
+    automation: {
+      ...DEFAULT_AUTOMATION_AI_CONFIG,
+      ...data.automation,
+    },
   };
 }
 
@@ -40,12 +46,9 @@ export function useAiConfig() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [reindexing, setReindexing] = useState(false);
-  const [embeddingStatus, setEmbeddingStatus] = useState<{
-    indexedCount: number;
-    activeProductCount: number;
-    hybridSearchReady: boolean;
-    embeddingModel?: string;
-  } | null>(null);
+  const [reindexingAsync, setReindexingAsync] = useState(false);
+  const [reindexJobStatus, setReindexJobStatus] = useState<string | null>(null);
+  const [embeddingStatus, setEmbeddingStatus] = useState<EmbeddingIndexStatus | null>(null);
   const [storefrontAiStatus, setStorefrontAiStatus] = useState<StorefrontAiStatus | null>(null);
   const [form, setForm] = useState<TenantAiConfigForm>(DEFAULT_AI_CONFIG_FORM);
   const [apiKeyPreview, setApiKeyPreview] = useState<string | null>(null);
@@ -113,6 +116,7 @@ export function useAiConfig() {
         maxTokens: form.maxTokens,
         temperature: form.temperature,
         storefront: form.storefront,
+        automation: form.automation,
       };
 
       if (form.apiKey && form.apiKey !== AI_API_KEY_UNCHANGED) {
@@ -132,6 +136,7 @@ export function useAiConfig() {
       }
       toast.success("AI configuration saved");
       await loadStorefrontAiStatus();
+      await loadEmbeddingStatus();
     } catch {
       toast.error("Failed to save AI configuration");
     } finally {
@@ -192,6 +197,34 @@ export function useAiConfig() {
     }));
   };
 
+  const pollReindexJob = async (jobId: string) => {
+    for (let attempt = 0; attempt < 90; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const res = await fetchAPI(`/ai/jobs/${jobId}`);
+      const status = res.data?.status as string | undefined;
+      setReindexJobStatus(status ?? null);
+
+      if (status === "completed") {
+        const result = res.data?.result as
+          | { indexed?: number; skipped?: number; failed?: number }
+          | undefined;
+        toast.success(
+          `Background reindex done: ${result?.indexed ?? 0} updated, ${result?.skipped ?? 0} unchanged`,
+        );
+        await loadEmbeddingStatus();
+        await loadStorefrontAiStatus();
+        return;
+      }
+
+      if (status === "failed") {
+        toast.error(res.data?.error || "Background reindex failed");
+        return;
+      }
+    }
+
+    toast.error("Background reindex is taking longer than expected. Check job status later.");
+  };
+
   const reindexCatalogEmbeddings = async () => {
     setReindexing(true);
     try {
@@ -211,6 +244,27 @@ export function useAiConfig() {
     }
   };
 
+  const reindexCatalogEmbeddingsAsync = async () => {
+    setReindexingAsync(true);
+    setReindexJobStatus("queued");
+    try {
+      const res = await fetchAPI("/products/embeddings/reindex/async", {
+        method: "POST",
+      });
+      const jobId = res.data?.id as string | undefined;
+      if (!jobId) {
+        throw new Error("Missing job id");
+      }
+      toast.success("Catalog reindex queued — running in background");
+      await pollReindexJob(jobId);
+    } catch {
+      toast.error("Failed to queue background reindex");
+      setReindexJobStatus(null);
+    } finally {
+      setReindexingAsync(false);
+    }
+  };
+
   const setStorefrontFlag = (
     key: keyof TenantAiConfigForm["storefront"],
     value: boolean,
@@ -221,20 +275,34 @@ export function useAiConfig() {
     }));
   };
 
+  const setAutomationFlag = (
+    key: keyof TenantAiConfigForm["automation"],
+    value: boolean,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      automation: { ...prev.automation, [key]: value },
+    }));
+  };
+
   return {
     loading,
     saving,
     testing,
     reindexing,
+    reindexingAsync,
+    reindexJobStatus,
     embeddingStatus,
     storefrontAiStatus,
     form,
     setForm,
     setStorefrontFlag,
+    setAutomationFlag,
     apiKeyPreview,
     saveConfig,
     testConnection,
     reindexCatalogEmbeddings,
+    reindexCatalogEmbeddingsAsync,
     applyProviderPreset,
     refreshConfig: loadConfig,
   };

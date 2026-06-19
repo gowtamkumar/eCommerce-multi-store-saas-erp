@@ -21,10 +21,10 @@ import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/re
 import { FaqModule } from '@/modules/admin/content/faq/faq.module'
 import { BrandModule } from '../brand/brand.module'
 import { CategoryModule } from '../category/category.module'
-import { AiModule } from '@/modules/admin/ai/ai.module'
 import { AiProcessor } from '@/modules/admin/ai/queue/ai.processor'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 import { ProductEmbeddingEntity } from './entities/product-embedding.entity'
+import { StorefrontSearchEventEntity } from './entities/storefront-search-event.entity'
 import { ProductEmbeddingService } from './services/product-embedding.service'
 import { ProductQaService } from './services/product-qa.service'
 import { StorefrontAssistantService } from './services/storefront-assistant.service'
@@ -37,6 +37,7 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
       ProductVariantEntity,
       ProductAttributeEntity,
       ProductEmbeddingEntity,
+      StorefrontSearchEventEntity,
     ]),
     BullModule.registerQueue({ name: 'product' }),
     BullModule.registerQueue({ name: 'ai' }),
@@ -50,7 +51,7 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
     FaqModule,
     BrandModule,
     CategoryModule,
-    forwardRef(() => AiModule),
+    forwardRef(() => require('../../ai/ai.module').AiModule),
     RbacModule,
   ],
   controllers: [ProductController],

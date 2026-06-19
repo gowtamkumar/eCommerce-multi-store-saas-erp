@@ -29,6 +29,7 @@ import { SystemModule } from '@/modules/system/system.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { ScheduleModule } from '@nestjs/schedule'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { AppThrottlerModule } from '@/common/throttler/throttler.module'
 import { CacheModule } from './modules/admin/operations/infra/cache/cache.module'
@@ -40,14 +41,15 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
       isGlobal: true,
       envFilePath: ['.env.development.local', '.env.development'],
     }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     SettingsModule,
     CacheModule,
 
-    // Core & System Domains
+    // Core & System Domains (TenantModule before AdminModule — AuthModule depends on it)
+    TenantModule,
     AdminModule,
     SystemModule,
-    TenantModule,
 
     // Storefront Domain
     CartModule,

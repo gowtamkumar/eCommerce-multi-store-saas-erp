@@ -3,11 +3,16 @@ import {
   DEFAULT_TENANT_AI_CONFIG,
   TenantAiConfig,
   TenantAiStorefrontConfig,
+  TenantAiAutomationConfig,
 } from '@/common/types/tenant-ai-config.types'
 import {
   mergeStorefrontAiConfig,
   normalizeStorefrontAiConfig,
 } from '@/common/utils/storefront-ai-config.util'
+import {
+  mergeTenantAiAutomation,
+  normalizeTenantAiAutomation,
+} from '@/common/utils/tenant-ai-automation.util'
 
 export const API_KEY_UNCHANGED = '__UNCHANGED__'
 
@@ -34,6 +39,7 @@ export function normalizeTenantAiConfig(raw?: TenantAiConfig | null): TenantAiCo
     temperature: raw.temperature ?? DEFAULT_TENANT_AI_CONFIG.temperature,
     extraHeaders: raw.extraHeaders,
     storefront: normalizeStorefrontAiConfig(raw.storefront),
+    automation: normalizeTenantAiAutomation(raw.automation),
   }
 }
 
@@ -66,6 +72,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
   temperature?: number
   extraHeaders?: Record<string, string>
   storefront: Required<TenantAiStorefrontConfig>
+  automation: Required<TenantAiAutomationConfig>
 } {
   const normalized = normalizeTenantAiConfig(config)
   const { hasApiKey, apiKeyPreview } = maskApiKey(normalized.apiKey)
@@ -85,6 +92,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
     temperature: normalized.temperature,
     extraHeaders: normalized.extraHeaders,
     storefront: normalizeStorefrontAiConfig(normalized.storefront),
+    automation: normalizeTenantAiAutomation(normalized.automation),
   }
 }
 
@@ -99,6 +107,9 @@ export function mergeTenantAiConfigUpdate(
     storefront: dto.storefront
       ? mergeStorefrontAiConfig(current.storefront, dto.storefront)
       : current.storefront,
+    automation: dto.automation
+      ? mergeTenantAiAutomation(current.automation, dto.automation)
+      : current.automation,
   }
 
   if (

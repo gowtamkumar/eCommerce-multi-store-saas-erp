@@ -18,6 +18,11 @@ export interface AiUsageSummaryDto {
     totalTokens: number
     requestCount: number
   }>
+  byEndpoint: Array<{
+    endpoint: string
+    totalTokens: number
+    requestCount: number
+  }>
   byDay: Array<{
     date: string
     totalTokens: number

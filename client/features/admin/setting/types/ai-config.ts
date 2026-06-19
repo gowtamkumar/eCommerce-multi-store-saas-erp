@@ -14,6 +14,12 @@ export interface TenantAiStorefrontConfigForm {
   semanticSearchEnabled: boolean
 }
 
+export interface TenantAiAutomationConfigForm {
+  productSeoOnCreate: boolean
+  abandonedCartDraft: boolean
+  demandForecastEnabled: boolean
+}
+
 export interface TenantAiConfigForm {
   enabled: boolean
   provider: AiProviderId
@@ -27,6 +33,7 @@ export interface TenantAiConfigForm {
   maxTokens: number
   temperature: number
   storefront: TenantAiStorefrontConfigForm
+  automation: TenantAiAutomationConfigForm
 }
 
 export interface TenantAiConfigResponse {
@@ -43,6 +50,7 @@ export interface TenantAiConfigResponse {
   maxTokens?: number
   temperature?: number
   storefront?: TenantAiStorefrontConfigForm
+  automation?: TenantAiAutomationConfigForm
 }
 
 export interface StorefrontAiStatus {
@@ -54,10 +62,46 @@ export interface StorefrontAiStatus {
   semanticSearchEnabled: boolean
 }
 
+export interface EmbeddingIndexStatus {
+  indexedCount: number
+  activeProductCount: number
+  hybridSearchReady: boolean
+  embeddingModel?: string
+  embeddingsSupported?: boolean
+  embeddingWarning?: string | null
+  searchAnalytics?: {
+    days: number
+    keywordSearches: number
+    hybridSearches: number
+  }
+}
+
+export function getEmbeddingFormWarning(form: TenantAiConfigForm): string | null {
+  if (!form.enabled || !form.storefront.semanticSearchEnabled) {
+    return null
+  }
+
+  if (form.provider === "anthropic") {
+    return "Anthropic does not provide embeddings. Use OpenAI, OpenRouter, Google, or Azure for semantic search, or disable semantic search.";
+  }
+
+  if (!form.embeddingModel?.trim()) {
+    return "Semantic search is enabled but no embedding model is set.";
+  }
+
+  return null;
+}
+
 export const DEFAULT_STOREFRONT_AI_CONFIG: TenantAiStorefrontConfigForm = {
   shoppingAssistantEnabled: true,
   productQaEnabled: true,
   semanticSearchEnabled: true,
+}
+
+export const DEFAULT_AUTOMATION_AI_CONFIG: TenantAiAutomationConfigForm = {
+  productSeoOnCreate: false,
+  abandonedCartDraft: true,
+  demandForecastEnabled: false,
 }
 
 export const AI_PROVIDER_OPTIONS: Array<{
@@ -88,7 +132,8 @@ export const AI_PROVIDER_OPTIONS: Array<{
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-3-5-haiku-20241022',
     apiKeyPlaceholder: 'sk-ant-...',
-    hint: 'Direct Claude API — use your Anthropic API key.',
+    hint: 'Direct Claude API — chat only; semantic search needs OpenAI, OpenRouter, Google, or Azure embeddings.',
+    showEmbeddingModel: false,
   },
   {
     id: 'google',
@@ -145,4 +190,5 @@ export const DEFAULT_AI_CONFIG_FORM: TenantAiConfigForm = {
   maxTokens: 1024,
   temperature: 0.7,
   storefront: { ...DEFAULT_STOREFRONT_AI_CONFIG },
+  automation: { ...DEFAULT_AUTOMATION_AI_CONFIG },
 }

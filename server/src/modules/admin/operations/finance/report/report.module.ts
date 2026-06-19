@@ -1,4 +1,3 @@
-import { ProductModule } from '@/modules/admin/catalog/product/product.module'
 import { PageModule } from '@/modules/admin/content/page/page.module'
 import { UserModule } from '@/modules/admin/core/user/user.module'
 import { ReportRepository } from '@/modules/admin/operations/finance/report/report.repository'
@@ -7,7 +6,7 @@ import { ReportService } from '@/modules/admin/operations/finance/report/report.
 import { OrderModule } from '@/modules/admin/sales/order/order.module'
 import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
 import { SuperAdminModule } from '@/modules/system/super-admin/super-admin.module'
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { ExpenseModule } from '../expense/expense.module'
 import { InvoiceModule } from '../invoice/invoice.module'
 import { PurchaseModule } from '../purchase/purchase.module'
@@ -20,7 +19,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   imports: [
     SuperAdminModule,
     UserModule,
-    ProductModule,
+    forwardRef(() => require('../../../catalog/product/product.module').ProductModule),
     OrderModule,
     PageModule,
     PaymentModule,

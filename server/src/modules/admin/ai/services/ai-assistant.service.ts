@@ -128,6 +128,10 @@ import {
   SupportReplyResultDto,
 } from '../dto/generate-support-reply.dto'
 import {
+  GenerateSupportConversationSummaryDto,
+  SupportConversationSummaryResultDto,
+} from '../dto/generate-support-conversation-summary.dto'
+import {
   GeneratePageBlockContentDto,
   PageBlockContentResultDto,
 } from '../dto/generate-page-block-content.dto'
@@ -136,12 +140,16 @@ import {
   GenerateProductContentDto,
   ProductContentResultDto,
 } from '../dto/generate-product-content.dto'
+import {
+  DemandForecastResultDto,
+  GenerateDemandForecastDto,
+} from '../dto/generate-demand-forecast.dto'
 import { GenerateStoreSeoDto, StoreSeoResultDto } from '../dto/generate-store-seo.dto'
 import {
   buildDashboardCopilotMessages,
   buildDashboardKpiSnapshot,
 } from '../utils/dashboard-kpi-context.util'
-import { AiChatMessage, TenantAiClientService } from './tenant-ai-client.service'
+import { AiChatMessage, AiCompletionResult, TenantAiClientService } from './tenant-ai-client.service'
 
 const ASSISTANT_SYSTEM_PROMPT = `You are a helpful e-commerce and ERP assistant for store administrators.
 Help with product ideas, marketing copy, operations questions, and business decisions.
@@ -153,6 +161,18 @@ export class AiAssistantService {
     private readonly aiClient: TenantAiClientService,
     private readonly moduleRef: ModuleRef,
   ) {}
+
+  private complete(
+    tenantId: string,
+    messages: AiChatMessage[],
+    endpoint: string,
+    options?: Parameters<TenantAiClientService['chatCompletion']>[2],
+  ): Promise<AiCompletionResult> {
+    return this.aiClient.chatCompletion(tenantId, messages, {
+      ...options,
+      usageContext: { endpoint, jobId: options?.usageContext?.jobId },
+    })
+  }
 
   async getStatus(tenantId: string) {
     const config = await this.aiClient.getConfigForTenant(tenantId)
@@ -177,7 +197,7 @@ export class AiAssistantService {
 
     messages.push({ role: 'user', content: dto.message })
 
-    const result = await this.aiClient.chatCompletion(tenantId, messages)
+    const result = await this.complete(tenantId, messages, 'ai/chat')
     return {
       reply: result.content,
       model: result.model,
@@ -196,7 +216,7 @@ export class AiAssistantService {
     const snapshot = buildDashboardKpiSnapshot(stats, period)
     const messages = buildDashboardCopilotMessages(snapshot, dto.message, dto.history || [])
 
-    const result = await this.aiClient.chatCompletion(ctx.tenantId, messages as AiChatMessage[], {
+    const result = await this.complete(ctx.tenantId, messages as AiChatMessage[], 'ai/copilot/dashboard', {
       temperature: 0.3,
     })
 
@@ -228,16 +248,14 @@ Return exactly this JSON shape:
   "tags": ["tag1", "tag2", "tag3"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You are an expert e-commerce copywriter. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/product-content',
       { temperature: 0.6 },
     )
 
@@ -270,16 +288,14 @@ Return exactly this JSON shape:
   "seoDescription": "string (max 155 chars)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You are an expert e-commerce SEO copywriter. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/catalog-content',
       { temperature: 0.6 },
     )
 
@@ -318,16 +334,14 @@ Return exactly this JSON shape:
   ${fields.join('\n  ')}
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You are an expert email, SMS, and push notification marketer. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/campaign-copy',
       { temperature: 0.7 },
     )
 
@@ -346,16 +360,14 @@ Return exactly this JSON shape:
   "answer": "string (2-4 sentences, plain text)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You are an e-commerce support writer. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/faq',
       { temperature: 0.5 },
     )
 
@@ -377,15 +389,13 @@ Return exactly this JSON shape:
   "metaDescription": "string (max 155 chars)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content: 'You are an SEO specialist. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/page-seo',
       { temperature: 0.5 },
     )
 
@@ -410,16 +420,14 @@ Return exactly this JSON shape:
   "metaDescription": "string (max 155 chars, compelling store summary)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You are an SEO specialist for e-commerce stores. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/store-seo',
       { temperature: 0.55 },
     )
 
@@ -455,16 +463,14 @@ Return exactly this JSON shape:
   ${jsonShapes[dto.blockType]}
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You are an expert e-commerce landing page copywriter. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/page-block-content',
       { temperature: 0.65 },
     )
 
@@ -486,16 +492,14 @@ Return exactly this JSON shape:
   "name": "string (short admin-facing rule name, max 80 chars)"
 }`
 
-      const result = await this.aiClient.chatCompletion(
-        tenantId,
-        [
+      const result = await this.complete(tenantId, [
           {
             role: 'system',
             content:
               'You name e-commerce loyalty promotion rules. Respond with valid JSON only, no extra text.',
           },
           { role: 'user', content: prompt },
-        ],
+        ], 'ai/generate/loyalty-copy',
         { temperature: 0.5 },
       )
 
@@ -512,16 +516,14 @@ Return exactly this JSON shape:
   "referralMessage": "string (1 sentence inviting friends to join, max 160 chars)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write loyalty program copy for online stores. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/loyalty-copy',
       { temperature: 0.6 },
     )
 
@@ -560,16 +562,14 @@ Return exactly this JSON shape:
   "smsText": "string (optional short SMS follow-up, max 160 chars)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write personalized lead nurture and newsletter follow-up emails for e-commerce stores. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/lead-follow-up',
       { temperature: 0.65 },
     )
 
@@ -598,16 +598,14 @@ Return exactly this JSON shape:
   "explanation": "string (2-4 sentences: what the status means, likely cause, and suggested next admin actions — do not change any data)"
 }`
 
-      const result = await this.aiClient.chatCompletion(
-        tenantId,
-        [
+      const result = await this.complete(tenantId, [
           {
             role: 'system',
             content:
               'You help e-commerce operations staff understand order statuses. Respond with valid JSON only, no extra text. Never invent tracking numbers or amounts not in the context.',
           },
           { role: 'user', content: prompt },
-        ],
+        ], 'ai/generate/order-assist',
         { temperature: 0.4 },
       )
 
@@ -641,16 +639,14 @@ Return exactly this JSON shape:
   "emailBody": "string (2-4 short paragraphs, plain text with line breaks, no HTML — draft only, admin will send manually)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You draft customer order emails for online stores. Respond with valid JSON only, no extra text. Never promise refunds or changes not stated in the order context.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/order-assist',
       { temperature: 0.55 },
     )
 
@@ -693,16 +689,14 @@ Return exactly this JSON shape:
   "emailBody": "string (2-4 short paragraphs, plain text with line breaks, no HTML — draft letter only, admin sends manually; do not invent refund amounts or dates not in context)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You draft return and refund explanation letters for e-commerce stores. Respond with valid JSON only, no extra text. Never promise refund amounts, timelines, or policy exceptions not stated in the context.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/return-assist',
       { temperature: 0.55 },
     )
 
@@ -733,21 +727,65 @@ Return exactly this JSON shape:
   "suggestedReply": "string (1-3 short paragraphs or bullet points, plain text, ready to send in chat — address the visitor's latest message; cite order status or FAQ only when supported by context; do not invent tracking numbers, refunds, or policies)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You draft live support chat replies for e-commerce stores. Respond with valid JSON only, no extra text. Never promise refunds, shipping dates, or order changes not stated in the context. Keep replies conversational and brief.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/support-reply',
       { temperature: 0.55 },
     )
 
     return this.parseJsonResponse<SupportReplyResultDto>(result.content, {
       suggestedReply: result.content,
+    })
+  }
+
+  async generateSupportConversationSummary(
+    tenantId: string,
+    dto: GenerateSupportConversationSummaryDto,
+  ): Promise<SupportConversationSummaryResultDto> {
+    const prompt = `Summarize this live support chat for an internal agent handoff as JSON only (no markdown fences).
+Customer: ${dto.customerName}
+${dto.customerEmail ? `Customer email: ${dto.customerEmail}` : ''}
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: factual, concise, and neutral — internal notes only'}
+
+Conversation transcript:
+${dto.conversationSummary}
+
+${dto.faqSummary ? `Relevant store FAQs (for policy context only):\n${dto.faqSummary}` : 'No FAQ context provided.'}
+
+${dto.orderSummary ? `Customer order lookup:\n${dto.orderSummary}` : 'No order context provided.'}
+
+Return exactly this JSON shape:
+{
+  "handoffSummary": "string (3-5 sentences for the next agent — what happened, current status, and what the visitor expects; facts only from transcript and order/FAQ context)",
+  "keyPoints": ["string (3-6 short bullet facts — order refs, policies cited, commitments made by either party; max 120 chars each)"],
+  "suggestedNextSteps": ["string (2-5 concrete actions for the next agent — e.g. verify tracking, offer replacement; do not invent refunds or policies)"],
+  "pendingVisitorRequests": ["string (0-4 open questions or requests the visitor still expects an answer to; empty array if resolved)"]
+}`
+
+    const result = await this.complete(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content:
+            'You write internal support handoff notes for e-commerce live chat. Respond with valid JSON only, no extra text. Never invent order numbers, refunds, shipping dates, or policies not supported by the context. Do not address the customer — write for the next agent.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      'ai/generate/support-conversation-summary',
+      { temperature: 0.4 },
+    )
+
+    return this.parseJsonResponse<SupportConversationSummaryResultDto>(result.content, {
+      handoffSummary: result.content.trim(),
+      keyPoints: [],
+      suggestedNextSteps: [],
+      pendingVisitorRequests: [],
     })
   }
 
@@ -775,16 +813,14 @@ Return exactly this JSON shape:
   "segmentLabels": ["string (3-6 short segment tags, e.g. B2B, Repeat buyer, Credit hold, At-risk — each max 4 words)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You produce read-only customer support briefings and segment labels for e-commerce CRM. Respond with valid JSON only, no extra text. Never change customer data or recommend automated actions — insights only.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/customer-profile',
       { temperature: 0.45 },
     )
 
@@ -816,16 +852,14 @@ Return exactly this JSON shape:
   "needsAttention": "boolean (true if toxicity is medium/high, contains harassment, hate speech, spam, or likely fake review signals)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You assist e-commerce review moderation. Respond with valid JSON only, no extra text. Flag toxicity conservatively; human moderators make final decisions. Never auto-approve or reject reviews.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/review-assist',
       { temperature: 0.4 },
     )
 
@@ -868,16 +902,14 @@ Return exactly this JSON shape:
   "smsText": "string (optional short SMS, max 160 chars)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write abandoned cart recovery emails and SMS for e-commerce stores. Respond with valid JSON only, no extra text. Never invent discounts, coupon codes, or checkout links not in context.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/abandoned-cart-message',
       { temperature: 0.6 },
     )
 
@@ -906,16 +938,14 @@ Return exactly this JSON shape:
   "usageGuidance": "string (1-2 sentences on when sales/ops should apply this book vs others; do not invent product prices)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You document B2B and retail price book strategy for ERP teams. Respond with valid JSON only, no extra text. Notes are internal — not customer-facing.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/price-book-rationale',
       { temperature: 0.45 },
     )
 
@@ -950,16 +980,14 @@ Return exactly this JSON shape:
   "visionUsed": ${useVision ? 'true' : 'false'}
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write image alt text and SEO filenames for e-commerce media libraries. Respond with valid JSON only, no extra text. Do not invent brand names or products not visible or implied.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/media-assist',
       {
         temperature: 0.4,
         imageUrl: useVision ? dto.imageUrl : undefined,
@@ -996,16 +1024,14 @@ Return exactly this JSON shape:
   "anomalyHighlights": ["string (3-8 bullet-style one-liners flagging specific anomalies e.g. out-of-stock bestsellers, high reserved vs available, category clusters)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You explain inventory and stock anomalies for e-commerce ERP dashboards. Respond with valid JSON only, no extra text. Read-only insights — never adjust inventory or promise stock levels not in context.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/inventory-anomaly',
       { temperature: 0.45 },
     )
 
@@ -1033,16 +1059,14 @@ Return exactly this JSON shape:
   "auditSummary": "string (2-4 bullet points as plain text with line breaks — internal audit context: route rationale, item mix summary, and any compliance or reconciliation notes; internal only)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write warehouse stock transfer reason notes for multi-location e-commerce ERP teams. Respond with valid JSON only, no extra text. Draft notes only — admin saves manually to the transfer document.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/stock-transfer-reason',
       { temperature: 0.45 },
     )
 
@@ -1073,16 +1097,14 @@ Return exactly this JSON shape:
   "varianceHighlights": ["string (3-8 bullet-style one-liners flagging specific variances e.g. large negative delta, multiple SKUs short, over-count patterns)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You explain physical inventory cycle count variances for e-commerce warehouse teams. Respond with valid JSON only, no extra text. Read-only insights — never post adjustments or change ledger balances.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/cycle-count-variance',
       { temperature: 0.45 },
     )
 
@@ -1110,16 +1132,14 @@ Return exactly this JSON shape:
   "handlingNotes": "string (2-4 bullet points as plain text with line breaks — internal warehouse instructions for pickers/packers e.g. fragile items, multi-bin picks, verify quantities, special order notes; internal only)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write packing slip and warehouse handling notes for e-commerce fulfillment. Respond with valid JSON only, no extra text. Draft notes only — admin prints or saves manually.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/packing-slip-notes',
       { temperature: 0.45 },
     )
 
@@ -1150,16 +1170,14 @@ Return exactly this JSON shape:
   "priorityActions": ["string (3-8 bullet-style one-liners — highest-impact actions this week e.g. ship oldest batch first, run promo on SKUs expiring in 14 days, sweep expired stock)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You advise e-commerce teams on perishable and batch-tracked inventory waste reduction. Respond with valid JSON only, no extra text. Heuristic forecasting tie-in only — no automated stock changes.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/batch-waste-reduction',
       { temperature: 0.45 },
     )
 
@@ -1187,16 +1205,14 @@ Return exactly this JSON shape:
   "lineNotes": ["string (one spec/note per line item in the same order as listed in context — short procurement spec e.g. grade, packaging, preferred supplier hint; empty string if none needed)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write purchase requisition justifications and line-item specs for e-commerce SCM teams. Respond with valid JSON only, no extra text. Draft only — approver submits manually.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/requisition-justification',
       { temperature: 0.45 },
     )
 
@@ -1224,16 +1240,14 @@ Return exactly this JSON shape:
   "termsNotes": "string (2-4 bullet points as plain text with line breaks — internal delivery/payment terms reminders for procurement e.g. net-30, FOB, inspection on receipt; internal only)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write B2B purchase order cover letters for e-commerce procurement teams. Respond with valid JSON only, no extra text. Draft only — buyer sends manually.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/po-cover-letter',
       { temperature: 0.45 },
     )
 
@@ -1265,16 +1279,14 @@ Return exactly this JSON shape:
   "supplierFollowUp": "string (2-4 short paragraphs as plain text with line breaks — draft supplier-facing follow-up message requesting clarification or credit memo for discrepancies; professional B2B tone; reference PO/GRN from context only)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You document goods receipt discrepancies for e-commerce procurement teams. Respond with valid JSON only, no extra text. Draft-only notes — buyer posts or sends manually.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/grn-discrepancy-notes',
       { temperature: 0.45 },
     )
 
@@ -1328,16 +1340,14 @@ Return exactly this JSON shape:
 
 Rules: Extract only what is visible or clearly stated. Use null for unknown fields. lineItems may be empty if unreadable. Do not invent SKUs or prices.`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You extract structured data from supplier invoices for accounts payable teams. Respond with valid JSON only, no extra text. Draft extraction only — humans approve before posting.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/invoice-ocr',
       {
         temperature: 0.2,
         imageUrl: useVision ? dto.imageUrl : undefined,
@@ -1349,6 +1359,52 @@ Rules: Extract only what is visible or clearly stated. Use null for unknown fiel
       extractionNotes: result.content,
       visionUsed: useVision,
       unmatchedWarnings: [],
+    })
+  }
+
+  async generateDemandForecast(
+    tenantId: string,
+    dto: GenerateDemandForecastDto,
+  ): Promise<DemandForecastResultDto> {
+    const prompt = `Analyze product sales velocity and stock levels. Return read-only reorder suggestions as JSON only (no markdown fences).
+${dto.tone ? `Tone: ${dto.tone}` : 'Tone: practical and conservative'}
+
+Context:
+${dto.salesSummary}
+
+Return exactly this JSON shape:
+{
+  "summary": "string (2-3 sentences on overall demand patterns — heuristic only, not ML)",
+  "suggestions": [
+    {
+      "productName": "string",
+      "sku": "string or null",
+      "currentStock": 0,
+      "recentSoldQty": 0,
+      "suggestedReorderQty": 0,
+      "rationale": "string (1-2 sentences)"
+    }
+  ],
+  "disclaimer": "string (remind buyer these are draft suggestions requiring human approval before PO)"
+}
+
+Rules: Use only products listed in context. suggestedReorderQty should be a reasonable heuristic (e.g. cover ~2-4 weeks of recent velocity minus on-hand stock). Never recommend automatic PO creation.`
+
+    const result = await this.complete(tenantId, [
+        {
+          role: 'system',
+          content:
+            'You provide read-only inventory reorder heuristics for e-commerce buyers. Respond with valid JSON only, no extra text. Never auto-create purchase orders.',
+        },
+        { role: 'user', content: prompt },
+      ], 'ai/generate/demand-forecast',
+      { temperature: 0.35 },
+    )
+
+    return this.parseJsonResponse<DemandForecastResultDto>(result.content, {
+      summary: result.content,
+      suggestions: [],
+      disclaimer: 'Draft suggestions only — verify stock and lead times before creating a PO.',
     })
   }
 
@@ -1370,16 +1426,14 @@ Return exactly this JSON shape:
   "internalNotes": "string (2-4 bullet points as plain text with line breaks — internal AP reminders e.g. attach GRN photos, hold payment on disputed line, escalate if no response in 7 days; internal only)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write B2B supplier debit note dispute letters for e-commerce procurement teams. Respond with valid JSON only, no extra text. Draft only — buyer sends manually; never post ledger entries automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/debit-note-dispute',
       { temperature: 0.45 },
     )
 
@@ -1407,16 +1461,14 @@ Return exactly this JSON shape:
   "supplierTags": ["string (3-6 short tags, e.g. Active vendor, Long lead time, High AP balance, Top rated — each max 4 words)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You produce read-only supplier profile summaries for e-commerce procurement teams. Respond with valid JSON only, no extra text. Insights only — never change supplier records or recommend automated ledger actions.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/supplier-profile-summary',
       { temperature: 0.45 },
     )
 
@@ -1448,16 +1500,14 @@ Return exactly this JSON shape:
   "internalNotes": "string (2-4 bullet points as plain text with line breaks — internal finance reminders e.g. follow up in 7 days, credit hold if no response, attach statement; internal only)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write B2B accounts receivable collection emails for e-commerce finance teams. Respond with valid JSON only, no extra text. Draft only — finance sends manually; never post payments or change ledger balances automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/ar-collection-draft',
       { temperature: 0.45 },
     )
 
@@ -1490,16 +1540,14 @@ Return exactly this JSON shape:
   "actionItems": ["string (2-5 bullet-style one-liners for approver checklist e.g. Verify 3-way match on INV-123, Release payment by Friday)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write internal accounts payable payment approval reminders for e-commerce finance teams. Respond with valid JSON only, no extra text. Draft only — never post payments or approve invoices automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/ap-payment-reminder',
       { temperature: 0.45 },
     )
 
@@ -1541,16 +1589,14 @@ Return exactly this JSON shape:
   "reasoning": "string (1-2 sentences explaining the classification based on title/description only — do not invent details not in context)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You classify business expenses into predefined accounting categories for e-commerce finance teams. Respond with valid JSON only, no extra text. Suggest only — never post or save expenses automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/expense-category-suggest',
       { temperature: 0.2 },
     )
 
@@ -1606,16 +1652,14 @@ Return exactly this JSON shape:
   "watchItems": ["string (1-3 bullet-style risks or areas to monitor — only if supported by context metrics, otherwise empty array)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write executive financial report narratives for e-commerce operators. Respond with valid JSON only, no extra text. Never invent metrics — only interpret numbers supplied in the user message. Read-only output.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/report-executive-summary',
       { temperature: 0.35 },
     )
 
@@ -1661,16 +1705,14 @@ Return exactly this JSON shape:
   "complianceReminders": ["string (1-3 generic reminders e.g. confirm with local tax advisor, keep audit trail; no invented filing dates)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write internal tax rule documentation for e-commerce finance teams. Respond with valid JSON only, no extra text. Explain only — never calculate tax or change rules automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/tax-rule-explanation',
       { temperature: 0.35 },
     )
 
@@ -1703,16 +1745,14 @@ Return exactly this JSON shape:
 
 Draft only — HR reviews before publishing. Do not invent benefits or compensation not in context.`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write job descriptions and HR screening questions for e-commerce and retail teams. Respond with valid JSON only, no extra text. Draft copy only — never publish jobs or contact candidates automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/recruitment-job-copy',
       { temperature: 0.5 },
     )
 
@@ -1768,16 +1808,14 @@ Return exactly this JSON shape:
   "usageNotes": ["string (1-2 reminders e.g. personalize before sharing, avoid copying verbatim without context)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write performance review phrase banks for HR managers in e-commerce and retail. Respond with valid JSON only, no extra text. Never include employee names or identifying details. Draft phrases only — never submit reviews automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/performance-review-phrases',
       { temperature: 0.45 },
     )
 
@@ -1826,16 +1864,14 @@ Return exactly this JSON shape:
   "internalNotes": ["string (1-2 HR-only reminders e.g. verify figures before sending, employee may reply with questions)"]
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content:
             'You write employee payslip explanation messages for HR/payroll teams. Respond with valid JSON only, no extra text. Use only figures supplied in context. Draft only — never change payroll or send email automatically.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/payslip-explanation',
       { temperature: 0.35 },
     )
 
@@ -1873,15 +1909,13 @@ Return exactly this JSON shape:
   "description": "string (1-2 sentences, max 200 chars, customer-facing)"
 }`
 
-    const result = await this.aiClient.chatCompletion(
-      tenantId,
-      [
+    const result = await this.complete(tenantId, [
         {
           role: 'system',
           content: 'You are an e-commerce marketer. Respond with valid JSON only, no extra text.',
         },
         { role: 'user', content: prompt },
-      ],
+      ], 'ai/generate/marketing-description',
       { temperature: 0.6 },
     )
 
@@ -1898,7 +1932,7 @@ Return exactly this JSON shape:
     }
 
     try {
-      return { ...fallback, ...JSON.parse(jsonMatch[0]) } as T
+      return { ...fallback, ...JSON.parse(jsonMatch[0], 'ai/generate/marketing-description') } as T
     } catch {
       return fallback
     }

@@ -62,6 +62,7 @@ describe('AI infrastructure (e2e)', () => {
     const summary = await usageLogService.getSummary(tenant.id, 30)
     expect(summary.totalTokens).toBeGreaterThanOrEqual(15)
     expect(summary.totalRequests).toBeGreaterThanOrEqual(1)
+    expect(summary.byEndpoint.some((row) => row.endpoint === 'ai/status')).toBe(true)
   })
 
   it('creates queued embedding reindex job row', async () => {

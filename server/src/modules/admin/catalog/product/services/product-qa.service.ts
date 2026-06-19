@@ -101,6 +101,7 @@ Return exactly this JSON shape:
       const result = await this.tenantAiClient.chatCompletion(tenantId, messages, {
         temperature: 0.3,
         maxTokens: 700,
+        usageContext: { endpoint: 'products/slug/ask' },
       })
 
       return this.parseJsonResponse<ProductQaResultDto>(result.content, {

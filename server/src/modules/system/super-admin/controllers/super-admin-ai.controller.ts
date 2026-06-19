@@ -15,6 +15,14 @@ import {
   TenantHealthAggregateDto,
   TenantHealthNarrativeResultDto,
 } from '../dto/tenant-health.dto'
+import {
+  GenerateOnboardingHintsDto,
+  OnboardingHintsResultDto,
+} from '../../platform/dto/generate-onboarding-hints.dto'
+import {
+  GenerateSupportTicketSummaryDto,
+  SupportTicketSummaryResultDto,
+} from '../../platform/dto/generate-support-ticket-summary.dto'
 
 @Controller('super-admin/ai')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -74,6 +82,34 @@ export class SuperAdminAiController {
       statusCode: 200,
       message: 'Tenant health narrative generated',
       data: { ...narrative, snapshot },
+    }
+  }
+
+  @Post('generate/support-ticket-summary')
+  @HttpCode(200)
+  async generateSupportTicketSummary(
+    @Body() body: GenerateSupportTicketSummaryDto,
+  ): Promise<BaseApiSuccessResponse<SupportTicketSummaryResultDto>> {
+    const data = await this.platformAiService.generateSupportTicketSummary(body)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Support ticket summary generated',
+      data,
+    }
+  }
+
+  @Post('generate/onboarding-hints')
+  @HttpCode(200)
+  async generateOnboardingHints(
+    @Body() body: GenerateOnboardingHintsDto,
+  ): Promise<BaseApiSuccessResponse<OnboardingHintsResultDto>> {
+    const data = await this.platformAiService.generateOnboardingHints(body)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Onboarding hints generated',
+      data,
     }
   }
 }

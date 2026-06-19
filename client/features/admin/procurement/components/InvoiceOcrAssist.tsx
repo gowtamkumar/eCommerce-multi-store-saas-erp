@@ -9,6 +9,7 @@ import type { Supplier } from "@/features/admin/supplier/types";
 import { FileUp, Loader2, ScanLine, Sparkles } from "lucide-react";
 import { ChangeEvent, useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import toast from "react-hot-toast";
+import { useAiJobPoll } from "@/features/admin/ai/hooks/useAiJobPoll";
 import {
   applyInvoiceOcrDraft,
   buildInvoiceOcrPayload,
@@ -48,10 +49,13 @@ export function InvoiceOcrAssist({
   setAddedItems,
 }: InvoiceOcrAssistProps) {
   const { configured, loading, generateInvoiceOcr } = useAiGenerate();
+  const { enqueueInvoiceOcr } = useAiJobPoll();
   const [uploadedFile, setUploadedFile] = useState<UploadedInvoiceFile | null>(null);
   const [uploading, setUploading] = useState(false);
   const [invoiceText, setInvoiceText] = useState("");
   const [useVision, setUseVision] = useState(false);
+  const [useBackground, setUseBackground] = useState(true);
+  const [ocrJobStatus, setOcrJobStatus] = useState<string | null>(null);
   const [result, setResult] = useState<InvoiceOcrResult | null>(null);
 
   const visionEligible = isInvoiceVisionEligible(uploadedFile);
@@ -88,15 +92,32 @@ export function InvoiceOcrAssist({
   };
 
   const handleExtract = async () => {
+    const payload = buildInvoiceOcrPayload({
+      file: uploadedFile,
+      invoiceText,
+      useVision,
+      poContextSummary: buildPoContextSummary(purchaseOrders, selectedPoId),
+    });
+
     try {
-      const data = await generateInvoiceOcr(
-        buildInvoiceOcrPayload({
-          file: uploadedFile,
-          invoiceText,
-          useVision,
-          poContextSummary: buildPoContextSummary(purchaseOrders, selectedPoId),
-        }),
-      );
+      if (useBackground) {
+        setOcrJobStatus("queued");
+        const job = await enqueueInvoiceOcr(payload);
+        const data = job.result as InvoiceOcrResult | undefined;
+        if (!data) {
+          throw new Error("Missing OCR result");
+        }
+        setResult(data);
+        setOcrJobStatus("completed");
+        toast.success(
+          data.visionUsed
+            ? "Invoice extracted in background from image — review before applying"
+            : "Invoice extracted in background — review before applying",
+        );
+        return;
+      }
+
+      const data = await generateInvoiceOcr(payload);
       if (!data) return;
 
       setResult(data);
@@ -106,6 +127,7 @@ export function InvoiceOcrAssist({
           : "Invoice extracted from text — review before applying",
       );
     } catch {
+      setOcrJobStatus(null);
       toast.error("Failed to extract invoice data");
     }
   };
@@ -184,14 +206,32 @@ export function InvoiceOcrAssist({
         </label>
       )}
 
+      <label className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+        <input
+          type="checkbox"
+          checked={useBackground}
+          onChange={(e) => setUseBackground(e.target.checked)}
+          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+        />
+        Extract in background (recommended for large scans)
+      </label>
+
       <AiInlineBar
         title="Extract invoice fields"
-        hint="Pull header, dates, amounts, and line items into a draft — apply manually"
+        hint={
+          useBackground
+            ? "Queue OCR job — poll until complete, then apply manually"
+            : "Pull header, dates, amounts, and line items into a draft — apply manually"
+        }
         configured={configured}
-        loading={loading}
+        loading={loading || ocrJobStatus === "queued"}
         disabled={!canExtract}
         onGenerate={handleExtract}
       />
+
+      {ocrJobStatus && ocrJobStatus !== "completed" ? (
+        <p className="text-xs font-mono text-indigo-600 dark:text-indigo-300">Job: {ocrJobStatus}</p>
+      ) : null}
 
       {result && (
         <div className="space-y-3 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 p-4">

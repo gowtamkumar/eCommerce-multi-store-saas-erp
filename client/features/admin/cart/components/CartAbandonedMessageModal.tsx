@@ -4,6 +4,7 @@ import type {
   AbandonedCartMessageResult,
   AbandonedCartMessageTemplate,
 } from "@/features/admin/ai/types/ai-studio";
+import { useAiJobPoll } from "@/features/admin/ai/hooks/useAiJobPoll";
 import type { CartSummary } from "../types";
 import { Check, Copy, Mail, ShoppingBag, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,6 +35,7 @@ export default function CartAbandonedMessageModal({
   onClose,
 }: CartAbandonedMessageModalProps) {
   const { formatPrice } = useSettings();
+  const { fetchLatestCartDraft } = useAiJobPoll();
   const [messageTemplate, setMessageTemplate] = useState<AbandonedCartMessageTemplate>("gentle_reminder");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
@@ -46,7 +48,21 @@ export default function CartAbandonedMessageModal({
     setEmailBody("");
     setSmsText("");
     setCopiedField(null);
-  }, [cart]);
+
+    void (async () => {
+      try {
+        const job = await fetchLatestCartDraft(cart.id);
+        const draft = job?.result as AbandonedCartMessageResult | undefined;
+        if (draft?.emailSubject && draft?.emailBody) {
+          setEmailSubject(draft.emailSubject);
+          setEmailBody(draft.emailBody);
+          setSmsText(draft.smsText ?? "");
+        }
+      } catch {
+        // Ignore — manual draft still available
+      }
+    })();
+  }, [cart, fetchLatestCartDraft]);
 
   const applyResult = (result: AbandonedCartMessageResult) => {
     setEmailSubject(result.emailSubject);
@@ -223,7 +239,7 @@ export default function CartAbandonedMessageModal({
           </div>
 
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Draft only — manual send. Automated cart.abandoned triggers remain Phase C.
+            Draft only — manual send. Background drafts may appear when automation is enabled in Settings → AI.
           </p>
         </div>
 

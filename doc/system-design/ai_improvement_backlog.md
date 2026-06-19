@@ -48,7 +48,7 @@ Use this doc as a **living checklist**. Mark items `[x]` when done in PRs; keep 
 |-------|----------|---------------------|
 | Tenant BYOK + config | ✅ Strong | Token usage dashboard |
 | Admin inline assists | ✅ Very strong | AI Studio expansion |
-| Storefront AI | 🟡 Good | Tenant assert + embedding lifecycle |
+| Storefront AI | 🟢 Strong | Tenant assert + embedding lifecycle |
 | Platform AI | 🟡 Early | Support tooling |
 | Async / jobs / metering | ⬜ Not built | **P0** |
 | Tests & observability | ⬜ Weak | **P0** |
@@ -86,33 +86,33 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 - [x] `product_embeddings` table + hybrid search on `GET /products?q=`
 - [x] Admin reindex UI (`Settings → AI`)
-- [ ] Reindex single product on create/update (incremental)
-- [ ] Remove embeddings on product delete (`removeEmbeddingsForProducts` wired)
-- [ ] Background full reindex via `ai_jobs` (large catalogs)
-- [ ] UI warning when provider lacks embedding API (e.g. Anthropic-only)
-- [ ] Storefront search analytics (AI vs keyword hit counts)
+- [x] Reindex single product on create/update (incremental, queued `EMBEDDING_BATCH`)
+- [x] Remove embeddings on product delete (`removeEmbeddingsForProducts` wired)
+- [x] Background full reindex via `ai_jobs` (large catalogs)
+- [x] UI warning when provider lacks embedding API (e.g. Anthropic-only)
+- [x] Storefront search analytics (AI vs keyword hit counts)
 
 ### Automation & events
 
-- [ ] Domain event: `product.created` → optional background SEO draft job
-- [ ] Domain event: `cart.abandoned` → draft email/SMS (no auto-send)
-- [ ] Async supplier invoice OCR (move from sync vision upload)
-- [ ] Scheduled demand forecast job (read-only suggestions)
+- [x] Domain event: `product.created` → optional background SEO draft job
+- [x] Domain event: `cart.abandoned` → draft email/SMS (no auto-send)
+- [x] Async supplier invoice OCR (move from sync vision upload)
+- [x] Scheduled demand forecast job (read-only suggestions)
 
 ### Copilot & platform
 
 - [x] Dashboard KPI copilot (`POST /ai/copilot/dashboard`)
-- [ ] Admin copilot with read-only tools (`listOrders`, `getStockLevel`, etc.)
+- [x] Admin copilot with read-only tools (`listOrders`, `getStockLevel`, etc.)
 - [x] Platform plan description AI
 - [x] Platform tenant health narrative
-- [ ] Platform support tooling AI (ticket summary, onboarding hints)
+- [x] Platform support tooling AI (ticket summary, onboarding hints)
 
 ### Documentation
 
 - [x] [AI System Guide](ai_system_guide.md)
 - [x] [Storefront AI Guide](../manuals/12_STOREFRONT_AI_GUIDE.md)
 - [x] This improvement backlog
-- [ ] Refresh stale summary in [ai_feature_opportunity_analysis.md](ai_feature_opportunity_analysis.md) § Summary
+- [x] Refresh stale summary in [ai_feature_opportunity_analysis.md](ai_feature_opportunity_analysis.md) § Summary
 
 ---
 
@@ -124,7 +124,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 |---|------|-------|--------|
 | 1 | Design `ai_jobs` schema + migration | | [x] |
 | 2 | Register BullMQ `ai` queue in app module | | [x] |
-| 3 | `AiJobProcessor` — run job types: `embedding_batch`, `ocr`, `bulk_seo` | | [x] partial (`embedding_reindex` live) |
+| 3 | `AiJobProcessor` — run job types: `embedding_batch`, `ocr`, `bulk_seo` | | [x] |
 | 4 | `ai_usage_logs` table + write from `TenantAiClientService` | | [x] |
 | 5 | `@Throttle` on `/ai/generate/*` and storefront chat | | [x] |
 | 6 | E2E or integration test: tenant config → `/ai/status` → one generate | | [x] usage + job e2e |
@@ -142,18 +142,18 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 | # | Task | Owner | Status |
 |---|------|-------|--------|
-| 1 | Call embedding upsert on product create/update | | [ ] |
-| 2 | Call `removeEmbeddingsForProducts` on product delete | | [ ] |
-| 3 | `BadRequestException` when `tenantId` null on public storefront AI routes | | [ ] |
-| 4 | Settings UI: warn if `embeddingModel` empty but semantic search enabled | | [ ] |
-| 5 | Settings UI: warn if Anthropic selected without embedding-capable provider | | [ ] |
-| 6 | Update opportunity analysis summary table to match current ✅ status | | [ ] |
+| 1 | Call embedding upsert on product create/update | | [x] |
+| 2 | Call `removeEmbeddingsForProducts` on product delete | | [x] |
+| 3 | `BadRequestException` when `tenantId` null on public storefront AI routes | | [x] |
+| 4 | Settings UI: warn if `embeddingModel` empty but semantic search enabled | | [x] |
+| 5 | Settings UI: warn if Anthropic selected without embedding-capable provider | | [x] |
+| 6 | Update opportunity analysis summary table to match current ✅ status | | [x] |
 
 **P1 exit criteria:**
 
-- [ ] Product edit → embedding updated within same request or queued job
-- [ ] Product delete → no orphan rows in `product_embeddings`
-- [ ] Public AI routes fail fast with clear message when tenant missing
+- [x] Product edit → embedding updated within same request or queued job
+- [x] Product delete → no orphan rows in `product_embeddings`
+- [x] Public AI routes fail fast with clear message when tenant missing
 
 ---
 
@@ -161,18 +161,18 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 | # | Task | Owner | Status |
 |---|------|-------|--------|
-| 1 | AI Studio tab: FAQ generator | | [ ] |
-| 2 | AI Studio tab: Page SEO generator | | [ ] |
-| 3 | AI Studio tab: Store SEO generator | | [ ] |
-| 4 | Move invoice OCR to async job + progress UI | | [ ] |
-| 5 | Tenant usage dashboard (tokens by day / endpoint) | | [ ] |
-| 6 | Support: conversation summary for handoff | | [ ] |
+| 1 | AI Studio tab: FAQ generator | | [x] |
+| 2 | AI Studio tab: Page SEO generator | | [x] |
+| 3 | AI Studio tab: Store SEO generator | | [x] |
+| 4 | Move invoice OCR to async job + progress UI | | [x] |
+| 5 | Tenant usage dashboard (tokens by day / endpoint) | | [x] |
+| 6 | Support: conversation summary for handoff | | [x] |
 | 7 | Support: intent tags on messages (optional) | | [ ] |
 
 **P2 exit criteria:**
 
-- [ ] Tenant can see last 30 days token usage
-- [ ] Large invoice PDF does not block HTTP request > 30s
+- [x] Tenant can see last 30 days token usage
+- [x] Large invoice PDF does not block HTTP request > 30s
 
 ---
 
@@ -180,12 +180,12 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 | # | Task | Owner | Status |
 |---|------|-------|--------|
-| 1 | `cart.abandoned` listener → draft message job | | [ ] |
-| 2 | `product.created` listener → optional SEO draft job | | [ ] |
+| 1 | `cart.abandoned` listener → draft message job | | [x] |
+| 2 | `product.created` listener → optional SEO draft job | | [x] |
 | 3 | Bulk product description job after CSV import | | [ ] |
-| 4 | Admin copilot read-only tool registry | | [ ] |
+| 4 | Admin copilot read-only tool registry | | [x] |
 | 5 | Storefront assistant → “Talk to human” deep link to live chat | | [ ] |
-| 6 | Platform Super Admin support AI assist | | [ ] |
+| 6 | Platform Super Admin support AI assist | | [x] |
 | 7 | 3-way match explanation (procurement/finance) | | [ ] |
 | 8 | Multilingual prompt locale from store settings | | [ ] |
 
@@ -214,12 +214,12 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Category / brand assist (`CatalogAiAssist`) | — | [x] |
 | Media alt-text assist (optional vision) | — | [x] |
 | Semantic search + admin reindex | — | [x] |
-| Auto embedding on product save | P1 | [ ] |
-| Remove embeddings on product delete | P1 | [ ] |
-| Incremental / background reindex | P2 | [ ] |
+| Auto embedding on product save | P1 | [x] |
+| Remove embeddings on product delete | P1 | [x] |
+| Incremental / background reindex | P2 | [x] |
 | Bulk description generate after import | P3 | [ ] |
 | Variant-level copy assist | P3 | [ ] |
-| Provider embedding capability warning in UI | P1 | [ ] |
+| Provider embedding capability warning in UI | P1 | [x] |
 
 ---
 
@@ -235,9 +235,9 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Loyalty program / rule copy | — | [x] |
 | Lead follow-up drafts | — | [x] |
 | AI Studio: only chat + product + campaign tabs | — | [x] |
-| AI Studio: FAQ tab | P2 | [ ] |
-| AI Studio: page SEO tab | P2 | [ ] |
-| AI Studio: store SEO tab | P2 | [ ] |
+| AI Studio: FAQ tab | P2 | [x] |
+| AI Studio: page SEO tab | P2 | [x] |
+| AI Studio: store SEO tab | P2 | [x] |
 | Audience-aware campaign variants | P3 | [ ] |
 | Abandoned cart **manual** draft | — | [x] |
 | Abandoned cart **event** automation | P3 | [ ] |
@@ -252,7 +252,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Support reply assist (FAQ + order context) | — | [x] |
 | Customer profile summary | — | [x] |
 | Lead follow-up assist | — | [x] |
-| Conversation summary for handoff | P2 | [ ] |
+| Conversation summary for handoff | P2 | [x] |
 | Intent tagging (`shipping`, `return`, etc.) | P3 | [ ] |
 | Richer auto order lookup in support assist | P2 | [ ] |
 | Storefront assistant → live chat handoff | P3 | [ ] |
@@ -282,7 +282,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Cycle count variance explanation | — | [x] |
 | Fulfillment packing slip notes | — | [x] |
 | Batch waste reduction tips | — | [x] |
-| Demand forecast job (read-only) | P3 | [ ] |
+| Demand forecast job (read-only) | P3 | [x] |
 | Reorder alert narrative linked to reports | P3 | [ ] |
 
 ---
@@ -296,7 +296,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | PO cover letter | — | [x] |
 | GRN discrepancy notes | — | [x] |
 | Invoice OCR (sync vision) | — | [x] |
-| Invoice OCR **async** + job status UI | P2 | [ ] |
+| Invoice OCR **async** + job status UI | P2 | [x] |
 | Debit note dispute draft | — | [x] |
 | Supplier profile summary | — | [x] |
 | AR collection email draft | — | [x] |
@@ -348,8 +348,8 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Env fallback (`PLATFORM_AI_*`) | — | [x] |
 | Plan description assist | — | [x] |
 | Tenant health snapshot + narrative | — | [x] |
-| Support tooling AI | P3 | [ ] |
-| New tenant onboarding copy assist | P3 | [ ] |
+| Support tooling AI | P3 | [x] |
+| New tenant onboarding copy assist | P3 | [x] |
 | Churn narrative week-over-week trends | P3 | [ ] |
 
 ---
@@ -359,7 +359,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Item | Priority | Status |
 |------|----------|--------|
 | Dashboard KPI copilot | — | [x] |
-| Read-only tool registry (orders, stock, reports) | P3 | [ ] |
+| Read-only tool registry (orders, stock, reports) | P3 | [x] |
 | Global copilot sidebar | P3 | [ ] |
 | Write tools (any ERP mutation) | — | 🔒 Never without audit |
 
@@ -423,7 +423,7 @@ Run for **each tenant** after config changes or releases. Requires valid `x-tena
 
 - [ ] Storefront toggles enabled in Settings → AI
 - [ ] `GET /products/storefront-ai/status` shows expected flags
-- [ ] Embeddings reindex completed (if semantic search on)
+- [x] Embeddings reindex completed (if semantic search on)
 - [ ] Catalog search returns results with `?q=`
 - [ ] Product Q&A on PDP returns grounded answer
 - [ ] Shopping assistant widget replies (no checkout actions)

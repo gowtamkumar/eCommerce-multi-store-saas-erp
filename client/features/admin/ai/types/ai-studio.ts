@@ -1,4 +1,4 @@
-export type AiStudioTab = "chat" | "product" | "campaign";
+export type AiStudioTab = "chat" | "product" | "campaign" | "faq" | "pageSeo" | "storeSeo";
 
 export interface AiStatus {
   enabled: boolean;
@@ -95,6 +95,13 @@ export interface ReturnAssistResult {
 
 export interface SupportReplyResult {
   suggestedReply: string;
+}
+
+export interface SupportConversationSummaryResult {
+  handoffSummary: string;
+  keyPoints: string[];
+  suggestedNextSteps: string[];
+  pendingVisitorRequests: string[];
 }
 
 export interface CustomerProfileResult {

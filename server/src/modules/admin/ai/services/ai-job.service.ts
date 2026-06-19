@@ -6,6 +6,12 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Queue } from 'bullmq'
 import { Repository } from 'typeorm'
 import { AiJobEntity } from '../entities/ai-job.entity'
+import {
+  AiAutomationDispatchPayload,
+  CartAbandonedEvent,
+  ProductCreatedEvent,
+} from '@/common/events/ai-domain.events'
+import { GenerateInvoiceOcrDto } from '../dto/generate-invoice-ocr.dto'
 
 export interface AiJobResponseDto {
   id: string
@@ -79,6 +85,115 @@ export class AiJobService {
 
   async enqueueEmbeddingReindex(tenantId: string): Promise<AiJobEntity> {
     return this.createAndEnqueue(tenantId, AiJobType.EMBEDDING_REINDEX, {})
+  }
+
+  async enqueueEmbeddingBatch(tenantId: string, productIds: string[]): Promise<AiJobEntity | null> {
+    const uniqueIds = [...new Set(productIds.filter(Boolean))]
+    if (uniqueIds.length === 0) {
+      return null
+    }
+
+    return this.createAndEnqueue(tenantId, AiJobType.EMBEDDING_BATCH, { productIds: uniqueIds })
+  }
+
+  async enqueueProductSeoDraft(tenantId: string, productId: string): Promise<AiJobEntity> {
+    return this.createAndEnqueue(tenantId, AiJobType.BULK_SEO, {
+      productId,
+      draftOnly: true,
+    })
+  }
+
+  async enqueueCartAbandonedDraft(
+    tenantId: string,
+    event: CartAbandonedEvent,
+  ): Promise<AiJobEntity> {
+    return this.createAndEnqueue(tenantId, AiJobType.CART_ABANDONED_DRAFT, { ...event })
+  }
+
+  async enqueueInvoiceOcr(
+    tenantId: string,
+    dto: GenerateInvoiceOcrDto,
+  ): Promise<AiJobEntity> {
+    return this.createAndEnqueue(tenantId, AiJobType.OCR, { ...dto })
+  }
+
+  async enqueueDemandForecast(tenantId: string): Promise<AiJobEntity> {
+    return this.createAndEnqueue(tenantId, AiJobType.DEMAND_FORECAST, { scheduled: 'weekly' })
+  }
+
+  async enqueueAutomationDispatch(
+    tenantId: string,
+    payload: AiAutomationDispatchPayload,
+  ): Promise<AiJobEntity> {
+    return this.createAndEnqueue(tenantId, AiJobType.AUTOMATION_DISPATCH, { ...payload })
+  }
+
+  async enqueueProductCreatedAutomation(
+    tenantId: string,
+    event: Omit<ProductCreatedEvent, 'tenantId'>,
+  ): Promise<AiJobEntity> {
+    return this.enqueueAutomationDispatch(tenantId, {
+      eventType: 'product.created',
+      productId: event.productId,
+      productName: event.productName,
+      category: event.category,
+      hasSeoFields: event.hasSeoFields,
+    })
+  }
+
+  async enqueueCartAbandonedAutomation(
+    tenantId: string,
+    event: Omit<CartAbandonedEvent, 'tenantId'>,
+  ): Promise<AiJobEntity> {
+    return this.enqueueAutomationDispatch(tenantId, {
+      eventType: 'cart.abandoned',
+      cartId: event.cartId,
+      customerName: event.customerName,
+      customerEmail: event.customerEmail,
+      customerPhone: event.customerPhone,
+      cartSummary: event.cartSummary,
+      messageTemplate: event.messageTemplate,
+      hoursSinceUpdate: event.hoursSinceUpdate,
+    })
+  }
+
+  async hasRecentPayloadJob(
+    tenantId: string,
+    type: AiJobType,
+    payloadKey: string,
+    payloadValue: string,
+    withinHours: number,
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - withinHours * 60 * 60 * 1000)
+
+    const count = await this.jobRepo
+      .createQueryBuilder('job')
+      .where('job.tenant_id = :tenantId', { tenantId })
+      .andWhere('job.type = :type', { type })
+      .andWhere('job.created_at >= :since', { since })
+      .andWhere(`job.payload ->> :payloadKey = :payloadValue`, { payloadKey, payloadValue })
+      .andWhere('job.status IN (:...statuses)', {
+        statuses: [AiJobStatus.QUEUED, AiJobStatus.RUNNING, AiJobStatus.COMPLETED],
+      })
+      .getCount()
+
+    return count > 0
+  }
+
+  async findLatestByPayload(
+    tenantId: string,
+    type: AiJobType,
+    payloadKey: string,
+    payloadValue: string,
+  ): Promise<AiJobEntity | null> {
+    return this.jobRepo
+      .createQueryBuilder('job')
+      .where('job.tenant_id = :tenantId', { tenantId })
+      .andWhere('job.type = :type', { type })
+      .andWhere(`job.payload ->> :payloadKey = :payloadValue`, { payloadKey, payloadValue })
+      .andWhere('job.status = :status', { status: AiJobStatus.COMPLETED })
+      .orderBy('job.completed_at', 'DESC')
+      .getOne()
   }
 
   async markRunning(jobId: string): Promise<void> {

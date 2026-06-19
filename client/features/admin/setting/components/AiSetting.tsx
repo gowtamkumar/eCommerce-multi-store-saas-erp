@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Eye, EyeOff, Loader2, MessageCircle, Search, Sparkles, Zap } from "lucide-react";
+import { Bot, Eye, EyeOff, Loader2, MessageCircle, Search, Sparkles, Zap, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useAiConfig } from "../hooks/useAiConfig";
 import { useAiUsage } from "../hooks/useAiUsage";
-import { AI_API_KEY_UNCHANGED, AI_PROVIDER_OPTIONS } from "../types/ai-config";
+import { AI_API_KEY_UNCHANGED, AI_PROVIDER_OPTIONS, getEmbeddingFormWarning } from "../types/ai-config";
 import { AiUsageDashboard } from "./AiUsageDashboard";
 
 function SecretInput({
@@ -100,15 +100,19 @@ export function AiSetting() {
     saving,
     testing,
     reindexing,
+    reindexingAsync,
+    reindexJobStatus,
     embeddingStatus,
     storefrontAiStatus,
     form,
     setForm,
     setStorefrontFlag,
+    setAutomationFlag,
     apiKeyPreview,
     saveConfig,
     testConnection,
     reindexCatalogEmbeddings,
+    reindexCatalogEmbeddingsAsync,
     applyProviderPreset,
   } = useAiConfig();
 
@@ -121,6 +125,9 @@ export function AiSetting() {
   } = useAiUsage(form.enabled);
 
   const selectedProvider = AI_PROVIDER_OPTIONS.find((p) => p.id === form.provider);
+  const embeddingFormWarning = getEmbeddingFormWarning(form);
+  const embeddingStatusWarning = embeddingStatus?.embeddingWarning ?? null;
+  const embeddingWarning = embeddingFormWarning || embeddingStatusWarning;
 
   if (loading) {
     return (
@@ -245,6 +252,17 @@ export function AiSetting() {
               className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
               placeholder={selectedProvider?.embeddingModel || "embedding-model"}
             />
+          </div>
+        ) : (
+          <div className="md:col-span-2 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+            Anthropic is chat-only. Semantic search needs a provider with embeddings (OpenAI, OpenRouter, Google, or Azure).
+          </div>
+        )}
+
+        {embeddingWarning ? (
+          <div className="md:col-span-2 flex items-start gap-2 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{embeddingWarning}</span>
           </div>
         ) : null}
 
@@ -371,7 +389,46 @@ export function AiSetting() {
         ) : null}
       </div>
 
-      {form.enabled && form.embeddingModel ? (
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-xl bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+            <Zap className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-bold text-slate-900 dark:text-white">Automation & events</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Background AI jobs queued on BullMQ. All outputs are drafts — nothing is sent
+              or published automatically.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-1">
+          <StorefrontToggle
+            checked={form.automation.productSeoOnCreate}
+            onChange={(value) => setAutomationFlag("productSeoOnCreate", value)}
+            disabled={!form.enabled}
+            title="SEO draft on new product"
+            description="When a product is created without meta title/description, queue a background SEO draft job."
+          />
+          <StorefrontToggle
+            checked={form.automation.abandonedCartDraft}
+            onChange={(value) => setAutomationFlag("abandonedCartDraft", value)}
+            disabled={!form.enabled}
+            title="Abandoned cart message drafts"
+            description="Hourly scan for idle carts (2h+) and draft recovery email/SMS for admin review — no auto-send."
+          />
+          <StorefrontToggle
+            checked={form.automation.demandForecastEnabled}
+            onChange={(value) => setAutomationFlag("demandForecastEnabled", value)}
+            disabled={!form.enabled}
+            title="Weekly demand forecast"
+            description="Read-only reorder suggestions from recent sales velocity (Sundays 03:00 UTC)."
+          />
+        </div>
+      </div>
+
+      {form.enabled && form.storefront.semanticSearchEnabled ? (
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 p-5 space-y-4">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-xl bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">
@@ -387,7 +444,7 @@ export function AiSetting() {
           </div>
 
           {embeddingStatus ? (
-            <div className="grid gap-3 sm:grid-cols-3 text-sm">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
                 <p className="text-slate-500">Indexed products</p>
                 <p className="font-semibold text-slate-900 dark:text-white">
@@ -397,7 +454,7 @@ export function AiSetting() {
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
                 <p className="text-slate-500">Embedding model</p>
                 <p className="font-mono text-xs font-semibold text-slate-900 dark:text-white truncate">
-                  {embeddingStatus.embeddingModel || form.embeddingModel}
+                  {embeddingStatus.embeddingModel || form.embeddingModel || "Not configured"}
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
@@ -406,21 +463,53 @@ export function AiSetting() {
                   {embeddingStatus.hybridSearchReady ? "Ready on storefront" : "Needs reindex or config"}
                 </p>
               </div>
+              {embeddingStatus.searchAnalytics ? (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
+                  <p className="text-slate-500">Searches ({embeddingStatus.searchAnalytics.days}d)</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {embeddingStatus.searchAnalytics.hybridSearches} hybrid ·{" "}
+                    {embeddingStatus.searchAnalytics.keywordSearches} keyword
+                  </p>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
-          <button
-            type="button"
-            onClick={async () => {
-              await reindexCatalogEmbeddings();
-              void refreshUsage();
-            }}
-            disabled={reindexing || !form.enabled}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl transition-all disabled:opacity-60"
-          >
-            {reindexing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            Reindex product catalog
-          </button>
+          <p className="text-xs text-slate-500">
+            New and updated products are indexed automatically in the background when semantic search is configured.
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={async () => {
+                await reindexCatalogEmbeddings();
+                void refreshUsage();
+              }}
+              disabled={reindexing || reindexingAsync || !form.enabled || !form.embeddingModel}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl transition-all disabled:opacity-60"
+            >
+              {reindexing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Reindex now
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                await reindexCatalogEmbeddingsAsync();
+                void refreshUsage();
+              }}
+              disabled={reindexing || reindexingAsync || !form.enabled || !form.embeddingModel}
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-all disabled:opacity-60"
+            >
+              {reindexingAsync ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Reindex in background
+            </button>
+            {reindexJobStatus ? (
+              <span className="inline-flex items-center px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-mono text-slate-600 dark:text-slate-300">
+                Job: {reindexJobStatus}
+              </span>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

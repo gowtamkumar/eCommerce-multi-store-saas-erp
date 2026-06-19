@@ -4,7 +4,10 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { AiChatPanel, AiSetupBanner } from "./components/AiChatPanel";
 import { CampaignCopyGenerator } from "./components/CampaignCopyGenerator";
+import { FaqContentGenerator } from "./components/FaqContentGenerator";
+import { PageSeoContentGenerator } from "./components/PageSeoContentGenerator";
 import { ProductContentGenerator } from "./components/ProductContentGenerator";
+import { StoreSeoContentGenerator } from "./components/StoreSeoContentGenerator";
 import { useAiStudio } from "./hooks/useAiStudio";
 import type { AiStudioTab } from "./types/ai-studio";
 
@@ -12,6 +15,9 @@ const TABS: Array<{ id: AiStudioTab; label: string }> = [
   { id: "chat", label: "Assistant" },
   { id: "product", label: "Product content" },
   { id: "campaign", label: "Campaign copy" },
+  { id: "faq", label: "FAQ generator" },
+  { id: "pageSeo", label: "Page SEO" },
+  { id: "storeSeo", label: "Store SEO" },
 ];
 
 export default function AiStudio() {
@@ -22,11 +28,17 @@ export default function AiStudio() {
     chatLoading,
     productLoading,
     campaignLoading,
+    faqLoading,
+    pageSeoLoading,
+    storeSeoLoading,
     messages,
     sendChat,
     clearChat,
     generateProductContent,
     generateCampaignCopy,
+    generateFaq,
+    generatePageSeo,
+    generateStoreSeo,
   } = useAiStudio();
 
   const disabled = !status?.configured;
@@ -48,7 +60,7 @@ export default function AiStudio() {
             <h1 className="text-2xl font-black text-slate-900 dark:text-white">AI Studio</h1>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Chat assistant, product descriptions, and campaign copy — powered by your tenant AI config.
+            Chat assistant, product descriptions, campaign copy, FAQs, and SEO tools — powered by your tenant AI config.
           </p>
         </div>
         {status?.configured ? (
@@ -100,6 +112,30 @@ export default function AiStudio() {
           loading={campaignLoading}
           disabled={disabled}
           onGenerate={generateCampaignCopy}
+        />
+      ) : null}
+
+      {activeTab === "faq" ? (
+        <FaqContentGenerator
+          loading={faqLoading}
+          disabled={disabled}
+          onGenerate={generateFaq}
+        />
+      ) : null}
+
+      {activeTab === "pageSeo" ? (
+        <PageSeoContentGenerator
+          loading={pageSeoLoading}
+          disabled={disabled}
+          onGenerate={generatePageSeo}
+        />
+      ) : null}
+
+      {activeTab === "storeSeo" ? (
+        <StoreSeoContentGenerator
+          loading={storeSeoLoading}
+          disabled={disabled}
+          onGenerate={generateStoreSeo}
         />
       ) : null}
     </div>

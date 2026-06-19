@@ -8,6 +8,7 @@ import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Audit } from '@/common/decorators/audit.decorator'
 import { Public } from '@/common/decorators/public.decorator'
+import { assertTenantContext } from '@/common/utils/assert-tenant-context.util'
 import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
 import {
   Body,
@@ -98,7 +99,8 @@ export class ProductController {
   async getStorefrontAiStatus(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<StorefrontAiStatusDto>> {
-    const data = await this.storefrontAssistantService.getStatus(ctx.tenantId)
+    const tenantId = assertTenantContext(ctx.tenantId)
+    const data = await this.storefrontAssistantService.getStatus(tenantId)
     return {
       success: true,
       statusCode: 200,
@@ -116,7 +118,8 @@ export class ProductController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: StorefrontAssistantChatDto,
   ): Promise<BaseApiSuccessResponse<StorefrontAssistantChatResultDto>> {
-    const data = await this.storefrontAssistantService.chat(ctx.tenantId, dto, ctx)
+    const tenantId = assertTenantContext(ctx.tenantId)
+    const data = await this.storefrontAssistantService.chat(tenantId, dto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -155,6 +158,28 @@ export class ProductController {
       statusCode: 200,
       message: 'Product catalog embeddings reindexed',
       data,
+    }
+  }
+
+  @Post('embeddings/reindex/async')
+  @UseGuards(JwtAuthGuard)
+  @RequireFeature('ai')
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'ProductEmbedding', action: 'REINDEX_ASYNC' })
+  @HttpCode(202)
+  async reindexProductEmbeddingsAsync(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const job = await this.productService.enqueueProductEmbeddingsReindex(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 202,
+      message: 'Product catalog embedding reindex queued',
+      data: {
+        id: job.id,
+        status: job.status,
+        type: job.type,
+      },
     }
   }
 
@@ -198,7 +223,8 @@ export class ProductController {
     @Param('slug') slug: string,
     @Body() dto: AskProductQuestionDto,
   ): Promise<BaseApiSuccessResponse<ProductQaResultDto>> {
-    const data = await this.productQaService.askAboutProduct(ctx.tenantId, slug, dto, ctx)
+    const tenantId = assertTenantContext(ctx.tenantId)
+    const data = await this.productQaService.askAboutProduct(tenantId, slug, dto, ctx)
     return {
       success: true,
       statusCode: 200,

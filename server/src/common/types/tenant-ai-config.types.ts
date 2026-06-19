@@ -16,6 +16,15 @@ export interface TenantAiStorefrontConfig {
   semanticSearchEnabled?: boolean
 }
 
+export interface TenantAiAutomationConfig {
+  /** Queue SEO draft job when a product is created without meta fields */
+  productSeoOnCreate?: boolean
+  /** Draft recovery email/SMS when a cart is abandoned (no auto-send) */
+  abandonedCartDraft?: boolean
+  /** Weekly read-only reorder suggestions job */
+  demandForecastEnabled?: boolean
+}
+
 export interface TenantAiConfig {
   enabled: boolean
   provider: AiProviderType | string
@@ -31,6 +40,13 @@ export interface TenantAiConfig {
   temperature?: number
   extraHeaders?: Record<string, string>
   storefront?: TenantAiStorefrontConfig
+  automation?: TenantAiAutomationConfig
+}
+
+export const DEFAULT_TENANT_AI_AUTOMATION: Required<TenantAiAutomationConfig> = {
+  productSeoOnCreate: false,
+  abandonedCartDraft: true,
+  demandForecastEnabled: false,
 }
 
 export const AI_PROVIDER_PRESETS: Record<
@@ -85,4 +101,5 @@ export const DEFAULT_TENANT_AI_CONFIG: TenantAiConfig = {
     productQaEnabled: true,
     semanticSearchEnabled: true,
   },
+  automation: { ...DEFAULT_TENANT_AI_AUTOMATION },
 }
