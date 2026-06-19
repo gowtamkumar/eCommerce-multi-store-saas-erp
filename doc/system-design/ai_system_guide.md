@@ -660,6 +660,7 @@ sequenceDiagram
 
 | Document | Contents |
 |----------|----------|
+| [ai_improvement_backlog.md](ai_improvement_backlog.md) | Phase & module checklists, QA testing |
 | [ai_feature_opportunity_analysis.md](ai_feature_opportunity_analysis.md) | Roadmap, module-by-module opportunities |
 | [12_STOREFRONT_AI_GUIDE.md](../manuals/12_STOREFRONT_AI_GUIDE.md) | Storefront-only deep dive |
 | [erp_master_system_design.md](erp_master_system_design.md) | Phase 7 — AI as extension layer |

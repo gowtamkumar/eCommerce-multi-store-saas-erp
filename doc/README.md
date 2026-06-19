@@ -43,6 +43,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 *   [`erp_subscription_feature_completion_matrix.md`](system-design/erp_subscription_feature_completion_matrix.md) — Feature completion matrix compared against the codebase and subscription gates.
 *   [`ai_system_guide.md`](system-design/ai_system_guide.md) — **AI System Guide (A–Z):** three AI layers, BYOK config, guards, APIs, embeddings, frontend patterns.
 *   [`ai_feature_opportunity_analysis.md`](system-design/ai_feature_opportunity_analysis.md) — AI roadmap and module-by-module opportunity analysis.
+*   [`ai_improvement_backlog.md`](system-design/ai_improvement_backlog.md) — **AI Improvement Backlog:** phase checklists (P0–P3), per-module tasks, QA checklist.
 
 ### 1.2 Supporting Module & Product Specs
 *   [`crm_loyalty_requirements.md`](system-design/crm_loyalty_requirements.md) — Wallets, loyalty points, customer credit holds, and AR aging tracking.

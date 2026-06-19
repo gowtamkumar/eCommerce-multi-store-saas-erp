@@ -2,7 +2,7 @@
 
 > **Purpose:** Identify where AI adds value across this multi-tenant eCommerce ERP — what is already built, what should be built next, and what must stay human-controlled.  
 > **Audience:** Product, engineering, and implementation planning.  
-> **Companion doc:** [AI System Guide](ai_system_guide.md) (A–Z architecture, configuration, APIs, file map).
+> **Companion docs:** [AI System Guide](ai_system_guide.md) (A–Z architecture) · [AI Improvement Backlog](ai_improvement_backlog.md) (checklists & next work)
 
 ---
 
@@ -421,6 +421,7 @@ Track per tenant after each phase:
 | Document | Content |
 |----------|---------|
 | [ai_system_guide.md](ai_system_guide.md) | A–Z architecture, configuration, APIs, providers, file map |
+| [ai_improvement_backlog.md](ai_improvement_backlog.md) | Improvement checklists by phase and module |
 | [erp_master_system_design.md](erp_master_system_design.md) | ERP Phase 7 AI extension principles |
 | [event_driven_architecture.md](../developer/event_driven_architecture.md) | Event hooks for async AI |
 | [subscription-and-features.md](subscription-and-features.md) | Plan feature `ai` gating |
@@ -431,17 +432,19 @@ Track per tenant after each phase:
 
 | Layer | Coverage today | Highest-impact next |
 |-------|----------------|---------------------|
-| **Marketing & content** | ~95% of copy workflows | — |
-| **Catalog** | Products, categories, brands | Alt text, bulk import |
-| **Support & CRM** | 0% | Suggested chat replies |
-| **Operations / inventory** | 100% | Read-only anomaly narratives |
-| **Procurement / finance** | 0% | OCR + AR drafts (async) |
-| **HRM** | Partial | Job descriptions, screening questions, review phrase bank, payslip explanations |
-| **Storefront** | Strong | Semantic search, product Q&A, shopping assistant |
-| **Platform infra** | Embeddings + sync API | Jobs queue, metering |
+| **Marketing & content** | ~95% inline assists | AI Studio tabs, event automation |
+| **Catalog** | Products, categories, brands, media | Embedding lifecycle, bulk import |
+| **Support & CRM** | Reply assist, profile, leads | Conversation summary, handoff |
+| **Operations / inventory** | Anomaly, transfer, cycle count, fulfillment, batches | Demand forecast (async) |
+| **Procurement / finance** | Sync drafts + invoice OCR | Async OCR, 3-way match explain |
+| **HRM** | Job copy, review phrases, payslip explain | Leave policy FAQ, sensitive opt-out |
+| **Storefront** | Semantic search, Q&A, assistant | Tenant assert, usage analytics |
+| **Platform infra** | Embeddings + sync API + platform AI | **Jobs queue, token metering, tests** |
+
+**Detailed checklists:** [ai_improvement_backlog.md](ai_improvement_backlog.md)
 
 AI should continue to expand **where humans write repetitive text** or **need read-only explanations** — not where the ERP enforces invariants (stock, money, permissions).
 
 ---
 
-*Last updated: 2026-06-18 — reflects Phase A/B implementation and platform module inventory.*
+*Last updated: 2026-06-18 — reflects full admin AI rollout, storefront Phase D, and platform AI.*

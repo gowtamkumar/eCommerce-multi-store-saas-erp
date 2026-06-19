@@ -562,6 +562,7 @@ curl -s "$API_URL/products/storefront-ai/status" -H "x-tenant-id: $TENANT_ID" | 
 | Document | Topic |
 |----------|--------|
 | [ai_system_guide.md](../system-design/ai_system_guide.md) | Full AI stack A–Z (admin, storefront, platform) |
+| [ai_improvement_backlog.md](../system-design/ai_improvement_backlog.md) | Improvement checklists and testing |
 | [ai_feature_opportunity_analysis.md](../system-design/ai_feature_opportunity_analysis.md) | AI roadmap and storefront phase |
 | [10_customer_crm_and_storefront.md](../codebase-understanding/10_customer_crm_and_storefront.md) | Broader storefront architecture |
 | [live_chat_system_design.md](../system-design/live_chat_system_design.md) | Human live chat (separate widget) |
