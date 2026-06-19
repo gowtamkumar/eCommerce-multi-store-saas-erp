@@ -57,6 +57,7 @@ export default function CartAbandonedMessageModal({
           setEmailSubject(draft.emailSubject);
           setEmailBody(draft.emailBody);
           setSmsText(draft.smsText ?? "");
+          toast.success("Loaded background automation draft", { id: `cart-draft-${cart.id}` });
         }
       } catch {
         // Ignore — manual draft still available

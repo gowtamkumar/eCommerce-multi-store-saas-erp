@@ -7,9 +7,12 @@ import { normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai
 import { Injectable, Logger } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { GenerateInvoiceOcrDto } from '../dto/generate-invoice-ocr.dto'
-import { AiAssistantService } from './ai-assistant.service'
+import { AiCatalogAssistantService } from './domains/ai-catalog-assistant.service'
+import { AiCrmAssistantService } from './domains/ai-crm-assistant.service'
+import { AiProcurementAssistantService } from './domains/ai-procurement-assistant.service'
 import { AiJobService } from './ai-job.service'
 import { TenantAiClientService } from './tenant-ai-client.service'
+import { ProductEmbeddingService } from '@/modules/admin/catalog/product/services/product-embedding.service'
 
 const DEMAND_FORECAST_LOOKBACK_DAYS = 60
 const DEMAND_FORECAST_TOP_PRODUCTS = 25
@@ -20,9 +23,12 @@ export class AiAutomationService {
 
   constructor(
     private readonly aiJobService: AiJobService,
-    private readonly aiAssistantService: AiAssistantService,
+    private readonly catalogAssistant: AiCatalogAssistantService,
+    private readonly crmAssistant: AiCrmAssistantService,
+    private readonly procurementAssistant: AiProcurementAssistantService,
     private readonly tenantAiClient: TenantAiClientService,
     private readonly productRepository: ProductRepository,
+    private readonly productEmbeddingService: ProductEmbeddingService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -61,10 +67,8 @@ export class AiAutomationService {
       return { skipped: true, reason: 'automation_disabled', cartId: event.cartId }
     }
 
-    const duplicate = await this.aiJobService.hasRecentPayloadJob(
+    const duplicate = await this.aiJobService.hasRecentCartAbandonedAutomation(
       event.tenantId,
-      AiJobType.CART_ABANDONED_DRAFT,
-      'cartId',
       event.cartId,
       24,
     )
@@ -123,7 +127,7 @@ export class AiAutomationService {
       return { skipped: true, reason: 'seo_already_set', productId }
     }
 
-    const draft = await this.aiAssistantService.generateProductContent(tenantId, {
+    const draft = await this.catalogAssistant.generateProductContent(tenantId, {
       productName: product.name,
       category: product.category?.name,
       existingDescription: product.description || product.shortDescription || undefined,
@@ -141,12 +145,127 @@ export class AiAutomationService {
     }
   }
 
+  async runBulkDescriptionImportJob(
+    tenantId: string,
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const productIds = Array.isArray(payload.productIds)
+      ? (payload.productIds as string[]).filter(Boolean)
+      : []
+    const applyToProducts = payload.applyToProducts !== false
+    const importBatchId = String(payload.importBatchId ?? '')
+
+    const results: Array<Record<string, unknown>> = []
+    let generatedCount = 0
+    let skippedCount = 0
+    let failedCount = 0
+
+    for (const productId of productIds) {
+      try {
+        const outcome = await this.generateAndApplyImportedDescription(
+          tenantId,
+          productId,
+          applyToProducts,
+        )
+        results.push(outcome)
+        if (outcome.skipped) {
+          skippedCount += 1
+        } else if (outcome.failed) {
+          failedCount += 1
+        } else {
+          generatedCount += 1
+        }
+      } catch (error: unknown) {
+        failedCount += 1
+        const message = error instanceof Error ? error.message : 'generation_failed'
+        results.push({ productId, failed: true, reason: message })
+      }
+    }
+
+    return {
+      importBatchId,
+      draftOnly: !applyToProducts,
+      processedCount: productIds.length,
+      generatedCount,
+      skippedCount,
+      failedCount,
+      results,
+    }
+  }
+
+  private async generateAndApplyImportedDescription(
+    tenantId: string,
+    productId: string,
+    applyToProducts: boolean,
+  ): Promise<Record<string, unknown>> {
+    const product = await this.productRepository.findProductById(productId, tenantId)
+    if (!product) {
+      return { productId, skipped: true, reason: 'product_not_found' }
+    }
+
+    const needsDescription = this.productNeedsImportedDescription(product)
+    if (!needsDescription) {
+      return { productId, productName: product.name, skipped: true, reason: 'has_description' }
+    }
+
+    const draft = await this.catalogAssistant.generateProductContent(tenantId, {
+      productName: product.name,
+      category: product.category?.name,
+      keywords: undefined,
+      existingDescription: product.description || undefined,
+      tone: 'professional',
+    })
+
+    if (applyToProducts) {
+      await this.productRepository.updateAndSave(product, {
+        description: draft.description || product.description,
+        shortDescription: draft.shortDescription || product.shortDescription,
+        metaTitle: product.metaTitle?.trim() ? product.metaTitle : draft.seoTitle,
+        metaDescription: product.metaDescription?.trim()
+          ? product.metaDescription
+          : draft.seoDescription,
+      })
+      void this.productEmbeddingService.scheduleProductEmbeddingSync(tenantId, productId)
+    }
+
+    return {
+      productId,
+      productName: product.name,
+      applied: applyToProducts,
+      description: draft.description,
+      shortDescription: draft.shortDescription,
+      seoTitle: draft.seoTitle,
+      seoDescription: draft.seoDescription,
+      tags: draft.tags,
+    }
+  }
+
+  private productNeedsImportedDescription(product: {
+    description?: string | null
+    shortDescription?: string | null
+  }): boolean {
+    const description = product.description?.trim() ?? ''
+    const shortDescription = product.shortDescription?.trim() ?? ''
+    const placeholder = '(imported — description pending)'
+
+    if (!description || description === placeholder) {
+      return true
+    }
+
+    if (!shortDescription && description.length < 40) {
+      return true
+    }
+
+    const lowered = description.toLowerCase()
+    return lowered === 'tbd' || lowered === 'n/a'
+  }
+
   async runCartAbandonedDraftJob(
     tenantId: string,
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const cartId = String(payload.cartId ?? '')
-    const draft = await this.aiAssistantService.generateAbandonedCartMessage(tenantId, {
+    const draft = await this.crmAssistant.generateAbandonedCartMessage(tenantId, {
       cartSummary: String(payload.cartSummary ?? ''),
       customerName: String(payload.customerName ?? 'Customer'),
       customerEmail: payload.customerEmail ? String(payload.customerEmail) : undefined,
@@ -168,13 +287,13 @@ export class AiAutomationService {
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const dto = payload as unknown as GenerateInvoiceOcrDto
-    const result = await this.aiAssistantService.generateInvoiceOcr(tenantId, dto)
+    const result = await this.procurementAssistant.generateInvoiceOcr(tenantId, dto)
     return { draftOnly: true, ...result }
   }
 
   async runDemandForecastJob(tenantId: string): Promise<Record<string, unknown>> {
     const salesSummary = await this.buildDemandForecastContext(tenantId)
-    const forecast = await this.aiAssistantService.generateDemandForecast(tenantId, {
+    const forecast = await this.catalogAssistant.generateDemandForecast(tenantId, {
       salesSummary,
       tone: 'practical',
     })

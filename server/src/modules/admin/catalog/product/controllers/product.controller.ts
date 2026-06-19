@@ -10,6 +10,7 @@ import { Audit } from '@/common/decorators/audit.decorator'
 import { Public } from '@/common/decorators/public.decorator'
 import { assertTenantContext } from '@/common/utils/assert-tenant-context.util'
 import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
+import { SkipNonStorefrontAiThrottles } from '@/common/throttler/throttler-skip.decorator'
 import {
   Body,
   Controller,
@@ -28,6 +29,7 @@ import { CreateReviewDto } from '../../review/dto/review.dto'
 import { ReviewService } from '../../review/services/review.service'
 import { CreateProductDto } from '../dto/create-product.dto'
 import { FilterProductDto } from '../dto/filter-product.dto'
+import { ImportProductsDto, ImportProductsResultDto } from '../dto/import-products.dto'
 import { ProductResponseDto } from '../dto/product-response.dto'
 import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductService } from '../services/product.service'
@@ -72,6 +74,24 @@ export class ProductController {
     }
   }
 
+  @Post('import')
+  @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_IMPORT, SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'Product', action: 'IMPORT' })
+  @HttpCode(200)
+  async importProducts(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: ImportProductsDto,
+  ): Promise<BaseApiSuccessResponse<ImportProductsResultDto>> {
+    const data = await this.productService.importProductsFromRows(dto, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Imported ${data.createdCount} product(s)`,
+      data,
+    }
+  }
+
   @Get()
   @Public()
   async findAllProducts(
@@ -112,6 +132,7 @@ export class ProductController {
   @Post('storefront-ai/chat')
   @Public()
   @UseGuards(CustomThrottlerGuard)
+  @SkipNonStorefrontAiThrottles()
   @Throttle({ 'ai-storefront': { limit: 20, ttl: 60000 } })
   @HttpCode(200)
   async chatWithShoppingAssistant(

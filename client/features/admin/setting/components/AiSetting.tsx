@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Eye, EyeOff, Loader2, MessageCircle, Search, Sparkles, Zap, AlertTriangle } from "lucide-react";
+import { Bot, Eye, EyeOff, Loader2, MessageCircle, Search, ShieldAlert, Sparkles, Zap, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { useAiConfig } from "../hooks/useAiConfig";
 import { useAiUsage } from "../hooks/useAiUsage";
@@ -108,6 +108,7 @@ export function AiSetting() {
     setForm,
     setStorefrontFlag,
     setAutomationFlag,
+    setSensitiveFlag,
     apiKeyPreview,
     saveConfig,
     testConnection,
@@ -412,6 +413,13 @@ export function AiSetting() {
             description="When a product is created without meta title/description, queue a background SEO draft job."
           />
           <StorefrontToggle
+            checked={form.automation.bulkDescriptionOnImport}
+            onChange={(value) => setAutomationFlag("bulkDescriptionOnImport", value)}
+            disabled={!form.enabled}
+            title="Descriptions after CSV import"
+            description="When importing products without descriptions, pre-check the AI bulk description job in the import modal."
+          />
+          <StorefrontToggle
             checked={form.automation.abandonedCartDraft}
             onChange={(value) => setAutomationFlag("abandonedCartDraft", value)}
             disabled={!form.enabled}
@@ -512,6 +520,40 @@ export function AiSetting() {
           </div>
         </div>
       ) : null}
+
+      {/* ─── Sensitive Module Opt-Out ─── */}
+      <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-900/10 p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-bold text-slate-900 dark:text-white">Sensitive module AI</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Control which sensitive data modules are allowed to send data to the AI provider.
+              Disabling a module prevents its AI endpoints from processing (returns 403).
+              AI generates drafts only — HR and financial records are never modified automatically.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          <StorefrontToggle
+            checked={form.sensitive.hrmEnabled}
+            onChange={(value) => setSensitiveFlag("hrmEnabled", value)}
+            disabled={!form.enabled}
+            title="HRM module AI"
+            description="Allow AI for HR features: leave policy FAQ, interview screening, payslip explanations, performance review phrases, and recruitment job copy. Disable to prevent any HR data from being sent to the AI provider."
+          />
+          <StorefrontToggle
+            checked={form.sensitive.financeEnabled}
+            onChange={(value) => setSensitiveFlag("financeEnabled", value)}
+            disabled={!form.enabled}
+            title="Finance module AI"
+            description="Allow AI for finance features: AR collection drafts, AP payment reminders, expense categorisation, tax explanations, and report summaries. Disable to prevent financial data from leaving the platform."
+          />
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
         <button

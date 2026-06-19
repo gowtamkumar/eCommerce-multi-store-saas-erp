@@ -88,6 +88,12 @@ export class StorefrontAssistantChatResultDto {
 
   @ApiProperty({ type: [StorefrontAssistantProductLinkDto] })
   productLinks: StorefrontAssistantProductLinkDto[]
+
+  @ApiProperty({
+    description:
+      'When true, the client should offer a prominent handoff to human live chat',
+  })
+  suggestLiveChatHandoff: boolean
 }
 
 export class StorefrontAiStatusDto {

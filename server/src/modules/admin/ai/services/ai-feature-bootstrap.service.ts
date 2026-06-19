@@ -34,7 +34,7 @@ export class AiFeatureBootstrapService implements OnApplicationBootstrap {
       INSERT INTO "role_permissions" ("role_id", "permission_id")
       SELECT r.id, p.id
       FROM "roles" r
-      INNER JOIN "permissions" p ON p.code IN ('ai:use', 'ai:manage')
+      INNER JOIN "permissions" p ON p.code IN ('ai:use', 'ai:manage', 'ai:use:hrm', 'ai:use:finance')
       WHERE (
         r."is_system_role" = true
         OR r.name = 'Branch Manager'

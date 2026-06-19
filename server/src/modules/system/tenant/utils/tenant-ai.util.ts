@@ -2,6 +2,7 @@ import {
   AI_PROVIDER_PRESETS,
   DEFAULT_TENANT_AI_CONFIG,
   TenantAiConfig,
+  TenantAiSensitiveConfig,
   TenantAiStorefrontConfig,
   TenantAiAutomationConfig,
 } from '@/common/types/tenant-ai-config.types'
@@ -15,6 +16,17 @@ import {
 } from '@/common/utils/tenant-ai-automation.util'
 
 export const API_KEY_UNCHANGED = '__UNCHANGED__'
+
+export function normalizeSensitiveAiConfig(
+  raw?: TenantAiSensitiveConfig | null,
+): Required<TenantAiSensitiveConfig> {
+  const defaults = DEFAULT_TENANT_AI_CONFIG.sensitive!
+  if (!raw || typeof raw !== 'object') return { hrmEnabled: true, financeEnabled: true }
+  return {
+    hrmEnabled: raw.hrmEnabled ?? defaults.hrmEnabled ?? true,
+    financeEnabled: raw.financeEnabled ?? defaults.financeEnabled ?? true,
+  }
+}
 
 export function normalizeTenantAiConfig(raw?: TenantAiConfig | null): TenantAiConfig {
   if (!raw || typeof raw !== 'object') {
@@ -40,6 +52,7 @@ export function normalizeTenantAiConfig(raw?: TenantAiConfig | null): TenantAiCo
     extraHeaders: raw.extraHeaders,
     storefront: normalizeStorefrontAiConfig(raw.storefront),
     automation: normalizeTenantAiAutomation(raw.automation),
+    sensitive: normalizeSensitiveAiConfig(raw.sensitive),
   }
 }
 
@@ -73,6 +86,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
   extraHeaders?: Record<string, string>
   storefront: Required<TenantAiStorefrontConfig>
   automation: Required<TenantAiAutomationConfig>
+  sensitive: Required<TenantAiSensitiveConfig>
 } {
   const normalized = normalizeTenantAiConfig(config)
   const { hasApiKey, apiKeyPreview } = maskApiKey(normalized.apiKey)
@@ -93,6 +107,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
     extraHeaders: normalized.extraHeaders,
     storefront: normalizeStorefrontAiConfig(normalized.storefront),
     automation: normalizeTenantAiAutomation(normalized.automation),
+    sensitive: normalizeSensitiveAiConfig(normalized.sensitive),
   }
 }
 
@@ -110,6 +125,9 @@ export function mergeTenantAiConfigUpdate(
     automation: dto.automation
       ? mergeTenantAiAutomation(current.automation, dto.automation)
       : current.automation,
+    sensitive: dto.sensitive
+      ? { ...normalizeSensitiveAiConfig(current.sensitive), ...dto.sensitive }
+      : current.sensitive,
   }
 
   if (

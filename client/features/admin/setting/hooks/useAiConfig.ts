@@ -8,6 +8,7 @@ import {
   AI_PROVIDER_OPTIONS,
   DEFAULT_AI_CONFIG_FORM,
   DEFAULT_AUTOMATION_AI_CONFIG,
+  DEFAULT_SENSITIVE_AI_CONFIG,
   DEFAULT_STOREFRONT_AI_CONFIG,
   EmbeddingIndexStatus,
   StorefrontAiStatus,
@@ -37,6 +38,10 @@ function mapResponseToForm(data: TenantAiConfigResponse): TenantAiConfigForm {
     automation: {
       ...DEFAULT_AUTOMATION_AI_CONFIG,
       ...data.automation,
+    },
+    sensitive: {
+      ...DEFAULT_SENSITIVE_AI_CONFIG,
+      ...data.sensitive,
     },
   };
 }
@@ -117,6 +122,7 @@ export function useAiConfig() {
         temperature: form.temperature,
         storefront: form.storefront,
         automation: form.automation,
+        sensitive: form.sensitive,
       };
 
       if (form.apiKey && form.apiKey !== AI_API_KEY_UNCHANGED) {
@@ -285,6 +291,16 @@ export function useAiConfig() {
     }));
   };
 
+  const setSensitiveFlag = (
+    key: keyof TenantAiConfigForm["sensitive"],
+    value: boolean,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      sensitive: { ...prev.sensitive, [key]: value },
+    }));
+  };
+
   return {
     loading,
     saving,
@@ -298,6 +314,7 @@ export function useAiConfig() {
     setForm,
     setStorefrontFlag,
     setAutomationFlag,
+    setSensitiveFlag,
     apiKeyPreview,
     saveConfig,
     testConnection,

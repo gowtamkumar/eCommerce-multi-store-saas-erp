@@ -54,6 +54,12 @@ export class AiProcessor extends WorkerHost {
           return result
         }
 
+        case AiJobType.BULK_DESCRIPTION_IMPORT: {
+          const result = await this.aiAutomationService.runBulkDescriptionImportJob(tenantId, payload)
+          await this.aiJobService.markCompleted(jobId, result)
+          return result
+        }
+
         case AiJobType.CART_ABANDONED_DRAFT: {
           const result = await this.aiAutomationService.runCartAbandonedDraftJob(tenantId, payload)
           await this.aiJobService.markCompleted(jobId, result)

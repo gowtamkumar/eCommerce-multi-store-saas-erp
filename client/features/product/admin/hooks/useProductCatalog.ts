@@ -196,5 +196,6 @@ export function useProductCatalog() {
     handleDelete,
     handleStatusUpdate,
     handleLandingPage,
+    refresh,
   };
 }

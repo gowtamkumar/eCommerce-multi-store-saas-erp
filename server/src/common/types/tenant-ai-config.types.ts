@@ -19,10 +19,19 @@ export interface TenantAiStorefrontConfig {
 export interface TenantAiAutomationConfig {
   /** Queue SEO draft job when a product is created without meta fields */
   productSeoOnCreate?: boolean
+  /** Queue bulk description job after CSV product import */
+  bulkDescriptionOnImport?: boolean
   /** Draft recovery email/SMS when a cart is abandoned (no auto-send) */
   abandonedCartDraft?: boolean
   /** Weekly read-only reorder suggestions job */
   demandForecastEnabled?: boolean
+}
+
+export interface TenantAiSensitiveConfig {
+  /** Allow AI for HRM module (leave, recruitment, payroll, performance). Default: true */
+  hrmEnabled?: boolean
+  /** Allow AI for Finance module (AR, AP, tax, expense, ledger). Default: true */
+  financeEnabled?: boolean
 }
 
 export interface TenantAiConfig {
@@ -41,10 +50,13 @@ export interface TenantAiConfig {
   extraHeaders?: Record<string, string>
   storefront?: TenantAiStorefrontConfig
   automation?: TenantAiAutomationConfig
+  /** Per-module AI opt-out toggles for sensitive data modules */
+  sensitive?: TenantAiSensitiveConfig
 }
 
 export const DEFAULT_TENANT_AI_AUTOMATION: Required<TenantAiAutomationConfig> = {
   productSeoOnCreate: false,
+  bulkDescriptionOnImport: true,
   abandonedCartDraft: true,
   demandForecastEnabled: false,
 }
@@ -102,4 +114,8 @@ export const DEFAULT_TENANT_AI_CONFIG: TenantAiConfig = {
     semanticSearchEnabled: true,
   },
   automation: { ...DEFAULT_TENANT_AI_AUTOMATION },
+  sensitive: {
+    hrmEnabled: true,
+    financeEnabled: true,
+  },
 }

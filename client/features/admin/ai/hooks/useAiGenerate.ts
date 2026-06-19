@@ -18,6 +18,7 @@ import type {
   ReturnLetterTemplate,
   SupportReplyResult,
   SupportConversationSummaryResult,
+  SupportMessageIntentsResult,
   CustomerProfileResult,
   ReviewAssistResult,
   AbandonedCartMessageResult,
@@ -44,11 +45,17 @@ import type {
   PerformanceReviewPhrasesResult,
   PayslipExplanationResult,
   MarketingDescriptionResult,
+  CouponCodeSuggestionsResult,
   PageSeoResult,
   PageBlockContentResult,
   PageBlockType,
   ProductContentResult,
   StoreSeoResult,
+  PosCashierAssistResult,
+  PosCashierAssistContext,
+  LeaveFaqResult,
+  ApplicantScreeningResult,
+  ApplicantScreeningStage,
 } from "../types/ai-studio";
 
 export function useAiGenerate() {
@@ -143,6 +150,15 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<MarketingDescriptionResult>("/ai/generate/marketing-description", payload);
 
+  const generateCouponCodeSuggestions = (payload: {
+    offerSummary?: string;
+    description?: string;
+    discountType?: "percentage" | "fixed" | "free_shipping";
+    amount?: number;
+    theme?: string;
+    count?: number;
+  }) => withGenerate<CouponCodeSuggestionsResult>("/ai/generate/coupon-code-suggestions", payload);
+
   const generateLoyaltyCopy = (payload: {
     context: "program" | "rule";
     offerSummary?: string;
@@ -206,6 +222,15 @@ export function useAiGenerate() {
   }) =>
     withGenerate<SupportConversationSummaryResult>(
       "/ai/generate/support-conversation-summary",
+      payload,
+    );
+
+  const generateSupportMessageIntents = (payload: {
+    messages: Array<{ messageId: string; text: string }>;
+    conversationSummary?: string;
+  }) =>
+    withGenerate<SupportMessageIntentsResult>(
+      "/ai/generate/support-message-intents",
       payload,
     );
 
@@ -375,6 +400,30 @@ export function useAiGenerate() {
     existingDraft?: string;
   }) => withGenerate<PayslipExplanationResult>("/ai/generate/payslip-explanation", payload);
 
+  const generatePosCashierAssist = (payload: {
+    context: PosCashierAssistContext;
+    cartSummary?: string;
+    customerSummary?: string;
+    shiftSummary?: string;
+    transactionSummary?: string;
+    tone?: string;
+  }) => withGenerate<PosCashierAssistResult>("/ai/generate/pos-cashier-assist", payload);
+
+  const generateLeaveFaq = (payload: {
+    policySummary: string;
+    seedQuestions?: string[];
+    audience?: string;
+    companyName?: string;
+  }) => withGenerate<LeaveFaqResult>("/ai/generate/leave-faq", payload);
+
+  const generateApplicantScreening = (payload: {
+    jobSummary: string;
+    stage?: ApplicantScreeningStage;
+    count?: number;
+    focusAreas?: string[];
+    tone?: string;
+  }) => withGenerate<ApplicantScreeningResult>("/ai/generate/applicant-screening", payload);
+
   return {
     configured,
     loading,
@@ -387,12 +436,14 @@ export function useAiGenerate() {
     generateStoreSeo,
     generatePageBlockContent,
     generateMarketingDescription,
+    generateCouponCodeSuggestions,
     generateLoyaltyCopy,
     generateLeadFollowUp,
     generateOrderAssist,
     generateReturnAssist,
     generateSupportReply,
     generateSupportConversationSummary,
+    generateSupportMessageIntents,
     generateCustomerProfile,
     generateReviewAssist,
     generateAbandonedCartMessage,
@@ -417,5 +468,8 @@ export function useAiGenerate() {
     generateRecruitmentJobCopy,
     generatePerformanceReviewPhrases,
     generatePayslipExplanation,
+    generatePosCashierAssist,
+    generateLeaveFaq,
+    generateApplicantScreening,
   };
 }

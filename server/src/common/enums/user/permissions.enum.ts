@@ -136,6 +136,10 @@ export const SystemPermissions = {
   // ─── AI ──────────────────────────────────────────────────────────────────────
   AI_USE: 'ai:use',
   AI_MANAGE: 'ai:manage',
+  /** Granular scope: use AI features specifically in HRM module (leave, recruitment, payroll) */
+  AI_USE_HRM: 'ai:use:hrm',
+  /** Granular scope: use AI features specifically in Finance module (AR, AP, tax, reports) */
+  AI_USE_FINANCE: 'ai:use:finance',
 } as const
 
 export type SystemPermissionCode = (typeof SystemPermissions)[keyof typeof SystemPermissions]

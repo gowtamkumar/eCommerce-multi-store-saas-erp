@@ -4,37 +4,54 @@ import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { BullModule } from '@nestjs/bullmq'
 import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { ProductModule } from '../catalog/product/product.module'
+import { ReportModule } from '../operations/finance/report/report.module'
+import { OrderModule } from '../sales/order/order.module'
 import { AiController } from './controllers/ai.controller'
 import { AiJobEntity } from './entities/ai-job.entity'
 import { AiUsageLogEntity } from './entities/ai-usage-log.entity'
 import { AiAutomationScheduler } from './schedulers/ai-automation.scheduler'
-import { AdminCopilotService } from './services/admin-copilot.service'
 import { AdminCopilotToolService } from './services/admin-copilot-tool.service'
-import { AiAssistantService } from './services/ai-assistant.service'
+import { AdminCopilotService } from './services/admin-copilot.service'
+import { AiAssistantBaseService } from './services/ai-assistant-base.service'
 import { AiAutomationService } from './services/ai-automation.service'
 import { AiFeatureBootstrapService } from './services/ai-feature-bootstrap.service'
 import { AiJobService } from './services/ai-job.service'
 import { AiUsageLogService } from './services/ai-usage-log.service'
+import { AiCatalogAssistantService } from './services/domains/ai-catalog-assistant.service'
+import { AiContentAssistantService } from './services/domains/ai-content-assistant.service'
+import { AiCoreAssistantService } from './services/domains/ai-core-assistant.service'
+import { AiCrmAssistantService } from './services/domains/ai-crm-assistant.service'
+import { AiFinanceAssistantService } from './services/domains/ai-finance-assistant.service'
+import { AiHrmAssistantService } from './services/domains/ai-hrm-assistant.service'
+import { AiInventoryAssistantService } from './services/domains/ai-inventory-assistant.service'
+import { AiProcurementAssistantService } from './services/domains/ai-procurement-assistant.service'
+import { AiSalesAssistantService } from './services/domains/ai-sales-assistant.service'
+import { AiSupportAssistantService } from './services/domains/ai-support-assistant.service'
 import { TenantAiClientService } from './services/tenant-ai-client.service'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      TenantEntity,
-      RoleEntity,
-      AiJobEntity,
-      AiUsageLogEntity,
-      CartEntity,
-    ]),
+    TypeOrmModule.forFeature([TenantEntity, RoleEntity, AiJobEntity, AiUsageLogEntity, CartEntity]),
     BullModule.registerQueue({ name: 'ai' }),
-    forwardRef(() => require('../catalog/product/product.module').ProductModule),
-    forwardRef(() => require('../sales/order/order.module').OrderModule),
-    forwardRef(() => require('../operations/finance/report/report.module').ReportModule),
+    forwardRef(() => ProductModule),
+    forwardRef(() => OrderModule),
+    forwardRef(() => ReportModule),
   ],
   controllers: [AiController],
   providers: [
     TenantAiClientService,
-    AiAssistantService,
+    AiAssistantBaseService,
+    AiCoreAssistantService,
+    AiCatalogAssistantService,
+    AiContentAssistantService,
+    AiCrmAssistantService,
+    AiSalesAssistantService,
+    AiSupportAssistantService,
+    AiInventoryAssistantService,
+    AiProcurementAssistantService,
+    AiFinanceAssistantService,
+    AiHrmAssistantService,
     AiAutomationService,
     AdminCopilotService,
     AdminCopilotToolService,
@@ -45,7 +62,17 @@ import { TenantAiClientService } from './services/tenant-ai-client.service'
   ],
   exports: [
     TenantAiClientService,
-    AiAssistantService,
+    AiAssistantBaseService,
+    AiCoreAssistantService,
+    AiCatalogAssistantService,
+    AiContentAssistantService,
+    AiCrmAssistantService,
+    AiSalesAssistantService,
+    AiSupportAssistantService,
+    AiInventoryAssistantService,
+    AiProcurementAssistantService,
+    AiFinanceAssistantService,
+    AiHrmAssistantService,
     AiUsageLogService,
     AiJobService,
     AiAutomationService,

@@ -2,7 +2,11 @@
 
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
-import { MessageSquare, Send, X, User } from "lucide-react";
+import {
+  STOREFRONT_OPEN_LIVE_CHAT_EVENT,
+  type StorefrontLiveChatHandoffDetail,
+} from "@/lib/storefront-live-chat-handoff";
+import { MessageSquare, Send, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
@@ -77,6 +81,28 @@ const LiveChatWidget = () => {
   useEffect(() => {
     isOpenRef.current = isOpen;
   }, [isOpen]);
+
+  // Open from shopping assistant handoff (or ?chat=open URL)
+  useEffect(() => {
+    const openFromHandoff = (event: Event) => {
+      const detail = (event as CustomEvent<StorefrontLiveChatHandoffDetail>).detail;
+      if (detail?.prefillMessage) {
+        setInputMessage(detail.prefillMessage);
+      }
+      setIsOpen(true);
+      setUnreadCount(0);
+    };
+
+    window.addEventListener(STOREFRONT_OPEN_LIVE_CHAT_EVENT, openFromHandoff);
+
+    if (typeof window !== "undefined" && window.location.hash === "#live-chat") {
+      setIsOpen(true);
+    }
+
+    return () => {
+      window.removeEventListener(STOREFRONT_OPEN_LIVE_CHAT_EVENT, openFromHandoff);
+    };
+  }, []);
 
   // Socket Connection setup
   useEffect(() => {

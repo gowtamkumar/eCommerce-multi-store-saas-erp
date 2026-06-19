@@ -3,6 +3,7 @@ export enum AiJobType {
   EMBEDDING_BATCH = 'embedding_batch',
   OCR = 'ocr',
   BULK_SEO = 'bulk_seo',
+  BULK_DESCRIPTION_IMPORT = 'bulk_description_import',
   CART_ABANDONED_DRAFT = 'cart_abandoned_draft',
   DEMAND_FORECAST = 'demand_forecast',
   AUTOMATION_DISPATCH = 'automation_dispatch',

@@ -9,6 +9,7 @@ describe('tenant-ai-automation.util', () => {
   it('defaults automation flags when missing', () => {
     expect(normalizeTenantAiAutomation(undefined)).toEqual({
       productSeoOnCreate: false,
+      bulkDescriptionOnImport: true,
       abandonedCartDraft: true,
       demandForecastEnabled: false,
     })
@@ -19,6 +20,7 @@ describe('tenant-ai-automation.util', () => {
       mergeTenantAiAutomation(undefined, { productSeoOnCreate: true }),
     ).toEqual({
       productSeoOnCreate: true,
+      bulkDescriptionOnImport: true,
       abandonedCartDraft: true,
       demandForecastEnabled: false,
     })

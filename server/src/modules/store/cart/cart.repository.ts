@@ -1,3 +1,4 @@
+import { ABANDONED_CART_IDLE_HOURS } from '@/common/constants/abandoned-cart.constants'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -28,6 +29,7 @@ export class CartRepository {
     page: number,
     limit: number,
     search?: string,
+    abandonedOnly?: boolean,
   ): Promise<{ carts: CartEntity[]; total: number }> {
     const queryWithItems = this.repo
       .createQueryBuilder('cart')
@@ -35,6 +37,11 @@ export class CartRepository {
       .innerJoinAndSelect('cart.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
       .where('cart.tenantId = :tenantId', { tenantId })
+
+    if (abandonedOnly) {
+      const idleBefore = new Date(Date.now() - ABANDONED_CART_IDLE_HOURS * 60 * 60 * 1000)
+      queryWithItems.andWhere('cart.updatedAt <= :idleBefore', { idleBefore })
+    }
 
     if (search) {
       queryWithItems.andWhere(

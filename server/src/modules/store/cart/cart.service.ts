@@ -1,3 +1,4 @@
+import { ABANDONED_CART_IDLE_HOURS } from '@/common/constants/abandoned-cart.constants'
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { PricingEngineService } from '@/common/services/pricing-engine.service'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
@@ -55,6 +56,7 @@ export class CartService {
     page: number = 1,
     limit: number = 10,
     search?: string,
+    abandonedOnly?: boolean,
   ): Promise<{ carts: any[]; total: number }> {
     this.logger.log(`${this.findAllAdminCarts.name} Service Called`)
     const tenantId = ctx.tenantId
@@ -64,7 +66,10 @@ export class CartService {
       page,
       limit,
       search,
+      abandonedOnly,
     )
+
+    const now = Date.now()
 
     // We do a lightweight transform here to avoid triggering heavy promotions engine N times
     // We'll just return the cart with summarized item count and rough total
@@ -79,6 +84,10 @@ export class CartService {
         }
       })
 
+      const updatedAtMs = new Date(cart.updatedAt).getTime()
+      const hoursSinceUpdate = (now - updatedAtMs) / (1000 * 60 * 60)
+      const isAbandoned = hoursSinceUpdate >= ABANDONED_CART_IDLE_HOURS
+
       return {
         id: cart.id,
         customerName: cart.user?.name || 'Guest',
@@ -87,6 +96,8 @@ export class CartService {
         itemCount,
         totalAmount,
         updatedAt: cart.updatedAt,
+        isAbandoned,
+        hoursSinceUpdate: Math.round(hoursSinceUpdate * 10) / 10,
         items: cart.items?.map((i) => ({
           productName: i.product?.name,
           quantity: i.quantity,

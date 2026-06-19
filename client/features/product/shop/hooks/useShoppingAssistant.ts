@@ -8,12 +8,14 @@ export interface ShoppingAssistantMessage {
   role: "user" | "assistant";
   content: string;
   productLinks?: Array<{ name: string; slug: string }>;
+  suggestLiveChatHandoff?: boolean;
 }
 
 export interface ShoppingAssistantReply {
   answer: string;
   suggestedFollowUps: string[];
   productLinks: Array<{ name: string; slug: string }>;
+  suggestLiveChatHandoff: boolean;
 }
 
 export function useShoppingAssistant(tenantId?: string, brandName?: string) {
@@ -69,6 +71,7 @@ export function useShoppingAssistant(tenantId?: string, brandName?: string) {
           role: "assistant",
           content: result.answer,
           productLinks: result.productLinks || [],
+          suggestLiveChatHandoff: !!result.suggestLiveChatHandoff,
         },
       ]);
 

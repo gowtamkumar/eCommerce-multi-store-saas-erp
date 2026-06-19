@@ -1,4 +1,4 @@
-import type { PR } from "../../types";
+import type { PR } from "../types";
 
 export interface RequisitionDraftItem {
   productName: string;

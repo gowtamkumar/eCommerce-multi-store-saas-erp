@@ -1,3 +1,7 @@
+import {
+  ABANDONED_CART_IDLE_HOURS,
+  ABANDONED_CART_MAX_AGE_DAYS,
+} from '@/common/constants/abandoned-cart.constants'
 import { CartAbandonedEvent } from '@/common/events/ai-domain.events'
 import { CartEntity } from '@/modules/store/cart/entities/cart.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
@@ -5,13 +9,10 @@ import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { AiJobService } from '../services/ai-job.service'
 import { AiJobType } from '@/common/enums/ai-job-type.enum'
+import { AiJobService } from '../services/ai-job.service'
 import { isTenantAiAutomationReady } from '@/common/utils/tenant-ai-automation.util'
 import { normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
-
-const ABANDONED_IDLE_HOURS = 2
-const ABANDONED_MAX_AGE_DAYS = 14
 
 @Injectable()
 export class AiAutomationScheduler {
@@ -27,8 +28,8 @@ export class AiAutomationScheduler {
 
   @Cron(CronExpression.EVERY_HOUR)
   async scanAbandonedCarts(): Promise<void> {
-    const idleBefore = new Date(Date.now() - ABANDONED_IDLE_HOURS * 60 * 60 * 1000)
-    const notTooOld = new Date(Date.now() - ABANDONED_MAX_AGE_DAYS * 24 * 60 * 60 * 1000)
+    const idleBefore = new Date(Date.now() - ABANDONED_CART_IDLE_HOURS * 60 * 60 * 1000)
+    const notTooOld = new Date(Date.now() - ABANDONED_CART_MAX_AGE_DAYS * 24 * 60 * 60 * 1000)
 
     const carts = await this.cartRepo
       .createQueryBuilder('cart')
@@ -52,10 +53,8 @@ export class AiAutomationScheduler {
           continue
         }
 
-        const duplicate = await this.aiJobService.hasRecentPayloadJob(
+        const duplicate = await this.aiJobService.hasRecentCartAbandonedAutomation(
           cart.tenantId,
-          AiJobType.CART_ABANDONED_DRAFT,
-          'cartId',
           cart.id,
           24,
         )

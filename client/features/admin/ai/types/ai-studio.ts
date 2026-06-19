@@ -46,6 +46,10 @@ export interface MarketingDescriptionResult {
   description: string;
 }
 
+export interface CouponCodeSuggestionsResult {
+  suggestions: string[];
+}
+
 export interface LoyaltyProgramCopyResult {
   programDescription: string;
   referralMessage: string;
@@ -102,6 +106,13 @@ export interface SupportConversationSummaryResult {
   keyPoints: string[];
   suggestedNextSteps: string[];
   pendingVisitorRequests: string[];
+}
+
+export interface SupportMessageIntentsResult {
+  messageIntents: Array<{
+    messageId: string;
+    intentTags: string[];
+  }>;
 }
 
 export interface CustomerProfileResult {
@@ -282,4 +293,41 @@ export interface PageBlockContentResult {
   subline?: string;
   html?: string;
   link?: string;
+}
+
+export type PosCashierAssistContext = "upsell" | "reconciliation" | "remarks";
+
+export interface PosCashierAssistResult {
+  upsellSuggestions?: Array<{
+    productSuggest: string;
+    pitchExplanation: string;
+  }>;
+  reconciliationSteps?: string[];
+  suggestedRemarks?: string;
+}
+
+export interface LeaveFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface LeaveFaqResult {
+  title: string;
+  intro?: string;
+  faqs: LeaveFaqItem[];
+  reviewNotes: string[];
+}
+
+export type ApplicantScreeningStage = "initial" | "technical" | "cultural_fit" | "final";
+
+export interface ScreeningQuestion {
+  question: string;
+  category: string;
+  interviewerGuide?: string;
+}
+
+export interface ApplicantScreeningResult {
+  questions: ScreeningQuestion[];
+  suggestedDurationMinutes: number;
+  complianceNotes: string[];
 }

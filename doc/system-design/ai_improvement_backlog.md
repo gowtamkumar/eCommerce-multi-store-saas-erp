@@ -167,7 +167,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | 4 | Move invoice OCR to async job + progress UI | | [x] |
 | 5 | Tenant usage dashboard (tokens by day / endpoint) | | [x] |
 | 6 | Support: conversation summary for handoff | | [x] |
-| 7 | Support: intent tags on messages (optional) | | [ ] |
+| 7 | Support: intent tags on messages (optional) | | [x] |
 
 **P2 exit criteria:**
 
@@ -182,9 +182,9 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 |---|------|-------|--------|
 | 1 | `cart.abandoned` listener → draft message job | | [x] |
 | 2 | `product.created` listener → optional SEO draft job | | [x] |
-| 3 | Bulk product description job after CSV import | | [ ] |
+| 3 | Bulk product description job after CSV import | | [x] |
 | 4 | Admin copilot read-only tool registry | | [x] |
-| 5 | Storefront assistant → “Talk to human” deep link to live chat | | [ ] |
+| 5 | Storefront assistant → “Talk to human” deep link to live chat | | [x] |
 | 6 | Platform Super Admin support AI assist | | [x] |
 | 7 | 3-way match explanation (procurement/finance) | | [ ] |
 | 8 | Multilingual prompt locale from store settings | | [ ] |
@@ -202,7 +202,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Usage dashboard UI | P2 | [x] |
 | Rate limits on generate endpoints | P0 | [x] |
 | AI integration / smoke tests | P0 | [x] |
-| Split `AiAssistantService` by domain (refactor) | P2 | [ ] |
+| Split `AiAssistantService` by domain (refactor) | P2 | [x] |
 
 ---
 
@@ -217,7 +217,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Auto embedding on product save | P1 | [x] |
 | Remove embeddings on product delete | P1 | [x] |
 | Incremental / background reindex | P2 | [x] |
-| Bulk description generate after import | P3 | [ ] |
+| Bulk description generate after import | P3 | [x] |
 | Variant-level copy assist | P3 | [ ] |
 | Provider embedding capability warning in UI | P1 | [x] |
 
@@ -240,8 +240,8 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | AI Studio: store SEO tab | P2 | [x] |
 | Audience-aware campaign variants | P3 | [ ] |
 | Abandoned cart **manual** draft | — | [x] |
-| Abandoned cart **event** automation | P3 | [ ] |
-| Coupon code name suggestions | P3 | [ ] |
+| Abandoned cart **event** automation | P3 | [x] |
+| Coupon code name suggestions | P3 | [x] |
 
 ---
 
@@ -255,7 +255,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Conversation summary for handoff | P2 | [x] |
 | Intent tagging (`shipping`, `return`, etc.) | P3 | [ ] |
 | Richer auto order lookup in support assist | P2 | [ ] |
-| Storefront assistant → live chat handoff | P3 | [ ] |
+| Storefront assistant → live chat handoff | P3 | [x] |
 
 ---
 
@@ -268,7 +268,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Review reply assist | — | [x] |
 | Abandoned cart message draft | — | [x] |
 | Review toxicity / policy flag UX | P2 | [ ] |
-| POS cashier AI assist | P3 | [ ] |
+| POS cashier AI assist | P3 | [x] |
 | Auto-send emails/SMS | — | 🔒 Never |
 
 ---
@@ -476,6 +476,7 @@ Run for **each tenant** after config changes or releases. Requires valid `x-tena
 |------|--------|
 | 2026-06-18 | Initial backlog created from codebase audit |
 | 2026-06-18 | P0 platform infra: `ai_jobs`, `ai_usage_logs`, BullMQ `ai` queue, usage logging, rate limits, tests |
+| 2026-06-19 | Implement POS cashier AI assist (upsell scripts, till audit steps, remarks draft) |
 
 ---
 

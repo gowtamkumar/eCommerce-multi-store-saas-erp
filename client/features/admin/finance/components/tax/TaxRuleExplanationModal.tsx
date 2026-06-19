@@ -5,7 +5,7 @@ import { useAiGenerate } from "@/features/admin/ai/hooks/useAiGenerate";
 import { BookOpen, Check, Copy, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { buildTaxRuleExplanationPayload } from "../lib/buildTaxRuleExplanationContext";
+import { buildTaxRuleExplanationPayload } from "../../lib/buildTaxRuleExplanationContext";
 
 const labelClass = "text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400";
 const inputClass =

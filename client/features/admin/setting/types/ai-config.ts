@@ -16,8 +16,16 @@ export interface TenantAiStorefrontConfigForm {
 
 export interface TenantAiAutomationConfigForm {
   productSeoOnCreate: boolean
+  bulkDescriptionOnImport: boolean
   abandonedCartDraft: boolean
   demandForecastEnabled: boolean
+}
+
+export interface TenantAiSensitiveConfigForm {
+  /** Allow AI for HRM module (leave, recruitment, payroll, performance). Default: true */
+  hrmEnabled: boolean
+  /** Allow AI for Finance module (AR, AP, tax, expense, ledger). Default: true */
+  financeEnabled: boolean
 }
 
 export interface TenantAiConfigForm {
@@ -34,6 +42,7 @@ export interface TenantAiConfigForm {
   temperature: number
   storefront: TenantAiStorefrontConfigForm
   automation: TenantAiAutomationConfigForm
+  sensitive: TenantAiSensitiveConfigForm
 }
 
 export interface TenantAiConfigResponse {
@@ -51,6 +60,7 @@ export interface TenantAiConfigResponse {
   temperature?: number
   storefront?: TenantAiStorefrontConfigForm
   automation?: TenantAiAutomationConfigForm
+  sensitive?: TenantAiSensitiveConfigForm
 }
 
 export interface StorefrontAiStatus {
@@ -100,8 +110,14 @@ export const DEFAULT_STOREFRONT_AI_CONFIG: TenantAiStorefrontConfigForm = {
 
 export const DEFAULT_AUTOMATION_AI_CONFIG: TenantAiAutomationConfigForm = {
   productSeoOnCreate: false,
+  bulkDescriptionOnImport: true,
   abandonedCartDraft: true,
   demandForecastEnabled: false,
+}
+
+export const DEFAULT_SENSITIVE_AI_CONFIG: TenantAiSensitiveConfigForm = {
+  hrmEnabled: true,
+  financeEnabled: true,
 }
 
 export const AI_PROVIDER_OPTIONS: Array<{
@@ -191,4 +207,5 @@ export const DEFAULT_AI_CONFIG_FORM: TenantAiConfigForm = {
   temperature: 0.7,
   storefront: { ...DEFAULT_STOREFRONT_AI_CONFIG },
   automation: { ...DEFAULT_AUTOMATION_AI_CONFIG },
+  sensitive: { ...DEFAULT_SENSITIVE_AI_CONFIG },
 }

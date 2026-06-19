@@ -1,16 +1,13 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderStatus } from '@/common/enums/order-status.enum'
-import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
-import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
-import { buildDashboardKpiSnapshot } from '../utils/dashboard-kpi-context.util'
-import {
-  AdminCopilotToolName,
-  isAdminCopilotToolName,
-} from '../copilot/admin-copilot-tool.registry'
+import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
+import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { Injectable, Logger } from '@nestjs/common'
 import { ModuleRef } from '@nestjs/core'
+import { isAdminCopilotToolName } from '../copilot/admin-copilot-tool.registry'
+import { buildDashboardKpiSnapshot } from '../utils/dashboard-kpi-context.util'
 
 @Injectable()
 export class AdminCopilotToolService {
@@ -201,12 +198,14 @@ export class AdminCopilotToolService {
 
     return {
       count: products.length,
-      products: products.map((p: { id?: string; name?: string; stock?: number; threshold?: number }) => ({
-        productId: p.id,
-        name: p.name,
-        stock: p.stock,
-        lowStockThreshold: p.threshold,
-      })),
+      products: products.map(
+        (p: { id?: string; name?: string; stock?: number; threshold?: number }) => ({
+          productId: p.id,
+          name: p.name,
+          stock: p.stock,
+          lowStockThreshold: p.threshold,
+        }),
+      ),
     }
   }
 

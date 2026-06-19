@@ -1,10 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { useSupportChat } from "../hooks/useSupportChat";
 import { SupportReplyAiAssist } from "./SupportReplyAiAssist";
 import { SupportHandoffSummaryAssist } from "./SupportHandoffSummaryAssist";
+import { SupportIntentTagsAssist } from "./SupportIntentTagsAssist";
+import { formatIntentTag, intentTagChipClass } from "../lib/formatIntentTag";
 
 export default function SupportChat() {
   const {
@@ -20,6 +22,14 @@ export default function SupportChat() {
     handleSelectConversation,
     handleSendMessage,
   } = useSupportChat();
+
+  const [intentTagsActive, setIntentTagsActive] = useState(false);
+  const [intentTagsByMessageId, setIntentTagsByMessageId] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    setIntentTagsActive(false);
+    setIntentTagsByMessageId({});
+  }, [selectedConv?.id]);
 
   return (
     <div className="flex h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-950 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
@@ -108,6 +118,13 @@ export default function SupportChat() {
               </div>
 
               <div className="flex items-center gap-3">
+                <SupportIntentTagsAssist
+                  messages={messages}
+                  disabled={loadingMessages}
+                  active={intentTagsActive}
+                  onToggle={setIntentTagsActive}
+                  onTagsUpdated={setIntentTagsByMessageId}
+                />
                 <SupportHandoffSummaryAssist
                   conversation={selectedConv}
                   messages={messages}
@@ -129,28 +146,45 @@ export default function SupportChat() {
               ) : (
                 messages.map((msg) => {
                   const isAgent = msg.senderType === "AGENT";
+                  const intentTags = intentTagsActive ? intentTagsByMessageId[msg.id] : undefined;
                   return (
                     <div
                       key={msg.id}
-                      className={`flex ${isAgent ? "justify-end" : "justify-start"}`}
+                      className={`flex flex-col gap-1 ${isAgent ? "items-end" : "items-start"}`}
                     >
                       <div
-                        className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${isAgent
-                            ? "bg-indigo-600 text-white rounded-br-none"
-                            : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-bl-none border border-slate-150 dark:border-slate-800"
-                          }`}
+                        className={`flex ${isAgent ? "justify-end" : "justify-start"} w-full`}
                       >
-                        <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
-                        <span
-                          className={`text-[9px] block text-right mt-1 ${isAgent ? "text-indigo-200" : "text-slate-400"
+                        <div
+                          className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${isAgent
+                              ? "bg-indigo-600 text-white rounded-br-none"
+                              : "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-bl-none border border-slate-150 dark:border-slate-800"
                             }`}
                         >
-                          {new Date(msg.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                          <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                          <span
+                            className={`text-[9px] block text-right mt-1 ${isAgent ? "text-indigo-200" : "text-slate-400"
+                              }`}
+                          >
+                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
                       </div>
+                      {!isAgent && intentTags && intentTags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-[70%] pl-1">
+                          {intentTags.map((tag) => (
+                            <span
+                              key={`${msg.id}-${tag}`}
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${intentTagChipClass(tag)}`}
+                            >
+                              {formatIntentTag(tag)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })

@@ -441,11 +441,11 @@ Track per tenant after each phase:
 |-------|----------------|---------------------|
 | **Marketing & content** | ✅ Inline assists across campaigns, coupons, pages, loyalty, leads | AI Studio FAQ/page/store SEO tabs |
 | **Catalog** | ✅ Copy assists, media alt-text, embeddings + auto-sync, hybrid search | Bulk import descriptions, variant copy |
-| **Support & CRM** | ✅ Reply assist, profiles, reviews, cart drafts (manual + automated) | Conversation summary, intent tags |
+| **Support & CRM** | ✅ Reply assist, handoff summary, optional message intent tags, profiles, reviews, cart drafts | Storefront → live chat handoff |
 | **Operations / inventory** | ✅ Anomaly, transfer, cycle count, fulfillment, batches; demand forecast job | Global copilot sidebar |
 | **Procurement / finance** | ✅ Sync drafts + async invoice OCR job | 3-way match explanation |
 | **HRM** | ✅ Job copy, review phrases, payslip explain | Leave policy FAQ, sensitive-module opt-out |
-| **Storefront** | ✅ Hybrid search, Q&A, assistant, tenant guards, search analytics | Multilingual prompts, assistant analytics |
+| **Storefront** | ✅ Hybrid search, Q&A, assistant, tenant guards, search analytics, live chat handoff | Multilingual prompts, assistant analytics |
 | **Copilot** | ✅ Dashboard KPI + admin read-only tools (`listOrders`, `getStockLevel`, …) | Global sidebar (cross-route) |
 | **Platform & infra** | ✅ `ai_jobs`, BullMQ, token metering UI, platform AI + support tooling | E2E storefront smoke, churn trend narratives |
 

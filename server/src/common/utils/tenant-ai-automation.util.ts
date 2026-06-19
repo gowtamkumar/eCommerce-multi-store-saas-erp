@@ -9,6 +9,8 @@ export function normalizeTenantAiAutomation(
 ): Required<TenantAiAutomationConfig> {
   return {
     productSeoOnCreate: raw?.productSeoOnCreate ?? DEFAULT_TENANT_AI_AUTOMATION.productSeoOnCreate,
+    bulkDescriptionOnImport:
+      raw?.bulkDescriptionOnImport ?? DEFAULT_TENANT_AI_AUTOMATION.bulkDescriptionOnImport,
     abandonedCartDraft:
       raw?.abandonedCartDraft ?? DEFAULT_TENANT_AI_AUTOMATION.abandonedCartDraft,
     demandForecastEnabled:

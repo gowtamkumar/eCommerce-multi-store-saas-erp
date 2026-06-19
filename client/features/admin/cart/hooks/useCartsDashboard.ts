@@ -12,6 +12,7 @@ export function useCartsDashboard() {
     const [carts, setCarts] = useState<CartSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [abandonedOnly, setAbandonedOnly] = useState(false);
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [pagination, setPagination] = useState({
         page: 1,
@@ -20,11 +21,14 @@ export function useCartsDashboard() {
         totalPages: 0,
     });
 
-    const fetchCarts = useCallback(async (page: number, search: string) => {
+    const fetchCarts = useCallback(async (page: number, search: string, abandoned: boolean) => {
         if (!session?.user?.accessToken) return;
         setLoading(true);
         try {
-            const res = await fetchAPI(`/carts?page=${page}&limit=${pagination.limit}&search=${encodeURIComponent(search)}`);
+            const abandonedParam = abandoned ? '&abandonedOnly=true' : '';
+            const res = await fetchAPI(
+                `/carts?page=${page}&limit=${pagination.limit}&search=${encodeURIComponent(search)}${abandonedParam}`,
+            );
 
             if (res.success) {
                 setCarts(res.data.carts);
@@ -41,20 +45,22 @@ export function useCartsDashboard() {
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
-            void fetchCarts(1, debouncedSearch);
+            void fetchCarts(1, debouncedSearch, abandonedOnly);
         }, 0);
         return () => window.clearTimeout(timeout);
-    }, [debouncedSearch, fetchCarts]);
+    }, [debouncedSearch, abandonedOnly, fetchCarts]);
 
     const handlePageChange = useCallback((newPage: number) => {
-        void fetchCarts(newPage, debouncedSearch);
-    }, [debouncedSearch, fetchCarts]);
+        void fetchCarts(newPage, debouncedSearch, abandonedOnly);
+    }, [debouncedSearch, abandonedOnly, fetchCarts]);
 
     return {
         carts,
         loading,
         searchQuery,
         setSearchQuery,
+        abandonedOnly,
+        setAbandonedOnly,
         pagination,
         handlePageChange,
     };

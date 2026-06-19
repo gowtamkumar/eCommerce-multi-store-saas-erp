@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { fetchAPI } from "@/services/api";
-import type { AiChatMessage } from "../types/ai-studio";
+import type { AiChatMessage } from "@/features/admin/ai/types/ai-studio";
 import type { DashboardPeriod } from "@/features/admin/dashboard/types";
 
 export function useDashboardCopilot(period: DashboardPeriod) {

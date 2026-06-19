@@ -103,6 +103,17 @@ export class AiJobService {
     })
   }
 
+  async enqueueBulkDescriptionImport(
+    tenantId: string,
+    payload: { importBatchId: string; productIds: string[] },
+  ): Promise<AiJobEntity> {
+    return this.createAndEnqueue(tenantId, AiJobType.BULK_DESCRIPTION_IMPORT, {
+      importBatchId: payload.importBatchId,
+      productIds: [...new Set(payload.productIds.filter(Boolean))],
+      applyToProducts: true,
+    })
+  }
+
   async enqueueCartAbandonedDraft(
     tenantId: string,
     event: CartAbandonedEvent,
@@ -178,6 +189,50 @@ export class AiJobService {
       .getCount()
 
     return count > 0
+  }
+
+  async hasRecentCartAbandonedAutomation(
+    tenantId: string,
+    cartId: string,
+    withinHours: number,
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - withinHours * 60 * 60 * 1000)
+
+    const count = await this.jobRepo
+      .createQueryBuilder('job')
+      .where('job.tenant_id = :tenantId', { tenantId })
+      .andWhere('job.created_at >= :since', { since })
+      .andWhere(`job.payload ->> 'cartId' = :cartId`, { cartId })
+      .andWhere('job.type IN (:...types)', {
+        types: [AiJobType.CART_ABANDONED_DRAFT, AiJobType.AUTOMATION_DISPATCH],
+      })
+      .andWhere('job.status IN (:...statuses)', {
+        statuses: [AiJobStatus.QUEUED, AiJobStatus.RUNNING, AiJobStatus.COMPLETED],
+      })
+      .getCount()
+
+    return count > 0
+  }
+
+  async findCompletedCartIdsWithDrafts(
+    tenantId: string,
+    cartIds: string[],
+  ): Promise<Set<string>> {
+    const uniqueIds = [...new Set(cartIds.filter(Boolean))]
+    if (uniqueIds.length === 0) {
+      return new Set()
+    }
+
+    const rows = await this.jobRepo
+      .createQueryBuilder('job')
+      .select(`job.payload ->> 'cartId'`, 'cartId')
+      .where('job.tenant_id = :tenantId', { tenantId })
+      .andWhere('job.type = :type', { type: AiJobType.CART_ABANDONED_DRAFT })
+      .andWhere('job.status = :status', { status: AiJobStatus.COMPLETED })
+      .andWhere(`job.payload ->> 'cartId' IN (:...cartIds)`, { cartIds: uniqueIds })
+      .getRawMany<{ cartId: string | null }>()
+
+    return new Set(rows.map((row) => row.cartId).filter((id): id is string => Boolean(id)))
   }
 
   async findLatestByPayload(

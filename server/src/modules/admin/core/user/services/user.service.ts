@@ -894,7 +894,26 @@ export class UserService implements OnApplicationBootstrap {
         action: 'manage',
         riskLevel: RiskLevel.MEDIUM,
       },
+      {
+        code: 'ai:use:hrm',
+        name: 'Use HRM AI Tools',
+        description: 'Can use AI for HRM features: leave FAQ, interview screening, payslip, performance reviews (sensitive HR data)',
+        module: 'AI',
+        feature: 'ai',
+        action: 'use:hrm',
+        riskLevel: RiskLevel.MEDIUM,
+      },
+      {
+        code: 'ai:use:finance',
+        name: 'Use Finance AI Tools',
+        description: 'Can use AI for Finance features: AR drafts, AP reminders, tax explanations, expense categorization (sensitive financial data)',
+        module: 'AI',
+        feature: 'ai',
+        action: 'use:finance',
+        riskLevel: RiskLevel.MEDIUM,
+      },
     ]
+
 
     for (const p of permissionsToSeed) {
       const existing = await this.permissionRepo.findOne({ where: { code: p.code } })

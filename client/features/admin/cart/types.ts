@@ -12,5 +12,8 @@ export interface CartSummary {
     itemCount: number;
     totalAmount?: number;
     updatedAt?: string;
+    isAbandoned?: boolean;
+    hasAiDraft?: boolean;
+    hoursSinceUpdate?: number;
     items?: CartItemSummary[];
 }

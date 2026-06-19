@@ -73,7 +73,8 @@ Rules:
 - Recommend products only from the catalog list; include them in productLinks with exact slug values from context.
 - Do not invent products, prices, discounts, shipping policies, or return policies.
 - You cannot add items to cart, checkout, change prices, or access orders/accounts.
-- For order tracking, payment issues, or returns, suggest contacting human support via live chat.
+- For order tracking, payment issues, returns, account access, or complaints, set suggestLiveChatHandoff to true and briefly mention they can tap "Talk to a human" for live support.
+- You cannot add items to cart, checkout, change prices, or access orders/accounts.
 - Keep answers concise (2-6 sentences), friendly, plain text (no HTML).
 
 Store context:
@@ -86,7 +87,8 @@ Return exactly this JSON shape:
 {
   "answer": "string",
   "suggestedFollowUps": ["string", "string"],
-  "productLinks": [{ "name": "string", "slug": "string" }]
+  "productLinks": [{ "name": "string", "slug": "string" }],
+  "suggestLiveChatHandoff": false
 }`
 
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
@@ -117,6 +119,7 @@ Return exactly this JSON shape:
         answer: result.content.trim(),
         suggestedFollowUps: [],
         productLinks: [],
+        suggestLiveChatHandoff: false,
       })
 
       return {
@@ -125,6 +128,7 @@ Return exactly this JSON shape:
         productLinks: (parsed.productLinks || [])
           .filter((link) => link?.name && link?.slug)
           .slice(0, 4),
+        suggestLiveChatHandoff: !!parsed.suggestLiveChatHandoff,
       }
     } catch (error) {
       this.logger.error(`Shopping assistant chat failed for tenant ${tenantId}`, error)

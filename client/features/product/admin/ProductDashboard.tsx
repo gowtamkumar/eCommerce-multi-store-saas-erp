@@ -2,9 +2,12 @@
 
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import ProductList from './ProductList';
+import ProductImportModal from './ProductImportModal';
 import { useProductCatalog } from './hooks/useProductCatalog';
+import { useState } from 'react';
 
 export default function ProductDashboard() {
+    const [importOpen, setImportOpen] = useState(false);
     const {
         products,
         loading,
@@ -24,6 +27,7 @@ export default function ProductDashboard() {
         handleDelete,
         handleStatusUpdate,
         handleLandingPage,
+        refresh,
     } = useProductCatalog();
 
     return (
@@ -45,6 +49,13 @@ export default function ProductDashboard() {
                 onDelete={handleDelete}
                 onStatusChange={handleStatusUpdate}
                 onLandingPage={handleLandingPage}
+                onOpenImport={() => setImportOpen(true)}
+            />
+
+            <ProductImportModal
+                isOpen={importOpen}
+                onClose={() => setImportOpen(false)}
+                onSuccess={() => refresh(pagination.page)}
             />
 
             <ConfirmModal

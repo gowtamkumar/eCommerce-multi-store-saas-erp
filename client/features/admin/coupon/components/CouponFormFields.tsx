@@ -4,6 +4,7 @@ import { DescriptionAiButton } from '@/features/admin/ai/components/DescriptionA
 import { DiscountType } from '@/lib/enums/discount-type.enum';
 import { Calendar, Percent, RefreshCw } from 'lucide-react';
 import type { CouponFormFieldsProps } from '../types';
+import { CouponCodeAiButton } from './CouponCodeAiButton';
 
 const INPUT_CLASS =
     'w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm outline-none';
@@ -42,23 +43,32 @@ export default function CouponFormFields({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2 col-span-1 md:col-span-2">
                     <label className="text-sm font-semibold text-slate-900 dark:text-white">Coupon Code</label>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            required
-                            value={formData.code}
-                            onChange={(e) => onChange('code', e.target.value.toUpperCase())}
-                            placeholder="e.g. SUMMER2024"
-                            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono uppercase focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm outline-none"
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex gap-2 flex-1">
+                            <input
+                                type="text"
+                                required
+                                value={formData.code}
+                                onChange={(e) => onChange('code', e.target.value.toUpperCase())}
+                                placeholder="e.g. SUMMER2024"
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono uppercase focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm outline-none"
+                            />
+                            <button
+                                type="button"
+                                onClick={onGenerateCode}
+                                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium border border-slate-200 dark:border-slate-700 shrink-0"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                Generate
+                            </button>
+                        </div>
+                        <CouponCodeAiButton
+                            offerSummary={offerSummary}
+                            description={formData.description || undefined}
+                            discountType={formData.discountType ?? DiscountType.PERCENTAGE}
+                            amount={formData.amount}
+                            onSelect={(code) => onChange('code', code)}
                         />
-                        <button
-                            type="button"
-                            onClick={onGenerateCode}
-                            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition-colors flex items-center gap-2 text-sm font-medium border border-slate-200 dark:border-slate-700"
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                            Generate
-                        </button>
                     </div>
                 </div>
                 <div className="space-y-2 col-span-1 md:col-span-2">

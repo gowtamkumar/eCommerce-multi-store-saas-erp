@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useState } from 'react';
 import Pagination from '@/components/shared/Pagination';
 import { fetchAPI } from '@/services/api';
 import {
@@ -17,7 +17,8 @@ import {
   ShoppingCart,
   Trash2,
   User,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { usePosDashboard } from '../hooks/usePosDashboard';
 
@@ -29,6 +30,7 @@ import VariantSelectorModal from './VariantSelectorModal';
 import ReceiptModal from './ReceiptModal';
 import ReturnModal from './ReturnModal';
 import CheckoutModal from './CheckoutModal';
+import PosAiAssistModal from './PosAiAssistModal';
 
 export default function Pos() {
   const {
@@ -190,6 +192,8 @@ export default function Pos() {
     changeDue,
   } = usePosDashboard();
 
+  const [isAiAssistOpen, setIsAiAssistOpen] = useState(false);
+
   // loading view
   if (loadingShift) {
     return (
@@ -329,6 +333,14 @@ export default function Pos() {
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Return/Exchange
+            </button>
+
+            <button
+              onClick={() => setIsAiAssistOpen(true)}
+              className="px-4 py-2.5 bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-700 hover:to-violet-700 text-white text-xs font-black rounded-xl shadow-lg hover:shadow-brand-500/10 transition-all flex items-center gap-1.5 border border-brand-500/30"
+            >
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              AI Cashier Assist
             </button>
 
             <button
@@ -858,6 +870,14 @@ export default function Pos() {
           taxRate={taxRate}
         />
       )}
+
+      <PosAiAssistModal
+        isOpen={isAiAssistOpen}
+        onClose={() => setIsAiAssistOpen(false)}
+        cart={cart}
+        activeShift={activeShift}
+        selectedCustomer={selectedCustomer}
+      />
     </div>
   );
 }

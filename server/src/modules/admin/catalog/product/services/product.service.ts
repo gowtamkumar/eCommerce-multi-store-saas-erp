@@ -33,6 +33,20 @@ import { generateEAN13, generateProductSku, generateVariantSku } from '../utils/
 import { AiJobService } from '@/modules/admin/ai/services/ai-job.service'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
+import { isTenantAiAutomationReady } from '@/common/utils/tenant-ai-automation.util'
+import { normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
+import { CategoryRepository } from '../../category/category.repository'
+import {
+  ImportProductsDto,
+  ImportProductsResultDto,
+} from '../dto/import-products.dto'
+import {
+  IMPORT_DESCRIPTION_PLACEHOLDER,
+  isMissingImportedDescription,
+  normalizeImportStatus,
+  slugifyProductName,
+} from '../utils/product-import.util'
+import { randomUUID } from 'crypto'
 import { ProductEmbeddingService } from './product-embedding.service'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
@@ -57,6 +71,7 @@ export class ProductService {
     private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
     private readonly productEmbeddingService: ProductEmbeddingService,
     private readonly aiJobService: AiJobService,
+    private readonly categoryRepository: CategoryRepository,
   ) {}
 
   private async assertProductQuotaAvailable(tenantId: string): Promise<void> {
@@ -464,6 +479,7 @@ export class ProductService {
   async createProduct(
     createProductDto: CreateProductDto,
     ctx: RequestContextDto,
+    options?: { skipAutomation?: boolean },
   ): Promise<ProductEntity> {
     this.logger.log(`${this.createProduct.name} Service Called`)
     const tenantId = ctx.tenantId
@@ -539,12 +555,14 @@ export class ProductService {
 
     const created = await this.findOneProduct(savedProduct.id, ctx)
     void this.productEmbeddingService.scheduleProductEmbeddingSync(tenantId, created.id)
-    void this.aiJobService.enqueueProductCreatedAutomation(tenantId, {
-      productId: created.id,
-      productName: created.name,
-      category: created.category?.name,
-      hasSeoFields: Boolean(created.metaTitle?.trim() || created.metaDescription?.trim()),
-    })
+    if (!options?.skipAutomation) {
+      void this.aiJobService.enqueueProductCreatedAutomation(tenantId, {
+        productId: created.id,
+        productName: created.name,
+        category: created.category?.name,
+        hasSeoFields: Boolean(created.metaTitle?.trim() || created.metaDescription?.trim()),
+      })
+    }
     return created
   }
 
@@ -772,5 +790,131 @@ export class ProductService {
   async productOverview(): Promise<any> {
     this.logger.log(`${this.productOverview.name} Service Called`)
     return await this.productRepository.getOverviewStats()
+  }
+
+  async importProductsFromRows(
+    dto: ImportProductsDto,
+    ctx: RequestContextDto,
+  ): Promise<ImportProductsResultDto> {
+    const tenantId = ctx.tenantId
+    const importBatchId = randomUUID()
+    const createdProductIds: string[] = []
+    const pendingDescriptionProductIds: string[] = []
+    const errors: ImportProductsResultDto['errors'] = []
+    let skippedCount = 0
+
+    const categoryCache = new Map<string, string | null>()
+    const usedSlugs = new Set<string>()
+
+    for (let index = 0; index < dto.rows.length; index += 1) {
+      const row = dto.rows[index]
+      const rowNumber = index + 1
+
+      try {
+        const baseSlug = slugifyProductName(row.slug?.trim() || row.name)
+        if (!baseSlug) {
+          throw new ConflictException('Product name must contain alphanumeric characters')
+        }
+
+        let slug = baseSlug
+        let suffix = 2
+        while (usedSlugs.has(slug) || (await this.productRepository.findBySlug(slug, tenantId))) {
+          slug = `${baseSlug}-${suffix}`
+          suffix += 1
+        }
+        usedSlugs.add(slug)
+
+        let categoryId: string | undefined
+        if (row.category?.trim()) {
+          const categoryKey = row.category.trim().toLowerCase()
+          if (!categoryCache.has(categoryKey)) {
+            categoryCache.set(categoryKey, await this.resolveImportCategoryId(row.category.trim(), tenantId))
+          }
+          categoryId = categoryCache.get(categoryKey) ?? undefined
+        }
+
+        const description = row.description?.trim()
+          ? row.description.trim()
+          : IMPORT_DESCRIPTION_PLACEHOLDER
+
+        const created = await this.createProduct(
+          {
+            name: row.name.trim(),
+            slug,
+            description,
+            shortDescription: undefined,
+            price: Number(row.price),
+            images: [],
+            stock: 0,
+            status: normalizeImportStatus(row.status),
+            categoryId,
+            sku: row.sku?.trim() || undefined,
+            productType: 'SIMPLE',
+          },
+          ctx,
+          { skipAutomation: true },
+        )
+
+        createdProductIds.push(created.id)
+        if (isMissingImportedDescription(description)) {
+          pendingDescriptionProductIds.push(created.id)
+        }
+      } catch (error: unknown) {
+        skippedCount += 1
+        const message = error instanceof Error ? error.message : 'Import failed'
+        errors.push({ row: rowNumber, name: row.name, message })
+      }
+    }
+
+    let descriptionJobId: string | null = null
+    if (
+      dto.generateDescriptions &&
+      pendingDescriptionProductIds.length > 0 &&
+      (await this.canQueueBulkDescriptionImport(tenantId))
+    ) {
+      const job = await this.aiJobService.enqueueBulkDescriptionImport(tenantId, {
+        importBatchId,
+        productIds: pendingDescriptionProductIds,
+      })
+      descriptionJobId = job.id
+    }
+
+    return {
+      importBatchId,
+      createdCount: createdProductIds.length,
+      skippedCount,
+      createdProductIds,
+      pendingDescriptionProductIds,
+      descriptionJobId,
+      errors,
+    }
+  }
+
+  private async canQueueBulkDescriptionImport(tenantId: string): Promise<boolean> {
+    const tenant = await this.tenantService.findOneTenants(tenantId)
+    const config = normalizeTenantAiConfig(tenant.aiConfig || null)
+    return isTenantAiAutomationReady(config)
+  }
+
+  private async resolveImportCategoryId(
+    categoryRef: string,
+    tenantId: string,
+  ): Promise<string | null> {
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (uuidPattern.test(categoryRef)) {
+      const category = await this.categoryRepository.findById(categoryRef, tenantId)
+      return category?.id ?? null
+    }
+
+    const slug = slugifyProductName(categoryRef)
+    const bySlug = await this.categoryRepository.findBySlug(slug, tenantId)
+    if (bySlug) return bySlug.id
+
+    const categories = await this.categoryRepository.findAllByTenant(tenantId)
+    const match = categories.find(
+      (category) => category.name.trim().toLowerCase() === categoryRef.trim().toLowerCase(),
+    )
+    return match?.id ?? null
   }
 }

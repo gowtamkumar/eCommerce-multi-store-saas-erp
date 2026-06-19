@@ -9,12 +9,12 @@ export {
 
 export type PlatformAiConfigForm = Omit<
   import("@/features/admin/setting/types/ai-config").TenantAiConfigForm,
-  "storefront" | "embeddingModel"
+  "storefront" | "embeddingModel" | "automation" | "sensitive"
 >;
 
 export type PlatformAiConfigResponse = Omit<
   import("@/features/admin/setting/types/ai-config").TenantAiConfigResponse,
-  "storefront"
+  "storefront" | "automation" | "sensitive"
 >;
 
 export const DEFAULT_PLATFORM_AI_CONFIG_FORM: PlatformAiConfigForm = {

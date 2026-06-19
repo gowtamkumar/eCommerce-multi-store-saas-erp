@@ -319,6 +319,7 @@ All under `@Controller('ai')`, require `@RequireFeature('ai')` and `@RequirePerm
 | `POST /ai/generate/return-assist` | Returns | `returns:read` |
 | `POST /ai/generate/support-reply` | Live chat | — |
 | `POST /ai/generate/support-conversation-summary` | Live chat handoff | — |
+| `POST /ai/generate/support-message-intents` | Live chat intent tags | — |
 | `POST /ai/generate/customer-profile` | CRM | `crm:read` |
 | `POST /ai/generate/review-assist` | Reviews | `catalog:read` |
 | `POST /ai/generate/abandoned-cart-message` | Carts | `orders:read` |

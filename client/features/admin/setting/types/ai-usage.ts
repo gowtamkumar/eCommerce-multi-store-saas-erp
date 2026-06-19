@@ -50,6 +50,7 @@ const ENDPOINT_LABELS: Record<string, string> = {
   "ai/generate/store-seo": "Store SEO",
   "ai/generate/support-reply": "Support reply assist",
   "ai/generate/support-conversation-summary": "Support handoff summary",
+  "ai/generate/support-message-intents": "Support intent tags",
 };
 
 export function formatAiUsageEndpoint(endpoint: string): string {

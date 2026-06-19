@@ -16,6 +16,8 @@ export default function CartsList() {
         loading,
         searchQuery,
         setSearchQuery,
+        abandonedOnly,
+        setAbandonedOnly,
         pagination,
         handlePageChange,
     } = useCartsDashboard();
@@ -70,10 +72,21 @@ export default function CartsList() {
             key: 'updated',
             header: 'Last Modified',
             className: 'text-xs font-medium text-slate-500',
-            cell: (cart) => cart.updatedAt ? new Date(cart.updatedAt).toLocaleString(undefined, {
-                dateStyle: 'medium',
-                timeStyle: 'short'
-            }) : '-',
+            cell: (cart) => (
+                <div className="space-y-1">
+                    <div>
+                        {cart.updatedAt ? new Date(cart.updatedAt).toLocaleString(undefined, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                        }) : '-'}
+                    </div>
+                    {cart.isAbandoned && (
+                        <span className="inline-flex text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                            Abandoned
+                        </span>
+                    )}
+                </div>
+            ),
         },
         {
             key: 'actions',
@@ -84,10 +97,13 @@ export default function CartsList() {
                 <button
                     type="button"
                     onClick={() => setAiCart(cart)}
-                    className="p-2 text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-all"
-                    title="AI abandoned cart message"
+                    className="relative p-2 text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-lg transition-all"
+                    title={cart.hasAiDraft ? 'View AI recovery draft' : 'AI abandoned cart message'}
                 >
                     <Sparkles className="w-4 h-4" />
+                    {cart.hasAiDraft && (
+                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+                    )}
                 </button>
             ),
         },
@@ -113,6 +129,15 @@ export default function CartsList() {
                     />
                 </div>
                 <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <label className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={abandonedOnly}
+                            onChange={(e) => setAbandonedOnly(e.target.checked)}
+                            className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                        Abandoned only (2h+ idle)
+                    </label>
                     <div className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 font-medium">
                         Total Users with Cart: <span className="text-slate-900 dark:text-white font-black">{pagination.total}</span>
                     </div>

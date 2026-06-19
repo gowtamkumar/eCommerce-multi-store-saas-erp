@@ -2,7 +2,11 @@
 
 import { useShoppingAssistant } from "@/features/product/shop/hooks/useShoppingAssistant";
 import { useSettings } from "@/hooks/SettingsContext";
-import { Loader2, RotateCcw, Send, Sparkles, X } from "lucide-react";
+import {
+  buildAssistantHandoffPrefill,
+  openStorefrontLiveChat,
+} from "@/lib/storefront-live-chat-handoff";
+import { Loader2, MessageSquare, RotateCcw, Send, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
@@ -53,6 +57,14 @@ export default function ShoppingAssistantWidget() {
     await handleSend(input);
   };
 
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content;
+
+  const handleTalkToHuman = (contextMessage?: string) => {
+    const prefill = buildAssistantHandoffPrefill(contextMessage || lastUserMessage);
+    setIsOpen(false);
+    openStorefrontLiveChat({ prefillMessage: prefill });
+  };
+
   return (
     <div className="fixed bottom-20 md:bottom-6 left-6 z-50 flex flex-col items-start">
       {isOpen ? (
@@ -70,6 +82,15 @@ export default function ShoppingAssistantWidget() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleTalkToHuman()}
+                className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                aria-label="Talk to a human agent"
+                title="Talk to a human"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
               {messages.length > 0 ? (
                 <button
                   type="button"
@@ -142,6 +163,22 @@ export default function ShoppingAssistantWidget() {
                           ))}
                         </div>
                       ) : null}
+                      {!isUser && message.suggestLiveChatHandoff ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const priorUser = messages
+                              .slice(0, index)
+                              .reverse()
+                              .find((m) => m.role === "user")?.content;
+                            handleTalkToHuman(priorUser);
+                          }}
+                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          Talk to a human
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 );
@@ -175,8 +212,17 @@ export default function ShoppingAssistantWidget() {
 
           <form
             onSubmit={onSubmit}
-            className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2"
+            className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 space-y-2"
           >
+            <button
+              type="button"
+              onClick={() => handleTalkToHuman()}
+              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Talk to a human (live chat)
+            </button>
+            <div className="flex items-center gap-2">
             <input
               type="text"
               value={input}
@@ -189,10 +235,11 @@ export default function ShoppingAssistantWidget() {
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="p-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white rounded-full transition-colors"
+              className="p-2 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white rounded-full transition-colors shrink-0"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
+            </div>
           </form>
         </div>
       ) : null}

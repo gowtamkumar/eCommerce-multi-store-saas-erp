@@ -1,13 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
-import { AlertCircle, Filter, Plus, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AlertCircle, Filter, Plus, Search, Sparkles } from 'lucide-react';
 import DataTable from '@/components/shared/DataTable';
 import { useLeaveVault } from '../hooks/useLeaveVault';
 import LeaveStatsGrid from './leaves/LeaveStatsGrid';
 import LeaveRequestModal from './leaves/LeaveRequestModal';
 import LeaveDecisionModal from './leaves/LeaveDecisionModal';
 import { buildLeaveColumns } from './leaves/leaveColumns';
+import { AiLeavePolicyFaqModal } from './leaves/AiLeavePolicyFaqModal';
 
 export default function LeavesListPage() {
   const {
@@ -32,6 +33,8 @@ export default function LeavesListPage() {
     handleDecision,
   } = useLeaveVault();
 
+  const [showFaqModal, setShowFaqModal] = useState(false);
+
   const columns = useMemo(
     () => buildLeaveColumns({
       onApprove: (id) => openDecision(id, 'approve'),
@@ -51,13 +54,22 @@ export default function LeavesListPage() {
             Managing employee absences and approval pipelines
           </p>
         </div>
-        <button
-          onClick={() => setShowRequestForm(true)}
-          className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all hover:scale-105 active:scale-95 shadow-xl"
-        >
-          <Plus className="w-4 h-4" />
-          Request Leave
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowFaqModal(true)}
+            className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-100 transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI FAQ
+          </button>
+          <button
+            onClick={() => setShowRequestForm(true)}
+            className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all hover:scale-105 active:scale-95 shadow-xl"
+          >
+            <Plus className="w-4 h-4" />
+            Request Leave
+          </button>
+        </div>
       </div>
 
       <LeaveStatsGrid stats={stats} />
@@ -115,6 +127,11 @@ export default function LeavesListPage() {
         setApproveData={setApproveData}
         submitting={submitting}
         onConfirm={handleDecision}
+      />
+
+      <AiLeavePolicyFaqModal
+        open={showFaqModal}
+        onClose={() => setShowFaqModal(false)}
       />
     </div>
   );

@@ -49,6 +49,13 @@ export class UpdateTenantAiAutomationConfigDto {
   @IsBoolean()
   productSeoOnCreate?: boolean
 
+  @ApiPropertyOptional({
+    description: 'Default-on: queue bulk description job after CSV product import',
+  })
+  @IsOptional()
+  @IsBoolean()
+  bulkDescriptionOnImport?: boolean
+
   @ApiPropertyOptional({ description: 'Draft abandoned cart recovery messages (no auto-send)' })
   @IsOptional()
   @IsBoolean()
@@ -65,10 +72,37 @@ export class TenantAiAutomationConfigResponseDto {
   productSeoOnCreate: boolean
 
   @ApiProperty()
+  bulkDescriptionOnImport: boolean
+
+  @ApiProperty()
   abandonedCartDraft: boolean
 
   @ApiProperty()
   demandForecastEnabled: boolean
+}
+
+export class UpdateTenantAiSensitiveConfigDto {
+  @ApiPropertyOptional({
+    description: 'Allow AI features for HRM module (leave, recruitment, payroll, performance). Disable to opt this tenant out of HR data being sent to the AI provider.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  hrmEnabled?: boolean
+
+  @ApiPropertyOptional({
+    description: 'Allow AI features for Finance module (AR, AP, tax, expense, ledger). Disable to opt this tenant out of financial data being sent to the AI provider.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  financeEnabled?: boolean
+}
+
+export class TenantAiSensitiveConfigResponseDto {
+  @ApiProperty({ description: 'AI enabled for HRM module' })
+  hrmEnabled: boolean
+
+  @ApiProperty({ description: 'AI enabled for Finance module' })
+  financeEnabled: boolean
 }
 
 export class UpdateTenantAiConfigDto {
@@ -154,6 +188,15 @@ export class UpdateTenantAiConfigDto {
   @ValidateNested()
   @Type(() => UpdateTenantAiAutomationConfigDto)
   automation?: UpdateTenantAiAutomationConfigDto
+
+  @ApiPropertyOptional({
+    type: UpdateTenantAiSensitiveConfigDto,
+    description: 'Per-module AI opt-out for sensitive data modules (HRM, Finance)',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateTenantAiSensitiveConfigDto)
+  sensitive?: UpdateTenantAiSensitiveConfigDto
 }
 
 export class TenantAiConfigResponseDto {
@@ -201,6 +244,9 @@ export class TenantAiConfigResponseDto {
 
   @ApiProperty({ type: TenantAiAutomationConfigResponseDto })
   automation: TenantAiAutomationConfigResponseDto
+
+  @ApiProperty({ type: TenantAiSensitiveConfigResponseDto, description: 'Per-module AI opt-out toggles' })
+  sensitive: TenantAiSensitiveConfigResponseDto
 }
 
 export class TestTenantAiConfigDto {

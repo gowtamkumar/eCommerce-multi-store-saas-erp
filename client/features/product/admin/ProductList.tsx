@@ -13,6 +13,7 @@ import {
   Tag,
   Trash2,
   TrendingUp,
+  Upload,
   X,
   XCircle
 } from 'lucide-react';
@@ -90,6 +91,7 @@ export default function ProductList({
   onDelete,
   onStatusChange,
   onLandingPage,
+  onOpenImport,
   filterLowStock,
   onLowStockToggle,
 }: ProductListProps) {
@@ -255,6 +257,12 @@ export default function ProductList({
           <p className="text-slate-500 text-sm mt-1">{products.length} total products</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenImport}
+            className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-xl font-bold flex items-center gap-2 transition-all"
+          >
+            <Upload className="w-4 h-4" /> Import CSV
+          </button>
           <button
             onClick={() => {
               setSelectedProductForBarcode(null);
