@@ -2,7 +2,8 @@ import { AiProviderType } from '@/common/types/tenant-ai-config.types'
 import { PlatformSettingsService } from '../platform-settings.service'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
+import { mapAiProviderError } from '@/modules/admin/ai/utils/map-ai-provider-error.util'
 import {
   isPlatformAiProviderReady,
   normalizePlatformAiConfig,
@@ -130,16 +131,8 @@ export class PlatformAiClientService {
       throw error
     }
 
-    const axiosError = error as AxiosError<{
-      error?: { message?: string }
-      message?: string
-    }>
-    const message =
-      axiosError.response?.data?.error?.message ||
-      axiosError.response?.data?.message ||
-      axiosError.message ||
-      'Platform AI request failed'
+    const message = mapAiProviderError(error)
     this.logger.error(`Platform AI request failed: ${message}`)
-    throw new ServiceUnavailableException(`Platform AI error: ${message}`)
+    throw new ServiceUnavailableException(message)
   }
 }

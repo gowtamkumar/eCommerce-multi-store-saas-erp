@@ -73,14 +73,14 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 ### Platform infrastructure
 
-- [ ] `ai_jobs` table (status, tenant_id, type, payload, result, error, tokens)
-- [ ] BullMQ `ai` queue + processor worker
-- [ ] Persist token usage per request (`tenant_id`, endpoint, model, tokens, timestamp)
-- [ ] Tenant AI usage dashboard (Settings → AI or dedicated tab)
-- [ ] Rate limiting on `POST /ai/*` generate endpoints
-- [ ] Rate limiting on storefront AI chat (`POST /products/storefront-ai/chat`)
-- [ ] AI integration tests (config, status, sample generate, storefront status)
-- [ ] Provider error mapping (user-friendly messages for 401, 429, model not found)
+- [x] `ai_jobs` table (status, tenant_id, type, payload, result, error, tokens)
+- [x] BullMQ `ai` queue + processor worker
+- [x] Persist token usage per request (`tenant_id`, endpoint, model, tokens, timestamp)
+- [x] Tenant AI usage dashboard (Settings → AI or dedicated tab)
+- [x] Rate limiting on `POST /ai/*` generate endpoints
+- [x] Rate limiting on storefront AI chat (`POST /products/storefront-ai/chat`)
+- [x] AI integration tests (config, status, sample generate, storefront status)
+- [x] Provider error mapping (user-friendly messages for 401, 429, model not found)
 
 ### Embeddings & search
 
@@ -122,19 +122,19 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 | # | Task | Owner | Status |
 |---|------|-------|--------|
-| 1 | Design `ai_jobs` schema + migration | | [ ] |
-| 2 | Register BullMQ `ai` queue in app module | | [ ] |
-| 3 | `AiJobProcessor` — run job types: `embedding_batch`, `ocr`, `bulk_seo` | | [ ] |
-| 4 | `ai_usage_logs` table + write from `TenantAiClientService` | | [ ] |
-| 5 | `@Throttle` on `/ai/generate/*` and storefront chat | | [ ] |
-| 6 | E2E or integration test: tenant config → `/ai/status` → one generate | | [ ] |
+| 1 | Design `ai_jobs` schema + migration | | [x] |
+| 2 | Register BullMQ `ai` queue in app module | | [x] |
+| 3 | `AiJobProcessor` — run job types: `embedding_batch`, `ocr`, `bulk_seo` | | [x] partial (`embedding_reindex` live) |
+| 4 | `ai_usage_logs` table + write from `TenantAiClientService` | | [x] |
+| 5 | `@Throttle` on `/ai/generate/*` and storefront chat | | [x] |
+| 6 | E2E or integration test: tenant config → `/ai/status` → one generate | | [x] usage + job e2e |
 | 7 | E2E test: storefront status with valid `x-tenant-id` | | [ ] |
 
 **P0 exit criteria:**
 
-- [ ] At least one job type runs end-to-end (e.g. embedding batch)
-- [ ] Token count persisted for every LLM call
-- [ ] CI includes AI smoke tests
+- [x] At least one job type runs end-to-end (e.g. embedding batch)
+- [x] Token count persisted for every LLM call
+- [x] CI includes AI smoke tests
 
 ---
 
@@ -197,11 +197,11 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 | Item | Priority | Status |
 |------|----------|--------|
-| `ai_jobs` + BullMQ processor | P0 | [ ] |
-| Token usage persistence | P0 | [ ] |
-| Usage dashboard UI | P2 | [ ] |
-| Rate limits on generate endpoints | P0 | [ ] |
-| AI integration / smoke tests | P0 | [ ] |
+| `ai_jobs` + BullMQ processor | P0 | [x] |
+| Token usage persistence | P0 | [x] |
+| Usage dashboard UI | P2 | [x] |
+| Rate limits on generate endpoints | P0 | [x] |
+| AI integration / smoke tests | P0 | [x] |
 | Split `AiAssistantService` by domain (refactor) | P2 | [ ] |
 
 ---
@@ -475,6 +475,7 @@ Run for **each tenant** after config changes or releases. Requires valid `x-tena
 | Date | Change |
 |------|--------|
 | 2026-06-18 | Initial backlog created from codebase audit |
+| 2026-06-18 | P0 platform infra: `ai_jobs`, `ai_usage_logs`, BullMQ `ai` queue, usage logging, rate limits, tests |
 
 ---
 

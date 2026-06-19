@@ -4,9 +4,11 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
+import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common'
+import { SkipThrottle, Throttle } from '@nestjs/throttler'
 import { AiChatDto } from '../dto/ai-chat.dto'
 import { DashboardCopilotDto } from '../dto/dashboard-copilot.dto'
 import { CampaignCopyResultDto, GenerateCampaignCopyDto } from '../dto/generate-campaign-copy.dto'
@@ -140,15 +142,24 @@ import {
   ProductContentResultDto,
 } from '../dto/generate-product-content.dto'
 import { GenerateStoreSeoDto, StoreSeoResultDto } from '../dto/generate-store-seo.dto'
+import { AiUsageSummaryDto } from '../dto/ai-usage.dto'
 import { AiAssistantService } from '../services/ai-assistant.service'
+import { AiJobService, AiJobResponseDto } from '../services/ai-job.service'
+import { AiUsageLogService } from '../services/ai-usage-log.service'
 
 @Controller('ai')
-@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard, CustomThrottlerGuard)
+@Throttle({ ai: { limit: 40, ttl: 60000 } })
 @RequireFeature('ai')
 export class AiController {
-  constructor(private readonly aiAssistantService: AiAssistantService) {}
+  constructor(
+    private readonly aiAssistantService: AiAssistantService,
+    private readonly aiUsageLogService: AiUsageLogService,
+    private readonly aiJobService: AiJobService,
+  ) {}
 
   @Get('status')
+  @SkipThrottle()
   @RequirePermissions(SystemPermissions.AI_USE)
   async getStatus(@RequestContext() ctx: RequestContextDto): Promise<
     BaseApiSuccessResponse<{
@@ -789,6 +800,53 @@ export class AiController {
       statusCode: 200,
       message: 'Payslip explanation generated successfully',
       data,
+    }
+  }
+
+  @Get('usage')
+  @SkipThrottle()
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async getUsageSummary(
+    @RequestContext() ctx: RequestContextDto,
+    @Query('days') days?: number,
+  ): Promise<BaseApiSuccessResponse<AiUsageSummaryDto>> {
+    const data = await this.aiUsageLogService.getSummary(ctx.tenantId, days)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'AI usage summary retrieved successfully',
+      data,
+    }
+  }
+
+  @Post('jobs/embedding-reindex')
+  @HttpCode(202)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.CATALOG_WRITE)
+  async enqueueEmbeddingReindex(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
+    const job = await this.aiJobService.enqueueEmbeddingReindex(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 202,
+      message: 'Embedding reindex job queued',
+      data: this.aiJobService.toResponse(job),
+    }
+  }
+
+  @Get('jobs/:id')
+  @SkipThrottle()
+  @RequirePermissions(SystemPermissions.AI_USE)
+  async getJob(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
+    const job = await this.aiJobService.findByIdForTenant(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'AI job retrieved successfully',
+      data: this.aiJobService.toResponse(job),
     }
   }
 }

@@ -6,12 +6,31 @@ import { normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import { Repository } from 'typeorm'
+import { AiUsageLogService } from './ai-usage-log.service'
+import { mapAiProviderError } from '../utils/map-ai-provider-error.util'
 
 export interface AiChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
+}
+
+export interface TenantAiUsageContext {
+  endpoint?: string
+  jobId?: string
+}
+
+export interface AiChatCompletionOptions {
+  model?: string
+  maxTokens?: number
+  temperature?: number
+  imageUrl?: string
+  usageContext?: TenantAiUsageContext
+}
+
+export interface AiEmbeddingOptions {
+  usageContext?: TenantAiUsageContext
 }
 
 export interface AiCompletionResult {
@@ -35,6 +54,7 @@ export class TenantAiClientService {
   constructor(
     @InjectRepository(TenantEntity)
     private readonly tenantRepo: Repository<TenantEntity>,
+    private readonly usageLogService: AiUsageLogService,
   ) {}
 
   async getConfigForTenant(tenantId: string): Promise<TenantAiConfig> {
@@ -48,12 +68,7 @@ export class TenantAiClientService {
   async chatCompletion(
     tenantId: string,
     messages: AiChatMessage[],
-    options?: {
-      model?: string
-      maxTokens?: number
-      temperature?: number
-      imageUrl?: string
-    },
+    options?: AiChatCompletionOptions,
   ): Promise<AiCompletionResult> {
     const config = await this.getConfigForTenant(tenantId)
     this.assertConfigReady(config)
@@ -63,13 +78,31 @@ export class TenantAiClientService {
     const temperature = options?.temperature ?? config.temperature ?? 0.7
     const payloadMessages = this.withOptionalVisionMessage(messages, options?.imageUrl)
 
+    let result: AiCompletionResult
     switch (config.provider) {
       case AiProviderType.ANTHROPIC:
-        return this.chatAnthropic(config, payloadMessages, model, maxTokens, temperature)
+        result = await this.chatAnthropic(
+          tenantId,
+          config,
+          payloadMessages,
+          model,
+          maxTokens,
+          temperature,
+        )
+        break
       case AiProviderType.GOOGLE:
-        return this.chatGoogle(config, payloadMessages, model, maxTokens, temperature)
+        result = await this.chatGoogle(
+          tenantId,
+          config,
+          payloadMessages,
+          model,
+          maxTokens,
+          temperature,
+        )
+        break
       case AiProviderType.AZURE_OPENAI:
-        return this.chatAzureOpenAi(
+        result = await this.chatAzureOpenAi(
+          tenantId,
           config,
           payloadMessages,
           model,
@@ -77,8 +110,10 @@ export class TenantAiClientService {
           temperature,
           options?.imageUrl,
         )
+        break
       default:
-        return this.chatOpenAiCompatible(
+        result = await this.chatOpenAiCompatible(
+          tenantId,
           config,
           payloadMessages,
           model,
@@ -87,6 +122,19 @@ export class TenantAiClientService {
           options?.imageUrl,
         )
     }
+
+    void this.usageLogService.recordSafe({
+      tenantId,
+      endpoint: options?.usageContext?.endpoint ?? 'chat',
+      operation: 'chat',
+      model: result.model,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      totalTokens: result.totalTokens,
+      jobId: options?.usageContext?.jobId,
+    })
+
+    return result
   }
 
   private withOptionalVisionMessage(
@@ -146,10 +194,15 @@ export class TenantAiClientService {
     return this.chatCompletion(tenantId, [{ role: 'user', content: prompt }], {
       maxTokens: 32,
       temperature: 0,
+      usageContext: { endpoint: 'ai-config/test' },
     })
   }
 
-  async createEmbeddings(tenantId: string, inputs: string[]): Promise<AiEmbeddingResult> {
+  async createEmbeddings(
+    tenantId: string,
+    inputs: string[],
+    options?: AiEmbeddingOptions,
+  ): Promise<AiEmbeddingResult> {
     const config = await this.getConfigForTenant(tenantId)
     this.assertConfigReady(config)
 
@@ -163,16 +216,30 @@ export class TenantAiClientService {
       throw new ServiceUnavailableException('No text provided for embedding')
     }
 
+    let result: AiEmbeddingResult
     switch (config.provider) {
       case AiProviderType.GOOGLE:
-        return this.embedGoogle(config, normalizedInputs, model)
+        result = await this.embedGoogle(tenantId, config, normalizedInputs, model)
+        break
       case AiProviderType.ANTHROPIC:
         throw new ServiceUnavailableException('Embeddings are not supported for Anthropic')
       case AiProviderType.AZURE_OPENAI:
-        return this.embedAzureOpenAi(config, normalizedInputs, model)
+        result = await this.embedAzureOpenAi(tenantId, config, normalizedInputs, model)
+        break
       default:
-        return this.embedOpenAiCompatible(config, normalizedInputs, model)
+        result = await this.embedOpenAiCompatible(tenantId, config, normalizedInputs, model)
     }
+
+    void this.usageLogService.recordSafe({
+      tenantId,
+      endpoint: options?.usageContext?.endpoint ?? 'embeddings',
+      operation: 'embedding',
+      model: result.model,
+      totalTokens: result.totalTokens,
+      jobId: options?.usageContext?.jobId,
+    })
+
+    return result
   }
 
   private assertConfigReady(config: TenantAiConfig): void {
@@ -188,20 +255,13 @@ export class TenantAiClientService {
   }
 
   private handleProviderError(tenantId: string, error: unknown): never {
-    const axiosError = error as AxiosError<{
-      error?: { message?: string }
-      message?: string
-    }>
-    const message =
-      axiosError.response?.data?.error?.message ||
-      axiosError.response?.data?.message ||
-      axiosError.message ||
-      'AI provider request failed'
+    const message = mapAiProviderError(error)
     this.logger.error(`Tenant ${tenantId} AI request failed: ${message}`)
-    throw new ServiceUnavailableException(`AI provider error: ${message}`)
+    throw new ServiceUnavailableException(message)
   }
 
   private async chatOpenAiCompatible(
+    tenantId: string,
     config: TenantAiConfig,
     messages: AiChatMessage[],
     model: string,
@@ -254,11 +314,12 @@ export class TenantAiClientService {
         totalTokens: data.usage?.total_tokens ?? 0,
       }
     } catch (error) {
-      this.handleProviderError('unknown', error)
+      this.handleProviderError(tenantId, error)
     }
   }
 
   private async chatAnthropic(
+    tenantId: string,
     config: TenantAiConfig,
     messages: AiChatMessage[],
     model: string,
@@ -305,11 +366,12 @@ export class TenantAiClientService {
         totalTokens: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
       }
     } catch (error) {
-      this.handleProviderError('unknown', error)
+      this.handleProviderError(tenantId, error)
     }
   }
 
   private async chatGoogle(
+    tenantId: string,
     config: TenantAiConfig,
     messages: AiChatMessage[],
     model: string,
@@ -366,11 +428,12 @@ export class TenantAiClientService {
         totalTokens: usage.totalTokenCount ?? 0,
       }
     } catch (error) {
-      this.handleProviderError('unknown', error)
+      this.handleProviderError(tenantId, error)
     }
   }
 
   private async chatAzureOpenAi(
+    tenantId: string,
     config: TenantAiConfig,
     messages: AiChatMessage[],
     model: string,
@@ -418,11 +481,12 @@ export class TenantAiClientService {
         totalTokens: data.usage?.total_tokens ?? 0,
       }
     } catch (error) {
-      this.handleProviderError('unknown', error)
+      this.handleProviderError(tenantId, error)
     }
   }
 
   private async embedOpenAiCompatible(
+    tenantId: string,
     config: TenantAiConfig,
     inputs: string[],
     model: string,
@@ -471,11 +535,12 @@ export class TenantAiClientService {
         totalTokens: data.usage?.total_tokens ?? 0,
       }
     } catch (error) {
-      this.handleProviderError('unknown', error)
+      this.handleProviderError(tenantId, error)
     }
   }
 
   private async embedAzureOpenAi(
+    tenantId: string,
     config: TenantAiConfig,
     inputs: string[],
     model: string,
@@ -519,11 +584,12 @@ export class TenantAiClientService {
         totalTokens: data.usage?.total_tokens ?? 0,
       }
     } catch (error) {
-      this.handleProviderError('unknown', error)
+      this.handleProviderError(tenantId, error)
     }
   }
 
   private async embedGoogle(
+    tenantId: string,
     config: TenantAiConfig,
     inputs: string[],
     model: string,
@@ -569,7 +635,7 @@ export class TenantAiClientService {
         totalTokens,
       }
     } catch (error) {
-      this.handleProviderError('unknown', error)
+      this.handleProviderError(tenantId, error)
     }
   }
 }

@@ -3,7 +3,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { InventoryLedgerModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
 import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.module'
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
@@ -22,6 +22,7 @@ import { FaqModule } from '@/modules/admin/content/faq/faq.module'
 import { BrandModule } from '../brand/brand.module'
 import { CategoryModule } from '../category/category.module'
 import { AiModule } from '@/modules/admin/ai/ai.module'
+import { AiProcessor } from '@/modules/admin/ai/queue/ai.processor'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 import { ProductEmbeddingEntity } from './entities/product-embedding.entity'
 import { ProductEmbeddingService } from './services/product-embedding.service'
@@ -38,6 +39,7 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
       ProductEmbeddingEntity,
     ]),
     BullModule.registerQueue({ name: 'product' }),
+    BullModule.registerQueue({ name: 'ai' }),
     ReviewModule,
     CacheModule,
     InventoryLedgerModule,
@@ -48,13 +50,14 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
     FaqModule,
     BrandModule,
     CategoryModule,
-    AiModule,
+    forwardRef(() => AiModule),
     RbacModule,
   ],
   controllers: [ProductController],
   providers: [
     ProductService,
     ProductProcessor,
+    AiProcessor,
     ProductRepository,
     ProductVariantRepository,
     ProductAttributeRepository,

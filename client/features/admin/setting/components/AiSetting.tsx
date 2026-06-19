@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import { Bot, Eye, EyeOff, Loader2, MessageCircle, Search, Sparkles, Zap } from "lucide-react";
 import { useState } from "react";
 import { useAiConfig } from "../hooks/useAiConfig";
+import { useAiUsage } from "../hooks/useAiUsage";
 import { AI_API_KEY_UNCHANGED, AI_PROVIDER_OPTIONS } from "../types/ai-config";
+import { AiUsageDashboard } from "./AiUsageDashboard";
 
 function SecretInput({
   label,
@@ -49,11 +51,10 @@ function SecretInput({
 function FeatureStatusBadge({ active, label }: { active: boolean; label: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-        active
-          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-      }`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${active
+        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+        }`}
     >
       {label}: {active ? "Live" : "Off"}
     </span>
@@ -75,9 +76,8 @@ function StorefrontToggle({
 }) {
   return (
     <label
-      className={`flex items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 ${
-        disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-white/60 dark:hover:bg-slate-900/40"
-      }`}
+      className={`flex items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-white/60 dark:hover:bg-slate-900/40"
+        }`}
     >
       <input
         type="checkbox"
@@ -111,6 +111,14 @@ export function AiSetting() {
     reindexCatalogEmbeddings,
     applyProviderPreset,
   } = useAiConfig();
+
+  const {
+    days: usageDays,
+    setDays: setUsageDays,
+    loading: usageLoading,
+    summary: usageSummary,
+    refreshUsage,
+  } = useAiUsage(form.enabled);
 
   const selectedProvider = AI_PROVIDER_OPTIONS.find((p) => p.id === form.provider);
 
@@ -242,27 +250,27 @@ export function AiSetting() {
 
         {selectedProvider?.showOpenRouterHeaders ? (
           <>
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site URL (OpenRouter header)</label>
-          <input
-            type="url"
-            value={form.siteUrl}
-            onChange={(e) => setForm({ ...form, siteUrl: e.target.value })}
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
-            placeholder="https://your-store.com"
-          />
-        </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site URL (OpenRouter header)</label>
+              <input
+                type="url"
+                value={form.siteUrl}
+                onChange={(e) => setForm({ ...form, siteUrl: e.target.value })}
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                placeholder="https://your-store.com"
+              />
+            </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site name (OpenRouter header)</label>
-          <input
-            type="text"
-            value={form.siteName}
-            onChange={(e) => setForm({ ...form, siteName: e.target.value })}
-            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
-            placeholder="My Store"
-          />
-        </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site name (OpenRouter header)</label>
+              <input
+                type="text"
+                value={form.siteName}
+                onChange={(e) => setForm({ ...form, siteName: e.target.value })}
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                placeholder="My Store"
+              />
+            </div>
           </>
         ) : null}
 
@@ -291,6 +299,15 @@ export function AiSetting() {
           />
         </div>
       </div>
+
+      <AiUsageDashboard
+        enabled={form.enabled}
+        days={usageDays}
+        onDaysChange={setUsageDays}
+        loading={usageLoading}
+        summary={usageSummary}
+        onRefresh={() => void refreshUsage()}
+      />
 
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 p-5 space-y-4">
         <div className="flex items-start gap-3">
@@ -394,7 +411,10 @@ export function AiSetting() {
 
           <button
             type="button"
-            onClick={reindexCatalogEmbeddings}
+            onClick={async () => {
+              await reindexCatalogEmbeddings();
+              void refreshUsage();
+            }}
             disabled={reindexing || !form.enabled}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl transition-all disabled:opacity-60"
           >
@@ -416,7 +436,10 @@ export function AiSetting() {
         </button>
         <button
           type="button"
-          onClick={testConnection}
+          onClick={async () => {
+            await testConnection();
+            void refreshUsage();
+          }}
           disabled={testing || !form.enabled}
           className="inline-flex items-center gap-2 px-6 py-3 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-60"
         >

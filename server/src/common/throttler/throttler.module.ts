@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 // import { APP_GUARD } from '@nestjs/core'
 import { ThrottlerModule } from '@nestjs/throttler'
-// import { CustomThrottlerGuard } from './throttler.guard'
+import { CustomThrottlerGuard } from './throttler.guard'
 
 @Module({
   imports: [
@@ -35,16 +35,21 @@ import { ThrottlerModule } from '@nestjs/throttler'
             ttl: 60000, // 60000 ms = 60 seconds = 1 minute
             limit: 15, // 15 requests per 1 minute
           },
+          {
+            name: 'ai',
+            ttl: 60000,
+            limit: 40, // tenant admin AI generate endpoints
+          },
+          {
+            name: 'ai-storefront',
+            ttl: 60000,
+            limit: 20, // public shopping assistant chat
+          },
         ],
       }),
     }),
   ],
-  providers: [
-    // Global rate limiting disabled — re-enable APP_GUARD when ready for production.
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: CustomThrottlerGuard,
-    // },
-  ],
+  providers: [CustomThrottlerGuard],
+  exports: [ThrottlerModule, CustomThrottlerGuard],
 })
 export class AppThrottlerModule {}

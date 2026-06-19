@@ -292,6 +292,9 @@ sequenceDiagram
 
 ```
 GET /ai/status → { enabled, configured, provider, defaultModel, hasApiKey }
+GET /ai/usage?days=30 → token summary (totalTokens, byOperation, byDay)
+GET /ai/jobs/:id → async job status (embedding reindex, etc.)
+POST /ai/jobs/embedding-reindex → queue background catalog reindex (202)
 ```
 
 ### 6.3 Generate endpoints (catalog)
@@ -591,7 +594,12 @@ sequenceDiagram
 | `server/src/modules/admin/ai/` | Admin AI module (controller, assistant, client, bootstrap) |
 | `server/src/modules/admin/ai/controllers/ai.controller.ts` | All `/ai/*` routes |
 | `server/src/modules/admin/ai/services/ai-assistant.service.ts` | Prompt + parse logic |
-| `server/src/modules/admin/ai/services/tenant-ai-client.service.ts` | Multi-provider HTTP client |
+| `server/src/modules/admin/ai/services/tenant-ai-client.service.ts` | Multi-provider HTTP client + usage logging |
+| `server/src/modules/admin/ai/services/ai-usage-log.service.ts` | Persist and summarize token usage |
+| `server/src/modules/admin/ai/services/ai-job.service.ts` | Create and track async AI jobs |
+| `server/src/modules/admin/ai/queue/ai.processor.ts` | BullMQ `ai` queue worker |
+| `server/src/modules/admin/ai/entities/ai-job.entity.ts` | `ai_jobs` table |
+| `server/src/modules/admin/ai/entities/ai-usage-log.entity.ts` | `ai_usage_logs` table |
 | `server/src/modules/admin/ai/services/ai-feature-bootstrap.service.ts` | Plan + permission backfill |
 | `server/src/common/types/tenant-ai-config.types.ts` | Types + provider presets |
 | `server/src/modules/system/tenant/` | Tenant AI config CRUD |
@@ -637,6 +645,7 @@ sequenceDiagram
 | `1781320000000-EnableAiPlanFeature.ts` | `ai` feature + permissions |
 | `1781380000000-AddProductEmbeddings.ts` | `product_embeddings` table |
 | `1781390000000-AddPlatformAiConfig.ts` | `platform_settings.ai_config` |
+| `1781400000000-AddAiJobsAndUsageLogs.ts` | `ai_jobs` + `ai_usage_logs` |
 
 ---
 

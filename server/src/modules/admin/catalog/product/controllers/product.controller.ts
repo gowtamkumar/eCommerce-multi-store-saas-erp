@@ -8,6 +8,7 @@ import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Audit } from '@/common/decorators/audit.decorator'
 import { Public } from '@/common/decorators/public.decorator'
+import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
 import {
   Body,
   Controller,
@@ -21,6 +22,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { CreateReviewDto } from '../../review/dto/review.dto'
 import { ReviewService } from '../../review/services/review.service'
 import { CreateProductDto } from '../dto/create-product.dto'
@@ -107,6 +109,8 @@ export class ProductController {
 
   @Post('storefront-ai/chat')
   @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ 'ai-storefront': { limit: 20, ttl: 60000 } })
   @HttpCode(200)
   async chatWithShoppingAssistant(
     @RequestContext() ctx: RequestContextDto,

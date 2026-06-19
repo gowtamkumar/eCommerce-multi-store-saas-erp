@@ -1,0 +1,75 @@
+import { INestApplication } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { DataSource } from 'typeorm'
+import { AppModule } from '../src/app.module'
+import { AiJobStatus } from '@/common/enums/ai-job-status.enum'
+import { AiJobType } from '@/common/enums/ai-job-type.enum'
+import { AiJobEntity } from '@/modules/admin/ai/entities/ai-job.entity'
+import { AiUsageLogEntity } from '@/modules/admin/ai/entities/ai-usage-log.entity'
+import { AiJobService } from '@/modules/admin/ai/services/ai-job.service'
+import { AiUsageLogService } from '@/modules/admin/ai/services/ai-usage-log.service'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+
+describe('AI infrastructure (e2e)', () => {
+  let app: INestApplication
+  let dataSource: DataSource
+  let tenant: TenantEntity
+  let usageLogService: AiUsageLogService
+  let aiJobService: AiJobService
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile()
+
+    app = moduleFixture.createNestApplication()
+    await app.init()
+
+    dataSource = app.get(DataSource)
+    usageLogService = app.get(AiUsageLogService)
+    aiJobService = app.get(AiJobService)
+
+    const tenantRepo = dataSource.getRepository(TenantEntity)
+    tenant = tenantRepo.create({
+      storeName: 'AI Infra E2E Store',
+      subdomain: `ai-infra-e2e-${Date.now()}`,
+    })
+    await tenantRepo.save(tenant)
+  })
+
+  afterAll(async () => {
+    if (tenant) {
+      await dataSource.getRepository(AiUsageLogEntity).delete({ tenantId: tenant.id })
+      await dataSource.getRepository(AiJobEntity).delete({ tenantId: tenant.id })
+      await dataSource.getRepository(TenantEntity).delete(tenant.id)
+    }
+    if (app) {
+      await app.close()
+    }
+  })
+
+  it('persists AI usage logs and returns summary', async () => {
+    await usageLogService.record({
+      tenantId: tenant.id,
+      endpoint: 'ai/status',
+      operation: 'chat',
+      model: 'gpt-4o-mini',
+      promptTokens: 5,
+      completionTokens: 10,
+      totalTokens: 15,
+    })
+
+    const summary = await usageLogService.getSummary(tenant.id, 30)
+    expect(summary.totalTokens).toBeGreaterThanOrEqual(15)
+    expect(summary.totalRequests).toBeGreaterThanOrEqual(1)
+  })
+
+  it('creates queued embedding reindex job row', async () => {
+    const job = await aiJobService.createAndEnqueue(tenant.id, AiJobType.EMBEDDING_REINDEX, {})
+
+    expect(job.tenantId).toBe(tenant.id)
+    expect(job.type).toBe(AiJobType.EMBEDDING_REINDEX)
+    expect(job.status).toBe(AiJobStatus.QUEUED)
+    expect(job.bullJobId).toBeTruthy()
+  })
+})
