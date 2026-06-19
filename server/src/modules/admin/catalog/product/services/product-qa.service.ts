@@ -1,6 +1,4 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
-import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
 import {
   ForbiddenException,
   Injectable,
@@ -11,9 +9,10 @@ import {
 import {
   AskProductQuestionDto,
   ProductQaResultDto,
-  StorefrontAiStatusDto,
 } from '../dto/ask-product-question.dto'
 import { ProductService } from './product.service'
+import { StorefrontAiConfigService } from './storefront-ai-config.service'
+import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
 import {
   buildProductRagContext,
   isProductEligibleForStorefrontQa,
@@ -26,26 +25,15 @@ export class ProductQaService {
   constructor(
     private readonly productService: ProductService,
     private readonly tenantAiClient: TenantAiClientService,
-    private readonly permissionResolution: PermissionResolutionService,
+    private readonly storefrontAiConfig: StorefrontAiConfigService,
   ) {}
 
-  async getStorefrontStatus(tenantId: string): Promise<StorefrontAiStatusDto> {
-    return {
-      productQaAvailable: await this.isProductQaAvailable(tenantId),
-    }
-  }
-
   async isProductQaAvailable(tenantId: string): Promise<boolean> {
-    if (!(await this.permissionResolution.isFeatureEnabledForTenant(tenantId, 'ai'))) {
-      return false
-    }
-
-    try {
-      const config = await this.tenantAiClient.getConfigForTenant(tenantId)
-      return Boolean(config.enabled && config.apiKey?.trim() && config.defaultModel?.trim())
-    } catch {
-      return false
-    }
+    const [providerReady, flags] = await Promise.all([
+      this.storefrontAiConfig.isProviderReady(tenantId),
+      this.storefrontAiConfig.getStorefrontFlags(tenantId),
+    ])
+    return providerReady && flags.productQaEnabled
   }
 
   async askAboutProduct(

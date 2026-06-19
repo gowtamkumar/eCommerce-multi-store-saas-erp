@@ -39,6 +39,38 @@ export class AskProductQuestionDto {
   conversationHistory?: ProductQaMessageDto[]
 }
 
+export class StorefrontAssistantChatDto {
+  @ApiProperty({ description: 'Shopper message to the shopping assistant' })
+  @IsString()
+  @MaxLength(500)
+  message: string
+
+  @ApiPropertyOptional({
+    description: 'Recent chat turns (max 8 messages)',
+    type: [ProductQaMessageDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(8)
+  @ValidateNested({ each: true })
+  @Type(() => ProductQaMessageDto)
+  conversationHistory?: ProductQaMessageDto[]
+
+  @ApiPropertyOptional({ description: 'Store brand name for friendlier replies' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  brandName?: string
+}
+
+export class StorefrontAssistantProductLinkDto {
+  @ApiProperty()
+  name: string
+
+  @ApiProperty()
+  slug: string
+}
+
 export class ProductQaResultDto {
   @ApiProperty()
   answer: string
@@ -47,7 +79,33 @@ export class ProductQaResultDto {
   suggestedFollowUps: string[]
 }
 
+export class StorefrontAssistantChatResultDto {
+  @ApiProperty()
+  answer: string
+
+  @ApiProperty({ type: [String] })
+  suggestedFollowUps: string[]
+
+  @ApiProperty({ type: [StorefrontAssistantProductLinkDto] })
+  productLinks: StorefrontAssistantProductLinkDto[]
+}
+
 export class StorefrontAiStatusDto {
   @ApiProperty()
   productQaAvailable: boolean
+
+  @ApiProperty()
+  shoppingAssistantAvailable: boolean
+
+  @ApiProperty()
+  semanticSearchAvailable: boolean
+
+  @ApiProperty()
+  shoppingAssistantEnabled: boolean
+
+  @ApiProperty()
+  productQaEnabled: boolean
+
+  @ApiProperty()
+  semanticSearchEnabled: boolean
 }

@@ -2,17 +2,33 @@
 
 import { getSession } from "next-auth/react";
 import nestApiUrl from "../lib/api-url";
+import { getClientTenantId } from "../lib/store-tenant-id";
 import { getTenantId } from "./tenant";
 import { authOptions } from "@/lib/authOptions";
 
-export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
-  const headers: any = { ...options.headers };
+type FetchAPIOptions = RequestInit & {
+  tenantId?: string;
+  silent404?: boolean;
+};
+
+export async function fetchAPI(endpoint: string, options: FetchAPIOptions = {}) {
+  const { tenantId: explicitTenantId, silent404, ...fetchOptions } = options;
+  const headers: any = { ...fetchOptions.headers };
   // If tenant ID not provided in headers, try to resolve it
   if (!headers["x-tenant-id"]) {
-    const resolvedId = await getTenantId(null, true);
+    if (explicitTenantId) {
+      headers["x-tenant-id"] = explicitTenantId;
+    } else {
+      const resolvedId = await getTenantId(null, true);
 
-    if (resolvedId) {
-      headers["x-tenant-id"] = resolvedId;
+      if (resolvedId) {
+        headers["x-tenant-id"] = resolvedId;
+      } else if (typeof window !== "undefined") {
+        const clientTenantId = getClientTenantId();
+        if (clientTenantId) {
+          headers["x-tenant-id"] = clientTenantId;
+        }
+      }
     }
   }
 
@@ -24,7 +40,7 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     }
   }
 
-  if (!(options.body instanceof FormData)) {
+  if (!(fetchOptions.body instanceof FormData)) {
     (headers as any)["Content-Type"] = "application/json";
   }
 
@@ -55,12 +71,12 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   }
 
   const res = await fetch(`${nestApiUrl}${endpoint}`, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
   if (!res.ok) {
-    if (res.status === 404 && (options as any).silent404) {
+    if (res.status === 404 && silent404) {
       return { success: false, data: null, message: "Not found" };
     }
 

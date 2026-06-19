@@ -7,6 +7,15 @@ export enum AiProviderType {
   CUSTOM = 'custom',
 }
 
+export interface TenantAiStorefrontConfig {
+  /** Floating shopping assistant chat (catalog + FAQ RAG) */
+  shoppingAssistantEnabled?: boolean
+  /** “Ask about this product” on product pages */
+  productQaEnabled?: boolean
+  /** Hybrid keyword + vector catalog search */
+  semanticSearchEnabled?: boolean
+}
+
 export interface TenantAiConfig {
   enabled: boolean
   provider: AiProviderType | string
@@ -21,6 +30,7 @@ export interface TenantAiConfig {
   maxTokens?: number
   temperature?: number
   extraHeaders?: Record<string, string>
+  storefront?: TenantAiStorefrontConfig
 }
 
 export const AI_PROVIDER_PRESETS: Record<
@@ -70,4 +80,9 @@ export const DEFAULT_TENANT_AI_CONFIG: TenantAiConfig = {
   embeddingModel: AI_PROVIDER_PRESETS[AiProviderType.OPENAI].embeddingModel,
   maxTokens: 1024,
   temperature: 0.7,
+  storefront: {
+    shoppingAssistantEnabled: true,
+    productQaEnabled: true,
+    semanticSearchEnabled: true,
+  },
 }

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { AiProviderType } from '@/common/types/tenant-ai-config.types'
+import { Type } from 'class-transformer'
 import {
   IsBoolean,
   IsNumber,
@@ -11,7 +12,36 @@ import {
   Min,
   MaxLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator'
+
+export class UpdateTenantAiStorefrontConfigDto {
+  @ApiPropertyOptional({ description: 'Show floating shopping assistant on storefront' })
+  @IsOptional()
+  @IsBoolean()
+  shoppingAssistantEnabled?: boolean
+
+  @ApiPropertyOptional({ description: 'Show “Ask about this product” on product pages' })
+  @IsOptional()
+  @IsBoolean()
+  productQaEnabled?: boolean
+
+  @ApiPropertyOptional({ description: 'Enable hybrid semantic product search' })
+  @IsOptional()
+  @IsBoolean()
+  semanticSearchEnabled?: boolean
+}
+
+export class TenantAiStorefrontConfigResponseDto {
+  @ApiProperty()
+  shoppingAssistantEnabled: boolean
+
+  @ApiProperty()
+  productQaEnabled: boolean
+
+  @ApiProperty()
+  semanticSearchEnabled: boolean
+}
 
 export class UpdateTenantAiConfigDto {
   @ApiPropertyOptional()
@@ -84,6 +114,12 @@ export class UpdateTenantAiConfigDto {
   @IsOptional()
   @IsObject()
   extraHeaders?: Record<string, string>
+
+  @ApiPropertyOptional({ type: UpdateTenantAiStorefrontConfigDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UpdateTenantAiStorefrontConfigDto)
+  storefront?: UpdateTenantAiStorefrontConfigDto
 }
 
 export class TenantAiConfigResponseDto {
@@ -125,6 +161,9 @@ export class TenantAiConfigResponseDto {
 
   @ApiPropertyOptional()
   extraHeaders?: Record<string, string>
+
+  @ApiProperty({ type: TenantAiStorefrontConfigResponseDto })
+  storefront: TenantAiStorefrontConfigResponseDto
 }
 
 export class TestTenantAiConfigDto {

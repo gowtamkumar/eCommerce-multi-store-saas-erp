@@ -1,5 +1,4 @@
 import { ProductStatus } from '@/common/enums/product-status.enum'
-import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -9,6 +8,7 @@ import { FilterProductDto } from '../dto/filter-product.dto'
 import { ProductEmbeddingEntity } from '../entities/product-embedding.entity'
 import { ProductEntity } from '../entities/product.entity'
 import { ProductRepository } from '../repositories/product.repository'
+import { StorefrontAiConfigService } from './storefront-ai-config.service'
 import { cosineSimilarity, mergeHybridProductIds } from '../utils/semantic-search.util'
 
 const EMBEDDING_BATCH_SIZE = 20
@@ -25,22 +25,28 @@ export class ProductEmbeddingService {
     private readonly productRepo: Repository<ProductEntity>,
     private readonly productRepository: ProductRepository,
     private readonly tenantAiClient: TenantAiClientService,
-    private readonly permissionResolution: PermissionResolutionService,
+    private readonly storefrontAiConfig: StorefrontAiConfigService,
   ) {}
 
+  async hasSemanticSearchIndex(tenantId: string): Promise<boolean> {
+    const count = await this.embeddingRepo.count({ where: { tenantId } })
+    return count > 0
+  }
+
   async canUseHybridSearch(tenantId: string): Promise<boolean> {
-    if (!(await this.permissionResolution.isFeatureEnabledForTenant(tenantId, 'ai'))) {
+    const [providerReady, flags, hasIndex] = await Promise.all([
+      this.storefrontAiConfig.isProviderReady(tenantId),
+      this.storefrontAiConfig.getStorefrontFlags(tenantId),
+      this.hasSemanticSearchIndex(tenantId),
+    ])
+
+    if (!providerReady || !flags.semanticSearchEnabled || !hasIndex) {
       return false
     }
 
     try {
       const config = await this.tenantAiClient.getConfigForTenant(tenantId)
-      if (!config.enabled || !config.apiKey?.trim() || !config.embeddingModel?.trim()) {
-        return false
-      }
-
-      const count = await this.embeddingRepo.count({ where: { tenantId } })
-      return count > 0
+      return Boolean(config.embeddingModel?.trim())
     } catch {
       return false
     }

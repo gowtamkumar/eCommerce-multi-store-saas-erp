@@ -4,20 +4,22 @@ import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { fetchAPI } from "@/services/api";
 
-export interface ProductQaMessage {
+export interface ShoppingAssistantMessage {
   role: "user" | "assistant";
   content: string;
+  productLinks?: Array<{ name: string; slug: string }>;
 }
 
-export interface ProductQaResult {
+export interface ShoppingAssistantReply {
   answer: string;
   suggestedFollowUps: string[];
+  productLinks: Array<{ name: string; slug: string }>;
 }
 
-export function useProductQa(productSlug: string, tenantId?: string) {
+export function useShoppingAssistant(tenantId?: string, brandName?: string) {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<ProductQaMessage[]>([]);
+  const [messages, setMessages] = useState<ShoppingAssistantMessage[]>([]);
 
   const checkAvailability = useCallback(async () => {
     if (!tenantId) {
@@ -27,9 +29,9 @@ export function useProductQa(productSlug: string, tenantId?: string) {
 
     try {
       const res = await fetchAPI("/products/storefront-ai/status", { tenantId });
-      setAvailable(!!res.data?.productQaAvailable);
+      setAvailable(!!res.data?.shoppingAssistantAvailable);
     } catch (error) {
-      console.error("Product Q&A status check failed:", error);
+      console.error("Shopping assistant status check failed:", error);
       setAvailable(false);
     }
   }, [tenantId]);
@@ -38,38 +40,43 @@ export function useProductQa(productSlug: string, tenantId?: string) {
     void checkAvailability();
   }, [checkAvailability]);
 
-  const askQuestion = async (question: string): Promise<ProductQaResult | null> => {
-    const trimmed = question.trim();
+  const sendMessage = async (message: string): Promise<ShoppingAssistantReply | null> => {
+    const trimmed = message.trim();
     if (!trimmed || !tenantId) return null;
 
     setLoading(true);
     try {
-      const res = await fetchAPI(`/products/slug/${encodeURIComponent(productSlug)}/ask`, {
+      const res = await fetchAPI("/products/storefront-ai/chat", {
         method: "POST",
         tenantId,
         body: JSON.stringify({
-          question: trimmed,
-          conversationHistory: messages.slice(-6),
+          message: trimmed,
+          brandName: brandName || undefined,
+          conversationHistory: messages.slice(-8).map(({ role, content }) => ({ role, content })),
         }),
       });
 
-      const result = res.data as ProductQaResult | undefined;
+      const result = res.data as ShoppingAssistantReply | undefined;
       if (!result?.answer) {
-        toast.error("Could not get an answer right now.");
+        toast.error("Could not get a reply right now.");
         return null;
       }
 
       setMessages((prev) => [
         ...prev,
         { role: "user", content: trimmed },
-        { role: "assistant", content: result.answer },
+        {
+          role: "assistant",
+          content: result.answer,
+          productLinks: result.productLinks || [],
+        },
       ]);
 
       return result;
     } catch (error) {
-      console.error("Product Q&A failed:", error);
+      console.error("Shopping assistant chat failed:", error);
       toast.error(
-        error instanceof Error ? error.message : "Product Q&A is unavailable.",
+        error instanceof Error ? error.message : "Shopping assistant is unavailable.",
       );
       return null;
     } finally {
@@ -83,7 +90,7 @@ export function useProductQa(productSlug: string, tenantId?: string) {
     available,
     loading,
     messages,
-    askQuestion,
+    sendMessage,
     resetConversation,
   };
 }

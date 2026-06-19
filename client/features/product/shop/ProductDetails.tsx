@@ -24,6 +24,7 @@ import toast from "react-hot-toast";
 import { ProductDetailsProps } from "../types";
 import { calculatePricing } from "@/lib/utils";
 import { PromotionType } from "@/lib/enums/promotion-type.enum";
+import ProductQaWidget from "@/features/product/shop/ProductQaWidget";
 
 
 const ProductDetails = ({ product }: ProductDetailsProps) => {
@@ -648,6 +649,8 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            <ProductQaWidget productSlug={product.slug} productName={product.name} />
           </div>
         </div>
       </div>

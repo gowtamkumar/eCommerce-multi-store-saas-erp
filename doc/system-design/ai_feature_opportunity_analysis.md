@@ -172,8 +172,8 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | Area | Surface | AI need | Status | Suggested capability |
 |------|---------|---------|--------|-------------------|
 | Product search | Storefront catalog | **Semantic / vector search** | ✅ | Phase D — hybrid keyword + vector (`GET /products?q=`); reindex at `/admin/settings` AI |
-| Product pages | PDP | Q&A widget (“Ask about this product”) | ⬜ | RAG on product fields |
-| Chat widget | Storefront | Shopping assistant | ⬜ | Read catalog + FAQ; no checkout |
+| Product pages | PDP | Q&A widget (“Ask about this product”) | ✅ | RAG on product fields + FAQs (`POST /products/slug/:slug/ask`) |
+| Chat widget | Storefront | Shopping assistant | ✅ | RAG on catalog + FAQs (`POST /products/storefront-ai/chat`); no checkout |
 | Checkout | Cart / checkout | — | ❌ | **No AI price or discount changes** |
 
 ### 3.9 Platform (Super Admin)
@@ -435,7 +435,7 @@ Track per tenant after each phase:
 | **Operations / inventory** | 100% | Read-only anomaly narratives |
 | **Procurement / finance** | 0% | OCR + AR drafts (async) |
 | **HRM** | Partial | Job descriptions, screening questions, review phrase bank, payslip explanations |
-| **Storefront** | Partial | Semantic search live; product Q&A next |
+| **Storefront** | Strong | Semantic search, product Q&A, shopping assistant |
 | **Platform infra** | Embeddings + sync API | Jobs queue, metering |
 
 AI should continue to expand **where humans write repetitive text** or **need read-only explanations** — not where the ERP enforces invariants (stock, money, permissions).

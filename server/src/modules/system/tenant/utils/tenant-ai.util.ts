@@ -2,7 +2,12 @@ import {
   AI_PROVIDER_PRESETS,
   DEFAULT_TENANT_AI_CONFIG,
   TenantAiConfig,
+  TenantAiStorefrontConfig,
 } from '@/common/types/tenant-ai-config.types'
+import {
+  mergeStorefrontAiConfig,
+  normalizeStorefrontAiConfig,
+} from '@/common/utils/storefront-ai-config.util'
 
 export const API_KEY_UNCHANGED = '__UNCHANGED__'
 
@@ -28,6 +33,7 @@ export function normalizeTenantAiConfig(raw?: TenantAiConfig | null): TenantAiCo
     maxTokens: raw.maxTokens ?? DEFAULT_TENANT_AI_CONFIG.maxTokens,
     temperature: raw.temperature ?? DEFAULT_TENANT_AI_CONFIG.temperature,
     extraHeaders: raw.extraHeaders,
+    storefront: normalizeStorefrontAiConfig(raw.storefront),
   }
 }
 
@@ -59,6 +65,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
   maxTokens?: number
   temperature?: number
   extraHeaders?: Record<string, string>
+  storefront: Required<TenantAiStorefrontConfig>
 } {
   const normalized = normalizeTenantAiConfig(config)
   const { hasApiKey, apiKeyPreview } = maskApiKey(normalized.apiKey)
@@ -77,6 +84,7 @@ export function toTenantAiConfigResponse(config: TenantAiConfig): {
     maxTokens: normalized.maxTokens,
     temperature: normalized.temperature,
     extraHeaders: normalized.extraHeaders,
+    storefront: normalizeStorefrontAiConfig(normalized.storefront),
   }
 }
 
@@ -88,6 +96,9 @@ export function mergeTenantAiConfigUpdate(
   const next: TenantAiConfig = {
     ...current,
     ...dto,
+    storefront: dto.storefront
+      ? mergeStorefrontAiConfig(current.storefront, dto.storefront)
+      : current.storefront,
   }
 
   if (

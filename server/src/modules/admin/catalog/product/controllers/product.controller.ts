@@ -29,10 +29,13 @@ import { ProductResponseDto } from '../dto/product-response.dto'
 import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductService } from '../services/product.service'
 import { ProductQaService } from '../services/product-qa.service'
+import { StorefrontAssistantService } from '../services/storefront-assistant.service'
 import {
   AskProductQuestionDto,
   ProductQaResultDto,
   StorefrontAiStatusDto,
+  StorefrontAssistantChatDto,
+  StorefrontAssistantChatResultDto,
 } from '../dto/ask-product-question.dto'
 
 @UseGuards(SubscriptionGuard)
@@ -45,6 +48,7 @@ export class ProductController {
     private readonly productService: ProductService,
     private readonly reviewService: ReviewService,
     private readonly productQaService: ProductQaService,
+    private readonly storefrontAssistantService: StorefrontAssistantService,
   ) {}
 
   @Post()
@@ -92,11 +96,27 @@ export class ProductController {
   async getStorefrontAiStatus(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<StorefrontAiStatusDto>> {
-    const data = await this.productQaService.getStorefrontStatus(ctx.tenantId)
+    const data = await this.storefrontAssistantService.getStatus(ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
       message: 'Storefront AI status retrieved',
+      data,
+    }
+  }
+
+  @Post('storefront-ai/chat')
+  @Public()
+  @HttpCode(200)
+  async chatWithShoppingAssistant(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: StorefrontAssistantChatDto,
+  ): Promise<BaseApiSuccessResponse<StorefrontAssistantChatResultDto>> {
+    const data = await this.storefrontAssistantService.chat(ctx.tenantId, dto, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shopping assistant reply generated',
       data,
     }
   }

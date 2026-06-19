@@ -20,11 +20,14 @@ import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog
 import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
 import { FaqModule } from '@/modules/admin/content/faq/faq.module'
 import { BrandModule } from '../brand/brand.module'
+import { CategoryModule } from '../category/category.module'
 import { AiModule } from '@/modules/admin/ai/ai.module'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 import { ProductEmbeddingEntity } from './entities/product-embedding.entity'
 import { ProductEmbeddingService } from './services/product-embedding.service'
 import { ProductQaService } from './services/product-qa.service'
+import { StorefrontAssistantService } from './services/storefront-assistant.service'
+import { StorefrontAiConfigService } from './services/storefront-ai-config.service'
 
 @Module({
   imports: [
@@ -44,6 +47,7 @@ import { ProductQaService } from './services/product-qa.service'
     AddonCatalogModule,
     FaqModule,
     BrandModule,
+    CategoryModule,
     AiModule,
     RbacModule,
   ],
@@ -57,6 +61,8 @@ import { ProductQaService } from './services/product-qa.service'
     SuperAdminCrossTenantRepository,
     ProductEmbeddingService,
     ProductQaService,
+    StorefrontAssistantService,
+    StorefrontAiConfigService,
   ],
   exports: [
     ProductService,
@@ -65,6 +71,8 @@ import { ProductQaService } from './services/product-qa.service'
     ProductAttributeRepository,
     ProductEmbeddingService,
     ProductQaService,
+    StorefrontAssistantService,
+    StorefrontAiConfigService,
   ],
 })
 export class ProductModule {}

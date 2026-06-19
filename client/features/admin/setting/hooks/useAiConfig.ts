@@ -7,6 +7,8 @@ import {
   AI_API_KEY_UNCHANGED,
   AI_PROVIDER_OPTIONS,
   DEFAULT_AI_CONFIG_FORM,
+  DEFAULT_STOREFRONT_AI_CONFIG,
+  StorefrontAiStatus,
   TenantAiConfigForm,
   TenantAiConfigResponse,
 } from "../types/ai-config";
@@ -26,6 +28,10 @@ function mapResponseToForm(data: TenantAiConfigResponse): TenantAiConfigForm {
     siteName: data.siteName || "",
     maxTokens: data.maxTokens ?? 1024,
     temperature: data.temperature ?? 0.7,
+    storefront: {
+      ...DEFAULT_STOREFRONT_AI_CONFIG,
+      ...data.storefront,
+    },
   };
 }
 
@@ -40,6 +46,7 @@ export function useAiConfig() {
     hybridSearchReady: boolean;
     embeddingModel?: string;
   } | null>(null);
+  const [storefrontAiStatus, setStorefrontAiStatus] = useState<StorefrontAiStatus | null>(null);
   const [form, setForm] = useState<TenantAiConfigForm>(DEFAULT_AI_CONFIG_FORM);
   const [apiKeyPreview, setApiKeyPreview] = useState<string | null>(null);
 
@@ -73,11 +80,23 @@ export function useAiConfig() {
     }
   }, []);
 
+  const loadStorefrontAiStatus = useCallback(async () => {
+    try {
+      const res = await fetchAPI("/products/storefront-ai/status");
+      if (res.data) {
+        setStorefrontAiStatus(res.data);
+      }
+    } catch {
+      setStorefrontAiStatus(null);
+    }
+  }, []);
+
   useEffect(() => {
     if (!loading && form.enabled) {
       loadEmbeddingStatus();
+      loadStorefrontAiStatus();
     }
-  }, [loading, form.enabled, loadEmbeddingStatus]);
+  }, [loading, form.enabled, loadEmbeddingStatus, loadStorefrontAiStatus]);
 
   const saveConfig = async () => {
     setSaving(true);
@@ -93,6 +112,7 @@ export function useAiConfig() {
         siteName: form.siteName || undefined,
         maxTokens: form.maxTokens,
         temperature: form.temperature,
+        storefront: form.storefront,
       };
 
       if (form.apiKey && form.apiKey !== AI_API_KEY_UNCHANGED) {
@@ -111,6 +131,7 @@ export function useAiConfig() {
         setApiKeyPreview(res.data.apiKeyPreview || null);
       }
       toast.success("AI configuration saved");
+      await loadStorefrontAiStatus();
     } catch {
       toast.error("Failed to save AI configuration");
     } finally {
@@ -136,6 +157,7 @@ export function useAiConfig() {
             siteName: form.siteName || undefined,
             maxTokens: form.maxTokens,
             temperature: form.temperature,
+            storefront: form.storefront,
           }),
         });
       }
@@ -181,11 +203,22 @@ export function useAiConfig() {
         `Catalog indexed: ${summary?.indexed ?? 0} updated, ${summary?.skipped ?? 0} unchanged`,
       );
       await loadEmbeddingStatus();
+      await loadStorefrontAiStatus();
     } catch {
       toast.error("Failed to reindex product catalog for semantic search");
     } finally {
       setReindexing(false);
     }
+  };
+
+  const setStorefrontFlag = (
+    key: keyof TenantAiConfigForm["storefront"],
+    value: boolean,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      storefront: { ...prev.storefront, [key]: value },
+    }));
   };
 
   return {
@@ -194,8 +227,10 @@ export function useAiConfig() {
     testing,
     reindexing,
     embeddingStatus,
+    storefrontAiStatus,
     form,
     setForm,
+    setStorefrontFlag,
     apiKeyPreview,
     saveConfig,
     testConnection,

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Eye, EyeOff, Loader2, Search, Sparkles, Zap } from "lucide-react";
+import { Bot, Eye, EyeOff, Loader2, MessageCircle, Search, Sparkles, Zap } from "lucide-react";
 import { useState } from "react";
 import { useAiConfig } from "../hooks/useAiConfig";
 import { AI_API_KEY_UNCHANGED, AI_PROVIDER_OPTIONS } from "../types/ai-config";
@@ -46,6 +46,54 @@ function SecretInput({
   );
 }
 
+function FeatureStatusBadge({ active, label }: { active: boolean; label: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+        active
+          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+      }`}
+    >
+      {label}: {active ? "Live" : "Off"}
+    </span>
+  );
+}
+
+function StorefrontToggle({
+  checked,
+  onChange,
+  title,
+  description,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  title: string;
+  description: string;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={`flex items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 ${
+        disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-white/60 dark:hover:bg-slate-900/40"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-1 w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+      />
+      <div>
+        <p className="font-semibold text-slate-800 dark:text-slate-100">{title}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      </div>
+    </label>
+  );
+}
+
 export function AiSetting() {
   const {
     loading,
@@ -53,8 +101,10 @@ export function AiSetting() {
     testing,
     reindexing,
     embeddingStatus,
+    storefrontAiStatus,
     form,
     setForm,
+    setStorefrontFlag,
     apiKeyPreview,
     saveConfig,
     testConnection,
@@ -242,6 +292,68 @@ export function AiSetting() {
         </div>
       </div>
 
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-xl bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div className="space-y-1 flex-1">
+            <h3 className="font-bold text-slate-900 dark:text-white">Storefront AI</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Control which AI features shoppers see on your storefront. Requires AI provider above
+              to be enabled; semantic search also needs a catalog reindex.
+            </p>
+            {storefrontAiStatus ? (
+              <div className="flex flex-wrap gap-2 pt-2">
+                <FeatureStatusBadge
+                  active={storefrontAiStatus.shoppingAssistantAvailable}
+                  label="Shopping assistant"
+                />
+                <FeatureStatusBadge
+                  active={storefrontAiStatus.productQaAvailable}
+                  label="Product Q&A"
+                />
+                <FeatureStatusBadge
+                  active={storefrontAiStatus.semanticSearchAvailable}
+                  label="Semantic search"
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-1">
+          <StorefrontToggle
+            checked={form.storefront.shoppingAssistantEnabled}
+            onChange={(value) => setStorefrontFlag("shoppingAssistantEnabled", value)}
+            disabled={!form.enabled}
+            title="Shopping assistant chat"
+            description="Floating assistant widget (bottom-left) that answers catalog and FAQ questions. No checkout or order changes."
+          />
+          <StorefrontToggle
+            checked={form.storefront.productQaEnabled}
+            onChange={(value) => setStorefrontFlag("productQaEnabled", value)}
+            disabled={!form.enabled}
+            title="Product Q&A"
+            description="“Ask about this product” widget on product detail pages, grounded in that product’s data."
+          />
+          <StorefrontToggle
+            checked={form.storefront.semanticSearchEnabled}
+            onChange={(value) => setStorefrontFlag("semanticSearchEnabled", value)}
+            disabled={!form.enabled}
+            title="Semantic product search"
+            description="Hybrid keyword + vector search when shoppers use the catalog search bar."
+          />
+        </div>
+
+        {!form.enabled ? (
+          <p className="text-xs text-slate-500 flex items-center gap-1.5">
+            <MessageCircle className="w-3.5 h-3.5" />
+            Enable AI provider above to configure storefront features.
+          </p>
+        ) : null}
+      </div>
+
       {form.enabled && form.embeddingModel ? (
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 p-5 space-y-4">
           <div className="flex items-start gap-3">
@@ -274,7 +386,7 @@ export function AiSetting() {
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
                 <p className="text-slate-500">Hybrid search</p>
                 <p className="font-semibold text-slate-900 dark:text-white">
-                  {embeddingStatus.hybridSearchReady ? "Active on storefront" : "Not ready — reindex catalog"}
+                  {embeddingStatus.hybridSearchReady ? "Ready on storefront" : "Needs reindex or config"}
                 </p>
               </div>
             </div>

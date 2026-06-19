@@ -2,6 +2,7 @@
 
 import { DEFAULT_SETTINGS } from '../services/getSettings';
 import { fetchAPI } from '@/services/api';
+import { setClientTenantId } from '@/lib/store-tenant-id';
 import { createContext, useContext, useEffect, useState } from 'react';
 
 interface SiteSettings {
@@ -228,6 +229,9 @@ export function SettingsProvider({
           },
         };
         setSettings(mergedSettings);
+        if (settings?.tenantId) {
+          setClientTenantId(settings.tenantId);
+        }
 
         // Initialize currency from localStorage or default
         const savedCurrency = localStorage.getItem('selectedCurrency');
@@ -255,6 +259,12 @@ export function SettingsProvider({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialSettings?.tenantId) {
+      setClientTenantId(initialSettings.tenantId);
+    }
+  }, [initialSettings?.tenantId]);
 
   useEffect(() => {
     let mounted = true;

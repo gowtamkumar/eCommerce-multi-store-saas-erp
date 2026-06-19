@@ -8,6 +8,12 @@ export type AiProviderId =
   | 'google'
   | 'custom'
 
+export interface TenantAiStorefrontConfigForm {
+  shoppingAssistantEnabled: boolean
+  productQaEnabled: boolean
+  semanticSearchEnabled: boolean
+}
+
 export interface TenantAiConfigForm {
   enabled: boolean
   provider: AiProviderId
@@ -20,6 +26,7 @@ export interface TenantAiConfigForm {
   siteName: string
   maxTokens: number
   temperature: number
+  storefront: TenantAiStorefrontConfigForm
 }
 
 export interface TenantAiConfigResponse {
@@ -35,6 +42,22 @@ export interface TenantAiConfigResponse {
   siteName?: string
   maxTokens?: number
   temperature?: number
+  storefront?: TenantAiStorefrontConfigForm
+}
+
+export interface StorefrontAiStatus {
+  productQaAvailable: boolean
+  shoppingAssistantAvailable: boolean
+  semanticSearchAvailable: boolean
+  shoppingAssistantEnabled: boolean
+  productQaEnabled: boolean
+  semanticSearchEnabled: boolean
+}
+
+export const DEFAULT_STOREFRONT_AI_CONFIG: TenantAiStorefrontConfigForm = {
+  shoppingAssistantEnabled: true,
+  productQaEnabled: true,
+  semanticSearchEnabled: true,
 }
 
 export const AI_PROVIDER_OPTIONS: Array<{
@@ -121,4 +144,5 @@ export const DEFAULT_AI_CONFIG_FORM: TenantAiConfigForm = {
   siteName: '',
   maxTokens: 1024,
   temperature: 0.7,
+  storefront: { ...DEFAULT_STOREFRONT_AI_CONFIG },
 }
