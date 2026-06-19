@@ -371,33 +371,33 @@ Use before merging significant AI changes.
 
 ### Code
 
-- [ ] New generate endpoint has DTO + `@RequirePermissions` + `@RequireFeature('ai')`
-- [ ] Prompt asks for JSON only where structured output expected
-- [ ] Parsed JSON validated before returning to client
-- [ ] No API keys in logs or API responses
-- [ ] All DB queries scoped by `tenantId`
-- [ ] `TenantAiClientService` used for tenant LLM calls (not raw axios in modules)
-- [ ] Platform AI uses `PlatformAiClientService` only
+- [x] New generate endpoint has DTO + `@RequirePermissions` + `@RequireFeature('ai')`
+- [x] Prompt asks for JSON only where structured output expected
+- [x] Parsed JSON validated before returning to client
+- [x] No API keys in logs or API responses
+- [x] All DB queries scoped by `tenantId`
+- [x] `TenantAiClientService` used for tenant LLM calls (not raw axios in modules)
+- [x] Platform AI uses `PlatformAiClientService` only
 
 ### Client
 
-- [ ] Uses `useAiGenerate` or dedicated hook (not duplicate fetch logic)
-- [ ] Shows setup banner when `configured === false`
-- [ ] Generated text is **applied to form** — user must save manually
-- [ ] Loading and error toasts present
-- [ ] Storefront widgets pass `tenantId` on public routes
+- [x] Uses `useAiGenerate` or dedicated hook (not duplicate fetch logic)
+- [x] Shows setup banner when `configured === false`
+- [x] Generated text is **applied to form** — user must save manually
+- [x] Loading and error toasts present
+- [x] Storefront widgets pass `tenantId` on public routes
 
 ### Security & compliance
 
-- [ ] No cross-tenant data in prompts
-- [ ] Finance/HRM prompts minimize PII where possible
-- [ ] No auto-send of email/SMS/push
-- [ ] Super Admin routes do not expose tenant BYOK keys
+- [x] No cross-tenant data in prompts
+- [x] Finance/HRM prompts minimize PII where possible
+- [x] No auto-send of email/SMS/push
+- [x] Super Admin routes do not expose tenant BYOK keys
 
 ### Docs
 
-- [ ] New endpoint listed in [ai_system_guide.md](ai_system_guide.md) if public API
-- [ ] Checklist item marked in this doc when shipped
+- [x] New endpoint listed in [ai_system_guide.md](ai_system_guide.md) if public API
+- [x] Checklist item marked in this doc when shipped
 
 ---
 
