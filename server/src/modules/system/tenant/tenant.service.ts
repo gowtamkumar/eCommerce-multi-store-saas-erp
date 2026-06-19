@@ -486,6 +486,12 @@ export class TenantService {
       throw new BadRequestException('Verification token missing')
     }
 
+    // Reset FAILED → PENDING so the user can retry cleanly
+    if (domainRecord.status === CustomDomainStatus.FAILED) {
+      domainRecord.status = CustomDomainStatus.PENDING
+      await domainRepo.save(domainRecord)
+    }
+
     const result = await verifyDomainOwnership(
       domainRecord.hostname,
       domainRecord.verificationToken,
@@ -495,6 +501,11 @@ export class TenantService {
       this.logger.warn(
         `Custom domain TXT verification failed tenant=${tenantId} domain=${domainRecord.hostname} reason=${result.error ?? 'mismatch'}`,
       )
+      // Persist FAILED status so the UI can surface a clear error state.
+      // The verificationToken is preserved so the user can retry after
+      // correcting their DNS records.
+      domainRecord.status = CustomDomainStatus.FAILED
+      await domainRepo.save(domainRecord)
       throw new BadRequestException(
         result.error
           ? `Verification failed: ${result.error}`

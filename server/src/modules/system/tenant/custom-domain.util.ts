@@ -12,7 +12,7 @@ const HOSTNAME_RE =
 
 const RESERVED_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0'])
 
-export class InvalidCustomDomainError extends Error {}
+export class InvalidCustomDomainError extends Error { }
 
 export function normalizeCustomDomain(input: string): string {
   if (typeof input !== 'string') {
