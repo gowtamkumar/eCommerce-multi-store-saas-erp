@@ -2,7 +2,7 @@
 
 > **Purpose:** Identify where AI adds value across this multi-tenant eCommerce ERP — what is already built, what should be built next, and what must stay human-controlled.  
 > **Audience:** Product, engineering, and implementation planning.  
-> **Companion doc:** [AI Implementation Analysis](ai_implementation_analysis.md) (technical architecture, APIs, file map).
+> **Companion doc:** [AI System Guide](ai_system_guide.md) (A–Z architecture, configuration, APIs, file map).
 
 ---
 
@@ -175,6 +175,8 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | Product pages | PDP | Q&A widget (“Ask about this product”) | ✅ | RAG on product fields + FAQs (`POST /products/slug/:slug/ask`) |
 | Chat widget | Storefront | Shopping assistant | ✅ | RAG on catalog + FAQs (`POST /products/storefront-ai/chat`); no checkout |
 | Checkout | Cart / checkout | — | ❌ | **No AI price or discount changes** |
+
+**Full user + developer guide:** [manuals/12_STOREFRONT_AI_GUIDE.md](../manuals/12_STOREFRONT_AI_GUIDE.md)
 
 ### 3.9 Platform (Super Admin)
 
@@ -418,7 +420,7 @@ Track per tenant after each phase:
 
 | Document | Content |
 |----------|---------|
-| [ai_implementation_analysis.md](ai_implementation_analysis.md) | Architecture, APIs, providers, file map |
+| [ai_system_guide.md](ai_system_guide.md) | A–Z architecture, configuration, APIs, providers, file map |
 | [erp_master_system_design.md](erp_master_system_design.md) | ERP Phase 7 AI extension principles |
 | [event_driven_architecture.md](../developer/event_driven_architecture.md) | Event hooks for async AI |
 | [subscription-and-features.md](subscription-and-features.md) | Plan feature `ai` gating |

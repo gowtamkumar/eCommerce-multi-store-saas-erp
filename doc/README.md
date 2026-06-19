@@ -41,6 +41,8 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 *   [`developer_architecture_onboarding.md`](system-design/developer_architecture_onboarding.md) — **Developer Architectural Onboarding & System Flow Map**: Explains modular monolith layouts, request guard pipelines, double-entry verification flowchart, and offline POS sync strategies.
 *   [`erp_remaining_roadmap.md`](system-design/erp_remaining_roadmap.md) — Implementation roadmap and task tracking.
 *   [`erp_subscription_feature_completion_matrix.md`](system-design/erp_subscription_feature_completion_matrix.md) — Feature completion matrix compared against the codebase and subscription gates.
+*   [`ai_system_guide.md`](system-design/ai_system_guide.md) — **AI System Guide (A–Z):** three AI layers, BYOK config, guards, APIs, embeddings, frontend patterns.
+*   [`ai_feature_opportunity_analysis.md`](system-design/ai_feature_opportunity_analysis.md) — AI roadmap and module-by-module opportunity analysis.
 
 ### 1.2 Supporting Module & Product Specs
 *   [`crm_loyalty_requirements.md`](system-design/crm_loyalty_requirements.md) — Wallets, loyalty points, customer credit holds, and AR aging tracking.
@@ -114,6 +116,8 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 *   [`00_SUPER_ADMIN_GUIDELINES.md`](manuals/00_SUPER_ADMIN_GUIDELINES.md) — Platform support checklists.
 *   [`08_HRM_TEAM_MANAGEMENT_GUIDELINE.md`](manuals/08_HRM_TEAM_MANAGEMENT_GUIDELINE.md) — HRM employee onboarding setup instructions.
 *   [`09_TENANT_OWNER_ONBOARDING_GUIDE.md`](manuals/09_TENANT_OWNER_ONBOARDING_GUIDE.md) — Setup guidelines for new business stores.
+*   [`12_STOREFRONT_AI_GUIDE.md`](manuals/12_STOREFRONT_AI_GUIDE.md) — **Storefront AI (customer-facing):** semantic search, product Q&A, shopping assistant — user manual + developer guide with diagrams.
+*   [`ai_system_guide.md`](system-design/ai_system_guide.md) — **AI System (A–Z):** tenant admin assists, storefront AI, platform AI, embeddings, access control, and file map.
 
 ---
 
