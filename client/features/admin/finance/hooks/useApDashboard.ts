@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchAPI } from '@/services/api';
 import toast from 'react-hot-toast';
-import type { ApAgingRow, ApTab, BatchPaymentResult, UnpaidInvoice } from '../types';
+import type { ApAgingRow, ApTab, ApReminderTarget, BatchPaymentResult, UnpaidInvoice } from '../types';
 
 export function useApDashboard() {
     const [activeTab, setActiveTab] = useState<ApTab>('aging');
@@ -18,6 +18,7 @@ export function useApDashboard() {
     const [paymentNote, setPaymentNote] = useState('');
     const [processingPayment, setProcessingPayment] = useState(false);
     const [paymentRunResult, setPaymentRunResult] = useState<BatchPaymentResult | null>(null);
+    const [reminderTarget, setReminderTarget] = useState<ApReminderTarget | null>(null);
 
     const fetchAging = useCallback(async () => {
         setLoading(true);
@@ -143,6 +144,40 @@ export function useApDashboard() {
 
     const allSelected = unpaidInvoices.length > 0 && selectedInvoiceIds.length === unpaidInvoices.length;
 
+    const ensureUnpaidInvoices = useCallback(async () => {
+        if (unpaidInvoices.length > 0) return unpaidInvoices;
+
+        try {
+            const res = await fetchAPI('/supplier-invoices');
+            if (res.success) {
+                const items = Array.isArray(res.data?.items) ? res.data.items : (res.data || []);
+                const unpaid = items.filter(
+                    (inv: UnpaidInvoice) => inv.status !== 'PAID' && inv.status !== 'CANCELLED',
+                );
+                setUnpaidInvoices(unpaid);
+                return unpaid;
+            }
+        } catch {
+            // Fall back to aging-only context in the reminder modal.
+        }
+
+        return unpaidInvoices;
+    }, [unpaidInvoices]);
+
+    const openSupplierReminder = useCallback(async (row: ApAgingRow) => {
+        const invoices = await ensureUnpaidInvoices();
+        setReminderTarget({ type: 'supplier', row, unpaidInvoices: invoices });
+    }, [ensureUnpaidInvoices]);
+
+    const openBatchReminder = useCallback(() => {
+        const selected = unpaidInvoices.filter((invoice) => selectedInvoiceIds.includes(invoice.id));
+        if (selected.length === 0) {
+            toast.error('Select at least one invoice to draft an approver reminder');
+            return;
+        }
+        setReminderTarget({ type: 'batch', invoices: selected });
+    }, [unpaidInvoices, selectedInvoiceIds]);
+
     return {
         activeTab,
         setActiveTab,
@@ -173,5 +208,9 @@ export function useApDashboard() {
         selectedPaymentTotal,
         unpaidCount: unpaidInvoices.length,
         allSelected,
+        reminderTarget,
+        setReminderTarget,
+        openSupplierReminder,
+        openBatchReminder,
     };
 }

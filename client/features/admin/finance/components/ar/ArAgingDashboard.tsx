@@ -17,6 +17,7 @@ export interface ArAgingDashboardProps {
     totalOverdue: number;
     holdCount: number;
     onPay: (row: ArAgingRow) => void;
+    onCollect: (row: ArAgingRow) => void;
 }
 
 export default function ArAgingDashboard({
@@ -29,8 +30,9 @@ export default function ArAgingDashboard({
     totalOverdue,
     holdCount,
     onPay,
+    onCollect,
 }: ArAgingDashboardProps) {
-    const columns = useMemo(() => buildAgingColumns(onPay), [onPay]);
+    const columns = useMemo(() => buildAgingColumns(onPay, onCollect), [onPay, onCollect]);
 
     return (
         <>

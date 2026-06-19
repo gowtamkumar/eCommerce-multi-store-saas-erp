@@ -14,6 +14,7 @@ export function useArDashboard() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [payingCustomer, setPayingCustomer] = useState<ArAgingRow | null>(null);
+    const [collectingCustomer, setCollectingCustomer] = useState<ArAgingRow | null>(null);
     const [editingRule, setEditingRule] = useState<Partial<DunningRule> | null>(null);
     const [showRuleModal, setShowRuleModal] = useState(false);
     const [runningAudit, setRunningAudit] = useState(false);
@@ -121,6 +122,8 @@ export function useArDashboard() {
         setSearch,
         payingCustomer,
         setPayingCustomer,
+        collectingCustomer,
+        setCollectingCustomer,
         editingRule,
         setEditingRule,
         showRuleModal,

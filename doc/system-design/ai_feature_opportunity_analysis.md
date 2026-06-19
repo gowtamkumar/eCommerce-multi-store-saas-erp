@@ -151,11 +151,11 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 
 | Area | Route | AI need | Status | Suggested capability |
 |------|-------|---------|--------|-------------------|
-| AR aging | `/admin/finance/ar` | **Collection email drafts** | 🔒 | Phase C — per overdue invoice |
-| AP | `/admin/finance/ap` | Payment reminder to internal approver | ⬜ | Low priority |
-| Expenses | `/admin/expenses` | Categorization suggest | ⬜ | Classify from description |
-| P&L / reports | `/admin/reports/*` | Executive summary narrative | ⬜ | Read-only, numbers from DB |
-| Tax engine | `/admin/finance/tax` | Rule explanation | ⬜ | Docs only, no calculation |
+| AR aging | `/admin/finance/ar` | **Collection email drafts** | ✅ | Phase C — per overdue invoice (sync draft; manual send) |
+| AP | `/admin/finance/ap` | **Payment reminder to internal approver** | ✅ | Phase C — aging row + batch tab (sync draft; manual send) |
+| Expenses | `/admin/expenses` | **Categorization suggest** | ✅ | Phase C — expense form (sync suggest; user applies category) |
+| P&L / reports | `/admin/reports/*` | **Executive summary narrative** | ✅ | Phase C — P&L, finance summary, cash flow (sync draft; numbers from DB) |
+| Tax engine | `/admin/finance/tax` | **Rule explanation** | ✅ | Phase C — rules table + create modal (docs only; no calculation) |
 | General ledger | `/admin/finance/ledger` | — | ❌ | **No AI writes to ledger** |
 
 ### 3.7 Admin — HRM

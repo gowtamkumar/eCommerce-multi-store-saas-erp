@@ -25,6 +25,7 @@ export interface ApBatchPaymentViewProps {
     onPaymentNoteChange: (value: string) => void;
     onSubmit: () => void;
     paymentRunResult: BatchPaymentResult | null;
+    onRemindBatch: () => void;
 }
 
 export default function ApBatchPaymentView({
@@ -47,6 +48,7 @@ export default function ApBatchPaymentView({
     onPaymentNoteChange,
     onSubmit,
     paymentRunResult,
+    onRemindBatch,
 }: ApBatchPaymentViewProps) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -74,6 +76,7 @@ export default function ApBatchPaymentView({
                     onTransactionIdChange={onTransactionIdChange}
                     onPaymentNoteChange={onPaymentNoteChange}
                     onSubmit={onSubmit}
+                    onRemindBatch={onRemindBatch}
                 />
 
                 {paymentRunResult && <PaymentRunReceipt result={paymentRunResult} />}

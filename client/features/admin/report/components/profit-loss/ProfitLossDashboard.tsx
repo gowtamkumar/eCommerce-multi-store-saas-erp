@@ -1,15 +1,19 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useSettings } from '@/hooks/SettingsContext';
 import { useProfitLossReport } from '../../hooks/useProfitLossReport';
+import { buildProfitLossReportSummary } from '../../lib/buildReportExecutiveSummaryContext';
 import ExpenseDistribution from '../expense/ExpenseDistribution';
 import FinancialStatement from '../finance/FinancialStatement';
+import ReportExecutiveSummaryPanel from '../ReportExecutiveSummaryPanel';
 import ProfitLossKpiGrid from './ProfitLossKpiGrid';
 import ProfitLossHeader from './ProfitLossHeader';
 
 export default function ProfitLossDashboard() {
     const { formatPrice } = useSettings();
     const { data, isLoading, dateRange, handleDateChange, fetchReport } = useProfitLossReport();
+    const reportSummary = useMemo(() => buildProfitLossReportSummary(data), [data]);
 
     return (
         <div className="space-y-6">
@@ -24,6 +28,12 @@ export default function ProfitLossDashboard() {
                 data={data}
                 isLoading={isLoading}
                 formatPrice={formatPrice}
+            />
+
+            <ReportExecutiveSummaryPanel
+                reportType="profit-loss"
+                reportSummary={reportSummary}
+                disabled={isLoading || !data}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

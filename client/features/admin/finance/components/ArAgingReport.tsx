@@ -9,6 +9,7 @@ import DunningRulesView from './ar/DunningRulesView';
 import DunningLogsView from './ar/DunningLogsView';
 import DunningLogDetailsModal from './ar/DunningLogDetailsModal';
 import PaymentModal from './ar/PaymentModal';
+import ArCollectionDraftModal from './ar/ArCollectionDraftModal';
 import DunningRuleModal from './ar/DunningRuleModal';
 
 export default function ArAgingReport() {
@@ -42,6 +43,7 @@ export default function ArAgingReport() {
                     totalOverdue={ar.totalOverdue}
                     holdCount={ar.holdCount}
                     onPay={ar.setPayingCustomer}
+                    onCollect={ar.setCollectingCustomer}
                 />
             )}
 
@@ -81,6 +83,13 @@ export default function ArAgingReport() {
                     customer={ar.payingCustomer}
                     onClose={() => ar.setPayingCustomer(null)}
                     onSuccess={ar.fetchAging}
+                />
+            )}
+
+            {ar.collectingCustomer && (
+                <ArCollectionDraftModal
+                    customer={ar.collectingCustomer}
+                    onClose={() => ar.setCollectingCustomer(null)}
                 />
             )}
 

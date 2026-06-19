@@ -35,6 +35,10 @@ import type {
   DebitNoteDisputeResult,
   SupplierProfileSummaryResult,
   ArCollectionDraftResult,
+  ApPaymentReminderResult,
+  ExpenseCategorySuggestResult,
+  ReportExecutiveSummaryResult,
+  TaxRuleExplanationResult,
   MarketingDescriptionResult,
   PageSeoResult,
   PageBlockContentResult,
@@ -313,6 +317,30 @@ export function useAiGenerate() {
     tone?: string;
   }) => withGenerate<ArCollectionDraftResult>("/ai/generate/ar-collection-draft", payload);
 
+  const generateApPaymentReminder = (payload: {
+    apSummary: string;
+    invoicesSummary: string;
+    existingDraft?: string;
+    tone?: string;
+  }) => withGenerate<ApPaymentReminderResult>("/ai/generate/ap-payment-reminder", payload);
+
+  const generateExpenseCategorySuggest = (payload: {
+    expenseSummary: string;
+    currentCategory?: string;
+  }) => withGenerate<ExpenseCategorySuggestResult>("/ai/generate/expense-category", payload);
+
+  const generateReportExecutiveSummary = (payload: {
+    reportType: string;
+    reportSummary: string;
+    existingDraft?: string;
+  }) => withGenerate<ReportExecutiveSummaryResult>("/ai/generate/report-executive-summary", payload);
+
+  const generateTaxRuleExplanation = (payload: {
+    ruleSummary: string;
+    relatedRulesSummary?: string;
+    existingDraft?: string;
+  }) => withGenerate<TaxRuleExplanationResult>("/ai/generate/tax-rule-explanation", payload);
+
   return {
     configured,
     loading,
@@ -347,5 +375,9 @@ export function useAiGenerate() {
     generateDebitNoteDispute,
     generateSupplierProfileSummary,
     generateArCollectionDraft,
+    generateApPaymentReminder,
+    generateExpenseCategorySuggest,
+    generateReportExecutiveSummary,
+    generateTaxRuleExplanation,
   };
 }

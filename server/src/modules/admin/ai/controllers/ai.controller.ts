@@ -27,6 +27,22 @@ import {
 } from '../dto/generate-marketing-description.dto'
 import { GenerateOrderAssistDto, OrderAssistResultDto } from '../dto/generate-order-assist.dto'
 import {
+  GenerateApPaymentReminderDto,
+  ApPaymentReminderResultDto,
+} from '../dto/generate-ap-payment-reminder.dto'
+import {
+  GenerateExpenseCategoryDto,
+  ExpenseCategorySuggestResultDto,
+} from '../dto/generate-expense-category.dto'
+import {
+  GenerateReportExecutiveSummaryDto,
+  ReportExecutiveSummaryResultDto,
+} from '../dto/generate-report-executive-summary.dto'
+import {
+  GenerateTaxRuleExplanationDto,
+  TaxRuleExplanationResultDto,
+} from '../dto/generate-tax-rule-explanation.dto'
+import {
   GenerateArCollectionDraftDto,
   ArCollectionDraftResultDto,
 } from '../dto/generate-ar-collection-draft.dto'
@@ -648,6 +664,70 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'AR collection email draft generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/ap-payment-reminder')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.ACCOUNTING_READ)
+  async generateApPaymentReminder(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateApPaymentReminderDto,
+  ): Promise<BaseApiSuccessResponse<ApPaymentReminderResultDto>> {
+    const data = await this.aiAssistantService.generateApPaymentReminder(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'AP payment reminder draft generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/expense-category')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.FINANCE_LEDGER_READ)
+  async generateExpenseCategorySuggest(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateExpenseCategoryDto,
+  ): Promise<BaseApiSuccessResponse<ExpenseCategorySuggestResultDto>> {
+    const data = await this.aiAssistantService.generateExpenseCategorySuggest(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Expense category suggestion generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/report-executive-summary')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.REPORTS_READ)
+  async generateReportExecutiveSummary(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateReportExecutiveSummaryDto,
+  ): Promise<BaseApiSuccessResponse<ReportExecutiveSummaryResultDto>> {
+    const data = await this.aiAssistantService.generateReportExecutiveSummary(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Report executive summary generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/tax-rule-explanation')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.ACCOUNTING_READ)
+  async generateTaxRuleExplanation(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateTaxRuleExplanationDto,
+  ): Promise<BaseApiSuccessResponse<TaxRuleExplanationResultDto>> {
+    const data = await this.aiAssistantService.generateTaxRuleExplanation(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Tax rule explanation generated successfully',
       data,
     }
   }

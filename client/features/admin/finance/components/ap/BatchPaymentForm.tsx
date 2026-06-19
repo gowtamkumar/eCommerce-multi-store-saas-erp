@@ -1,7 +1,7 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { Loader2, Play } from 'lucide-react';
+import { Loader2, Play, UserCheck } from 'lucide-react';
 import { useSettings } from '@/hooks/SettingsContext';
 
 export interface BatchPaymentFormProps {
@@ -15,6 +15,7 @@ export interface BatchPaymentFormProps {
     onTransactionIdChange: (value: string) => void;
     onPaymentNoteChange: (value: string) => void;
     onSubmit: () => void;
+    onRemindBatch: () => void;
 }
 
 export default function BatchPaymentForm({
@@ -28,6 +29,7 @@ export default function BatchPaymentForm({
     onTransactionIdChange,
     onPaymentNoteChange,
     onSubmit,
+    onRemindBatch,
 }: BatchPaymentFormProps) {
     const { formatPrice } = useSettings();
 
@@ -92,6 +94,16 @@ export default function BatchPaymentForm({
                         placeholder="e.g. End of month payment batch run..."
                     />
                 </div>
+
+                <button
+                    type="button"
+                    onClick={onRemindBatch}
+                    disabled={selectedCount === 0}
+                    className="w-full py-3 border-2 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 text-indigo-700 dark:text-indigo-300 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                    <UserCheck className="w-4 h-4" />
+                    Remind approver
+                </button>
 
                 <button
                     type="submit"

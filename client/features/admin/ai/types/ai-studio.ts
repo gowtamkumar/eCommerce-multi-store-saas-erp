@@ -215,6 +215,32 @@ export interface ArCollectionDraftResult {
   internalNotes: string;
 }
 
+export interface ApPaymentReminderResult {
+  reminderSubject: string;
+  reminderBody: string;
+  actionItems: string[];
+}
+
+export interface ExpenseCategorySuggestResult {
+  suggestedCategory: string;
+  confidence: "high" | "medium" | "low";
+  reasoning: string;
+}
+
+export interface ReportExecutiveSummaryResult {
+  headline: string;
+  executiveSummary: string;
+  highlights: string[];
+  watchItems: string[];
+}
+
+export interface TaxRuleExplanationResult {
+  ruleTitle: string;
+  explanation: string;
+  applicabilityNotes: string[];
+  complianceReminders: string[];
+}
+
 export interface CatalogContentResult {
   description: string;
   seoTitle: string;

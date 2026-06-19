@@ -1,8 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useSettings } from '@/hooks/SettingsContext';
 import React from 'react';
 import { useCashFlowReport } from '../../hooks/useCashFlowReport';
+import { buildCashFlowReportSummary } from '../../lib/buildReportExecutiveSummaryContext';
+import ReportExecutiveSummaryPanel from '../ReportExecutiveSummaryPanel';
 import CashFlowChart from './CashFlowChart';
 import CashFlowHeader from './CashFlowHeader';
 import CashFlowKpiGrid from './CashFlowKpiGrid';
@@ -11,6 +14,7 @@ import CashFlowMovementTable from './CashFlowMovementTable';
 const CashFlowDashboard: React.FC = () => {
     const { formatPrice } = useSettings();
     const { data, isLoading, isExporting, handleExport } = useCashFlowReport();
+    const reportSummary = useMemo(() => buildCashFlowReportSummary(data), [data]);
 
     if (isLoading && !data) {
         return (
@@ -29,6 +33,11 @@ const CashFlowDashboard: React.FC = () => {
             <CashFlowKpiGrid
                 summary={data.summary}
                 formatPrice={formatPrice}
+            />
+
+            <ReportExecutiveSummaryPanel
+                reportType="cash-flow"
+                reportSummary={reportSummary}
             />
 
             <CashFlowChart chartData={data.chartData} />

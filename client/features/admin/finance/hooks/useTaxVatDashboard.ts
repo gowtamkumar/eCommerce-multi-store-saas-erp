@@ -51,6 +51,8 @@ export function useTaxVatDashboard() {
     const [calcForm, setCalcForm] = useState<TaxCalculationFormData>(DEFAULT_CALC_FORM);
     const [calcResult, setCalcResult] = useState<TaxCalculationResult | null>(null);
     const [calculating, setCalculating] = useState(false);
+    const [explainingRule, setExplainingRule] = useState<TaxRule | null>(null);
+    const [explainingDraft, setExplainingDraft] = useState(false);
 
     const loadRules = useCallback(async () => {
         setRulesLoading(true);
@@ -194,6 +196,25 @@ export function useTaxVatDashboard() {
         toast.success('Structured CSV data downloaded successfully!');
     }, []);
 
+    const openExplainRule = useCallback((rule: TaxRule) => {
+        setExplainingDraft(false);
+        setExplainingRule(rule);
+    }, []);
+
+    const openExplainDraft = useCallback(() => {
+        if (!ruleForm.name.trim()) {
+            toast.error('Enter a rule name first');
+            return;
+        }
+        setExplainingRule(null);
+        setExplainingDraft(true);
+    }, [ruleForm.name]);
+
+    const closeExplain = useCallback(() => {
+        setExplainingRule(null);
+        setExplainingDraft(false);
+    }, []);
+
     return {
         activeTab,
         setActiveTab,
@@ -222,5 +243,10 @@ export function useTaxVatDashboard() {
         deleteRule,
         simulateCalculation,
         exportFilingReport,
+        explainingRule,
+        explainingDraft,
+        openExplainRule,
+        openExplainDraft,
+        closeExplain,
     };
 }

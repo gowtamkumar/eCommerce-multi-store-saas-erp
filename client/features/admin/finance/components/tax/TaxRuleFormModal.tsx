@@ -11,6 +11,7 @@ export interface TaxRuleFormModalProps {
     onFieldChange: (field: keyof TaxRuleFormData, value: string) => void;
     onClose: () => void;
     onSubmit: (event: FormEvent) => void;
+    onExplainDraft?: () => void;
 }
 
 export default function TaxRuleFormModal({
@@ -19,6 +20,7 @@ export default function TaxRuleFormModal({
     onFieldChange,
     onClose,
     onSubmit,
+    onExplainDraft,
 }: TaxRuleFormModalProps) {
     return (
         <AnimatePresence>
@@ -110,6 +112,17 @@ export default function TaxRuleFormModal({
                                     </select>
                                 </div>
                             </div>
+
+                            {onExplainDraft && (
+                                <button
+                                    type="button"
+                                    onClick={onExplainDraft}
+                                    disabled={!formData.name.trim()}
+                                    className="w-full py-3 border-2 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 disabled:opacity-50 text-indigo-700 dark:text-indigo-300 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+                                >
+                                    Explain draft rule
+                                </button>
+                            )}
 
                             <div className="pt-4 flex gap-4">
                                 <button

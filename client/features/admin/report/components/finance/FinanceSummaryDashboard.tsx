@@ -1,17 +1,21 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useSettings } from '@/hooks/SettingsContext';
 import { useFinanceSummary } from '../../hooks/useFinanceSummary';
+import { buildFinanceSummaryReportSummary } from '../../lib/buildReportExecutiveSummaryContext';
 import FinanceKpiGrid from './FinanceKpiGrid';
 import FinanceQuickActions from './FinanceQuickActions';
 import FinanceSummaryHeader from './FinanceSummaryHeader';
 import FinanceSupplyChainCard from './FinanceSupplyChainCard';
 import OutflowPieChart from './OutflowPieChart';
 import RevenuePayoutChart from './RevenuePayoutChart';
+import ReportExecutiveSummaryPanel from '../ReportExecutiveSummaryPanel';
 
 export default function FinanceSummaryDashboard() {
     const { formatPrice } = useSettings();
     const { data, isLoading, refresh } = useFinanceSummary();
+    const reportSummary = useMemo(() => buildFinanceSummaryReportSummary(data), [data]);
 
     return (
         <div className="space-y-8">
@@ -21,6 +25,12 @@ export default function FinanceSummaryDashboard() {
                 kpis={data?.kpis}
                 isLoading={isLoading}
                 formatPrice={formatPrice}
+            />
+
+            <ReportExecutiveSummaryPanel
+                reportType="finance-summary"
+                reportSummary={reportSummary}
+                disabled={isLoading || !data}
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

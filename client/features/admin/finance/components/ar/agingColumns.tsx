@@ -1,11 +1,15 @@
 'use client';
 
-import { AlertTriangle, DollarSign } from 'lucide-react';
+import { AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import type { DataTableColumn } from '@/components/shared/DataTable';
 import type { ArAgingRow } from '@/features/admin/customer/type';
 import AgingBadge from './AgingBadge';
+import { getOverdueAmount } from '../../lib/buildArCollectionContext';
 
-export function buildAgingColumns(onPay: (row: ArAgingRow) => void): DataTableColumn<ArAgingRow>[] {
+export function buildAgingColumns(
+  onPay: (row: ArAgingRow) => void,
+  onCollect: (row: ArAgingRow) => void,
+): DataTableColumn<ArAgingRow>[] {
     return [
         {
             key: 'customer',
@@ -99,13 +103,27 @@ export function buildAgingColumns(onPay: (row: ArAgingRow) => void): DataTableCo
             headerClassName: 'text-right',
             className: 'text-right',
             cell: (row) => (
-                <button
-                    onClick={() => onPay(row)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm ml-auto inline-flex"
-                >
-                    <DollarSign className="w-3.5 h-3.5" />
-                    Pay
-                </button>
+                <div className="flex items-center justify-end gap-2">
+                    {getOverdueAmount(row) > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => onCollect(row)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-sm inline-flex"
+                            title="Draft collection email"
+                        >
+                            <Mail className="w-3.5 h-3.5" />
+                            Collect
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => onPay(row)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm inline-flex"
+                    >
+                        <DollarSign className="w-3.5 h-3.5" />
+                        Pay
+                    </button>
+                </div>
             ),
         },
     ];

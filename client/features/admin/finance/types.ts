@@ -136,6 +136,10 @@ export interface UnpaidInvoice {
     };
 }
 
+export type ApReminderTarget =
+    | { type: 'supplier'; row: ApAgingRow; unpaidInvoices: UnpaidInvoice[] }
+    | { type: 'batch'; invoices: UnpaidInvoice[] };
+
 export interface BatchPaymentResultLine {
     invoiceNumber: string;
     amountPaid: number;

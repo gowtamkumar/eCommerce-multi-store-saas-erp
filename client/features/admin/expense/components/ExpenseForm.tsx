@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { EXPENSE_CATEGORIES, type ExpenseFormProps } from '../types';
 import { useExpenseForm } from '../hooks/useExpenseForm';
+import { ExpenseCategoryAiAssist } from './ExpenseCategoryAiAssist';
 
 const RECURRENCE_OPTIONS = [
     { value: 'NONE', label: 'One-time' },
@@ -88,6 +89,15 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
                                     />
                                 </div>
                             </div>
+
+                            <ExpenseCategoryAiAssist
+                                title={formData.title}
+                                description={formData.description}
+                                amount={formData.amount}
+                                referenceNumber={formData.referenceNumber}
+                                currentCategory={formData.category}
+                                onApply={(category) => setFormData({ ...formData, category })}
+                            />
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">

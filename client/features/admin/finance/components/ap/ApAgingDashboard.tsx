@@ -16,6 +16,7 @@ export interface ApAgingDashboardProps {
     onSearchChange: (value: string) => void;
     totalOutstanding: number;
     totalOverdue: number;
+    onRemind: (row: ApAgingRow) => void;
 }
 
 export default function ApAgingDashboard({
@@ -26,9 +27,10 @@ export default function ApAgingDashboard({
     onSearchChange,
     totalOutstanding,
     totalOverdue,
+    onRemind,
 }: ApAgingDashboardProps) {
     const { formatPrice } = useSettings();
-    const columns = useMemo(() => buildApAgingColumns(formatPrice), [formatPrice]);
+    const columns = useMemo(() => buildApAgingColumns(formatPrice, onRemind), [formatPrice, onRemind]);
 
     return (
         <>

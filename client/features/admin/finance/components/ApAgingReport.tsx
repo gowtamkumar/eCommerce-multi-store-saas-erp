@@ -1,13 +1,53 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useApDashboard } from '../hooks/useApDashboard';
+import {
+    buildBatchApReminderContext,
+    buildSupplierApReminderContext,
+    getApOverdueAmount,
+    getOldestApAgingBucket,
+} from '../lib/buildApPaymentReminderContext';
 import ApHeader from './ap/ApHeader';
 import ApTabs from './ap/ApTabs';
 import ApAgingDashboard from './ap/ApAgingDashboard';
 import ApBatchPaymentView from './ap/ApBatchPaymentView';
+import ApPaymentReminderModal from './ap/ApPaymentReminderModal';
 
 export default function ApAgingReport() {
     const ap = useApDashboard();
+
+    const reminderModalProps = useMemo(() => {
+        if (!ap.reminderTarget) return null;
+
+        if (ap.reminderTarget.type === 'supplier') {
+            const { row, unpaidInvoices } = ap.reminderTarget;
+            const payload = buildSupplierApReminderContext(row, unpaidInvoices);
+
+            return {
+                title: 'Payment approval reminder',
+                subtitle: `${row.supplierName} · ${getOldestApAgingBucket(row)}`,
+                apSummary: payload.apSummary,
+                invoicesSummary: payload.invoicesSummary,
+                hasActionableBalance: getApOverdueAmount(row) > 0,
+            };
+        }
+
+        const { invoices } = ap.reminderTarget;
+        const payload = buildBatchApReminderContext(invoices);
+        const totalOutstanding = invoices.reduce(
+            (sum, invoice) => sum + (Number(invoice.totalAmount) - Number(invoice.paidAmount || 0)),
+            0,
+        );
+
+        return {
+            title: 'Batch payment approval reminder',
+            subtitle: `${invoices.length} invoice${invoices.length === 1 ? '' : 's'} · ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })} outstanding`,
+            apSummary: payload.apSummary,
+            invoicesSummary: payload.invoicesSummary,
+            hasActionableBalance: invoices.length > 0,
+        };
+    }, [ap.reminderTarget]);
 
     return (
         <div className="space-y-6 pb-12">
@@ -24,6 +64,7 @@ export default function ApAgingReport() {
                     onSearchChange={ap.setSearch}
                     totalOutstanding={ap.totalOutstanding}
                     totalOverdue={ap.totalOverdue}
+                    onRemind={(row) => void ap.openSupplierReminder(row)}
                 />
             ) : (
                 <ApBatchPaymentView
@@ -46,6 +87,14 @@ export default function ApAgingReport() {
                     onPaymentNoteChange={ap.setPaymentNote}
                     onSubmit={ap.runBatchPayment}
                     paymentRunResult={ap.paymentRunResult}
+                    onRemindBatch={ap.openBatchReminder}
+                />
+            )}
+
+            {reminderModalProps && (
+                <ApPaymentReminderModal
+                    {...reminderModalProps}
+                    onClose={() => ap.setReminderTarget(null)}
                 />
             )}
         </div>

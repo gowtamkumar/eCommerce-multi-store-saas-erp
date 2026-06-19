@@ -1,12 +1,17 @@
 'use client';
 
+import { UserCheck } from 'lucide-react';
 import type { DataTableColumn } from '@/components/shared/DataTable';
 import type { ApAgingRow } from '../../types';
+import { getApOverdueAmount } from '../../lib/buildApPaymentReminderContext';
 import ApAgingBadge from './ApAgingBadge';
 
 type PriceFormatter = (amount: number) => string;
 
-export function buildApAgingColumns(formatPrice: PriceFormatter): DataTableColumn<ApAgingRow>[] {
+export function buildApAgingColumns(
+    formatPrice: PriceFormatter,
+    onRemind: (row: ApAgingRow) => void,
+): DataTableColumn<ApAgingRow>[] {
     return [
         {
             key: 'supplierName',
@@ -63,6 +68,26 @@ export function buildApAgingColumns(formatPrice: PriceFormatter): DataTableColum
             headerClassName: 'text-center',
             className: 'text-center',
             cell: (row) => <ApAgingBadge days="90+" amount={row.aging['90+']} />,
+        },
+        {
+            key: 'action',
+            header: 'Action',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            cell: (row) =>
+                getApOverdueAmount(row) > 0 ? (
+                    <button
+                        type="button"
+                        onClick={() => onRemind(row)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm inline-flex ml-auto"
+                        title="Draft internal approver reminder"
+                    >
+                        <UserCheck className="w-3.5 h-3.5" />
+                        Remind
+                    </button>
+                ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                ),
         },
     ];
 }

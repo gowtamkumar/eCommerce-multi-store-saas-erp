@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
+import { BookOpen, Trash2 } from 'lucide-react';
 import type { DataTableColumn } from '@/components/shared/DataTable';
 import type { TaxFilingLog, TaxRule } from '../../types';
 
@@ -71,7 +71,10 @@ export function buildTaxFilingColumns(formatPrice: PriceFormatter): DataTableCol
     ];
 }
 
-export function buildTaxRuleColumns(onDelete: (id: string) => void): DataTableColumn<TaxRule>[] {
+export function buildTaxRuleColumns(
+    onDelete: (id: string) => void,
+    onExplain: (rule: TaxRule) => void,
+): DataTableColumn<TaxRule>[] {
     return [
         {
             key: 'name',
@@ -136,14 +139,27 @@ export function buildTaxRuleColumns(onDelete: (id: string) => void): DataTableCo
             header: 'Actions',
             headerClassName: 'text-right',
             className: 'text-right',
-            cell: (rule) => !rule.isSystem ? (
-                <button
-                    onClick={() => onDelete(rule.id)}
-                    className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors inline-block"
-                >
-                    <Trash2 className="w-3.5 h-3.5" />
-                </button>
-            ) : null,
+            cell: (rule) => (
+                <div className="flex items-center justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onExplain(rule)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-sm inline-flex"
+                        title="Generate rule documentation"
+                    >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        Explain
+                    </button>
+                    {!rule.isSystem ? (
+                        <button
+                            onClick={() => onDelete(rule.id)}
+                            className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors inline-block"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    ) : null}
+                </div>
+            ),
         },
     ];
 }
