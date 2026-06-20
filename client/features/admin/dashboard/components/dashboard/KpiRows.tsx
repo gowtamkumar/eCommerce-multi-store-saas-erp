@@ -20,7 +20,7 @@ export default function KpiRows({
 
     return (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <StatCard
                     label={`${periodLabel} Sales`}
                     value={stats?.periodSales || 0}
@@ -62,7 +62,7 @@ export default function KpiRows({
                 />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <StatCard
                     label="Total Sales"
                     value={stats?.totalSales || 0}

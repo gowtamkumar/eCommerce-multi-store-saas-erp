@@ -2,7 +2,7 @@ import { BaseTenantRepository } from '@/common/base-repository'
 import { FaqStatus } from '@/common/enums/faq-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
+import { In, IsNull, Repository } from 'typeorm'
 import { FaqEntity } from './entities/faq.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -57,8 +57,8 @@ export class FaqRepository extends BaseTenantRepository<FaqEntity> {
     return this.repo.find({
       where: {
         tenantId,
-        productId: null,
-        pageId: null,
+        productId: IsNull(),
+        pageId: IsNull(),
         status: FaqStatus.ACTIVE,
       },
       order: { order: 'ASC', createdAt: 'DESC' },

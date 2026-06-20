@@ -19,7 +19,7 @@ export default function DashboardHeader({
     onRefresh,
 }: DashboardHeaderProps) {
     return (
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white font-display flex items-center gap-3">
                     Dashboard <span className="text-brand-600 italic">Overview</span>

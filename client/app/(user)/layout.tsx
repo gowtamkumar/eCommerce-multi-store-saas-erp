@@ -5,7 +5,6 @@ import CartDrawer from "@/components/shared/CartDrawer";
 import FloatingCartWidget from "@/components/shared/FloatingCartWidget";
 import ScrollToTop from "@/components/shared/ScrollToTop";
 import LiveChatWidget from "@/components/shared/LiveChatWidget";
-import ShoppingAssistantWidget from "@/components/shared/ShoppingAssistantWidget";
 import { CartProvider } from "@/hooks/CartContext";
 import { WishlistProvider } from "@/hooks/WishlistContext";
 import { useSettings } from "@/hooks/SettingsContext";
@@ -77,7 +76,6 @@ export default function StorefrontLayout({
             </>
           )}
           <ScrollToTop />
-          <ShoppingAssistantWidget />
           <LiveChatWidget />
           {children}
         </WishlistProvider>
