@@ -8,7 +8,7 @@ import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { InjectQueue } from '@nestjs/bullmq'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Queue } from 'bullmq'
-import { Between, In } from 'typeorm'
+import { Between, In, LessThanOrEqual, MoreThanOrEqual } from 'typeorm'
 import { AttendanceSessionEntity } from '../entities/attendance.entity'
 import { EmployeeEntity } from '../entities/employee.entity'
 import { LeaveRequestEntity } from '../entities/leave.entity'
@@ -89,7 +89,14 @@ export class HrmPayrollService {
       const employeeIds = activeEmployees.map((e) => e.id)
 
       const [approvedLeaves, allSessions] = await Promise.all([
-        leaveRequestRepo.find({ where: { tenantId: ctx.tenantId, status: LeaveStatus.APPROVED } }),
+        leaveRequestRepo.find({
+          where: {
+            tenantId: ctx.tenantId,
+            status: LeaveStatus.APPROVED,
+            startDate: LessThanOrEqual(endDate),
+            endDate: MoreThanOrEqual(startDate),
+          },
+        }),
         employeeIds.length > 0
           ? attendanceSessionRepo.find({
               where: {
@@ -101,6 +108,19 @@ export class HrmPayrollService {
             })
           : Promise.resolve([]),
       ])
+
+      const shiftAssignments = await this.hrmRepo.findEmployeeShiftsForEmployees(
+        employeeIds,
+        startDate,
+        ctx.tenantId,
+      )
+
+      const assignmentMap = new Map<string, typeof shiftAssignments[0]>()
+      for (const assignment of shiftAssignments) {
+        if (!assignmentMap.has(assignment.employeeId)) {
+          assignmentMap.set(assignment.employeeId, assignment)
+        }
+      }
 
       const sessionsByEmployee = new Map<string, AttendanceSessionEntity[]>()
       for (const session of allSessions) {
@@ -145,11 +165,7 @@ export class HrmPayrollService {
           (Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2),
         )
 
-        const assignment = await this.hrmRepo.findEmployeeShift(
-          employee.id,
-          startDate,
-          ctx.tenantId,
-        )
+        const assignment = assignmentMap.get(employee.id) ?? null
         const workingDays = resolveWorkingDays(assignment)
         const employeeLeaves = approvedLeaves.filter((l) => l.employeeId === employee.id)
         const checkInDateSet = buildCheckInDateSet(sessions)

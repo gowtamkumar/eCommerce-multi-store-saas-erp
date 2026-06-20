@@ -12,6 +12,9 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import * as crypto from 'crypto'
 import { HrmRepository } from '../hrm.repository'
 import { HrmEmployeeService } from './hrm-employee.service'
+import { EmployeeEntity } from '../entities/employee.entity'
+import { EmployeePersonalDetailsEntity } from '../entities/employee-personal-details.entity'
+import { ApplicantEntity } from '../entities/recruitment.entity'
 
 @Injectable()
 export class HrmRecruitmentService {
@@ -151,27 +154,31 @@ export class HrmRecruitmentService {
       )
     }
 
-    const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.tenantId)
-    const employee = await this.hrmRepo.createEmployee({
-      tenantId: ctx.tenantId,
-      userId: user.id,
-      departmentId: applicant.jobPosting?.departmentId,
-      status: EmployeeStatus.PROBATION,
-      employeeId: humanReadableId,
-      joiningDate: new Date(),
-    })
-
-    // Create Personal Details
-    await this.hrmRepo.personalDetailsRepo.save(
-      this.hrmRepo.personalDetailsRepo.create({
-        userId: user.id,
-        employeeId: employee.id,
+    const employee = await this.hrmRepo.employeeRepo.manager.transaction(async (em) => {
+      const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.tenantId)
+      const employeeEntity = em.create(EmployeeEntity, {
         tenantId: ctx.tenantId,
-      }),
-    )
+        userId: user.id,
+        departmentId: applicant.jobPosting?.departmentId,
+        status: EmployeeStatus.PROBATION,
+        employeeId: humanReadableId,
+        joiningDate: new Date(),
+      })
+      const savedEmployee = await em.save(EmployeeEntity, employeeEntity)
 
-    // Update applicant status to reflect onboarding completion
-    await this.hrmRepo.updateApplicantStatus(id, ApplicantStatus.JOINED)
+      // Create Personal Details
+      const personalDetails = em.create(EmployeePersonalDetailsEntity, {
+        userId: user.id,
+        employeeId: savedEmployee.id,
+        tenantId: ctx.tenantId,
+      })
+      await em.save(EmployeePersonalDetailsEntity, personalDetails)
+
+      // Update applicant status to reflect onboarding completion
+      await em.update(ApplicantEntity, id, { status: ApplicantStatus.JOINED })
+
+      return savedEmployee
+    })
 
     // Trigger Notification for Admin
     try {

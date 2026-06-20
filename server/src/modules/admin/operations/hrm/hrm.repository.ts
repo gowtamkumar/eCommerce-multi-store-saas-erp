@@ -204,6 +204,14 @@ export class HrmRepository {
     return this.attendanceRepository.findEmployeeShift(employeeId, date, tenantId)
   }
 
+  async findEmployeeShiftsForEmployees(
+    employeeIds: string[],
+    date: Date,
+    tenantId: string,
+  ): Promise<EmployeeShiftAssignmentEntity[]> {
+    return this.attendanceRepository.findEmployeeShiftsForEmployees(employeeIds, date, tenantId)
+  }
+
   // --- Attendance ---
   async logAttendanceEvent(data: Partial<AttendanceEventEntity>): Promise<AttendanceEventEntity> {
     return this.attendanceRepository.logAttendanceEvent(data)

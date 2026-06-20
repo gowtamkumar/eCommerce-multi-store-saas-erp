@@ -19,4 +19,6 @@ export const BASIC_DEFAULT_SETTINGS: UpdateSiteSettingsDto = {
   timezone: "Asia/Dhaka",
   locale: "en-US",
   defaultBranchId: "",
+  probationDays: 90,
+  documentExpiryAlertDays: 30,
 };

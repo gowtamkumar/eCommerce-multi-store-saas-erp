@@ -131,6 +131,12 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   branding?: BrandingSettingsDto
 
+  @Column({ name: 'probation_days', type: 'integer', default: 90 })
+  probationDays: number
+
+  @Column({ name: 'document_expiry_alert_days', type: 'integer', default: 30 })
+  documentExpiryAlertDays: number
+
   @Column({ type: 'uuid', name: 'tenant_id', unique: true })
   tenantId: string
 

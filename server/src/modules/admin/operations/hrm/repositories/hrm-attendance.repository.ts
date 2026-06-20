@@ -85,6 +85,23 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
     return qb.getOne()
   }
 
+  async findEmployeeShiftsForEmployees(
+    employeeIds: string[],
+    date: Date,
+    tenantId: string,
+  ): Promise<EmployeeShiftAssignmentEntity[]> {
+    if (employeeIds.length === 0) return []
+    return this.shiftAssignmentRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.shift', 'shift')
+      .where('a.employeeId IN (:...employeeIds)', { employeeIds })
+      .andWhere('a.tenantId = :tenantId', { tenantId })
+      .andWhere('a.effectiveFrom <= :date', { date })
+      .andWhere('(a.effectiveTo IS NULL OR a.effectiveTo >= :date)', { date })
+      .orderBy('a.effectiveFrom', 'DESC')
+      .getMany()
+  }
+
   // --- Attendance ---
   async logAttendanceEvent(data: Partial<AttendanceEventEntity>): Promise<AttendanceEventEntity> {
     return this.attendanceEventRepo.save(this.attendanceEventRepo.create(data))

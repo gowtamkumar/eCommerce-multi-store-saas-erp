@@ -1,11 +1,12 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Logger } from '@nestjs/common'
 import { Job } from 'bullmq'
-import { DataSource } from 'typeorm'
+import { DataSource, In } from 'typeorm'
 import { EmployeeStatus } from '@/common/enums/hrm/hrm-enums'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { EmployeeEntity } from '../entities/employee.entity'
-import { EmployeeDocumentEntity } from '../entities/employee-document.entity'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
+import { HrmRepository } from '../hrm.repository'
 
 const DEFAULT_PROBATION_DAYS = 90
 const DOCUMENT_EXPIRY_ALERT_DAYS = 30
@@ -17,6 +18,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
   constructor(
     private readonly dataSource: DataSource,
     private readonly notificationService: NotificationService,
+    private readonly hrmRepo: HrmRepository,
   ) {
     super()
   }
@@ -38,39 +40,62 @@ export class HrmSchedulerProcessor extends WorkerHost {
 
   /**
    * Promote employees from PROBATION → ACTIVE when their probation period
-   * (default 90 days from joiningDate) has elapsed.
+   * (tenant settings or default 90 days from joiningDate) has elapsed.
    */
   private async runProbationAutoConfirm() {
     const em = this.dataSource.manager
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - DEFAULT_PROBATION_DAYS)
 
-    const employees = await em
-      .createQueryBuilder(EmployeeEntity, 'e')
-      .leftJoinAndSelect('e.user', 'user')
-      .where('e.status = :status', { status: EmployeeStatus.PROBATION })
-      .andWhere('e.joining_date <= :cutoff', { cutoff })
-      .getMany()
+    const employees = await this.hrmRepo.employeeRepo.find({
+      where: { status: EmployeeStatus.PROBATION },
+      relations: { user: true },
+    })
 
-    this.logger.log(`Probation auto-confirm: ${employees.length} employee(s) eligible`)
+    this.logger.log(`Probation auto-confirm check: ${employees.length} employee(s) currently on probation`)
+    if (employees.length === 0) return
+
+    const settingsList = await em.find(SiteSettingsEntity)
+    const settingsMap = new Map<string, SiteSettingsEntity>()
+    for (const s of settingsList) {
+      settingsMap.set(s.tenantId, s)
+    }
+
+    const eligibleEmployees: EmployeeEntity[] = []
+    const now = new Date()
 
     for (const employee of employees) {
-      await em.update(EmployeeEntity, employee.id, { status: EmployeeStatus.ACTIVE })
+      const tenantSettings = settingsMap.get(employee.tenantId)
+      const probationDays = tenantSettings?.probationDays ?? DEFAULT_PROBATION_DAYS
 
-      if (employee.userId) {
-        try {
-          await this.notificationService.createNotification(
-            {
-              title: 'Probation Completed',
-              message: `Congratulations! Your probation period has been completed and your status is now ACTIVE.`,
-              type: 'SUCCESS',
-              link: '/admin/profile',
-              userId: employee.userId,
-            },
-            employee.tenantId,
-          )
-        } catch (e: any) {
-          this.logger.error(`Failed to notify employee ${employee.id}: ${e.message}`)
+      const cutoff = new Date(now)
+      cutoff.setDate(cutoff.getDate() - probationDays)
+
+      if (new Date(employee.joiningDate) <= cutoff) {
+        eligibleEmployees.push(employee)
+      }
+    }
+
+    this.logger.log(`Probation auto-confirm: ${eligibleEmployees.length} employee(s) eligible for promotion`)
+
+    if (eligibleEmployees.length > 0) {
+      const eligibleIds = eligibleEmployees.map((e) => e.id)
+      await em.update(EmployeeEntity, { id: In(eligibleIds) }, { status: EmployeeStatus.ACTIVE })
+
+      for (const employee of eligibleEmployees) {
+        if (employee.userId) {
+          try {
+            await this.notificationService.createNotification(
+              {
+                title: 'Probation Completed',
+                message: `Congratulations! Your probation period has been completed and your status is now ACTIVE.`,
+                type: 'SUCCESS',
+                link: '/admin/profile',
+                userId: employee.userId,
+              },
+              employee.tenantId,
+            )
+          } catch (e: any) {
+            this.logger.error(`Failed to notify employee ${employee.id}: ${e.message}`)
+          }
         }
       }
     }
@@ -81,38 +106,50 @@ export class HrmSchedulerProcessor extends WorkerHost {
    */
   private async runDocumentExpiryAlerts() {
     const em = this.dataSource.manager
+
+    const settingsList = await em.find(SiteSettingsEntity)
+    const settingsMap = new Map<string, SiteSettingsEntity>()
+    let maxAlertDays = DOCUMENT_EXPIRY_ALERT_DAYS
+
+    for (const s of settingsList) {
+      settingsMap.set(s.tenantId, s)
+      const alertDays = s.documentExpiryAlertDays ?? DOCUMENT_EXPIRY_ALERT_DAYS
+      if (alertDays > maxAlertDays) {
+        maxAlertDays = alertDays
+      }
+    }
+
+    const expiringDocs = await this.hrmRepo.findExpiringDocuments(maxAlertDays)
     const now = new Date()
-    const ahead = new Date()
-    ahead.setDate(ahead.getDate() + DOCUMENT_EXPIRY_ALERT_DAYS)
 
-    const expiringDocs = await em
-      .createQueryBuilder(EmployeeDocumentEntity, 'd')
-      .leftJoinAndSelect('d.employee', 'employee')
-      .leftJoinAndSelect('employee.user', 'user')
-      .where('d.expiryDate IS NOT NULL')
-      .andWhere('d.expiryDate >= :now', { now })
-      .andWhere('d.expiryDate <= :ahead', { ahead })
-      .getMany()
-
-    this.logger.log(`Document expiry alerts: ${expiringDocs.length} document(s) expiring soon`)
+    this.logger.log(`Document expiry alerts: found ${expiringDocs.length} total document(s) expiring within ${maxAlertDays} days`)
 
     for (const doc of expiringDocs) {
       const employee = doc.employee
       if (!employee?.userId) continue
 
-      try {
-        await this.notificationService.createNotification(
-          {
-            title: 'Document Expiring Soon',
-            message: `Your "${doc.documentType}" document expires on ${new Date(doc.expiryDate!).toLocaleDateString()}. Please renew it.`,
-            type: 'WARNING',
-            link: '/admin/profile',
-            userId: employee.userId,
-          },
-          doc.tenantId,
-        )
-      } catch (e: any) {
-        this.logger.error(`Failed to send expiry alert for doc ${doc.id}: ${e.message}`)
+      const tenantSettings = settingsMap.get(doc.tenantId)
+      const alertDays = tenantSettings?.documentExpiryAlertDays ?? DOCUMENT_EXPIRY_ALERT_DAYS
+
+      const ahead = new Date()
+      ahead.setDate(ahead.getDate() + alertDays)
+
+      const expiryDate = new Date(doc.expiryDate!)
+      if (expiryDate >= now && expiryDate <= ahead) {
+        try {
+          await this.notificationService.createNotification(
+            {
+              title: 'Document Expiring Soon',
+              message: `Your "${doc.documentType}" document expires on ${expiryDate.toLocaleDateString()}. Please renew it.`,
+              type: 'WARNING',
+              link: '/admin/profile',
+              userId: employee.userId,
+            },
+            doc.tenantId,
+          )
+        } catch (e: any) {
+          this.logger.error(`Failed to send expiry alert for doc ${doc.id}: ${e.message}`)
+        }
       }
     }
   }

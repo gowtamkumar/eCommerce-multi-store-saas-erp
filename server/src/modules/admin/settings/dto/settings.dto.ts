@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEmail,
+  IsInt,
   IsObject,
   IsOptional,
   IsString,
@@ -247,4 +248,14 @@ export class UpdateSiteSettingsDto {
   @ValidateNested()
   @Type(() => BrandingSettingsDto)
   branding?: BrandingSettingsDto
+
+  @ApiProperty({ required: false, default: 90 })
+  @IsInt()
+  @IsOptional()
+  probationDays?: number
+
+  @ApiProperty({ required: false, default: 30 })
+  @IsInt()
+  @IsOptional()
+  documentExpiryAlertDays?: number
 }
