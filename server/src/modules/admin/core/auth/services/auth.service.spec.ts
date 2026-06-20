@@ -11,6 +11,7 @@ import { PermissionResolutionService } from '@/common/services/permission-resolu
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { AuthService } from './auth.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 describe('AuthService', () => {
   let service: AuthService
@@ -61,6 +62,14 @@ describe('AuthService', () => {
         {
           provide: ReferralService,
           useValue: {},
+        },
+        {
+          provide: CacheService,
+          useValue: {
+            getCache: jest.fn().mockResolvedValue(null),
+            setCache: jest.fn().mockResolvedValue(undefined),
+            delCache: jest.fn().mockResolvedValue(undefined),
+          },
         },
         {
           provide: getRepositoryToken(SessionEntity),

@@ -15,6 +15,12 @@ export class AuditLogService {
   /**
    * Programmatically log an action from any service.
    * Errors are swallowed so audit logging never breaks business logic.
+   *
+   * Usage:
+   *  - From the AuditLogInterceptor: called via setImmediate() (fire-and-forget) so
+   *    the HTTP response is NOT held open waiting for the DB write.
+   *  - From RBAC/security services (role assign, permission override, access denied):
+   *    called with `await` for durable, guaranteed delivery before the response.
    */
   async log(
     ctx: RequestContextDto,
@@ -22,7 +28,6 @@ export class AuditLogService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    this.logger.log(`${this.log.name} Service Called`)
     try {
       await this.auditLogRepository.createAndSave(ctx, {
         userId: dto.userId ?? ctx.userId,

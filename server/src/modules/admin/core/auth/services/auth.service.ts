@@ -27,6 +27,7 @@ import { SessionEntity } from '../entities/session.entity'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Injectable()
 export class AuthService {
@@ -41,6 +42,7 @@ export class AuthService {
     private readonly permissionResolutionService: PermissionResolutionService,
     private readonly notificationService: NotificationService,
     private readonly referralService: ReferralService,
+    private readonly cacheService: CacheService,
     @InjectRepository(SessionEntity)
     private readonly sessionRepository: Repository<SessionEntity>,
   ) {}
@@ -298,7 +300,7 @@ export class AuthService {
       features = tenant?.subscriptionPlan?.features || []
     }
 
-    // Invalidate old session from rotated token
+    // Invalidate old session from rotated token (DB + Redis cache)
     let oldSessionId: string | null = null
     try {
       const decoded = this.jwtService.decode(refreshToken) as any
@@ -311,6 +313,7 @@ export class AuthService {
 
     if (oldSessionId) {
       await this.sessionRepository.update({ id: oldSessionId }, { isActive: false })
+      await this.cacheService.delCache(`auth:session:${oldSessionId}`)
     }
 
     const tokens = await this.getTokens(user, features, ipAddress, userAgent)
@@ -321,8 +324,18 @@ export class AuthService {
     this.logger.log(`${this.logout.name} Service Called`)
     if (sessionId) {
       await this.sessionRepository.update({ id: sessionId, userId }, { isActive: false })
+      // Evict the specific session from Redis so the JwtAuthStrategy cache is consistent
+      await this.cacheService.delCache(`auth:session:${sessionId}`)
     } else {
+      // Full logout: find all active sessions first so we can evict each one from Redis
+      const activeSessions = await this.sessionRepository.find({
+        where: { userId, isActive: true },
+        select: { id: true },
+      })
       await this.sessionRepository.update({ userId, isActive: true }, { isActive: false })
+      await Promise.all(
+        activeSessions.map((s) => this.cacheService.delCache(`auth:session:${s.id}`)),
+      )
     }
     return this.userService.removeRefreshToken(userId)
   }
@@ -336,10 +349,22 @@ export class AuthService {
 
   async revokeSession(sessionId: string, userId: string): Promise<void> {
     await this.sessionRepository.update({ id: sessionId, userId }, { isActive: false })
+    // Evict the revoked session from Redis
+    await this.cacheService.delCache(`auth:session:${sessionId}`)
   }
 
   async revokeAllOtherSessions(userId: string, currentSessionId: string): Promise<void> {
+    // Find sessions to revoke before deactivating them, so we can evict each from Redis
+    const sessionsToRevoke = await this.sessionRepository.find({
+      where: { userId, isActive: true },
+      select: { id: true },
+    })
     await this.sessionRepository.update({ userId, id: Not(currentSessionId) }, { isActive: false })
+    await Promise.all(
+      sessionsToRevoke
+        .filter((s) => s.id !== currentSessionId)
+        .map((s) => this.cacheService.delCache(`auth:session:${s.id}`)),
+    )
   }
 
   async createImpersonateToken(userId: string): Promise<string> {

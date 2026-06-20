@@ -19,7 +19,7 @@ export class TenantIsolationGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -29,9 +29,6 @@ export class TenantIsolationGuard implements CanActivate {
     if (isPublic) return true
 
     const request = context.switchToHttp().getRequest()
-
-    // Tenant context the request is trying to act on (set by TenantContextMiddleware).
-    const headerTenantId = request.tenantId || (request.headers['x-tenant-id'] as string) || null
 
     // Resolve the authenticated identity from the bearer token. Unauthenticated
     // (public/storefront) requests have no token — leave them to other guards.
@@ -55,6 +52,17 @@ export class TenantIsolationGuard implements CanActivate {
     }
 
     const userTenantId = decoded?.tenantId
+
+    // Tenant context the request is trying to act on (set by TenantContextMiddleware).
+    let headerTenantId = request.tenantId || (request.headers['x-tenant-id'] as string) || null
+
+    // If the request has no tenant context but the user is bound to a tenant,
+    // implicitly scope the request to the user's tenant context.
+    if (!headerTenantId && userTenantId) {
+      headerTenantId = userTenantId
+      request.tenantId = userTenantId
+    }
+
     // Token without a tenant (e.g. platform-level), or no tenant context to
     // validate against — nothing to compare here.
     if (!userTenantId || !headerTenantId) {

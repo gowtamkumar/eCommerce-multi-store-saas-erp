@@ -71,21 +71,27 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('User is not associated with a tenant.')
     }
 
-    // 2. Run the 3-step resolution for each declared permission
-    for (const perm of requiredPermissions) {
-      const allowed = await this.resolutionService.resolvePermission(user.id, tenantId, perm)
-      if (!allowed) {
-        // Log the failed access attempt
-        await this.auditLogService.logPermissionCheckFailed(
-          tenantId,
-          user.id,
-          perm,
-          `Access denied to route: ${request.method} ${request.url}`,
-        )
-        throw new ForbiddenException(
-          `Access Denied: You do not have the required permission (${perm}) to perform this action.`,
-        )
-      }
+    // 2. Load the cached manifest once and check ALL required permissions in a single
+    //    Redis round-trip. This replaces the previous N×5 DB-query loop:
+    //      Old: for each perm → resolvePermission() → 5-6 DB queries each
+    //      New: resolvePermissionsFromManifest() → 1 Redis lookup, 0 DB queries on cache hit
+    const { denied } = await this.resolutionService.resolvePermissionsFromManifest(
+      user.id,
+      tenantId,
+      requiredPermissions,
+    )
+
+    if (denied !== null) {
+      // Log the failed access attempt
+      await this.auditLogService.logPermissionCheckFailed(
+        tenantId,
+        user.id,
+        denied,
+        `Access denied to route: ${request.method} ${request.url}`,
+      )
+      throw new ForbiddenException(
+        `Access Denied: You do not have the required permission (${denied}) to perform this action.`,
+      )
     }
 
     return true

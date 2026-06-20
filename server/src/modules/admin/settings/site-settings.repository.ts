@@ -1,7 +1,7 @@
 import { BaseTenantRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { EntityManager, Repository } from 'typeorm'
 import { SiteSettingsEntity } from './entities/site-settings.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -12,23 +12,31 @@ export class SiteSettingsRepository extends BaseTenantRepository<SiteSettingsEnt
     repo: Repository<SiteSettingsEntity>,
   ) {
     super(SiteSettingsEntity, repo)
-}
-
-  async findByTenantId(tenantId: string): Promise<SiteSettingsEntity | null> {
-    return await this.repo.findOne({ where: { tenantId } })
   }
 
-  async createAndSave(dto: any, ctx: RequestContextDto): Promise<SiteSettingsEntity> {
-    const settings = this.repo.create({
+  async findByTenantId(tenantId: string, manager?: EntityManager): Promise<SiteSettingsEntity | null> {
+    return await this.txRepo(manager).findOne({ where: { tenantId } })
+  }
+
+  async createAndSave(
+    dto: any,
+    ctx: RequestContextDto,
+    manager?: EntityManager,
+  ): Promise<SiteSettingsEntity> {
+    const settings = this.txRepo(manager).create({
       ...dto,
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     } as any) as unknown as SiteSettingsEntity
-    return this.repo.save(settings)
+    return this.txRepo(manager).save(settings)
   }
 
-  async updateAndSave(settings: SiteSettingsEntity, dto: any): Promise<SiteSettingsEntity> {
+  async updateAndSave(
+    settings: SiteSettingsEntity,
+    dto: any,
+    manager?: EntityManager,
+  ): Promise<SiteSettingsEntity> {
     Object.assign(settings, dto)
-    return await this.repo.save(settings)
+    return await this.txRepo(manager).save(settings)
   }
 }

@@ -264,6 +264,18 @@ export class TenantService {
       )
       await accountRepo.save(accounts)
 
+      // Initialize Site Settings inside the transaction to guarantee onboarding atomicity
+      await this.settingsService.createSetting(
+        { tenantId: savedTenant.id } as RequestContextDto,
+        {
+          userId: savedUser.id,
+          brandName: storeName,
+          siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
+          contactEmail: email,
+        },
+        manager,
+      )
+
       return {
         tenant: savedTenant,
         admin: {
@@ -278,13 +290,6 @@ export class TenantService {
 
     // 4. Parallelize non-critical initialization tasks (after transaction has committed)
     await Promise.all([
-      // Initialize Site Settings
-      this.settingsService.createSetting({ tenantId: result.tenant.id } as RequestContextDto, {
-        userId: result.admin.id,
-        brandName: storeName,
-        siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
-        contactEmail: email,
-      }),
       // Send verification email (fire and forget or handle errors gracefully)
       this.mailService
         .sendVerificationEmail(email, result.verificationToken, result.tenant.id)

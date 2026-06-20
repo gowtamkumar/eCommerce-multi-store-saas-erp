@@ -36,7 +36,9 @@ export interface PermissionManifest {
  * - Super Admins bypass all checks (handled at the guard layer).
  * - Expired role assignments are automatically ignored.
  * - The permission manifest is cached per-user for 5 minutes and invalidated on role change.
- * - The manifest is for UI gating ONLY — the backend always re-validates on every request.
+ * - The manifest IS consumed by the backend guard on every request (0 DB queries on cache hit).
+ *   Previously, each guard call ran 5-6 DB queries per permission; now it runs 1 Redis lookup
+ *   for all permissions on a single request.
  */
 @Injectable()
 export class PermissionResolutionService {
@@ -63,12 +65,16 @@ export class PermissionResolutionService {
   ) {}
 
   // ─────────────────────────────────────────────────────────────────
-  // Step 1 Helper: Feature Enabled Check
+  // Step 1 Helper: Feature Enabled Check (used standalone, not in hot path)
   // ─────────────────────────────────────────────────────────────────
 
   /**
    * Determine whether a feature is active for a given tenant.
    * Checks overrides first, then plan fallback.
+   *
+   * NOTE: This method performs DB queries. It is NOT called from the
+   * hot-path permission guard. The guard uses resolvePermissionsFromManifest()
+   * which operates purely from the Redis-cached manifest.
    */
   async isFeatureEnabledForTenant(tenantId: string, featureSlug: string): Promise<boolean> {
     const planFeature = getPlanFeature(featureSlug)
@@ -112,11 +118,70 @@ export class PermissionResolutionService {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Main Resolution (used by PermissionsGuard per-request)
+  // Hot-Path Guard Entry Point — 0 DB queries on cache hit
+  // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Resolve ALL required permissions for a single request using the cached manifest.
+   *
+   * This is the primary entry point for the PermissionsGuard. It fetches the
+   * manifest once from Redis and checks all required permission slugs against it,
+   * resulting in at most 1 Redis lookup per request (0 DB queries on cache hit).
+   *
+   * On a Redis cache miss, the manifest is built from DB (once) and cached for
+   * CACHE_TTL_SECONDS (5 minutes), so subsequent requests are served from cache.
+   *
+   * @param userId              - The authenticated user
+   * @param tenantId            - The tenant scope
+   * @param requiredPermissions - The array of permission slugs to check
+   * @returns                   - The first denied permission slug, or null if all are allowed
+   */
+  async resolvePermissionsFromManifest(
+    userId: string,
+    tenantId: string,
+    requiredPermissions: string[],
+  ): Promise<{ denied: string | null; manifest: PermissionManifest }> {
+    // Load the cached manifest (or build it if not cached). This is at most 1 Redis
+    // operation for the entire request regardless of how many permissions are required.
+    const manifest = await this.resolvePermissionsManifest(userId, tenantId)
+    const permissionSet = new Set(manifest.permissions)
+    const featuresSet = new Set(manifest.featuresEnabled)
+
+    for (const permSlug of requiredPermissions) {
+      const featureSlug = permSlug.split(':')[0]
+      const planFeature = getPlanFeature(featureSlug)
+
+      // Step 1: Check if the feature is enabled for this tenant (from manifest)
+      const featureEnabled = featuresSet.has(featureSlug) || featuresSet.has(planFeature)
+      if (!featureEnabled) {
+        this.logger.debug(`[DENY] Feature "${featureSlug}" not enabled for tenant ${tenantId}`)
+        return { denied: permSlug, manifest }
+      }
+
+      // Step 2+3: Check if the permission exists in the manifest permission set
+      if (!permissionSet.has(permSlug)) {
+        this.logger.debug(
+          `[DENY] user=${userId} perm=${permSlug} tenant=${tenantId} (manifest miss)`,
+        )
+        return { denied: permSlug, manifest }
+      }
+
+      this.logger.debug(`[ALLOW] user=${userId} perm=${permSlug} tenant=${tenantId} (manifest hit)`)
+    }
+
+    return { denied: null, manifest }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Legacy single-permission check (kept for backward compatibility)
   // ─────────────────────────────────────────────────────────────────
 
   /**
    * Resolve whether a user can perform a given permission in a tenant context.
+   *
+   * PERFORMANCE NOTE: This method now uses the Redis-cached manifest under the hood.
+   * On a cache hit it runs 0 DB queries. On a cache miss it builds the manifest
+   * (1 multi-query DB pass) and caches it for future requests.
    *
    * @param userId    - The user being checked
    * @param tenantId  - The tenant scope
@@ -124,57 +189,33 @@ export class PermissionResolutionService {
    * @returns         - true if ALLOWED, false if DENIED
    */
   async resolvePermission(userId: string, tenantId: string, permSlug: string): Promise<boolean> {
-    const featureSlug = permSlug.split(':')[0]
-
-    // ── Step 1: Is the feature enabled for this tenant? ───────────────
-    const featureEnabled = await this.isFeatureEnabledForTenant(tenantId, featureSlug)
-    if (!featureEnabled) {
-      this.logger.debug(`[DENY] Feature "${featureSlug}" not enabled for tenant ${tenantId}`)
-      return false
-    }
-
-    // ── Step 1.5: Check User-Specific Permission Overrides ───────────
-    const now = new Date()
-    const override = await this.overrideRepo.findOne({
-      where: { userId, tenantId, permissionSlug: permSlug },
-    })
-
-    if (override && (!override.expiresAt || new Date(override.expiresAt) > now)) {
-      if (override.effect === OverrideEffect.DENY) {
-        this.logger.debug(`[DENY-OVERRIDE] user=${userId} perm=${permSlug} tenant=${tenantId}`)
-        return false
-      }
-      if (override.effect === OverrideEffect.ALLOW) {
-        this.logger.debug(`[ALLOW-OVERRIDE] user=${userId} perm=${permSlug} tenant=${tenantId}`)
-        return true
-      }
-    }
-
-    // ── Step 2 + 3: Does a role grant this permission? ────────────────
-    const effectivePermissions = await this.getEffectivePermissions(userId, tenantId)
-    const allowed = effectivePermissions.has(permSlug)
-
-    this.logger.debug(
-      `[${allowed ? 'ALLOW' : 'DENY'}] user=${userId} perm=${permSlug} tenant=${tenantId}`,
-    )
-    return allowed
+    const { denied } = await this.resolvePermissionsFromManifest(userId, tenantId, [permSlug])
+    return denied === null
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Permission Manifest (for login response & UI gating)
+  // Permission Manifest (for login response, UI gating & guard hot path)
   // ─────────────────────────────────────────────────────────────────
 
   /**
    * Build the full permission manifest for a user.
-   * Returned at login and cached for 5 minutes.
+   * Cached in Redis for CACHE_TTL_SECONDS (5 minutes).
+   * Invalidated automatically on role assignment/revocation or feature changes.
    *
-   * Frontend uses this for UI gating ONLY.
-   * Backend always re-validates per-request via resolvePermission().
+   * Frontend uses this for UI gating. Backend guard uses this for per-request
+   * authorization (0 DB queries on cache hit).
    */
   async resolvePermissionsManifest(userId: string, tenantId: string): Promise<PermissionManifest> {
     const cacheKey = `rbac:manifest:${tenantId}:${userId}`
     const cached = await this.cacheService.getCache<PermissionManifest>(cacheKey)
-    if (cached) return cached
+    if (cached) {
+      this.logger.debug(`[Cache HIT] RBAC manifest for user=${userId} tenant=${tenantId}`)
+      return cached
+    }
+
+    this.logger.debug(
+      `[Cache MISS] Building RBAC manifest from DB for user=${userId} tenant=${tenantId}`,
+    )
 
     // ── Build enabled features list ───────────────────────────────────
     const tenant = await this.tenantRepo.findOne({

@@ -83,6 +83,55 @@ describe('PermissionResolutionService', () => {
     })
   })
 
+  describe('resolvePermissionsFromManifest', () => {
+    it('returns denied=null when all permissions are in the cached manifest (0 DB queries)', async () => {
+      // Cache hit — no DB calls should be made
+      cacheService.getCache.mockResolvedValue({
+        featuresEnabled: ['finance'],
+        permissions: ['accounting:read', 'accounting:write'],
+      })
+
+      const result = await service.resolvePermissionsFromManifest('user-1', 'tenant-1', [
+        'accounting:read',
+        'accounting:write',
+      ])
+
+      expect(result.denied).toBeNull()
+      // Confirm no DB queries were run
+      expect(tenantRepo.findOne).not.toHaveBeenCalled()
+      expect(assignmentRepo.find).not.toHaveBeenCalled()
+    })
+
+    it('returns denied=permSlug when the feature is not enabled in manifest', async () => {
+      // Cache hit — feature not enabled
+      cacheService.getCache.mockResolvedValue({
+        featuresEnabled: ['catalog'],
+        permissions: ['catalog:read'],
+      })
+
+      const result = await service.resolvePermissionsFromManifest('user-1', 'tenant-1', [
+        'accounting:read', // finance feature not in featuresEnabled
+      ])
+
+      expect(result.denied).toBe('accounting:read')
+    })
+
+    it('returns denied=permSlug when the permission is missing from manifest', async () => {
+      // Cache hit — feature enabled but permission not granted
+      cacheService.getCache.mockResolvedValue({
+        featuresEnabled: ['finance'],
+        permissions: ['accounting:read'], // no 'accounting:write'
+      })
+
+      const result = await service.resolvePermissionsFromManifest('user-1', 'tenant-1', [
+        'accounting:read',
+        'accounting:write', // this one is missing
+      ])
+
+      expect(result.denied).toBe('accounting:write')
+    })
+  })
+
   describe('resolvePermissionsManifest', () => {
     it('includes permissions with sub-feature prefixes in the manifest if parent feature is enabled', async () => {
       cacheService.getCache.mockResolvedValue(null) // Force cache miss to build manifest

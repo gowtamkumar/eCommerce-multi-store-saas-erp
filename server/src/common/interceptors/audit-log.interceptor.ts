@@ -1,12 +1,29 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { Observable, from } from 'rxjs'
+import { Observable, from, of } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
 import { sanitizeAuditValue } from 'src/modules/system/audit-log/audit-log-sanitizer.util'
 import { AuditLogService } from 'src/modules/system/audit-log/audit-log.service'
 import { DataSource } from 'typeorm'
 import { AUDIT_METADATA_KEY, AuditOptions } from '../decorators/audit.decorator'
 
+/**
+ * Intercepts decorated routes and writes a structured audit log entry.
+ *
+ * Performance design:
+ *
+ * 1. `loadOldValue()` — still runs BEFORE the handler so we can capture the pre-mutation
+ *    state (needed for UPDATE/DELETE diffs). This is a single targeted PK lookup and is
+ *    acceptable on mutation routes. It is skipped entirely on CREATE routes.
+ *
+ * 2. `auditLogService.log()` — runs AFTER the handler responds, inside `tap()`. The DB write
+ *    is deferred with `setImmediate()` so it executes in the next event-loop tick AFTER the
+ *    HTTP response has been flushed to the client. The caller never `await`s it. This means
+ *    audit write latency is completely invisible to API response time.
+ *
+ * 3. `loadOldValue()` errors are silently swallowed — audit logging NEVER blocks or fails a
+ *    business request.
+ */
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AuditLogInterceptor.name)
@@ -27,7 +44,7 @@ export class AuditLogInterceptor implements NestInterceptor {
       controller,
     ])
 
-    // GATEKEEPER: If no audit decorator, skip immediately
+    // GATEKEEPER: If no audit decorator, skip immediately — zero overhead
     if (!auditOptions) {
       return next.handle()
     }
@@ -44,9 +61,17 @@ export class AuditLogInterceptor implements NestInterceptor {
     const action = auditOptions.action || this.mapMethodToAction(method)
     const entityId = request.params?.id || request.body?.id
 
+    /**
+     * Build the observable that runs the handler and fires the audit write.
+     *
+     * @param oldValue - The entity state captured before the handler ran (null on CREATE).
+     */
     const emit = (oldValue: Record<string, any> | null): Observable<any> =>
       next.handle().pipe(
-        tap(async () => {
+        tap(() => {
+          // Guard: no tenantId = nothing to audit
+          if (!tenantId) return
+
           const auditData = {
             userId: user?.id,
             action,
@@ -62,17 +87,26 @@ export class AuditLogInterceptor implements NestInterceptor {
             userAgent: headers['user-agent'],
           }
 
-          // Log asynchronously (service handles errors internally)
-          if (tenantId) {
-            const ctx = {
-              tenantId,
-              userId: user?.id,
-              user,
-              branchId,
-              warehouseId,
-            } as any
-            await this.auditLogService.log(ctx, auditData)
-          }
+          const ctx = {
+            tenantId,
+            userId: user?.id,
+            user,
+            branchId,
+            warehouseId,
+          } as any
+
+          // ── Fire-and-forget audit write ────────────────────────────────
+          // Defer to the next event-loop tick so this NEVER adds latency to
+          // the HTTP response. The client receives its response first; the DB
+          // insert happens in the background. Errors are swallowed internally
+          // by AuditLogService.log() so they can never surface to the caller.
+          setImmediate(() => {
+            this.auditLogService.log(ctx, auditData).catch((err) => {
+              this.logger.warn(
+                `[AuditLog] Background write failed for ${action} on ${auditOptions.entity}: ${err?.message}`,
+              )
+            })
+          })
         }),
       )
 

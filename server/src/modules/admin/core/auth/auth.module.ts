@@ -15,6 +15,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     RbacModule,
     NotificationModule,
     LoyaltyModule,
+    CacheModule,
     TypeOrmModule.forFeature([SessionEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
