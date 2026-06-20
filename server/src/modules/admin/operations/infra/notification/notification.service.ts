@@ -128,20 +128,24 @@ export class NotificationService {
    * Mark all notifications as read for a user
    */
   async markAllAsRead(ctx: RequestContextDto): Promise<void> {
-    const tenantId = ctx.tenantId || IsNull()
-    const userId = ctx.userId || IsNull()
+    const qb = this.notificationRepository.createQueryBuilder('notification')
+      .update(NotificationEntity)
+      .set({ isRead: true })
+      .where('is_read = :isRead', { isRead: false })
 
-    const notifications = await this.notificationRepository.find({
-      where: [
-        { tenantId, userId, isRead: false },
-        { tenantId, userId: IsNull(), isRead: false },
-      ],
-    })
-
-    for (const notif of notifications) {
-      notif.isRead = true
+    if (ctx.tenantId) {
+      qb.andWhere('tenant_id = :tenantId', { tenantId: ctx.tenantId })
+    } else {
+      qb.andWhere('tenant_id IS NULL')
     }
-    await this.notificationRepository.save(notifications)
+
+    if (ctx.userId) {
+      qb.andWhere('(user_id = :userId OR user_id IS NULL)', { userId: ctx.userId })
+    } else {
+      qb.andWhere('user_id IS NULL')
+    }
+
+    await qb.execute()
   }
 
   /**

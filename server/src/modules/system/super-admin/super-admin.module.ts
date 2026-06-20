@@ -6,6 +6,7 @@ import { UserModule } from '@/modules/admin/core/user/user.module'
 import { AuthModule } from '@/modules/admin/core/auth/auth.module'
 import { OrderModule } from '@/modules/admin/sales/order/order.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.module'
@@ -27,6 +28,7 @@ import { TrafficRepository } from './traffic.repository'
   imports: [
     UserModule,
     TenantModule,
+    MailModule,
     OrderModule,
     ProductModule,
     PageModule,

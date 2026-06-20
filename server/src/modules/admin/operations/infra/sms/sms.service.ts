@@ -1,5 +1,6 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
+import { PlatformSettingsRepository } from '@/modules/system/platform/platform-settings.repository'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import axios from 'axios'
@@ -11,6 +12,7 @@ export class SmsService {
   constructor(
     private readonly configService: ConfigService,
     private readonly settingsService: SettingsService,
+    private readonly platformSettingsRepository: PlatformSettingsRepository,
   ) {}
 
   async sendSms(
@@ -71,21 +73,38 @@ export class SmsService {
   }
 
   private async getCredentials(tenantId: string): Promise<{ apiKey: string; senderId: string }> {
-    // Try to get from tenant settings
+    // 1. Try to get from tenant settings
     if (tenantId) {
-      const settings = await this.settingsService.findByTenantSettings({
-        tenantId,
-      } as RequestContextDto)
+      try {
+        const settings = await this.settingsService.findByTenantSettings({
+          tenantId,
+        } as RequestContextDto)
 
-      if (settings?.sms?.apiKey && settings?.sms?.senderId) {
-        return {
-          apiKey: settings.sms.apiKey,
-          senderId: settings.sms.senderId,
+        if (settings?.sms?.apiKey && settings?.sms?.senderId) {
+          return {
+            apiKey: settings.sms.apiKey,
+            senderId: settings.sms.senderId,
+          }
         }
+      } catch (err: any) {
+        this.logger.error(`Failed to load tenant settings: ${err.message}. Falling back to platform SMS config.`)
       }
     }
 
-    // Fallback to global config
+    // 2. Try to get from platform settings
+    try {
+      const platformSettings = await this.platformSettingsRepository.findSettings()
+      if (platformSettings?.sms?.apiKey && platformSettings?.sms?.senderId) {
+        return {
+          apiKey: platformSettings.sms.apiKey,
+          senderId: platformSettings.sms.senderId,
+        }
+      }
+    } catch (err: any) {
+      this.logger.error(`Failed to load platform settings: ${err.message}. Falling back to environment variables.`)
+    }
+
+    // 3. Fallback to global config
     return {
       apiKey: this.configService.get<string>('BULKSMSBD_API_KEY'),
       senderId: this.configService.get<string>('BULKSMSBD_SENDER_ID'),

@@ -3,20 +3,23 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
-import { Injectable, Logger } from '@nestjs/common'
+import { PlatformSettingsRepository } from '@/modules/system/platform/platform-settings.repository'
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as nodemailer from 'nodemailer'
 
 @Injectable()
-export class MailService {
+export class MailService implements OnModuleDestroy {
   private transporter: nodemailer.Transporter
   private readonly logger = new Logger(MailService.name)
+  private readonly tenantTransporters = new Map<string, { transporter: nodemailer.Transporter; hash: string }>()
 
   constructor(
     private configService: ConfigService,
     private tenantRepo: TenantRepository,
     private settingsService: SettingsService,
     private cacheService: CacheService,
+    private platformSettingsRepository: PlatformSettingsRepository,
   ) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
@@ -29,33 +32,102 @@ export class MailService {
     })
   }
 
+  onModuleDestroy() {
+    this.logger.log('Closing all cached tenant SMTP transporter pools...')
+    for (const { transporter } of this.tenantTransporters.values()) {
+      try {
+        transporter.close()
+      } catch (e: any) {
+        this.logger.error(`Failed to close SMTP transporter pool during shutdown: ${e.message}`)
+      }
+    }
+    this.tenantTransporters.clear()
+  }
+
   private async getTransporter(tenantId: string) {
     this.logger.log(`${this.getTransporter.name} Service Called`)
-    if (!tenantId)
-      return {
-        transporter: this.transporter,
-        from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
+
+    // 1. Try Tenant SMTP Settings if tenantId is provided
+    if (tenantId) {
+      try {
+        const settings = await this.settingsService.findByTenantSettings({
+          tenantId,
+        } as RequestContextDto)
+
+        if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
+          const port = Number(settings.smtp.port) || 587
+          const configHash = `tenant:${settings.smtp.host}:${port}:${settings.smtp.user}:${settings.smtp.pass}:${settings.smtp.from}`
+
+          const cached = this.tenantTransporters.get(tenantId)
+          if (cached && cached.hash === configHash) {
+            return { transporter: cached.transporter, from: settings.smtp.from || settings.smtp.user }
+          }
+
+          if (cached) {
+            try {
+              cached.transporter.close()
+            } catch (e: any) {
+              this.logger.error(`Failed to close old SMTP transporter pool: ${e.message}`)
+            }
+          }
+
+          const tenantTransporter = nodemailer.createTransport({
+            host: settings.smtp.host,
+            port: port,
+            secure: port === 465, // force true for port 465 to avoid socket close errors
+            auth: {
+              user: settings.smtp.user,
+              pass: settings.smtp.pass,
+            },
+          })
+
+          this.tenantTransporters.set(tenantId, { transporter: tenantTransporter, hash: configHash })
+          return { transporter: tenantTransporter, from: settings.smtp.from || settings.smtp.user }
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed to load tenant settings: ${err.message}. Falling back to platform SMTP.`)
       }
-
-    const settings = await this.settingsService.findByTenantSettings({
-      tenantId,
-    } as RequestContextDto)
-
-    if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
-      const port = Number(settings.smtp.port) || 587
-
-      const tenantTransporter = nodemailer.createTransport({
-        host: settings.smtp.host,
-        port: port,
-        secure: port === 465, // force true for port 465 to avoid socket close errors
-        auth: {
-          user: settings.smtp.user,
-          pass: settings.smtp.pass,
-        },
-      })
-      return { transporter: tenantTransporter, from: settings.smtp.from || settings.smtp.user }
     }
 
+    // 2. Try Platform SMTP Settings
+    try {
+      const platformSettings = await this.platformSettingsRepository.findSettings()
+      if (platformSettings && platformSettings.smtp && platformSettings.smtp.host && platformSettings.smtp.user) {
+        const smtp = platformSettings.smtp
+        const port = Number(smtp.port) || 587
+        const configHash = `platform:${smtp.host}:${port}:${smtp.user}:${smtp.pass}:${smtp.from}`
+
+        const cached = this.tenantTransporters.get('platform')
+        if (cached && cached.hash === configHash) {
+          return { transporter: cached.transporter, from: smtp.from || smtp.user }
+        }
+
+        if (cached) {
+          try {
+            cached.transporter.close()
+          } catch (e: any) {
+            this.logger.error(`Failed to close old Platform SMTP transporter pool: ${e.message}`)
+          }
+        }
+
+        const platformTransporter = nodemailer.createTransport({
+          host: smtp.host,
+          port: port,
+          secure: port === 465,
+          auth: {
+            user: smtp.user,
+            pass: smtp.pass,
+          },
+        })
+
+        this.tenantTransporters.set('platform', { transporter: platformTransporter, hash: configHash })
+        return { transporter: platformTransporter, from: smtp.from || smtp.user }
+      }
+    } catch (err: any) {
+      this.logger.error(`Failed to load platform settings: ${err.message}. Falling back to environment variables.`)
+    }
+
+    // 3. Fallback to Env SMTP Settings
     return {
       transporter: this.transporter,
       from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),

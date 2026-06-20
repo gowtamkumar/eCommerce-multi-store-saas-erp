@@ -265,10 +265,15 @@ export class SupplierInvoiceService {
 
       const savedInvoice = await queryRunner.manager.save(SupplierInvoiceEntity, invoice)
 
+      // Lock the supplier record to serialize AP Ledger updates and prevent empty-ledger race conditions
+      await queryRunner.manager.findOne(SupplierEntity, {
+        where: { id: invoice.supplierId, tenantId },
+        lock: { mode: 'pessimistic_write' },
+      })
+
       // 3. Post to Accounts Payable Ledger (Debit, reducing liability)
       const lastEntry = await queryRunner.manager
         .createQueryBuilder(SupplierAPLedgerEntity, 'ap')
-        .setLock('pessimistic_write')
         .where('ap.supplierId = :supplierId', { supplierId: invoice.supplierId })
         .andWhere('ap.tenantId = :tenantId', { tenantId })
         .orderBy('ap.createdAt', 'DESC')

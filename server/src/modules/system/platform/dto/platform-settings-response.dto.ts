@@ -1,4 +1,6 @@
 import { Expose } from 'class-transformer'
+import { SmtpDto } from '@/modules/admin/settings/dto/smtp.dto'
+import { SmsDto } from '@/modules/admin/settings/dto/sms.dto'
 
 export class PlatformSettingsResponseDto {
   @Expose()
@@ -57,6 +59,12 @@ export class PlatformSettingsResponseDto {
 
   @Expose()
   maintenanceMessage: string
+
+  @Expose()
+  smtp: SmtpDto
+
+  @Expose()
+  sms: SmsDto
 
   @Expose()
   createdAt: Date

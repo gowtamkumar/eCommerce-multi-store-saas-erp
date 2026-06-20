@@ -8,6 +8,8 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { FilterUserDto } from '@/modules/admin/core/user/dtos'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import * as crypto from 'crypto'
 import {
   Body,
   Controller,
@@ -19,6 +21,9 @@ import {
   Post,
   Query,
   UseGuards,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common'
 import { SuperAdminCrossTenantRepository } from '../repositories/super-admin-cross-tenant.repository'
 
@@ -36,7 +41,8 @@ export class SuperAdminUsersController {
   constructor(
     private readonly userService: UserService,
     private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
-  ) {}
+    private readonly mailService: MailService,
+  ) { }
 
   @Get('/users')
   async getAllUsers(
@@ -120,16 +126,31 @@ export class SuperAdminUsersController {
   @Post('/users/:id/send-verification')
   @HttpCode(200)
   async sendVerificationEmail(@Param('id') id: string): Promise<BaseApiSuccessResponse<null>> {
-    try {
-      const user = await this.userService.getUser(id)
-      this.logger.log(
-        `Sending verification email to user ${sanitizeLog(id)}: ${sanitizeLog(user?.email)}`,
-      )
-      // The actual email sending would be triggered here via a notification/email service
-      // For now we log and return success — the auth service handles re-sending via existing flows
-    } catch (e: any) {
-      this.logger.warn(`Send verification for ${id}: ${e.message}`)
+    const user = await this.userService.getUser(id)
+    if (!user) {
+      throw new NotFoundException('User not found')
     }
-    return { success: true, statusCode: 200, message: 'Verification email queued', data: null }
+    if (!user.email) {
+      throw new BadRequestException('User does not have an email address')
+    }
+
+    this.logger.log(
+      `Sending verification email to user ${sanitizeLog(id)}: ${sanitizeLog(user?.email)}`,
+    )
+
+    try {
+      let token = user.emailVerificationToken
+      if (!token) {
+        token = crypto.randomBytes(32).toString('hex')
+        await this.userService.updateUser(id, { emailVerificationToken: token } as any)
+      }
+
+      await this.mailService.sendVerificationEmail(user.email, token, user.tenantId)
+    } catch (e: any) {
+      this.logger.error(`Send verification for ${id} failed: ${e.message}`, e.stack)
+      throw new InternalServerErrorException(e.message || 'Failed to send verification email')
+    }
+
+    return { success: true, statusCode: 200, message: 'Verification email sent successfully', data: null }
   }
 }

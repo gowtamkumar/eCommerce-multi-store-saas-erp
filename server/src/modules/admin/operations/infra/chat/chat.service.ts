@@ -57,35 +57,42 @@ export class ChatService {
     senderName: string | null,
     message: string,
   ): Promise<ChatMessageEntity> {
-    const conversation = await this.conversationRepo.findOne({
-      where: { id: conversationId },
+    return await this.messageRepo.manager.transaction(async (em) => {
+      const conversation = await em.findOne(ConversationEntity, {
+        where: { id: conversationId },
+      })
+
+      if (!conversation) {
+        throw new NotFoundException('Conversation not found')
+      }
+
+      const chatMessage = em.create(ChatMessageEntity, {
+        conversationId,
+        senderType,
+        senderId,
+        senderName,
+        message,
+        isRead: false,
+      })
+
+      const savedMessage = await em.save(ChatMessageEntity, chatMessage)
+
+      // Update conversation metadata atomically using TypeORM expression update
+      const updateData: any = { lastMessageAt: new Date() }
+      if (senderType === 'VISITOR') {
+        updateData.unreadCountAdmin = () => '"unread_count_admin" + 1'
+      } else {
+        updateData.unreadCountVisitor = () => '"unread_count_visitor" + 1'
+      }
+
+      await em.createQueryBuilder()
+        .update(ConversationEntity)
+        .set(updateData)
+        .where('id = :conversationId', { conversationId })
+        .execute()
+
+      return savedMessage
     })
-
-    if (!conversation) {
-      throw new NotFoundException('Conversation not found')
-    }
-
-    const chatMessage = this.messageRepo.create({
-      conversationId,
-      senderType,
-      senderId,
-      senderName,
-      message,
-      isRead: false,
-    })
-
-    const savedMessage = await this.messageRepo.save(chatMessage)
-
-    // Update conversation metadata
-    conversation.lastMessageAt = new Date()
-    if (senderType === 'VISITOR') {
-      conversation.unreadCountAdmin += 1
-    } else {
-      conversation.unreadCountVisitor += 1
-    }
-    await this.conversationRepo.save(conversation)
-
-    return savedMessage
   }
 
   /**

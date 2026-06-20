@@ -39,12 +39,14 @@ export class InvoiceService {
       const date = new Date()
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
-      const random = Math.floor(1000 + Math.random() * 9000)
-      invoiceNumber = `INV-${year}${month}-${random}`
 
-      const exists = await this.invoiceRepository.checkInvoiceNumberExists(invoiceNumber, tenantId)
-      if (exists) {
-        invoiceNumber = `INV-${year}${month}-${random + 1}`
+      let attempts = 0
+      let exists = true
+      while (exists && attempts < 5) {
+        attempts++
+        const random = Math.floor(1000 + Math.random() * 9000)
+        invoiceNumber = `INV-${year}${month}-${random}`
+        exists = await this.invoiceRepository.checkInvoiceNumberExists(invoiceNumber, tenantId)
       }
     }
 

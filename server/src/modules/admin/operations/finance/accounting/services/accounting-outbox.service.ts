@@ -67,11 +67,12 @@ export class AccountingOutboxService {
     for (const entry of entries) {
       try {
         await this.dataSource.transaction(async (transactionManager) => {
-          // Lock row to prevent concurrent worker execution
-          const outbox = await transactionManager.findOne(AccountingOutboxEntity, {
-            where: { id: entry.id },
-            lock: { mode: 'pessimistic_write' },
-          })
+          // Lock row using SKIP LOCKED to prevent concurrent worker block/wait
+          const outbox = await transactionManager.createQueryBuilder(AccountingOutboxEntity, 'o')
+            .setLock('pessimistic_write')
+            .setOnLocked('skip_locked')
+            .where('o.id = :id', { id: entry.id })
+            .getOne()
 
           if (!outbox || outbox.status === 'PROCESSED') {
             return

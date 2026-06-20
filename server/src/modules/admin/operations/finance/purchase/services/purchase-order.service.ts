@@ -5,6 +5,7 @@ import { InventoryTransactionReferenceType } from '@/common/enums/inventory-tran
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supplier/enums/supplier-ap-Refernce-type.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
@@ -259,9 +260,13 @@ export class PurchaseOrderService {
 
         // 6. Update Supplier Accounts Payable Ledger
         if (totalGrnCost > 0) {
+          await queryRunner.manager.findOne(SupplierEntity, {
+            where: { id: orderWithItems.supplierId, tenantId },
+            lock: { mode: 'pessimistic_write' },
+          })
+
           const lastEntry = await queryRunner.manager
             .createQueryBuilder(SupplierAPLedgerEntity, 'ap')
-            .setLock('pessimistic_write')
             .where('ap.supplierId = :supplierId', { supplierId: orderWithItems.supplierId })
             .andWhere('ap.tenantId = :tenantId', { tenantId })
             .orderBy('ap.createdAt', 'DESC')

@@ -2,7 +2,7 @@
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/superAdminApi';
-import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard, Search, Bot } from 'lucide-react';
+import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard, Search, Bot, Mail, MessageSquare, Eye, EyeOff } from 'lucide-react';
 import { PlatformAiSetting } from './PlatformAiSetting';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -15,6 +15,9 @@ export default function GlobalSetting() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    const [showSmtpPass, setShowSmtpPass] = useState(false);
+    const [showSmsApiKey, setShowSmsApiKey] = useState(false);
 
     // Cache clearing states for Super Admin
     const [clearing, setClearing] = useState(false);
@@ -158,6 +161,8 @@ export default function GlobalSetting() {
                     { id: 'features', label: 'Features', icon: Zap },
                     { id: 'footer', label: 'Footer', icon: Shield },
                     { id: 'seo', label: 'SEO & Meta', icon: Search },
+                    { id: 'smtp', label: 'SMTP Config', icon: Mail },
+                    { id: 'sms', label: 'SMS Config', icon: MessageSquare },
                     { id: 'ai', label: 'AI', icon: Bot },
                     { id: 'system', label: 'System & Cache', icon: Database },
                 ].map(tab => (
@@ -701,6 +706,138 @@ export default function GlobalSetting() {
                                     description="Recommended size: 1200x630px for optimal social sharing visibility"
                                     aspectRatio="wide"
                                 />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'smtp' && (
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden animate-in fade-in duration-300">
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Mail className="w-5 h-5 text-indigo-600" />
+                                    Platform SMTP Gateway Settings
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">Configure the global platform-wide SMTP server settings. If a tenant has not configured their custom SMTP, the system will use this gateway as a fallback.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">SMTP Host</label>
+                                    <input
+                                        type="text"
+                                        value={settings.smtp?.host || ''}
+                                        onChange={(e) => setSettings({ ...settings, smtp: { ...(settings.smtp || {}), host: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="e.g. smtp.mailgun.org"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">SMTP Port</label>
+                                    <input
+                                        type="number"
+                                        value={settings.smtp?.port || ''}
+                                        onChange={(e) => setSettings({ ...settings, smtp: { ...(settings.smtp || {}), port: e.target.value ? parseInt(e.target.value) : undefined } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="e.g. 587 or 465"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Username</label>
+                                    <input
+                                        type="text"
+                                        value={settings.smtp?.user || ''}
+                                        onChange={(e) => setSettings({ ...settings, smtp: { ...(settings.smtp || {}), user: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="e.g. postmaster@yoursaas.com"
+                                    />
+                                </div>
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSmtpPass(!showSmtpPass)}
+                                            className="text-slate-400 hover:text-indigo-650 transition-colors text-xs font-bold"
+                                        >
+                                            {showSmtpPass ? 'Hide' : 'Show'}
+                                        </button>
+                                    </div>
+                                    <input
+                                        type={showSmtpPass ? 'text' : 'password'}
+                                        value={settings.smtp?.pass || ''}
+                                        onChange={(e) => setSettings({ ...settings, smtp: { ...(settings.smtp || {}), pass: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="SMTP password"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sender Email (From)</label>
+                                    <input
+                                        type="email"
+                                        value={settings.smtp?.from || ''}
+                                        onChange={(e) => setSettings({ ...settings, smtp: { ...(settings.smtp || {}), from: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="e.g. support@yoursaas.com"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-3 pt-8">
+                                    <input
+                                        type="checkbox"
+                                        id="smtpSecure"
+                                        checked={settings.smtp?.secure || false}
+                                        onChange={(e) => setSettings({ ...settings, smtp: { ...(settings.smtp || {}), secure: e.target.checked } })}
+                                        className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-550"
+                                    />
+                                    <label htmlFor="smtpSecure" className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Use Secure SSL/TLS (port 465)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'sms' && (
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden animate-in fade-in duration-300">
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <MessageSquare className="w-5 h-5 text-indigo-600" />
+                                    Platform SMS Gateway Settings
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-1">Configure the global platform-wide SMS gateway. If a tenant has not configured custom SMS credentials, this gateway will be used to send system SMS alerts (like OTP, verification, order notifications).</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">API Key</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSmsApiKey(!showSmsApiKey)}
+                                            className="text-slate-400 hover:text-indigo-650 transition-colors text-xs font-bold"
+                                        >
+                                            {showSmsApiKey ? 'Hide' : 'Show'}
+                                        </button>
+                                    </div>
+                                    <input
+                                        type={showSmsApiKey ? 'text' : 'password'}
+                                        value={settings.sms?.apiKey || ''}
+                                        onChange={(e) => setSettings({ ...settings, sms: { ...(settings.sms || {}), apiKey: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="Enter platform SMS API Key"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sender ID</label>
+                                    <input
+                                        type="text"
+                                        value={settings.sms?.senderId || ''}
+                                        onChange={(e) => setSettings({ ...settings, sms: { ...(settings.sms || {}), senderId: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="Enter approved Sender ID"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
