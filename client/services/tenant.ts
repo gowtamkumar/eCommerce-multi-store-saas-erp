@@ -1,7 +1,5 @@
-"use server";
-import { headers } from "next/headers";
 import nestApiUrl from "../lib/api-url";
-import { authOptions } from "@/lib/authOptions";
+import { getClientTenantId, setClientTenantId } from "../lib/store-tenant-id";
 
 let cachedTenantId: string | null = null;
 let tenantLookupPromise: Promise<string | null> | null = null;
@@ -33,14 +31,16 @@ export async function getTenantId(
 ): Promise<string | null> {
   const isClient = typeof window !== "undefined";
 
-  // 0. Check cache (CLIENT ONLY)
-  if (isClient && cachedTenantId) return cachedTenantId;
-
-  let host: string | null = null;
-  let headerTenantId: string | null = null;
-
   // 1. Client-side resolution
   if (isClient) {
+    if (cachedTenantId) return cachedTenantId;
+
+    const storedId = getClientTenantId();
+    if (storedId) {
+      cachedTenantId = storedId;
+      return storedId;
+    }
+
     if (tenantLookupPromise) return tenantLookupPromise;
 
     const hostname = window.location.hostname;
@@ -70,8 +70,10 @@ export async function getTenantId(
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.data?.id) {
-            cachedTenantId = data.data.id;
-            return cachedTenantId;
+            const tenantId = data.data.id;
+            cachedTenantId = tenantId;
+            setClientTenantId(tenantId);
+            return tenantId;
           }
         }
       } catch (e) {
@@ -86,13 +88,17 @@ export async function getTenantId(
   }
 
   // 2. Server-side resolution (ALWAYS per-request)
-  // 2a. Try to get headers from Request object or next/headers
+  let host: string | null = null;
+  let headerTenantId: string | null = null;
+
+  // Try to get headers from Request object or next/headers
   if (req) {
     host = getHeader(req, "host");
     headerTenantId = getHeader(req, "x-tenant-id");
   } else {
     try {
-      // const { headers } = await import("next/headers");
+      // Dynamic import next/headers so it is never statically compiled/bundled for the browser
+      const { headers } = await import("next/headers");
       const headerList = await headers();
       host = headerList.get("host");
       headerTenantId = headerList.get("x-tenant-id");
@@ -101,12 +107,12 @@ export async function getTenantId(
     }
   }
 
-  // 2b. Check x-tenant-id header
+  // Check x-tenant-id header
   if (headerTenantId) {
     return headerTenantId;
   }
 
-  // 2c. Check hostname/subdomain
+  // Check hostname/subdomain
   if (host) {
     const hostname = host.split(":")[0];
 
@@ -148,11 +154,11 @@ export async function getTenantId(
     }
   }
 
-  // 2d. Check session (Fallback) - DISABLED by default for root domain safety
+  // Check session (Fallback)
   if (allowSessionFallback) {
     try {
       const { getServerSession } = await import("next-auth");
-      // const { authOptions } = await import("../lib/authOptions");
+      const { authOptions } = await import("@/lib/authOptions");
       const session = await getServerSession(authOptions);
       if (session?.user?.tenantId) {
         return session.user.tenantId;

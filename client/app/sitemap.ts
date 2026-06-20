@@ -21,7 +21,7 @@ async function resolveBaseUrl(): Promise<string> {
   const proto = headerList.get('x-forwarded-proto') ?? 'https'
   return (
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
-    (host ? `${proto}://${host}` : 'https://example.com')
+    (host ? `${proto}://${host}` : 'https://luxesaas.com')
   )
 }
 

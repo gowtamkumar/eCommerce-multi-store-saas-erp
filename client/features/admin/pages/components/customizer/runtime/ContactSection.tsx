@@ -1,11 +1,11 @@
 'use client'
 
-import { getSiteSettings } from '@/services/getSettings';
 import { ContactSectionSettings } from '@/types/customizer';
 import { Mail, MapPin, Phone, Sparkles } from 'lucide-react';
 import SectionHeader from "./SectionHeader";
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import ContactForm from '@/features/user/contact/components/ContactForm';
+import { useSettings } from '@/hooks/SettingsContext';
 
 interface ContactSectionProps {
     settings: ContactSectionSettings;
@@ -13,12 +13,8 @@ interface ContactSectionProps {
 }
 
 export default function ContactSection({ settings, styles }: ContactSectionProps) {
-    const [siteSettings, setSiteSettings] = useState<any>(null);
+    const { settings: siteSettings } = useSettings();
     const uid = useMemo(() => `contact-${Math.random().toString(36).substring(2, 9)}`, []);
-
-    useEffect(() => {
-        getSiteSettings().then(setSiteSettings);
-    }, []);
 
     const showInfo = settings?.showInfo !== false;
     const showForm = settings?.showForm !== false;

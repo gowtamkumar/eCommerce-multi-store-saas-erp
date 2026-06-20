@@ -1,6 +1,6 @@
 "use client";
 
-import { DEFAULT_SETTINGS } from '../services/getSettings';
+import { DEFAULT_SETTINGS } from '../services/defaultSettings';
 import { fetchAPI } from '@/services/api';
 import { setClientTenantId } from '@/lib/store-tenant-id';
 import { createContext, useContext, useEffect, useState } from 'react';
