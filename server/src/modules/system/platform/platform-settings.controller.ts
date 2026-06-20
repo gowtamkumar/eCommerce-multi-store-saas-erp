@@ -1,5 +1,5 @@
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { Body, Controller, Get, HttpCode, Logger, Patch, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Logger, Patch, Post, Put, UseGuards, Inject, forwardRef } from '@nestjs/common'
 import { Public } from '@/common/decorators/public.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
@@ -13,6 +13,9 @@ import {
 } from './dto/platform-ai-config.dto'
 import { PlatformSettingsService } from './platform-settings.service'
 import { PlatformAiClientService } from './services/platform-ai-client.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
+import { TestEmailDto, TestSmsDto } from './dto/test-settings.dto'
 
 @Controller('platform/settings')
 export class PlatformSettingsController {
@@ -21,6 +24,10 @@ export class PlatformSettingsController {
   constructor(
     private readonly platformSettingsService: PlatformSettingsService,
     private readonly platformAiClient: PlatformAiClientService,
+    @Inject(forwardRef(() => MailService))
+    private readonly mailService: MailService,
+    @Inject(forwardRef(() => SmsService))
+    private readonly smsService: SmsService,
   ) {}
 
   @Public()
@@ -98,5 +105,35 @@ export class PlatformSettingsController {
         totalTokens: result.totalTokens,
       },
     }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Post('test-email')
+  @HttpCode(200)
+  async testPlatformEmail(@Body() body: TestEmailDto) {
+    await this.mailService.sendGenericEmail({
+      to: body.email,
+      subject: 'Platform SMTP Gateway Test',
+      html: `<p>If you are receiving this message, your Platform SMTP Gateway configuration works correctly!</p>`,
+      tenantId: '',
+    })
+    return { success: true, message: 'Test email dispatched successfully' }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Post('test-sms')
+  @HttpCode(200)
+  async testPlatformSms(@Body() body: TestSmsDto) {
+    const result = await this.smsService.sendSms(
+      body.phone,
+      'Platform SMS Gateway Test: If you receive this, your settings are active and correct!',
+      '',
+    )
+    if (!result.success) {
+      return { success: false, message: 'Failed to send test SMS. Check your API credentials.' }
+    }
+    return { success: true, message: 'Test SMS dispatched successfully', messageId: result.messageId }
   }
 }

@@ -15,10 +15,16 @@ import {
   ShieldCheck,
   XCircle,
   ArrowUpRight,
+  Plus,
+  Send,
+  X,
 } from 'lucide-react';
 import React from 'react';
 import { useNotifications } from '../hooks/useNotifications';
 import { Notification } from '../types';
+import { fetchAPI } from '@/services/api';
+import { fetchSuperAdminAPI } from '@/services/superAdminApi';
+import toast from 'react-hot-toast';
 
 interface NotificationConsoleProps {
   isSystem?: boolean;
@@ -77,6 +83,67 @@ export default function NotificationConsole({
     markAllAsRead,
     handleNotificationClick,
   } = useNotifications({ isSystem });
+
+  const [tenants, setTenants] = React.useState<any[]>([]);
+  const [showBroadcastModal, setShowBroadcastModal] = React.useState(false);
+  const [broadcasting, setBroadcasting] = React.useState(false);
+
+  // Broadcast Form States
+  const [broadcastTitle, setBroadcastTitle] = React.useState('');
+  const [broadcastMessage, setBroadcastMessage] = React.useState('');
+  const [broadcastType, setBroadcastType] = React.useState('INFO');
+  const [broadcastLink, setBroadcastLink] = React.useState('');
+  const [broadcastTarget, setBroadcastTarget] = React.useState('global');
+
+  React.useEffect(() => {
+    if (isSystem) {
+      async function loadTenants() {
+        try {
+          const res = await fetchSuperAdminAPI('/super-admin/tenants');
+          setTenants(res.data || []);
+        } catch (error) {
+          console.error('Failed to load tenants list:', error);
+        }
+      }
+      loadTenants();
+    }
+  }, [isSystem]);
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastTitle || !broadcastMessage) {
+      toast.error('Title and message are required');
+      return;
+    }
+    setBroadcasting(true);
+    try {
+      const headers = { 'x-tenant-id': '' };
+      await fetchAPI('/infra/notifications/broadcast', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          title: broadcastTitle,
+          message: broadcastMessage,
+          type: broadcastType,
+          link: broadcastLink,
+          tenantId: broadcastTarget,
+        }),
+      });
+      toast.success('Broadcast notification dispatched successfully!');
+      setShowBroadcastModal(false);
+      // Reset form
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+      setBroadcastType('INFO');
+      setBroadcastLink('');
+      setBroadcastTarget('global');
+    } catch (error: any) {
+      console.error('Failed to send broadcast:', error);
+      toast.error(error.message || 'Failed to dispatch broadcast notification');
+    } finally {
+      setBroadcasting(false);
+    }
+  };
 
   const onRedirect = (link?: string) => {
     if (!link) return;
@@ -139,14 +206,24 @@ export default function NotificationConsole({
             {description}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={markAllAsRead}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 active:scale-95"
-          >
-            Mark all read
-          </button>
-        )}
+        <div className="flex gap-3">
+          {isSystem && (
+            <button
+              onClick={() => setShowBroadcastModal(true)}
+              className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" /> Send Broadcast
+            </button>
+          )}
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 active:scale-95"
+            >
+              Mark all read
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Main Panel Box */}
@@ -324,6 +401,147 @@ export default function NotificationConsole({
           </div>
         )}
       </div>
+
+      {/* Send Broadcast Modal */}
+      <AnimatePresence>
+        {showBroadcastModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !broadcasting && setShowBroadcastModal(false)}
+              className="absolute inset-0 bg-slate-950/40 dark:bg-slate-955/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl relative z-10 space-y-6"
+            >
+              <button
+                type="button"
+                disabled={broadcasting}
+                onClick={() => setShowBroadcastModal(false)}
+                className="absolute right-6 top-6 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors disabled:opacity-50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-400 rounded-2xl shrink-0">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                    Send Broadcast Notification
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5 font-medium">Compose and dispatch alert notifications across the system.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSendBroadcast} className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Recipient Target</label>
+                  <select
+                    value={broadcastTarget}
+                    onChange={(e) => setBroadcastTarget(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  >
+                    <option value="global">Global Platform Alert (Super Admins Only)</option>
+                    <option value="all">Broadcast to All Tenant Stores (Bulk)</option>
+                    {tenants.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        Single Tenant: {t.name} ({t.subdomain || 'no-subdomain'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Notification Type</label>
+                    <select
+                      value={broadcastType}
+                      onChange={(e) => setBroadcastType(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    >
+                      <option value="INFO">INFO</option>
+                      <option value="SUCCESS">SUCCESS</option>
+                      <option value="WARNING">WARNING</option>
+                      <option value="DANGER">DANGER</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Action Link (Optional)</label>
+                    <input
+                      type="text"
+                      value={broadcastLink}
+                      onChange={(e) => setBroadcastLink(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                      placeholder="e.g. /system/billing"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Notification Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    placeholder="e.g. Scheduled System Maintenance"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Message / Details</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={broadcastMessage}
+                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500 transition-all h-24 resize-none"
+                    placeholder="Provide details about this notification..."
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    disabled={broadcasting}
+                    onClick={() => setShowBroadcastModal(false)}
+                    className="px-5 py-2.5 text-xs font-bold text-slate-650 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-800 rounded-2xl transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={broadcasting}
+                    className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-2xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-750/30 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {broadcasting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Send Broadcast</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

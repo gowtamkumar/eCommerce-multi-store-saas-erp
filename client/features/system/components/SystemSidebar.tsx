@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Activity, Bell, CreditCard, Globe, Layers, LayoutDashboard, Mail, Settings, ShieldAlert, ShieldCheck, Users, X, Zap } from 'lucide-react';
+import { Activity, Bell, CreditCard, Globe, Layers, LayoutDashboard, Mail, Megaphone, Settings, ShieldAlert, ShieldCheck, Users, X, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMenuOpen: boolean; setIsMobileMenuOpen: (open: boolean) => void }) {
@@ -15,6 +15,7 @@ export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }:
         { icon: Layers, label: 'Subscription Plans', href: '/system/plans' },
         { icon: Zap, label: 'Addon Catalog', href: '/system/addons' },
         { icon: Mail, label: 'Subscribers', href: '/system/subscribers' },
+        { icon: Megaphone, label: 'Campaigns', href: '/system/campaigns' },
         { icon: CreditCard, label: 'Billing & Revenue', href: '/system/billing' },
         { icon: ShieldAlert, label: 'Security', href: '/system/security' },
         { icon: Settings, label: 'Global Settings', href: '/system/settings' },

@@ -2,6 +2,9 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
 import {
   Controller,
   DefaultValuePipe,
@@ -11,6 +14,8 @@ import {
   Patch,
   Query,
   UseGuards,
+  Post,
+  Body,
 } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { NotificationEntity } from './entities/notification.entity'
@@ -86,6 +91,46 @@ export class NotificationController {
       statusCode: 200,
       message: 'Notification marked as read',
       data: null,
+    }
+  }
+
+  @Post('broadcast')
+  @Roles(UserRole.SUPER_ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiOperation({ summary: 'Broadcast a global, bulk, or tenant-specific notification' })
+  async broadcastNotification(
+    @Body() dto: { title: string; message: string; type?: string; link?: string; tenantId?: string },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    if (dto.tenantId === 'all') {
+      const notifications = await this.notificationService.broadcastToAllTenants({
+        title: dto.title,
+        message: dto.message,
+        type: dto.type,
+        link: dto.link,
+      })
+      return {
+        success: true,
+        statusCode: 201,
+        message: `Notification broadcasted to ${notifications.length} tenants`,
+        data: null,
+      }
+    } else {
+      const targetTenantId = dto.tenantId && dto.tenantId !== 'global' ? dto.tenantId : null
+      const notification = await this.notificationService.createNotification(
+        {
+          title: dto.title,
+          message: dto.message,
+          type: dto.type,
+          link: dto.link,
+        },
+        targetTenantId,
+      )
+      return {
+        success: true,
+        statusCode: 201,
+        message: 'Notification broadcasted successfully',
+        data: notification,
+      }
     }
   }
 }

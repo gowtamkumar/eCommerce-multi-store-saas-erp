@@ -19,6 +19,56 @@ export default function GlobalSetting() {
     const [showSmtpPass, setShowSmtpPass] = useState(false);
     const [showSmsApiKey, setShowSmsApiKey] = useState(false);
 
+    // SMTP & SMS Test States
+    const [testEmail, setTestEmail] = useState('');
+    const [testingEmail, setTestingEmail] = useState(false);
+    const [testPhone, setTestPhone] = useState('');
+    const [testingPhone, setTestingPhone] = useState(false);
+
+    const handleTestEmail = async () => {
+        if (!testEmail) {
+            toast.error('Please enter a test email address');
+            return;
+        }
+        setTestingEmail(true);
+        try {
+            await fetchAPI('/platform/settings/test-email', {
+                method: 'POST',
+                body: JSON.stringify({ email: testEmail }),
+            });
+            toast.success('Test email sent successfully!');
+        } catch (error: any) {
+            console.error('Failed to send test email:', error);
+            toast.error(error.message || 'Failed to send test email');
+        } finally {
+            setTestingEmail(false);
+        }
+    };
+
+    const handleTestPhone = async () => {
+        if (!testPhone) {
+            toast.error('Please enter a test phone number');
+            return;
+        }
+        setTestingPhone(true);
+        try {
+            const res = await fetchAPI('/platform/settings/test-sms', {
+                method: 'POST',
+                body: JSON.stringify({ phone: testPhone }),
+            });
+            if (res.success) {
+                toast.success(res.message || 'Test SMS sent successfully!');
+            } else {
+                toast.error(res.message || 'Failed to send test SMS');
+            }
+        } catch (error: any) {
+            console.error('Failed to send test SMS:', error);
+            toast.error(error.message || 'Failed to send test SMS');
+        } finally {
+            setTestingPhone(false);
+        }
+    };
+
     // Cache clearing states for Super Admin
     const [clearing, setClearing] = useState(false);
     const [clearingAll, setClearingAll] = useState(false);
@@ -793,6 +843,38 @@ export default function GlobalSetting() {
                                     <label htmlFor="smtpSecure" className="text-sm font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Use Secure SSL/TLS (port 465)</label>
                                 </div>
                             </div>
+
+                            {/* Test Connection Section */}
+                            <div className="pt-6 border-t border-slate-100 dark:border-slate-700 space-y-4">
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                    <Mail className="w-4 h-4 text-indigo-500" />
+                                    Test SMTP Configuration
+                                </h4>
+                                <p className="text-xs text-slate-500">
+                                    Send a verification test email to verify that your SMTP credentials and port configs are set up correctly. Please click "Save Changes" first if you have edited the SMTP settings.
+                                </p>
+                                <div className="flex gap-4 items-end max-w-md">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Recipient Email</label>
+                                        <input
+                                            type="email"
+                                            value={testEmail}
+                                            onChange={(e) => setTestEmail(e.target.value)}
+                                            className="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="test@example.com"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleTestEmail}
+                                        disabled={testingEmail}
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70 text-xs h-[38px] cursor-pointer"
+                                    >
+                                        {testingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                                        Send Test Email
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -837,6 +919,38 @@ export default function GlobalSetting() {
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                         placeholder="Enter approved Sender ID"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Test Connection Section */}
+                            <div className="pt-6 border-t border-slate-100 dark:border-slate-700 space-y-4">
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                    <MessageSquare className="w-4 h-4 text-indigo-500" />
+                                    Test SMS Configuration
+                                </h4>
+                                <p className="text-xs text-slate-500">
+                                    Send a verification test SMS to verify that your API credentials and sender ID are set up correctly. Please click "Save Changes" first if you have edited the SMS settings.
+                                </p>
+                                <div className="flex gap-4 items-end max-w-md">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Recipient Phone Number</label>
+                                        <input
+                                            type="text"
+                                            value={testPhone}
+                                            onChange={(e) => setTestPhone(e.target.value)}
+                                            className="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="e.g. +8801700000000"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleTestPhone}
+                                        disabled={testingPhone}
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70 text-xs h-[38px] cursor-pointer"
+                                    >
+                                        {testingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
+                                        Send Test SMS
+                                    </button>
                                 </div>
                             </div>
                         </div>

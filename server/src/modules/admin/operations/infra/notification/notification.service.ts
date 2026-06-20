@@ -13,6 +13,10 @@ export interface CreateNotificationDto {
   link?: string
 }
 
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+
+
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name)
@@ -20,6 +24,8 @@ export class NotificationService {
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
+    @InjectRepository(TenantEntity)
+    private readonly tenantRepository: Repository<TenantEntity>,
     private readonly notificationGateway: NotificationGateway,
   ) {}
 
@@ -161,5 +167,27 @@ export class NotificationService {
         { tenantId, userId: IsNull(), isRead: false },
       ],
     })
+  }
+
+  /**
+   * Broadcast a notification to all active tenants (bulk)
+   */
+  async broadcastToAllTenants(dto: CreateNotificationDto): Promise<NotificationEntity[]> {
+    const tenants = await this.tenantRepository.find({
+      select: { id: true },
+      where: { status: TenantStatus.ACTIVE },
+    })
+    const notifications: NotificationEntity[] = []
+
+    for (const tenant of tenants) {
+      try {
+        const notif = await this.createNotification(dto, tenant.id)
+        notifications.push(notif)
+      } catch (err: any) {
+        this.logger.error(`Failed to send bulk notification to tenant ${tenant.id}: ${err.message}`)
+      }
+    }
+
+    return notifications
   }
 }

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { NotificationEntity } from './entities/notification.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { NotificationGateway } from './notification.gateway'
 import { NotificationService } from './notification.service'
 
@@ -36,6 +37,17 @@ describe('NotificationService', () => {
               getMany: jest.fn().mockResolvedValue([]),
               getOne: jest.fn().mockResolvedValue(null),
             })),
+          },
+        },
+        {
+          provide: getRepositoryToken(TenantEntity),
+          useValue: {
+            find: jest.fn(),
+            findOne: jest.fn(),
+            save: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
           },
         },
         {

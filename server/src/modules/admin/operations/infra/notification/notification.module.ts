@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { NotificationEntity } from './entities/notification.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { NotificationController } from './notification.controller'
 import { NotificationGateway } from './notification.gateway'
 import { NotificationService } from './notification.service'
@@ -10,7 +11,7 @@ import { getJwtSecret } from '@/common/utils/jwt-secret.util'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationEntity]),
+    TypeOrmModule.forFeature([NotificationEntity, TenantEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

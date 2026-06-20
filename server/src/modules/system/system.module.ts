@@ -5,6 +5,7 @@ import { SubscriptionBillingModule } from './subscription-billing/subscription-b
 import { SubscriptionPlanModule } from './subscription-plan/subscription-plan.module'
 import { SuperAdminModule } from './super-admin/super-admin.module'
 import { OrganizationModule } from './organization/organization.module'
+import { PlatformCampaignModule } from './platform-campaign/platform-campaign.module'
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { OrganizationModule } from './organization/organization.module'
     SubscriptionPlanModule,
     SubscriptionBillingModule,
     OrganizationModule,
+    PlatformCampaignModule,
   ],
   exports: [
     AuditLogModule,
@@ -22,6 +24,7 @@ import { OrganizationModule } from './organization/organization.module'
     SubscriptionPlanModule,
     SubscriptionBillingModule,
     OrganizationModule,
+    PlatformCampaignModule,
   ],
 })
 export class SystemModule {}
