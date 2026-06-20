@@ -5,16 +5,22 @@ import { fetchSuperAdminAPI } from '@/services/superAdminApi';
 import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard, Search, Bot, Mail, MessageSquare, Eye, EyeOff } from 'lucide-react';
 import { PlatformAiSetting } from './PlatformAiSetting';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GlobalSetting() {
     const searchParams = useSearchParams();
+    const params = useParams();
     const [settings, setSettings] = useState<any>(null);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    const handleTabChange = (tabId: string) => {
+        setActiveTab(tabId);
+        window.history.pushState({}, '', `/system/settings/${tabId}`);
+    };
 
     const [showSmtpPass, setShowSmtpPass] = useState(false);
     const [showSmsApiKey, setShowSmsApiKey] = useState(false);
@@ -78,11 +84,15 @@ export default function GlobalSetting() {
     const [showTenantConfirm, setShowTenantConfirm] = useState(false);
 
     useEffect(() => {
-        const tab = searchParams.get('tab');
+        const tabParam = params?.tab;
+        const tab = (Array.isArray(tabParam) ? tabParam[0] : tabParam) || searchParams.get('tab');
         if (tab) {
             setActiveTab(tab);
+        } else {
+            setActiveTab('dashboard');
+            window.history.replaceState({}, '', '/system/settings/dashboard');
         }
-    }, [searchParams]);
+    }, [params, searchParams]);
 
     useEffect(() => {
         async function loadSettings() {
@@ -200,34 +210,6 @@ export default function GlobalSetting() {
                         Save Changes
                     </button>
                 </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit">
-                {[
-                    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-                    { id: 'identity', label: 'Identity', icon: Globe },
-                    { id: 'hero', label: 'Hero Section', icon: Layout },
-                    { id: 'features', label: 'Features', icon: Zap },
-                    { id: 'footer', label: 'Footer', icon: Shield },
-                    { id: 'seo', label: 'SEO & Meta', icon: Search },
-                    { id: 'smtp', label: 'SMTP Config', icon: Mail },
-                    { id: 'sms', label: 'SMS Config', icon: MessageSquare },
-                    { id: 'ai', label: 'AI', icon: Bot },
-                    { id: 'system', label: 'System & Cache', icon: Database },
-                ].map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === tab.id
-                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                            }`}
-                    >
-                        <tab.icon className="w-4 h-4" />
-                        {tab.label}
-                    </button>
-                ))}
             </div>
 
              <div className="max-w-5xl space-y-6">
