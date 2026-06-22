@@ -16,4 +16,13 @@ export class PaymentDto {
   @IsBoolean()
   @IsOptional()
   sslCommerzIsSandbox?: boolean
+  @IsString()
+  @IsOptional()
+  paypalClientId?: string
+  @IsString()
+  @IsOptional()
+  paypalClientSecret?: string
+  @IsString()
+  @IsOptional()
+  paypalMode?: string
 }

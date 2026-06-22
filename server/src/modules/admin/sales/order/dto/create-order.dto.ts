@@ -49,8 +49,8 @@ export class CreateOrderDto {
   customerEmail: string
 
   @IsString()
-  @Matches(/^01\d{9}$/, {
-    message: 'Customer phone must be a valid 11-digit Bangladeshi number starting with 01',
+  @Matches(/^\+?[0-9\s\-]{7,20}$/, {
+    message: 'Customer phone must be a valid phone number (7 to 20 digits, spaces or hyphens allowed)',
   })
   customerPhone: string
 

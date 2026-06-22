@@ -101,6 +101,47 @@ const SSLCommerzConfigSection = memo(({ payment, onChange }: any) => (
 
 SSLCommerzConfigSection.displayName = "SSLCommerzConfigSection";
 
+const PaypalConfigSection = memo(({ payment, onChange }: any) => (
+    <div className="space-y-1.5 md:col-span-2">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+            PayPal Configuration
+        </h3>
+        <div className="space-y-4">
+            <InputField
+                label="Client ID"
+                value={payment.paypalClientId || ""}
+                onChange={(val: string) => onChange("paypalClientId", val)}
+                placeholder="Enter PayPal Client ID"
+            />
+            <InputField
+                label="Client Secret"
+                isSecret
+                value={payment.paypalClientSecret || ""}
+                onChange={(val: string) => onChange("paypalClientSecret", val)}
+                placeholder="Enter PayPal Client Secret"
+            />
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Mode
+                </label>
+                <select
+                    value={payment.paypalMode || "sandbox"}
+                    onChange={(e) => onChange("paypalMode", e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                >
+                    <option value="sandbox">Sandbox</option>
+                    <option value="live">Live</option>
+                </select>
+                <p className="text-xs text-slate-500 pl-1">
+                    Select Live for production environment, Sandbox for testing.
+                </p>
+            </div>
+        </div>
+    </div>
+));
+
+PaypalConfigSection.displayName = "PaypalConfigSection";
+
 function PaymentSetting({ formData, setFormData }: any) {
     const handlePaymentChange = React.useCallback((field: string, value: any) => {
         setFormData((prev: any) => ({
@@ -136,6 +177,13 @@ function PaymentSetting({ formData, setFormData }: any) {
                 <div className="w-full h-px bg-slate-200 dark:bg-slate-800 md:col-span-2" />
 
                 <SSLCommerzConfigSection 
+                    payment={formData.payment} 
+                    onChange={handlePaymentChange} 
+                />
+
+                <div className="w-full h-px bg-slate-200 dark:bg-slate-800 md:col-span-2" />
+
+                <PaypalConfigSection 
                     payment={formData.payment} 
                     onChange={handlePaymentChange} 
                 />

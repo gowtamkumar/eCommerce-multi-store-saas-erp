@@ -9,6 +9,9 @@ export interface ShippingAddress {
     address: string;
     city?: string;
     zone?: ShippingZoneType;
+    country?: string;
+    state?: string;
+    postalCode?: string;
     isDefault: boolean;
 }
 
@@ -19,6 +22,9 @@ export interface CreateShippingAddressPayload {
     label?: string;
     city?: string;
     zone?: ShippingZoneType;
+    country?: string;
+    state?: string;
+    postalCode?: string;
     isDefault?: boolean;
 }
 

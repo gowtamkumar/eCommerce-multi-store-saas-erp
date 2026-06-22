@@ -64,7 +64,15 @@ export class OrderCheckoutService {
             createOrderDto.shippingAddressId,
             ctx,
           )
-          resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`
+          const addressParts = [
+            savedAddress.recipientName,
+            savedAddress.address,
+            savedAddress.city,
+            savedAddress.state,
+            savedAddress.postalCode,
+            savedAddress.country,
+          ].filter(Boolean)
+          resolvedAddress = addressParts.join(', ')
         } catch (err: any) {
           this.logger.error('Failed to resolve shipping address', err)
         }

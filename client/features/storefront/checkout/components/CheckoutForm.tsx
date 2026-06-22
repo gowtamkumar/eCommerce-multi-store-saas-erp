@@ -150,19 +150,60 @@ const CheckoutForm = React.memo(({
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone *</label>
                                 <input
-                                    value={newAddressForm.phone}
-                                    onChange={e => onNewAddressChange('phone', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                                    value={newAddressForm.phone || ""}
+                                    onChange={e => onNewAddressChange('phone', e.target.value.replace(/[^\d+ -]/g, '').slice(0, 20))}
                                     required
-                                    placeholder="017XXXXXXXX"
+                                    placeholder="e.g. +1 555-0199 or 017xxxxxxxx"
                                     className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none"
                                 />
                             </div>
                             <div className="space-y-1">
+                                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Country *</label>
+                                <select
+                                    value={newAddressForm.country || "BD"}
+                                    onChange={e => onNewAddressChange('country', e.target.value)}
+                                    required
+                                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none"
+                                >
+                                    <option value="BD">Bangladesh</option>
+                                    <option value="US">United States</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="AU">Australia</option>
+                                    <option value="DE">Germany</option>
+                                    <option value="FR">France</option>
+                                    <option value="IN">India</option>
+                                    <option value="SG">Singapore</option>
+                                    <option value="MY">Malaysia</option>
+                                    <option value="AE">United Arab Emirates</option>
+                                    <option value="SA">Saudi Arabia</option>
+                                </select>
+                            </div>
+                            <div className="space-y-1">
                                 <label className="text-xs font-medium text-slate-600 dark:text-slate-400">City</label>
                                 <input
-                                    value={newAddressForm.city}
+                                    value={newAddressForm.city || ""}
                                     onChange={e => onNewAddressChange('city', e.target.value)}
                                     className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none"
+                                    placeholder="Dhaka"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">State / Region</label>
+                                <input
+                                    value={newAddressForm.state || ""}
+                                    onChange={e => onNewAddressChange('state', e.target.value)}
+                                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none"
+                                    placeholder="California"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Postal / ZIP Code</label>
+                                <input
+                                    value={newAddressForm.postalCode || ""}
+                                    onChange={e => onNewAddressChange('postalCode', e.target.value)}
+                                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none"
+                                    placeholder="1207"
                                 />
                             </div>
                         </div>
@@ -248,7 +289,7 @@ const CheckoutForm = React.memo(({
                             Payment Method
                         </label>
                         <div className="grid grid-cols-2 gap-4">
-                            {[PaymentMethod.COD, PaymentMethod.SSLCOMMERZ].map(method => (
+                            {[PaymentMethod.COD, PaymentMethod.SSLCOMMERZ, PaymentMethod.STRIPE, PaymentMethod.PAYPAL].map(method => (
                                 <button
                                     key={method}
                                     type="button"
@@ -266,7 +307,9 @@ const CheckoutForm = React.memo(({
                                     )}
                                     {method === PaymentMethod.COD ? <Truck className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
                                     <span className="font-semibold text-sm">
-                                        {method === PaymentMethod.COD ? 'Cash on Delivery' : 'Online Payment'}
+                                        {method === PaymentMethod.COD ? 'Cash on Delivery' : 
+                                         method === PaymentMethod.SSLCOMMERZ ? 'SSLCommerz' :
+                                         method === PaymentMethod.STRIPE ? 'Stripe' : 'PayPal'}
                                     </span>
                                 </button>
                             ))}

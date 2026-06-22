@@ -25,6 +25,15 @@ export class ShippingAddressEntity extends BaseEntity {
   @Column({ type: 'enum', enum: ShippingZoneType, nullable: true })
   zone: ShippingZoneType
 
+  @Column({ type: 'varchar', length: 100, default: 'BD' })
+  country: string
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  state: string
+
+  @Column({ type: 'varchar', name: 'postal_code', length: 20, nullable: true })
+  postalCode: string
+
   @Column({ type: 'boolean', name: 'is_default', default: false })
   isDefault: boolean
 }

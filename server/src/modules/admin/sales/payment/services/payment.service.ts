@@ -94,11 +94,21 @@ export class PaymentService {
         tenantId: order.tenantId,
       } as RequestContextDto)
       const verification = await strategy.verifyTransaction({
-        valId: gatewayResponse?.val_id ?? gatewayResponse?.value_id ?? gatewayResponse?.['VAL_ID'],
+        valId:
+          gatewayResponse?.val_id ??
+          gatewayResponse?.value_id ??
+          gatewayResponse?.['VAL_ID'] ??
+          gatewayResponse?.session_id ??
+          gatewayResponse?.token,
         transactionId: tran_id,
-        storeId: (settings as any)?.payment?.sslCommerzStoreId,
-        storePassword: (settings as any)?.payment?.sslCommerzStorePassword,
-        isSandbox: !!(settings as any)?.payment?.sslCommerzIsSandbox,
+        storeId: (settings as any)?.payment?.sslCommerzStoreId || (settings as any)?.payment?.paypalClientId,
+        storePassword:
+          (settings as any)?.payment?.sslCommerzStorePassword ||
+          (settings as any)?.payment?.stripeSecretKey ||
+          (settings as any)?.payment?.paypalClientSecret,
+        isSandbox:
+          !!(settings as any)?.payment?.sslCommerzIsSandbox ||
+          (settings as any)?.payment?.paypalMode === 'sandbox',
         expectedAmount: Number(order.totalAmount) / (Number(order.currencyRate) || 1),
         expectedCurrency: order.currency || 'BDT',
       })

@@ -1,7 +1,7 @@
 import { Audit } from '@/common/decorators/audit.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
-import { Body, Controller, Post, Query, Res, Logger, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Query, Res, Logger, UseGuards } from '@nestjs/common'
 // import { Throttle } from '@nestjs/throttler'
 import { Response } from 'express'
 import { InitPaymentDto } from '../dto/payment.dto'
@@ -41,7 +41,6 @@ export class PaymentActionController {
   // Redirect endpoints — cannot return JSON wrappers as they perform HTTP redirects
   @Post('success')
   @RequirePermissions(SystemPermissions.PAYMENTS_READ)
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async success(
     @Query('tran_id') tran_id: string,
     @Body() gatewayResponse: any,
@@ -57,8 +56,24 @@ export class PaymentActionController {
     return res.redirect(redirectUrl)
   }
 
-  @Post('fail')
+  @Get('success')
   @RequirePermissions(SystemPermissions.PAYMENTS_READ)
+  async successGet(
+    @Query('tran_id') tran_id: string,
+    @Query() query: any,
+    @Res() res: Response,
+  ) {
+    await this.paymentService.handleSuccessPayment(tran_id, query)
+    const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const redirectUrl = await this.paymentService.getRedirectUrl(
+      tran_id,
+      query,
+      defaultAppUrl,
+    )
+    return res.redirect(redirectUrl)
+  }
+
+  @Post('fail')
   @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async fail(
     @Query('tran_id') tran_id: string,
@@ -75,8 +90,24 @@ export class PaymentActionController {
     return res.redirect(redirectUrl)
   }
 
-  @Post('cancel')
+  @Get('fail')
   @RequirePermissions(SystemPermissions.PAYMENTS_READ)
+  async failGet(
+    @Query('tran_id') tran_id: string,
+    @Query() query: any,
+    @Res() res: Response,
+  ) {
+    await this.paymentService.handleFailPayment(tran_id, query)
+    const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const redirectUrl = await this.paymentService.getRedirectUrl(
+      tran_id,
+      query,
+      defaultAppUrl,
+    )
+    return res.redirect(redirectUrl)
+  }
+
+  @Post('cancel')
   @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async cancel(
     @Query('tran_id') tran_id: string,
@@ -88,6 +119,23 @@ export class PaymentActionController {
     const redirectUrl = await this.paymentService.getRedirectUrl(
       tran_id,
       gatewayResponse,
+      defaultAppUrl,
+    )
+    return res.redirect(redirectUrl)
+  }
+
+  @Get('cancel')
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
+  async cancelGet(
+    @Query('tran_id') tran_id: string,
+    @Query() query: any,
+    @Res() res: Response,
+  ) {
+    await this.paymentService.handleCancelPayment(tran_id, query)
+    const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const redirectUrl = await this.paymentService.getRedirectUrl(
+      tran_id,
+      query,
       defaultAppUrl,
     )
     return res.redirect(redirectUrl)

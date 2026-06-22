@@ -67,6 +67,9 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
             sslCommerzStoreId: "",
             sslCommerzStorePassword: "",
             sslCommerzIsSandbox: false,
+            paypalClientId: "",
+            paypalClientSecret: "",
+            paypalMode: "sandbox",
         },
         pathaoCourier: {
             pathaoClientId: "",
@@ -229,6 +232,9 @@ export function AdminSettingsProvider({ children }: { children: React.ReactNode 
                         sslCommerzStoreId: data.payment?.sslCommerzStoreId || "",
                         sslCommerzStorePassword: data.payment?.sslCommerzStorePassword || "",
                         sslCommerzIsSandbox: data.payment?.sslCommerzIsSandbox || false,
+                        paypalClientId: data.payment?.paypalClientId || "",
+                        paypalClientSecret: data.payment?.paypalClientSecret || "",
+                        paypalMode: data.payment?.paypalMode || "sandbox",
                     },
                     pathaoCourier: {
                         pathaoClientId: data.pathaoCourier?.pathaoClientId || "",

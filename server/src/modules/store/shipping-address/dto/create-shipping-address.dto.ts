@@ -7,7 +7,7 @@ export class CreateShippingAddressDto {
   recipientName: string
 
   @IsString()
-  @Matches(/^01\d{9}$/, { message: 'Phone must be a valid 11-digit BD number starting with 01' })
+  @Matches(/^\+?[0-9\s\-]{7,20}$/, { message: 'Phone must be a valid phone number (7 to 20 digits, spaces or hyphens allowed)' })
   phone: string
 
   @IsString()
@@ -25,6 +25,18 @@ export class CreateShippingAddressDto {
   @IsEnum(ShippingZoneType)
   @IsOptional()
   zone?: ShippingZoneType
+
+  @IsString()
+  @IsOptional()
+  country?: string
+
+  @IsString()
+  @IsOptional()
+  state?: string
+
+  @IsString()
+  @IsOptional()
+  postalCode?: string
 
   @IsBoolean()
   @IsOptional()

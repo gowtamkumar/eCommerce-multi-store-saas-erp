@@ -4,7 +4,7 @@ import { ContactSectionSettings } from '@/types/customizer';
 import { Mail, MapPin, Phone, Sparkles } from 'lucide-react';
 import SectionHeader from "./SectionHeader";
 import { useMemo } from 'react';
-import ContactForm from '@/features/user/contact/components/ContactForm';
+import ContactForm from '@/features/storefront/contact/components/ContactForm';
 import { useSettings } from '@/hooks/SettingsContext';
 
 interface ContactSectionProps {

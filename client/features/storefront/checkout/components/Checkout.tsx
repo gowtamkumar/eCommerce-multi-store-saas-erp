@@ -58,6 +58,9 @@ export default function Checkout() {
         address: '',
         city: '',
         zone: ShippingZoneType.INSIDE,
+        country: 'BD',
+        state: '',
+        postalCode: '',
     });
 
     const [formData, setFormData] = useState({
@@ -162,7 +165,9 @@ export default function Checkout() {
         e.preventDefault();
         if (items.length === 0 || loading) return;
 
-        if (addingNewAddress && !/^01\d{9}$/.test(newAddressForm.phone)) {
+        const paymentGateways = [PaymentMethod.SSLCOMMERZ, PaymentMethod.STRIPE, PaymentMethod.PAYPAL];
+
+        if (addingNewAddress && !/^\+?[0-9\s\-]{7,20}$/.test(newAddressForm.phone)) {
             toast.error("Invalid phone number");
             return;
         }
@@ -247,7 +252,7 @@ export default function Checkout() {
             if (!orderJson.success) throw new Error(orderJson.error || "Failed to create order");
 
             const order = orderJson.data?.order;
-            if (paymentMethod === PaymentMethod.SSLCOMMERZ && order?.paymentStatus !== 'PAID') {
+            if (paymentGateways.includes(paymentMethod) && order?.paymentStatus !== 'PAID') {
                 const paymentJson = await fetchAPI("/payment/init", {
                     method: "POST",
                     body: JSON.stringify({ orderId: order.id, callbackUrl: `${window.location.origin}/api/payment` }),
@@ -265,7 +270,7 @@ export default function Checkout() {
         } catch (error: any) {
             toast.error(error.message || "Checkout failed");
         } finally {
-            if (paymentMethod !== PaymentMethod.SSLCOMMERZ || (lastOrder && lastOrder.paymentStatus === 'PAID')) setLoading(false);
+            if (!paymentGateways.includes(paymentMethod) || (lastOrder && lastOrder.paymentStatus === 'PAID')) setLoading(false);
         }
     };
 
