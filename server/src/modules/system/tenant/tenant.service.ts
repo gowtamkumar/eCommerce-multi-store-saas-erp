@@ -47,6 +47,7 @@ import { BranchEntity } from '@/modules/system/organization/entities/branch.enti
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-register.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
+import { getSymbolForCurrency, getCurrencyName, getLocaleForCountry } from './utils/localization.util'
 
 export interface CreateTenantResponseDto {
   tenant: TenantEntity
@@ -108,6 +109,9 @@ export class TenantService {
       email,
       password,
       subscriptionBillingCycle,
+      country,
+      baseCurrency,
+      timezone,
     } = createTenantDto
 
     let subdomain: string
@@ -272,6 +276,18 @@ export class TenantService {
           brandName: storeName,
           siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
           contactEmail: email,
+          currency: baseCurrency,
+          currencySymbol: getSymbolForCurrency(baseCurrency),
+          supportedCurrencies: [
+            {
+              code: baseCurrency,
+              symbol: getSymbolForCurrency(baseCurrency),
+              rate: 1,
+              name: getCurrencyName(baseCurrency),
+            },
+          ],
+          timezone: timezone,
+          locale: getLocaleForCountry(country),
         },
         manager,
       )

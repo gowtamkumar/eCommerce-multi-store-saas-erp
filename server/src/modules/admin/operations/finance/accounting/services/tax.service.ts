@@ -7,6 +7,7 @@ import { AccountEntity } from '../entities/account.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
 import { AccountType, AccountCategory } from '@/common/enums/account-type.enum'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 
 @Injectable()
 export class TaxService {
@@ -153,30 +154,93 @@ export class TaxService {
    * Dynamically calculates multi-jurisdiction tax rate and amounts.
    * Scopes down by country, state, and rate classification.
    */
+  async getTenantCountry(tenantId: string, manager?: EntityManager): Promise<string> {
+    const repo = manager ? manager.getRepository(SiteSettingsEntity) : this.dataSource.getRepository(SiteSettingsEntity)
+    const settings = await repo.findOne({ where: { tenantId } })
+    if (settings?.locale) {
+      const parts = settings.locale.split(/[-_]/)
+      if (parts.length > 1) {
+        return parts[1].toUpperCase()
+      }
+    }
+    return 'US' // fallback
+  }
+
+  /**
+   * Dynamically calculates multi-jurisdiction tax rate and amounts.
+   * Scopes down by country, state, and rate classification.
+   * Supports standard US ZIP calculations and EU VAT reverse charges.
+   */
   async calculateTax(
     ctx: RequestContextDto,
     payload: { country: string; state?: string; category?: TaxCategory; baseAmount: number },
+    manager?: EntityManager,
   ) {
-    const repo = this.dataSource.getRepository(TaxRuleEntity)
+    const em = manager || this.dataSource.manager
     const tenantId = ctx.tenantId
 
-    // 1. Resolve rule based on country specificity and category
+    const customerCountry = payload.country.toUpperCase()
+    let targetState = payload.state || null
+
+    // 1. Resolve US ZIP codes to States
+    if (customerCountry === 'US' && targetState) {
+      const cleaned = targetState.trim()
+      if (/^\d{5}(-\d{4})?$/.test(cleaned) || /^\d{5}$/.test(cleaned.substring(0, 5))) {
+        const prefix = cleaned.substring(0, 1)
+        if (prefix === '9') {
+          targetState = 'CA'
+        } else if (prefix === '1') {
+          targetState = 'NY'
+        } else if (prefix === '7') {
+          targetState = 'TX'
+        }
+      }
+    }
+
+    // 2. Resolve EU VAT Reverse Charge rules
+    const EU_COUNTRIES = new Set([
+      'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI',
+      'FR', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT',
+      'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK', 'EL'
+    ])
+
+    const tenantCountry = await this.getTenantCountry(tenantId, em)
+    if (
+      EU_COUNTRIES.has(tenantCountry) &&
+      EU_COUNTRIES.has(customerCountry) &&
+      tenantCountry !== customerCountry
+    ) {
+      return {
+        rate: 0,
+        ruleName: 'EU VAT Reverse Charge (0%)',
+        taxAmount: 0,
+        baseAmount: payload.baseAmount,
+        totalAmount: payload.baseAmount,
+        category: payload.category || TaxCategory.STANDARD,
+        country: payload.country,
+        state: payload.state || null,
+      }
+    }
+
+    const repo = em.getRepository(TaxRuleEntity)
+
+    // 3. Resolve rule from DB based on country specificity and category
     let rule = await repo.findOne({
       where: {
         tenantId,
-        country: payload.country.toUpperCase(),
-        state: payload.state || null,
+        country: customerCountry,
+        state: targetState || null,
         category: payload.category || TaxCategory.STANDARD,
         isActive: true,
       },
     })
 
     // Fallback to state-less general country rule
-    if (!rule && payload.state) {
+    if (!rule && targetState) {
       rule = await repo.findOne({
         where: {
           tenantId,
-          country: payload.country.toUpperCase(),
+          country: customerCountry,
           state: null,
           category: payload.category || TaxCategory.STANDARD,
           isActive: true,
@@ -184,11 +248,39 @@ export class TaxService {
       })
     }
 
-    // Default global system standard VAT if still unresolved
-    const rate = rule ? Number(rule.rate) : 0
-    const ruleName = rule ? rule.name : 'Exempt / Zero-Rated'
-    const taxAmount = (payload.baseAmount * rate) / 100
-    const totalAmount = payload.baseAmount + taxAmount
+    let rate = 0
+    let ruleName = 'Exempt / Zero-Rated'
+
+    if (rule) {
+      rate = Number(rule.rate)
+      ruleName = rule.name
+    } else {
+      // Custom fallbacks if standard rules aren't in the DB
+      if (customerCountry === 'US') {
+        if (targetState === 'CA') {
+          rate = 8.25
+          ruleName = 'Sales Tax US CA (Fallback)'
+        } else if (targetState === 'NY') {
+          rate = 8.875
+          ruleName = 'Sales Tax US NY (Fallback)'
+        } else if (targetState === 'TX') {
+          rate = 6.25
+          ruleName = 'Sales Tax US TX (Fallback)'
+        } else {
+          rate = 5.0
+          ruleName = 'Sales Tax US Standard (Fallback)'
+        }
+      } else if (customerCountry === 'GB') {
+        rate = 20.0
+        ruleName = 'VAT Standard UK (Fallback)'
+      } else if (customerCountry === 'AU') {
+        rate = 10.0
+        ruleName = 'GST Standard AU (Fallback)'
+      }
+    }
+
+    const taxAmount = Number(((payload.baseAmount * rate) / 100).toFixed(2))
+    const totalAmount = Number((payload.baseAmount + taxAmount).toFixed(2))
 
     return {
       rate,

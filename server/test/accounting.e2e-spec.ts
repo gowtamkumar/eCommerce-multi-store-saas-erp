@@ -139,7 +139,11 @@ describe('Accounting Module (e2e)', () => {
       const journalRepo = dataSource.getRepository(JournalEntryEntity)
       const fullReversal = await journalRepo.findOne({
         where: { id: reversed.id },
-        relations: ['lines', 'lines.account'],
+        relations: {
+          lines: {
+            account: true,
+          },
+        },
       })
 
       expect(fullReversal.lines).toHaveLength(2)

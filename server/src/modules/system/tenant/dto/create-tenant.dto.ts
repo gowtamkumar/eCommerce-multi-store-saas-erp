@@ -44,4 +44,16 @@ export class CreateTenantDto {
   @IsString()
   @MinLength(6)
   password: string
+
+  @IsString()
+  @IsNotEmpty()
+  country: string
+
+  @IsString()
+  @IsNotEmpty()
+  baseCurrency: string
+
+  @IsString()
+  @IsNotEmpty()
+  timezone: string
 }

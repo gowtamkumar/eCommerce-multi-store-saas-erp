@@ -47,6 +47,12 @@ export class JournalEntryEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   totalAmount: number // Sum of debits
 
+  @Column({ type: 'varchar', length: 3, default: 'USD' })
+  currency: string
+
+  @Column({ type: 'decimal', precision: 15, scale: 6, default: 1.0, name: 'exchange_rate' })
+  exchangeRate: number
+
   @Column({ type: 'boolean', name: 'is_reversal', default: false })
   isReversal: boolean
 

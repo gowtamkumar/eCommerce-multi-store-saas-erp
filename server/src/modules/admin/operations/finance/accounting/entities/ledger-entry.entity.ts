@@ -31,6 +31,15 @@ export class LedgerEntryEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   amount: number
 
+  @Column({ type: 'varchar', length: 3, default: 'USD', name: 'transaction_currency' })
+  transactionCurrency: string
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'transaction_amount' })
+  transactionAmount: number
+
+  @Column({ type: 'decimal', precision: 15, scale: 6, default: 1.0, name: 'exchange_rate' })
+  exchangeRate: number
+
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   balanceAfter: number // Running balance for the specific account
 

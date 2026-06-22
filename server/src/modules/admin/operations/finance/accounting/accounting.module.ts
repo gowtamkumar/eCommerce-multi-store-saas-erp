@@ -13,6 +13,7 @@ import { ArService } from './services/ar.service'
 import { WalletService } from './services/wallet.service'
 import { AccountingOutboxService } from './services/accounting-outbox.service'
 import { AccountingOutboxEntity } from './entities/accounting-outbox.entity'
+import { CurrencyFeedService } from './services/currency-feed.service'
 
 import { AccountingController } from './controllers/accounting.controller'
 import { ArController } from './controllers/ar.controller'
@@ -65,6 +66,7 @@ import { AccountingProcessor } from './accounting.processor'
     TaxService,
     AccountingSchedulerService,
     AccountingProcessor,
+    CurrencyFeedService,
   ],
   exports: [
     AccountingService,
@@ -76,6 +78,7 @@ import { AccountingProcessor } from './accounting.processor'
     AccountingOutboxService,
     DunningService,
     TaxService,
+    CurrencyFeedService,
   ],
 })
 export class AccountingModule {}

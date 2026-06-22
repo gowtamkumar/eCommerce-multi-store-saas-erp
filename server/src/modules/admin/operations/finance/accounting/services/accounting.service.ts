@@ -8,12 +8,17 @@ import { DEFAULT_CHART_OF_ACCOUNTS } from '../constants/default-coa'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
 import { AccountType, AccountCategory } from '@/common/enums/account-type.enum'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
+import { CurrencyFeedService } from './currency-feed.service'
 
 @Injectable()
 export class AccountingService {
   private readonly logger = new Logger(AccountingService.name)
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly currencyFeedService: CurrencyFeedService,
+  ) {}
 
   /**
    * Initializes the default Chart of Accounts for a tenant.
@@ -53,6 +58,8 @@ export class AccountingService {
       referenceId?: string
       isReversal?: boolean
       reversedJournalEntryId?: string
+      currency?: string
+      exchangeRate?: number
       lines: { accountCode: string; side: LedgerEntrySide; amount: number }[]
     },
     ctx: RequestContextDto,
@@ -85,24 +92,74 @@ export class AccountingService {
         )
       }
 
-      // 1. Validate balanced entry
-      const debitTotal = lines
+      // Determine Base Currency and Exchange Rate
+      const settings = await em.findOne(SiteSettingsEntity, { where: { tenantId } })
+      const baseCurrency = (settings?.currency || 'USD').toUpperCase()
+      const txCurrency = (data.currency || baseCurrency).toUpperCase()
+
+      let exchangeRate = Number(data.exchangeRate)
+      if (txCurrency === baseCurrency) {
+        exchangeRate = 1.0
+      } else if (!exchangeRate || isNaN(exchangeRate)) {
+        exchangeRate = await this.currencyFeedService.getExchangeRate(txCurrency, baseCurrency)
+      }
+
+      // 1. Validate balanced entry in transaction currency
+      const debitTotalTx = lines
         .filter((l) => l.side === LedgerEntrySide.DEBIT)
         .reduce((sum, l) => sum + Number(l.amount), 0)
-      const creditTotal = lines
+      const creditTotalTx = lines
         .filter((l) => l.side === LedgerEntrySide.CREDIT)
         .reduce((sum, l) => sum + Number(l.amount), 0)
 
-      if (Math.abs(debitTotal - creditTotal) > 0.01) {
+      if (Math.abs(debitTotalTx - creditTotalTx) > 0.01) {
         throw new BadRequestException(
-          `Unbalanced journal entry: Debits (${debitTotal}) != Credits (${creditTotal})`,
+          `Unbalanced journal entry in transaction currency (${txCurrency}): Debits (${debitTotalTx}) != Credits (${creditTotalTx})`,
         )
+      }
+
+      // Convert lines to base currency
+      const baseLines = lines.map((line) => {
+        const txAmount = Number(line.amount)
+        const baseAmount = Number((txAmount * exchangeRate).toFixed(2))
+        return {
+          ...line,
+          txAmount,
+          baseAmount,
+        }
+      })
+
+      // Verify base currency balanced entry (allowing 0.02 tolerance)
+      const debitTotalBase = baseLines
+        .filter((l) => l.side === LedgerEntrySide.DEBIT)
+        .reduce((sum, l) => sum + l.baseAmount, 0)
+      const creditTotalBase = baseLines
+        .filter((l) => l.side === LedgerEntrySide.CREDIT)
+        .reduce((sum, l) => sum + l.baseAmount, 0)
+
+      const diff = debitTotalBase - creditTotalBase
+      if (Math.abs(diff) > 0.02) {
+        throw new BadRequestException(
+          `Unbalanced journal entry in base currency (${baseCurrency}) exceeding tolerance: Debits (${debitTotalBase}) != Credits (${creditTotalBase})`,
+        )
+      }
+
+      // Absorb rounding tolerance discrepancy into the last line to balance exactly
+      if (Math.abs(diff) > 0.0001 && Math.abs(diff) <= 0.02 && baseLines.length > 0) {
+        const lastLine = baseLines[baseLines.length - 1]
+        if (lastLine.side === LedgerEntrySide.DEBIT) {
+          lastLine.baseAmount = Number((lastLine.baseAmount - diff).toFixed(2))
+        } else {
+          lastLine.baseAmount = Number((lastLine.baseAmount + diff).toFixed(2))
+        }
       }
 
       // 2. Create Journal Header
       const journal = em.create(JournalEntryEntity, {
         ...header,
-        totalAmount: debitTotal,
+        totalAmount: debitTotalTx,
+        currency: txCurrency,
+        exchangeRate,
         tenantId,
         isReversal: data.isReversal || false,
         reversedJournalEntryId: data.reversedJournalEntryId || null,
@@ -113,8 +170,6 @@ export class AccountingService {
       const savedJournal = (await em.save(JournalEntryEntity, journal)) as JournalEntryEntity
 
       // 3. Process Ledger Lines
-      // Bulk-load every referenced account once (avoids one query per line and
-      // repeated loads when the same account code appears on multiple lines).
       const uniqueCodes = [...new Set(lines.map((l) => l.accountCode))]
       const accounts = (await em.find(AccountEntity, {
         where: { code: In(uniqueCodes), tenantId },
@@ -131,14 +186,12 @@ export class AccountingService {
       const ledgerEntries: LedgerEntryEntity[] = []
       const affectedAccounts = new Set<AccountEntity>()
 
-      for (const line of lines) {
+      for (const line of baseLines) {
         const account = accountByCode.get(line.accountCode)!
 
-        // Update Account Balance (standard double-entry rules)
-        const amount = Number(line.amount)
+        // Update Account Balance using converted base currency amount
+        const amount = line.baseAmount
         if (line.side === LedgerEntrySide.DEBIT) {
-          // Debit INCREASES: Assets and Expenses
-          // Debit DECREASES: Liabilities, Equity, Revenue
           const isDebitIncrease =
             account.type === AccountType.ASSET || account.type === AccountType.EXPENSE
 
@@ -146,8 +199,6 @@ export class AccountingService {
             ? Number(account.balance) + amount
             : Number(account.balance) - amount
         } else {
-          // Credit INCREASES: Liabilities, Equity, Revenue
-          // Credit DECREASES: Assets and Expenses
           const isCreditIncrease =
             account.type === AccountType.LIABILITY ||
             account.type === AccountType.EQUITY ||
@@ -159,14 +210,16 @@ export class AccountingService {
         }
         affectedAccounts.add(account)
 
-        // Create Ledger Entry — balanceAfter reflects the running in-memory
-        // balance so multiple lines on the same account stay correct.
+        // Create Ledger Entry
         ledgerEntries.push(
           em.create(LedgerEntryEntity, {
             journalEntryId: savedJournal.id,
             accountId: account.id,
             side: line.side,
             amount,
+            transactionCurrency: txCurrency,
+            transactionAmount: line.txAmount,
+            exchangeRate,
             balanceAfter: account.balance,
             tenantId,
           }),
@@ -350,7 +403,7 @@ export class AccountingService {
         return {
           accountCode: line.account.code,
           side: reversedSide,
-          amount: Number(line.amount),
+          amount: Number(line.transactionAmount || line.amount),
         }
       })
 
@@ -364,6 +417,8 @@ export class AccountingService {
           referenceId: original.id,
           isReversal: true,
           reversedJournalEntryId: original.id,
+          currency: original.currency,
+          exchangeRate: original.exchangeRate,
           lines: reversingLines,
         },
         ctx,

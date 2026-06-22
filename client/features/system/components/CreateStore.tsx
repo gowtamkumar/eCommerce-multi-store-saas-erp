@@ -7,12 +7,15 @@ import {
     ArrowRight,
     CheckCircle2,
     ChevronLeft,
+    Clock,
+    Coins,
     CreditCard,
     Globe,
     Layout,
     Loader2,
     Lock,
     Mail,
+    MapPin,
     ShieldCheck,
     Sparkles,
     Store,
@@ -22,6 +25,15 @@ import {
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SubscriptionPlan } from '../types/subscription-plan';
+
+const COUNTRY_DEFAULTS = {
+    US: { currency: 'USD', timezone: 'America/New_York' },
+    GB: { currency: 'GBP', timezone: 'Europe/London' },
+    DE: { currency: 'EUR', timezone: 'Europe/Berlin' },
+    FR: { currency: 'EUR', timezone: 'Europe/Paris' },
+    IN: { currency: 'INR', timezone: 'Asia/Kolkata' },
+    BD: { currency: 'BDT', timezone: 'Asia/Dhaka' },
+};
 
 export default function CreateStore() {
     const [step, setStep] = useState(1);
@@ -42,6 +54,9 @@ export default function CreateStore() {
         email: '',
         username: '',
         password: '',
+        country: 'US',
+        baseCurrency: 'USD',
+        timezone: 'America/New_York',
     });
 
     useEffect(() => {
@@ -67,6 +82,17 @@ export default function CreateStore() {
     const handleSubdomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
         setFormData({ ...formData, subdomain: value });
+    };
+
+    const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const country = e.target.value;
+        const defaults = COUNTRY_DEFAULTS[country as keyof typeof COUNTRY_DEFAULTS] || { currency: 'USD', timezone: 'America/New_York' };
+        setFormData({
+            ...formData,
+            country,
+            baseCurrency: defaults.currency,
+            timezone: defaults.timezone,
+        });
     };
 
     const nextStep = () => {
@@ -281,6 +307,64 @@ export default function CreateStore() {
                                                         Your store will be live at <span className="text-brand-600 dark:text-brand-400 font-bold underline">{formData.subdomain}.luxesaas.com</span>
                                                     </motion.p>
                                                 )}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div className="group">
+                                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">Country</label>
+                                                    <div className="relative">
+                                                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
+                                                        <select
+                                                            value={formData.country}
+                                                            onChange={handleCountryChange}
+                                                            className="w-full pl-14 pr-6 py-5 rounded-[1.25rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all shadow-sm appearance-none"
+                                                        >
+                                                            <option value="US">United States</option>
+                                                            <option value="GB">United Kingdom</option>
+                                                            <option value="DE">Germany</option>
+                                                            <option value="FR">France</option>
+                                                            <option value="IN">India</option>
+                                                            <option value="BD">Bangladesh</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div className="group">
+                                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">Base Currency</label>
+                                                    <div className="relative">
+                                                        <Coins className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
+                                                        <select
+                                                            value={formData.baseCurrency}
+                                                            onChange={(e) => setFormData({ ...formData, baseCurrency: e.target.value })}
+                                                            className="w-full pl-14 pr-6 py-5 rounded-[1.25rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all shadow-sm appearance-none"
+                                                        >
+                                                            <option value="USD">USD ($)</option>
+                                                            <option value="GBP">GBP (£)</option>
+                                                            <option value="EUR">EUR (€)</option>
+                                                            <option value="INR">INR (₹)</option>
+                                                            <option value="BDT">BDT (৳)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div className="group">
+                                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">Timezone</label>
+                                                    <div className="relative">
+                                                        <Clock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
+                                                        <select
+                                                            value={formData.timezone}
+                                                            onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                                                            className="w-full pl-14 pr-6 py-5 rounded-[1.25rem] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all shadow-sm appearance-none"
+                                                        >
+                                                            <option value="America/New_York">America/New York</option>
+                                                            <option value="Europe/London">Europe/London</option>
+                                                            <option value="Europe/Berlin">Europe/Berlin</option>
+                                                            <option value="Europe/Paris">Europe/Paris</option>
+                                                            <option value="Asia/Kolkata">Asia/Kolkata</option>
+                                                            <option value="Asia/Dhaka">Asia/Dhaka</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
