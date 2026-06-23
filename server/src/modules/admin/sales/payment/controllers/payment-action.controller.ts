@@ -1,6 +1,4 @@
 import { Audit } from '@/common/decorators/audit.decorator'
-import { RequirePermissions } from '@/common/decorators/permissions.decorator'
-import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Post, Query, Res, Logger, UseGuards } from '@nestjs/common'
 // import { Throttle } from '@nestjs/throttler'
 import { Response } from 'express'
@@ -12,6 +10,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { Public } from '@/common/decorators/public.decorator'
 
 @Controller('payment')
 export class PaymentActionController {
@@ -39,8 +38,8 @@ export class PaymentActionController {
   }
 
   // Redirect endpoints — cannot return JSON wrappers as they perform HTTP redirects
+  @Public()
   @Post('success')
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async success(
     @Query('tran_id') tran_id: string,
     @Body() gatewayResponse: any,
@@ -56,25 +55,17 @@ export class PaymentActionController {
     return res.redirect(redirectUrl)
   }
 
+  @Public()
   @Get('success')
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
-  async successGet(
-    @Query('tran_id') tran_id: string,
-    @Query() query: any,
-    @Res() res: Response,
-  ) {
+  async successGet(@Query('tran_id') tran_id: string, @Query() query: any, @Res() res: Response) {
     await this.paymentService.handleSuccessPayment(tran_id, query)
     const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const redirectUrl = await this.paymentService.getRedirectUrl(
-      tran_id,
-      query,
-      defaultAppUrl,
-    )
+    const redirectUrl = await this.paymentService.getRedirectUrl(tran_id, query, defaultAppUrl)
     return res.redirect(redirectUrl)
   }
 
+  @Public()
   @Post('fail')
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async fail(
     @Query('tran_id') tran_id: string,
     @Body() gatewayResponse: any,
@@ -90,25 +81,17 @@ export class PaymentActionController {
     return res.redirect(redirectUrl)
   }
 
+  @Public()
   @Get('fail')
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
-  async failGet(
-    @Query('tran_id') tran_id: string,
-    @Query() query: any,
-    @Res() res: Response,
-  ) {
+  async failGet(@Query('tran_id') tran_id: string, @Query() query: any, @Res() res: Response) {
     await this.paymentService.handleFailPayment(tran_id, query)
     const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const redirectUrl = await this.paymentService.getRedirectUrl(
-      tran_id,
-      query,
-      defaultAppUrl,
-    )
+    const redirectUrl = await this.paymentService.getRedirectUrl(tran_id, query, defaultAppUrl)
     return res.redirect(redirectUrl)
   }
 
+  @Public()
   @Post('cancel')
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async cancel(
     @Query('tran_id') tran_id: string,
     @Body() gatewayResponse: any,
@@ -124,26 +107,17 @@ export class PaymentActionController {
     return res.redirect(redirectUrl)
   }
 
+  @Public()
   @Get('cancel')
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
-  async cancelGet(
-    @Query('tran_id') tran_id: string,
-    @Query() query: any,
-    @Res() res: Response,
-  ) {
+  async cancelGet(@Query('tran_id') tran_id: string, @Query() query: any, @Res() res: Response) {
     await this.paymentService.handleCancelPayment(tran_id, query)
     const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const redirectUrl = await this.paymentService.getRedirectUrl(
-      tran_id,
-      query,
-      defaultAppUrl,
-    )
+    const redirectUrl = await this.paymentService.getRedirectUrl(tran_id, query, defaultAppUrl)
     return res.redirect(redirectUrl)
   }
 
+  @Public()
   @Post('ipn')
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
-  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async ipn(
     @Body() gatewayResponse: any,
   ): Promise<BaseApiSuccessResponse<{ success: boolean }> | { received: boolean }> {

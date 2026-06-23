@@ -46,6 +46,8 @@ export class PaymentService {
       throw new NotFoundException('Order not found')
     }
 
+    this.validatePaymentMethodForCurrency(order.paymentMethod, order.currency)
+
     const settings = await this.settingsService.findByTenantSettings(ctx)
     const strategy = PaymentStrategyFactory.create(order.paymentMethod)
 
@@ -62,6 +64,21 @@ export class PaymentService {
       return { gatewayUrl: result.gatewayUrl }
     } else {
       throw new BadRequestException(result.error || 'Failed to initiate payment')
+    }
+  }
+
+  validatePaymentMethodForCurrency(method: string | PaymentMethod, currency: string): void {
+    const upperCurrency = (currency || '').toUpperCase()
+    if (method === PaymentMethod.SSLCOMMERZ && upperCurrency !== 'BDT') {
+      throw new BadRequestException('SSLCommerz only supports BDT currency transactions.')
+    }
+    if (
+      (method === PaymentMethod.STRIPE || method === PaymentMethod.PAYPAL) &&
+      upperCurrency === 'BDT'
+    ) {
+      throw new BadRequestException(
+        `${method.toUpperCase()} does not support BDT currency transactions.`,
+      )
     }
   }
 
@@ -101,7 +118,9 @@ export class PaymentService {
           gatewayResponse?.session_id ??
           gatewayResponse?.token,
         transactionId: tran_id,
-        storeId: (settings as any)?.payment?.sslCommerzStoreId || (settings as any)?.payment?.paypalClientId,
+        storeId:
+          (settings as any)?.payment?.sslCommerzStoreId ||
+          (settings as any)?.payment?.paypalClientId,
         storePassword:
           (settings as any)?.payment?.sslCommerzStorePassword ||
           (settings as any)?.payment?.stripeSecretKey ||

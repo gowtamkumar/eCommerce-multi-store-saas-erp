@@ -51,6 +51,29 @@ export class OrderCheckoutService {
     const result = await this.dataSource.transaction(async (manager) => {
       // 1. Initial Data Fetching
       const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
+      const orderCurrency = createOrderDto.currency || settings?.currency || 'USD'
+
+      // Validate payment method / currency compatibility
+      const upperCurrency = orderCurrency.toUpperCase()
+      const method = createOrderDto.paymentMethod
+      if (method === PaymentMethod.SSLCOMMERZ && upperCurrency !== 'BDT') {
+        throw new BadRequestException('SSLCommerz only supports BDT currency transactions.')
+      }
+      if (
+        (method === PaymentMethod.STRIPE || method === PaymentMethod.PAYPAL) &&
+        upperCurrency === 'BDT'
+      ) {
+        throw new BadRequestException(
+          `${method.toUpperCase()} does not support BDT currency transactions.`,
+        )
+      }
+
+      // Enforce structured shipping address for international checkouts
+      if (!createOrderDto.shippingAddressId && upperCurrency !== 'BDT') {
+        throw new BadRequestException(
+          'Structured shipping address selection is required for international checkouts to calculate correct shipping rates and customs.',
+        )
+      }
 
       const targetUserId = createOrderDto.userId || ctx.userId
       const user = targetUserId
@@ -110,7 +133,7 @@ export class OrderCheckoutService {
       const processedItems: OrderItemEntity[] = []
       const pendingLedgerIds: string[] = []
       const pendingReservationIds: string[] = []
-      const orderCurrency = createOrderDto.currency || settings?.currency || 'USD'
+      // Reuse resolved orderCurrency
       const resolvedPriceBookCode = createOrderDto.priceBookCode || user?.priceBookCode || null
       for (const item of rawItems) {
         const { orderItem, ledgerEntryId, reservationId } =
@@ -292,6 +315,8 @@ export class OrderCheckoutService {
               remainingAmount,
               netRevenue,
               taxAmount,
+              currency: savedOrder.currency,
+              exchangeRate: Number(savedOrder.currencyRate),
             },
           },
           { removeOnComplete: true },

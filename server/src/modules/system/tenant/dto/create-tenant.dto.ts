@@ -56,4 +56,12 @@ export class CreateTenantDto {
   @IsString()
   @IsNotEmpty()
   timezone: string
+
+  @IsString()
+  @IsOptional()
+  accountingStandard?: string
+
+  @IsString()
+  @IsOptional()
+  residencyRegion?: string
 }

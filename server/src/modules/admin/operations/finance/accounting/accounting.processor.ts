@@ -93,7 +93,7 @@ export class AccountingProcessor extends WorkerHost {
         }
 
         case 'post-order-credit-placed': {
-          const { orderId, walletDeduction, remainingAmount, netRevenue, taxAmount } = payload
+          const { orderId, walletDeduction, remainingAmount, netRevenue, taxAmount, currency, exchangeRate } = payload
           this.logger.log(`Posting B2B Credit Sale entries for order: ${orderId}`)
           const lines = []
           if (walletDeduction > 0) {
@@ -123,6 +123,8 @@ export class AccountingProcessor extends WorkerHost {
               description: `B2B Credit Sale - Net 30 Terms - Order ID: ${orderId}`,
               referenceType: 'ORDER',
               referenceId: orderId,
+              currency,
+              exchangeRate,
               lines,
             },
             ctx,
@@ -139,6 +141,8 @@ export class AccountingProcessor extends WorkerHost {
             remainingAmount,
             netRevenue,
             taxAmount,
+            currency,
+            exchangeRate,
           } = payload
           this.logger.log(`Posting Sales Recognition entries for order: ${orderId}`)
           if (paymentMethod === 'ON_ACCOUNT') {
@@ -173,6 +177,8 @@ export class AccountingProcessor extends WorkerHost {
               description: `Sales Revenue & Cash Recognition - Order ID: ${orderId}`,
               referenceType: 'ORDER',
               referenceId: orderId,
+              currency,
+              exchangeRate,
               lines,
             },
             ctx,

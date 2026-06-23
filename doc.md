@@ -68,3 +68,6 @@ const RESOURCE_ADDONS: AddonItem[] = [
     }
 ];
 
+
+5. Finance & Accounting Module (Mostly Complete)
+6. Site Settings & Region Localization (Not Started)

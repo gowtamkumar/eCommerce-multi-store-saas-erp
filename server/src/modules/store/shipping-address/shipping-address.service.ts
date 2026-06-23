@@ -4,12 +4,16 @@ import { CreateShippingAddressDto } from './dto/create-shipping-address.dto'
 import { UpdateShippingAddressDto } from './dto/update-shipping-address.dto'
 import { ShippingAddressEntity } from './entities/shipping-address.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { AddressValidationService } from './services/address-validation.service'
 
 @Injectable()
 export class ShippingAddressService {
   private readonly logger = new Logger(ShippingAddressService.name)
 
-  constructor(private readonly repo: ShippingAddressRepository) {}
+  constructor(
+    private readonly repo: ShippingAddressRepository,
+    private readonly addressValidationService: AddressValidationService,
+  ) {}
 
   async findShippingAddresses(ctx: RequestContextDto): Promise<ShippingAddressEntity[]> {
     this.logger.log(`${this.findShippingAddresses.name} Service Called`)
@@ -33,6 +37,10 @@ export class ShippingAddressService {
     this.logger.log(`${this.createShippingAddress.name} Service Called`)
     const tenantId = ctx.tenantId
     const userId = ctx.userId
+
+    // Validate the address
+    await this.addressValidationService.validateAddress(dto)
+
     // If isDefault, unset existing defaults first
     if (dto.isDefault) {
       await this.repo.unsetDefaults(userId, tenantId)
@@ -49,6 +57,13 @@ export class ShippingAddressService {
     const tenantId = ctx.tenantId
     const userId = ctx.userId
     const address = await this.findShippingAddress(id, ctx)
+
+    // Validate the updated address fields merged with existing values
+    await this.addressValidationService.validateAddress({
+      ...address,
+      ...dto,
+    } as any)
+
     if (dto.isDefault) {
       await this.repo.unsetDefaults(userId, tenantId)
     }

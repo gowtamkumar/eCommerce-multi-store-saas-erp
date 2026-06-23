@@ -23,47 +23,56 @@ describe('TenantService', () => {
   let subscriptionPlanService: any
   let cacheService: any
   let userRepository: any
+  let roleManagementService: any
+  let settingsService: any
+  let mailService: any
   let dataSource: any
 
-  const mockManager = {
-    getRepository: jest.fn().mockImplementation((entity) => {
-      if (entity === TenantEntity) {
-        return {
-          save: jest.fn().mockImplementation((t) => Promise.resolve(t)),
-        }
+  const mockRepo = {
+    create: jest.fn().mockImplementation((dto) => dto),
+    save: jest.fn().mockImplementation((dto) => {
+      if (Array.isArray(dto)) {
+        return Promise.resolve(dto.map(item => Object.assign(item, { id: 'mock-id' })))
       }
-      if (entity === TenantFeatureEntity) {
-        return {
-          find: jest.fn().mockResolvedValue([
-            { featureSlug: '/admin/hrm', isEnabled: true, tenantId: 'tenant-1' },
-            { featureSlug: '/admin', isEnabled: true, tenantId: 'tenant-1' },
-          ]),
-          create: jest.fn().mockImplementation((dto) => dto),
-          save: jest.fn().mockResolvedValue([]),
-        }
-      }
-      if (entity === TenantSubscriptionEntity) {
-        return {
-          create: jest.fn().mockImplementation((dto) => dto),
-          save: jest.fn().mockImplementation((t) => Promise.resolve(t)),
-        }
-      }
+      return Promise.resolve(Object.assign(dto, { id: 'mock-id' }))
     }),
+  }
+
+  const mockManager = {
+    withRepository: jest.fn().mockImplementation((repo) => repo),
+    getRepository: jest.fn().mockReturnValue(mockRepo),
   }
 
   beforeEach(async () => {
     tenantRepository = {
       findOneTenants: jest.fn(),
+      findBySubdomain: jest.fn().mockResolvedValue(null),
+      repo: mockRepo,
     }
     subscriptionPlanService = {
-      findOneSubscriptionPlan: jest.fn(),
+      findOneSubscriptionPlan: jest.fn().mockResolvedValue({ id: 'plan-1', trialPeriodDays: 14 }),
+      findActiveSubscriptionPlans: jest.fn().mockResolvedValue([{ id: 'plan-1', trialPeriodDays: 14 }]),
     }
     cacheService = {
       getCache: jest.fn(),
       delCache: jest.fn(),
+      setCache: jest.fn(),
     }
     userRepository = {
+      repo: {
+        target: 'UserEntity',
+      },
       findTeamMembers: jest.fn().mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]),
+    }
+    roleManagementService = {
+      seedSuperAdminRole: jest.fn().mockResolvedValue({ id: 'role-1' }),
+      seedDefaultRoles: jest.fn().mockResolvedValue(true),
+    }
+    settingsService = {
+      createSetting: jest.fn().mockResolvedValue(true),
+    }
+    mailService = {
+      sendVerificationEmail: jest.fn().mockResolvedValue(true),
     }
     dataSource = {
       transaction: jest.fn().mockImplementation((cb) => cb(mockManager)),
@@ -81,9 +90,9 @@ describe('TenantService', () => {
         { provide: UserRepository, useValue: userRepository },
         { provide: SubscriptionPlanService, useValue: subscriptionPlanService },
         { provide: CacheService, useValue: cacheService },
-        { provide: MailService, useValue: {} },
-        { provide: SettingsService, useValue: {} },
-        { provide: RoleManagementService, useValue: {} },
+        { provide: MailService, useValue: mailService },
+        { provide: SettingsService, useValue: settingsService },
+        { provide: RoleManagementService, useValue: roleManagementService },
         { provide: DataSource, useValue: dataSource },
         {
           provide: NotificationService,
@@ -202,6 +211,88 @@ describe('TenantService', () => {
         'tenant:customdomain:nonexistent.com',
         { id: '__NOT_FOUND__' },
         180,
+      )
+    })
+  })
+
+  describe('createTenant', () => {
+    it('should create a tenant, route database residency and seed dynamic Chart of Accounts (COA)', async () => {
+      const dto = {
+        storeName: 'Acme Store',
+        subdomain: 'acme',
+        name: 'Acme Admin',
+        username: 'acmeadmin',
+        email: 'acme@acme.com',
+        password: 'Password123!',
+        country: 'US',
+        baseCurrency: 'USD',
+        timezone: 'America/New_York',
+        accountingStandard: 'US-GAAP',
+        residencyRegion: 'US',
+      }
+
+      mockRepo.create.mockClear()
+
+      const result = await service.createTenant(dto)
+
+      expect(result.tenant).toBeDefined()
+      // Verify database residency routing fields
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          storeName: 'Acme Store',
+          subdomain: 'acme',
+          accountingStandard: 'US-GAAP',
+          residencyRegion: 'US',
+          dbHost: 'us-db.luxesaas.com',
+          dbName: 'tenant_acme_us',
+        }),
+      )
+
+      // Verify dynamic COA seeding
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: '1000',
+          name: 'Cash & Cash Equivalents',
+        }),
+      )
+    })
+
+    it('should fall back to BAS and AS defaults if standard and region are not provided', async () => {
+      const dto = {
+        storeName: 'Fallback Store',
+        subdomain: 'fallback',
+        name: 'Fallback Admin',
+        username: 'fallbackadmin',
+        email: 'fallback@fallback.com',
+        password: 'Password123!',
+        country: 'BD',
+        baseCurrency: 'BDT',
+        timezone: 'Asia/Dhaka',
+      }
+
+      mockRepo.create.mockClear()
+
+      const result = await service.createTenant(dto)
+
+      expect(result.tenant).toBeDefined()
+      // Verify default fallback database residency fields
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          storeName: 'Fallback Store',
+          subdomain: 'fallback',
+          accountingStandard: 'BAS',
+          residencyRegion: 'AS',
+          dbHost: 'postgres',
+          dbName: 'multi_tenant_ecommerce',
+        }),
+      )
+
+      // Verify dynamic COA seeding falls back to BAS_COA
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: '1000',
+          name: 'Cash',
+        }),
       )
     })
   })

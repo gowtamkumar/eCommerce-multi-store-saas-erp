@@ -64,7 +64,7 @@ describe('TaxService', () => {
       expect(result.ruleName).toContain('US CA')
     })
 
-    it('should apply EU VAT reverse charge (0%) for cross-border EU transactions', async () => {
+    it('should apply EU VAT reverse charge (0%) for cross-border EU transactions if valid B2B VAT number is provided', async () => {
       // Germany tenant (DE), France customer (FR)
       mockFindOneSettings.mockResolvedValue({ locale: 'de-DE' })
 
@@ -74,12 +74,35 @@ describe('TaxService', () => {
         state: '',
         baseAmount: 200,
         category: TaxCategory.STANDARD,
+        vatNumber: 'FR12345678901',
       })
 
       expect(result.rate).toBe(0)
       expect(result.taxAmount).toBe(0)
       expect(result.totalAmount).toBe(200)
-      expect(result.ruleName).toBe('EU VAT Reverse Charge (0%)')
+      expect(result.ruleName).toBe('EU VAT Reverse Charge B2B (0%)')
+    })
+
+    it('should NOT apply EU VAT reverse charge (0%) for cross-border EU transactions if B2B VAT number is missing or invalid', async () => {
+      // Germany tenant (DE), France customer (FR)
+      mockFindOneSettings.mockResolvedValue({ locale: 'de-DE' })
+      mockFindOneRule.mockResolvedValue({
+        name: 'FR Standard VAT',
+        rate: 20.0,
+      })
+
+      const ctx = { tenantId: 'tenant-1' } as any
+      const result = await service.calculateTax(ctx, {
+        country: 'FR',
+        state: '',
+        baseAmount: 200,
+        category: TaxCategory.STANDARD,
+      })
+
+      expect(result.rate).toBe(20.0)
+      expect(result.taxAmount).toBe(40.0)
+      expect(result.totalAmount).toBe(240.0)
+      expect(result.ruleName).toBe('FR Standard VAT')
     })
 
     it('should apply standard VAT if EU transaction is domestic', async () => {
@@ -102,6 +125,28 @@ describe('TaxService', () => {
       expect(result.taxAmount).toBe(19.0)
       expect(result.totalAmount).toBe(119.0)
       expect(result.ruleName).toBe('DE Standard VAT')
+    })
+
+    it('should perform simulated live calculation when taxProvider is TaxJar', async () => {
+      mockFindOneSettings.mockResolvedValue({
+        locale: 'en-US',
+        financeConfig: {
+          taxProvider: 'taxjar',
+          taxApiKey: 'test-api-key',
+        },
+      })
+
+      const ctx = { tenantId: 'tenant-1' } as any
+      const result = await service.calculateTax(ctx, {
+        country: 'US',
+        state: 'NY',
+        baseAmount: 100,
+        category: TaxCategory.STANDARD,
+      })
+
+      expect(result.rate).toBe(8.875)
+      expect(result.taxAmount).toBe(8.88)
+      expect(result.ruleName).toBe('TaxJar Live Rate')
     })
   })
 })

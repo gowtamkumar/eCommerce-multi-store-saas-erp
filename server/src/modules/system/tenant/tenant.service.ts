@@ -36,18 +36,18 @@ import { TenantDomainEntity } from './entities/tenant-domain.entity'
 import { TenantSubscriptionEntity } from './entities/tenant-subscription.entity'
 import { TenantFeatureEntity } from './entities/tenant-feature.entity'
 import { TenantRepository } from './tenant.repository'
-import {
-  mergeTenantAiConfigUpdate,
-  normalizeTenantAiConfig,
-  toTenantAiConfigResponse,
-} from './utils/tenant-ai.util'
+import { mergeTenantAiConfigUpdate, toTenantAiConfigResponse } from './utils/tenant-ai.util'
 import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
-import { DEFAULT_CHART_OF_ACCOUNTS } from '@/modules/admin/operations/finance/accounting/constants/default-coa'
+import { getChartOfAccounts } from '@/modules/admin/operations/finance/accounting/constants/default-coa'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-register.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
-import { getSymbolForCurrency, getCurrencyName, getLocaleForCountry } from './utils/localization.util'
+import {
+  getSymbolForCurrency,
+  getCurrencyName,
+  getLocaleForCountry,
+} from './utils/localization.util'
 
 export interface CreateTenantResponseDto {
   tenant: TenantEntity
@@ -112,7 +112,25 @@ export class TenantService {
       country,
       baseCurrency,
       timezone,
+      accountingStandard,
+      residencyRegion,
     } = createTenantDto
+
+    // Resolve dynamic database routing/residency coordinates
+    const residency = residencyRegion || 'AS'
+    const standard = accountingStandard || 'BAS'
+    let dbHost = 'postgres' // Default local host
+    let dbName = 'multi_tenant_ecommerce' // Default local DB name
+
+    if (residency.toUpperCase() === 'EU') {
+      dbHost = 'eu-db.luxesaas.com'
+      dbName = `tenant_${rawSubdomain}_eu`
+    } else if (residency.toUpperCase() === 'US') {
+      dbHost = 'us-db.luxesaas.com'
+      dbName = `tenant_${rawSubdomain}_us`
+    }
+
+    this.logger.log(`Tenant database residency routed to: ${residency} -> ${dbHost}/${dbName}`)
 
     let subdomain: string
     try {
@@ -167,6 +185,10 @@ export class TenantService {
       const tenant = tenantRepo.create({
         storeName,
         subdomain,
+        accountingStandard: standard,
+        residencyRegion: residency,
+        dbHost,
+        dbName,
       })
       const savedTenant = await tenantRepo.save(tenant)
 
@@ -258,9 +280,10 @@ export class TenantService {
 
       // Tenant features are resolved dynamically from the Subscription Plan.
 
-      // Initialize default Chart of Accounts (COA) for this new tenant
+      // Initialize compliance-specific Chart of Accounts (COA) for this new tenant
       const accountRepo = manager.getRepository(AccountEntity)
-      const accounts = DEFAULT_CHART_OF_ACCOUNTS.map((coa) =>
+      const seedCoa = getChartOfAccounts(standard)
+      const accounts = seedCoa.map((coa) =>
         accountRepo.create({
           ...coa,
           tenantId: savedTenant.id,

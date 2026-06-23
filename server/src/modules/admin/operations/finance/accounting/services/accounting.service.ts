@@ -60,7 +60,7 @@ export class AccountingService {
       reversedJournalEntryId?: string
       currency?: string
       exchangeRate?: number
-      lines: { accountCode: string; side: LedgerEntrySide; amount: number }[]
+      lines: { accountCode: string; side: LedgerEntrySide; amount: number; exchangeRate?: number }[]
     },
     ctx: RequestContextDto,
     manager?: EntityManager,
@@ -97,11 +97,11 @@ export class AccountingService {
       const baseCurrency = (settings?.currency || 'USD').toUpperCase()
       const txCurrency = (data.currency || baseCurrency).toUpperCase()
 
-      let exchangeRate = Number(data.exchangeRate)
+      let headerExchangeRate = Number(data.exchangeRate)
       if (txCurrency === baseCurrency) {
-        exchangeRate = 1.0
-      } else if (!exchangeRate || isNaN(exchangeRate)) {
-        exchangeRate = await this.currencyFeedService.getExchangeRate(txCurrency, baseCurrency)
+        headerExchangeRate = 1.0
+      } else if (!headerExchangeRate || isNaN(headerExchangeRate)) {
+        headerExchangeRate = await this.currencyFeedService.getExchangeRate(txCurrency, baseCurrency)
       }
 
       // 1. Validate balanced entry in transaction currency
@@ -121,27 +121,69 @@ export class AccountingService {
       // Convert lines to base currency
       const baseLines = lines.map((line) => {
         const txAmount = Number(line.amount)
-        const baseAmount = Number((txAmount * exchangeRate).toFixed(2))
+        let lineRate = line.exchangeRate !== undefined && line.exchangeRate !== null ? Number(line.exchangeRate) : headerExchangeRate
+        if (txCurrency === baseCurrency) {
+          lineRate = 1.0
+        } else if (!lineRate || isNaN(lineRate)) {
+          lineRate = headerExchangeRate
+        }
+        const baseAmount = Number((txAmount * lineRate).toFixed(2))
         return {
           ...line,
           txAmount,
+          exchangeRate: lineRate,
           baseAmount,
         }
       })
 
       // Verify base currency balanced entry (allowing 0.02 tolerance)
-      const debitTotalBase = baseLines
+      let debitTotalBase = baseLines
         .filter((l) => l.side === LedgerEntrySide.DEBIT)
         .reduce((sum, l) => sum + l.baseAmount, 0)
-      const creditTotalBase = baseLines
+      let creditTotalBase = baseLines
         .filter((l) => l.side === LedgerEntrySide.CREDIT)
         .reduce((sum, l) => sum + l.baseAmount, 0)
 
-      const diff = debitTotalBase - creditTotalBase
+      let diff = debitTotalBase - creditTotalBase
+
+      // Automatically insert a balancing line to the Forex Gain/Loss account 8000 when discrepancy exceeds 0.02
       if (Math.abs(diff) > 0.02) {
-        throw new BadRequestException(
-          `Unbalanced journal entry in base currency (${baseCurrency}) exceeding tolerance: Debits (${debitTotalBase}) != Credits (${creditTotalBase})`,
-        )
+        let forexAccount = await em.findOne(AccountEntity, {
+          where: { code: '8000', tenantId },
+        })
+        if (!forexAccount) {
+          forexAccount = em.create(AccountEntity, {
+            code: '8000',
+            name: 'Foreign Exchange Gain/Loss',
+            type: AccountType.EXPENSE,
+            category: AccountCategory.OPERATING_EXPENSE,
+            isSystem: true,
+            balance: 0,
+            tenantId,
+          })
+          await em.save(AccountEntity, forexAccount)
+        }
+
+        const forexSide = diff > 0 ? LedgerEntrySide.CREDIT : LedgerEntrySide.DEBIT
+        const forexBaseAmount = Number(Math.abs(diff).toFixed(2))
+
+        baseLines.push({
+          accountCode: '8000',
+          side: forexSide,
+          amount: 0,
+          txAmount: 0,
+          exchangeRate: 0,
+          baseAmount: forexBaseAmount,
+        })
+
+        // Recompute totals
+        debitTotalBase = baseLines
+          .filter((l) => l.side === LedgerEntrySide.DEBIT)
+          .reduce((sum, l) => sum + l.baseAmount, 0)
+        creditTotalBase = baseLines
+          .filter((l) => l.side === LedgerEntrySide.CREDIT)
+          .reduce((sum, l) => sum + l.baseAmount, 0)
+        diff = debitTotalBase - creditTotalBase
       }
 
       // Absorb rounding tolerance discrepancy into the last line to balance exactly
@@ -159,7 +201,7 @@ export class AccountingService {
         ...header,
         totalAmount: debitTotalTx,
         currency: txCurrency,
-        exchangeRate,
+        exchangeRate: headerExchangeRate,
         tenantId,
         isReversal: data.isReversal || false,
         reversedJournalEntryId: data.reversedJournalEntryId || null,
@@ -170,7 +212,7 @@ export class AccountingService {
       const savedJournal = (await em.save(JournalEntryEntity, journal)) as JournalEntryEntity
 
       // 3. Process Ledger Lines
-      const uniqueCodes = [...new Set(lines.map((l) => l.accountCode))]
+      const uniqueCodes = [...new Set(baseLines.map((l) => l.accountCode))]
       const accounts = (await em.find(AccountEntity, {
         where: { code: In(uniqueCodes), tenantId },
       })) as AccountEntity[]
@@ -219,7 +261,7 @@ export class AccountingService {
             amount,
             transactionCurrency: txCurrency,
             transactionAmount: line.txAmount,
-            exchangeRate,
+            exchangeRate: line.exchangeRate,
             balanceAfter: account.balance,
             tenantId,
           }),
@@ -396,16 +438,19 @@ export class AccountingService {
         throw new BadRequestException('This journal entry has already been reversed')
       }
 
-      // 2. Swapping debits and credits
-      const reversingLines = original.lines.map((line) => {
-        const reversedSide =
-          line.side === LedgerEntrySide.DEBIT ? LedgerEntrySide.CREDIT : LedgerEntrySide.DEBIT
-        return {
-          accountCode: line.account.code,
-          side: reversedSide,
-          amount: Number(line.transactionAmount || line.amount),
-        }
-      })
+      // 2. Swapping debits and credits, filtering out existing forex lines
+      const reversingLines = original.lines
+        .filter((line) => line.account.code !== '8000')
+        .map((line) => {
+          const reversedSide =
+            line.side === LedgerEntrySide.DEBIT ? LedgerEntrySide.CREDIT : LedgerEntrySide.DEBIT
+          return {
+            accountCode: line.account.code,
+            side: reversedSide,
+            amount: Number(line.transactionAmount || line.amount),
+            exchangeRate: Number(line.exchangeRate),
+          }
+        })
 
       // 3. Create the new reversing journal entry
       const reversingEntry = await this.createJournalEntry(

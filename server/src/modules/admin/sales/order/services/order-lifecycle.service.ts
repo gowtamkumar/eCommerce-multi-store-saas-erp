@@ -174,6 +174,8 @@ export class OrderLifecycleService {
                   Number(savedOrder.totalAmount) - Number(savedOrder.walletDeductionAmount || 0),
                 netRevenue: Number(savedOrder.totalAmount) - Number(savedOrder.taxAmount || 0),
                 taxAmount: Number(savedOrder.taxAmount || 0),
+                currency: savedOrder.currency,
+                exchangeRate: Number(savedOrder.currencyRate),
               },
             },
             { removeOnComplete: true },
