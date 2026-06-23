@@ -135,6 +135,7 @@ export class CartService {
       })),
       userPriceBookCode,
       tenantId,
+      currency,
     )
 
     const resolvedItems = cartItems.map((item) => {

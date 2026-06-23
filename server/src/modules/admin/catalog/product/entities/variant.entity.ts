@@ -39,6 +39,24 @@ export class ProductVariantEntity extends BaseEntity {
   @Column({ type: 'jsonb' })
   combination: Record<string, string> // e.g., { "Color": "Red", "Size": "XL" }
 
+  @Column({ type: 'decimal', precision: 10, scale: 3, nullable: true })
+  weight: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  height: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  width: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  length: number
+
+  @Column({ type: 'varchar', length: 100, nullable: true, name: 'country_of_origin' })
+  countryOfOrigin: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'hs_code' })
+  hsCode: string
+
   @Column({ type: 'uuid', name: 'product_id' })
   productId: string
 

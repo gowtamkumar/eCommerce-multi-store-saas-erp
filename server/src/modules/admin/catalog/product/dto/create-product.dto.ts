@@ -90,6 +90,40 @@ class ProductVariantDto {
   @Min(0)
   lowStockThreshold?: number
 
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  weight?: number
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  height?: number
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  width?: number
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  length?: number
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  countryOfOrigin?: string
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  hsCode?: string
+
   @ApiProperty()
   @IsObject()
   combination: Record<string, string>

@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, IsNull, LessThanOrEqual, MoreThanOrEqual, Or, Not, In } from 'typeorm'
 import { PriceBookEntity } from './entities/price-book.entity'
 import { ProductPriceEntity } from './entities/product-price.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PriceBookType } from './enums/price-book-type.enum'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 
 @Injectable()
 export class PricingService {
@@ -80,20 +81,21 @@ export class PricingService {
    * code, falling back to the active PROMOTIONAL then RETAIL book. The result
    * does not depend on any product, so it can be resolved once for many items.
    */
-  private async resolvePriceBook(
+  private readonly logger = new Logger(PricingService.name)
+
+  private async queryPriceBook(
     priceBookCode: string | null | undefined,
     tenantId: string,
     now: Date,
+    currency: string,
   ): Promise<PriceBookEntity | null> {
     let pb: PriceBookEntity | null = null
 
-    // 1. If explicit priceBookCode is passed, look up that specific active book (of any type)
+    // 1. If explicit priceBookCode is passed, look up that specific active book
     if (priceBookCode) {
       pb = await this.priceBookRepo.findOne({
         where: [
-          // Active book with no date constraints
           { code: priceBookCode, tenantId, isActive: true, validFrom: IsNull(), validTo: IsNull() },
-          // Active book: validFrom set, validTo not set
           {
             code: priceBookCode,
             tenantId,
@@ -101,7 +103,6 @@ export class PricingService {
             validFrom: LessThanOrEqual(now),
             validTo: IsNull(),
           },
-          // Active book: validFrom not set, validTo set
           {
             code: priceBookCode,
             tenantId,
@@ -109,7 +110,6 @@ export class PricingService {
             validFrom: IsNull(),
             validTo: MoreThanOrEqual(now),
           },
-          // Active book: both dates set and within range
           {
             code: priceBookCode,
             tenantId,
@@ -121,8 +121,7 @@ export class PricingService {
       })
     }
 
-    // 2. If no code is passed (or requested one not found), resolve by priority:
-    //    Priority A: Active PROMOTIONAL price book matching current time
+    // 2. Active PROMOTIONAL price book matching current time and currency
     if (!pb) {
       pb = await this.priceBookRepo.findOne({
         where: [
@@ -130,6 +129,7 @@ export class PricingService {
             tenantId,
             type: PriceBookType.PROMOTIONAL,
             isActive: true,
+            currency,
             validFrom: IsNull(),
             validTo: IsNull(),
           },
@@ -137,6 +137,7 @@ export class PricingService {
             tenantId,
             type: PriceBookType.PROMOTIONAL,
             isActive: true,
+            currency,
             validFrom: LessThanOrEqual(now),
             validTo: IsNull(),
           },
@@ -144,6 +145,7 @@ export class PricingService {
             tenantId,
             type: PriceBookType.PROMOTIONAL,
             isActive: true,
+            currency,
             validFrom: IsNull(),
             validTo: MoreThanOrEqual(now),
           },
@@ -151,15 +153,16 @@ export class PricingService {
             tenantId,
             type: PriceBookType.PROMOTIONAL,
             isActive: true,
+            currency,
             validFrom: LessThanOrEqual(now),
             validTo: MoreThanOrEqual(now),
           },
         ],
-        order: { createdAt: 'DESC' }, // Pick newest promotion if multiple exist
+        order: { createdAt: 'DESC' },
       })
     }
 
-    //    Priority B: Active RETAIL price book
+    // 3. Active RETAIL price book matching currency
     if (!pb) {
       pb = await this.priceBookRepo.findOne({
         where: [
@@ -167,6 +170,7 @@ export class PricingService {
             tenantId,
             type: PriceBookType.RETAIL,
             isActive: true,
+            currency,
             validFrom: IsNull(),
             validTo: IsNull(),
           },
@@ -174,6 +178,7 @@ export class PricingService {
             tenantId,
             type: PriceBookType.RETAIL,
             isActive: true,
+            currency,
             validFrom: LessThanOrEqual(now),
             validTo: IsNull(),
           },
@@ -181,6 +186,7 @@ export class PricingService {
             tenantId,
             type: PriceBookType.RETAIL,
             isActive: true,
+            currency,
             validFrom: IsNull(),
             validTo: MoreThanOrEqual(now),
           },
@@ -188,12 +194,52 @@ export class PricingService {
             tenantId,
             type: PriceBookType.RETAIL,
             isActive: true,
+            currency,
             validFrom: LessThanOrEqual(now),
             validTo: MoreThanOrEqual(now),
           },
         ],
         order: { createdAt: 'ASC' },
       })
+    }
+
+    return pb
+  }
+
+  /**
+   * Resolves the applicable price book for a tenant given an optional explicit
+   * code, falling back to the active PROMOTIONAL then RETAIL book. The result
+   * does not depend on any product, so it can be resolved once for many items.
+   */
+  private async resolvePriceBook(
+    priceBookCode: string | null | undefined,
+    tenantId: string,
+    now: Date,
+    currency?: string,
+  ): Promise<PriceBookEntity | null> {
+    let targetCurrency = currency?.toUpperCase()
+
+    let baseCurrency = 'BDT'
+    try {
+      const settings = await this.priceBookRepo.manager
+        .getRepository(SiteSettingsEntity)
+        .findOne({ where: { tenantId } })
+      baseCurrency = settings?.currency?.toUpperCase() || 'BDT'
+    } catch (err) {
+      // Ignore
+    }
+
+    if (!targetCurrency) {
+      targetCurrency = baseCurrency
+    }
+
+    let pb = await this.queryPriceBook(priceBookCode, tenantId, now, targetCurrency)
+
+    if (!pb && targetCurrency !== baseCurrency) {
+      this.logger.log(
+        `No active price book found for currency: ${targetCurrency}. Falling back to base currency: ${baseCurrency}`,
+      )
+      pb = await this.queryPriceBook(priceBookCode, tenantId, now, baseCurrency)
     }
 
     return pb
@@ -228,6 +274,39 @@ export class PricingService {
     return applicablePrice ? Number(applicablePrice.price) : null
   }
 
+  private async convertPriceUsingSettings(
+    price: number,
+    fromCurrency: string,
+    toCurrency: string,
+    tenantId: string,
+  ): Promise<number> {
+    try {
+      const settings = await this.priceBookRepo.manager
+        .getRepository(SiteSettingsEntity)
+        .findOne({ where: { tenantId } })
+
+      if (!settings) return price
+
+      const currencies = settings.supportedCurrencies || []
+      const fromItem = currencies.find(
+        (c: any) => c.code?.toUpperCase() === fromCurrency.toUpperCase(),
+      )
+      const toItem = currencies.find(
+        (c: any) => c.code?.toUpperCase() === toCurrency.toUpperCase(),
+      )
+
+      if (fromItem && toItem) {
+        const fromRate = Number(fromItem.rate) || 1
+        const toRate = Number(toItem.rate) || 1
+        const converted = price * (fromRate / toRate)
+        return Number(converted.toFixed(2))
+      }
+    } catch (err) {
+      // Ignore conversion error and return original price
+    }
+    return price
+  }
+
   /**
    * Finds the applicable price for a product/variant based on quantity.
    * This is used by the Cart and Checkout modules.
@@ -238,9 +317,10 @@ export class PricingService {
     quantity: number,
     priceBookCode: string | null | undefined,
     tenantId: string,
+    currency?: string,
   ) {
     const now = new Date()
-    const pb = await this.resolvePriceBook(priceBookCode, tenantId, now)
+    const pb = await this.resolvePriceBook(priceBookCode, tenantId, now, currency)
     if (!pb) return null
 
     let applicablePrice = null
@@ -273,7 +353,14 @@ export class PricingService {
       applicablePrice = basePrices.find((p) => quantity >= p.minQuantity)
     }
 
-    return applicablePrice ? Number(applicablePrice.price) : null
+    if (applicablePrice) {
+      let price = Number(applicablePrice.price)
+      if (currency && pb.currency && pb.currency.toUpperCase() !== currency.toUpperCase()) {
+        price = await this.convertPriceUsingSettings(price, pb.currency, currency, tenantId)
+      }
+      return price
+    }
+    return null
   }
 
   /**
@@ -287,6 +374,7 @@ export class PricingService {
     items: { productId: string; variantId: string | null; quantity: number }[],
     priceBookCode: string | null | undefined,
     tenantId: string,
+    currency?: string,
   ): Promise<Map<string, number | null>> {
     const result = new Map<string, number | null>()
     if (items.length === 0) return result
@@ -295,7 +383,7 @@ export class PricingService {
       `${productId}:${variantId ?? ''}`
 
     const now = new Date()
-    const pb = await this.resolvePriceBook(priceBookCode, tenantId, now)
+    const pb = await this.resolvePriceBook(priceBookCode, tenantId, now, currency)
     if (!pb) {
       for (const item of items) result.set(keyOf(item.productId, item.variantId), null)
       return result
@@ -310,10 +398,11 @@ export class PricingService {
     })
 
     for (const item of items) {
-      result.set(
-        keyOf(item.productId, item.variantId),
-        this.pickApplicableTier(prices, item.productId, item.variantId, item.quantity),
-      )
+      let price = this.pickApplicableTier(prices, item.productId, item.variantId, item.quantity)
+      if (price !== null && currency && pb.currency && pb.currency.toUpperCase() !== currency.toUpperCase()) {
+        price = await this.convertPriceUsingSettings(price, pb.currency, currency, tenantId)
+      }
+      result.set(keyOf(item.productId, item.variantId), price)
     }
     return result
   }

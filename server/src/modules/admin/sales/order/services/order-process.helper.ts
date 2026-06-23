@@ -40,6 +40,7 @@ export class OrderProcessHelper {
     ctx: RequestContextDto,
     manager: EntityManager,
     priceBookCode?: string | null,
+    orderCurrency?: string,
   ): Promise<{
     orderItem: OrderItemEntity
     ledgerEntryId: string | null
@@ -79,6 +80,7 @@ export class OrderProcessHelper {
       quantity,
       priceBookCode || null, // Use specified book; falls back to default if null
       tenantId,
+      orderCurrency,
     )
 
     const unitPrice =

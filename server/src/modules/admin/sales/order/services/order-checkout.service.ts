@@ -110,6 +110,7 @@ export class OrderCheckoutService {
       const processedItems: OrderItemEntity[] = []
       const pendingLedgerIds: string[] = []
       const pendingReservationIds: string[] = []
+      const orderCurrency = createOrderDto.currency || settings?.currency || 'USD'
       const resolvedPriceBookCode = createOrderDto.priceBookCode || user?.priceBookCode || null
       for (const item of rawItems) {
         const { orderItem, ledgerEntryId, reservationId } =
@@ -118,6 +119,7 @@ export class OrderCheckoutService {
             ctx,
             manager,
             resolvedPriceBookCode, // forward resolved book
+            orderCurrency,
           )
         processedItems.push(orderItem)
         if (ledgerEntryId) pendingLedgerIds.push(ledgerEntryId)
@@ -138,7 +140,7 @@ export class OrderCheckoutService {
         shippingAddressId: createOrderDto.shippingAddressId || undefined,
         items: processedItems,
         totalAmount: 0,
-        currency: createOrderDto.currency || settings?.currency || 'USD',
+        currency: orderCurrency,
         currencyRate: createOrderDto.currencyRate || 1,
         paymentMethod: createOrderDto.paymentMethod,
         status: OrderStatus.PENDING,
