@@ -125,6 +125,76 @@ const SteadfastSection = memo(({ steadfastCourier, onChange }: any) => (
 
 SteadfastSection.displayName = "SteadfastSection";
 
+const EasyPostSection = memo(({ shippingConfig, onChange }: any) => (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mt-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Globe className="w-5 h-5 text-indigo-500" />
+            EasyPost Logistics Settings (Global Fulfillment)
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField
+                label="EasyPost API Key"
+                isSecret
+                value={shippingConfig.easyPostApiKey || ""}
+                onChange={(val: string) => onChange("shippingConfig", "easyPostApiKey", val)}
+                placeholder="EZTK..."
+            />
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    EasyPost Mode
+                </label>
+                <select
+                    value={shippingConfig.easyPostMode || "test"}
+                    onChange={(e) => onChange("shippingConfig", "easyPostMode", e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                >
+                    <option value="test">Test</option>
+                    <option value="production">Production</option>
+                </select>
+            </div>
+            <div className="md:col-span-2 space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/50">
+                <h4 className="text-sm font-bold text-slate-850 dark:text-slate-200">Origin Warehouse Address</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <InputField
+                            label="Origin Address line 1"
+                            value={shippingConfig.originAddress || ""}
+                            onChange={(val: string) => onChange("shippingConfig", "originAddress", val)}
+                            placeholder="123 Export Blvd"
+                        />
+                    </div>
+                    <InputField
+                        label="Origin City"
+                        value={shippingConfig.originCity || ""}
+                        onChange={(val: string) => onChange("shippingConfig", "originCity", val)}
+                        placeholder="San Francisco"
+                    />
+                    <InputField
+                        label="Origin State"
+                        value={shippingConfig.originState || ""}
+                        onChange={(val: string) => onChange("shippingConfig", "originState", val)}
+                        placeholder="CA"
+                    />
+                    <InputField
+                        label="Origin Postal Code"
+                        value={shippingConfig.originPostalCode || ""}
+                        onChange={(val: string) => onChange("shippingConfig", "originPostalCode", val)}
+                        placeholder="94107"
+                    />
+                    <InputField
+                        label="Origin Country"
+                        value={shippingConfig.originCountry || ""}
+                        onChange={(val: string) => onChange("shippingConfig", "originCountry", val)}
+                        placeholder="US"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+));
+
+EasyPostSection.displayName = "EasyPostSection";
+
 const ShippingRatesSection = memo(({ shippingConfig, onChange }: any) => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mt-6">
         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
@@ -207,6 +277,11 @@ function CourierSetting({ formData, setFormData }: any) {
 
             <SteadfastSection 
                 steadfastCourier={formData.steadfastCourier} 
+                onChange={handleFieldChange} 
+            />
+
+            <EasyPostSection 
+                shippingConfig={formData.shippingConfig} 
                 onChange={handleFieldChange} 
             />
 
