@@ -15,8 +15,9 @@ export default function Price({ amount, className = "", showOriginal = false, or
   }, []);
 
   if (!mounted) {
-    // Return a placeholder or the raw amount with $ during SSR to avoid mismatch
-    return <span className={className}>${Number(amount).toFixed(2)}</span>;
+    // Return a placeholder or the raw amount with selected currency symbol during SSR to avoid mismatch
+    const symbol = selectedCurrency?.symbol || '$';
+    return <span className={className}>{symbol}{Number(amount).toFixed(2)}</span>;
   }
 
   return (

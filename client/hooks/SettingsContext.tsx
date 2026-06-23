@@ -314,9 +314,25 @@ export function SettingsProvider({
   const formatPrice = (amount: number) => {
     const converted = convertPrice(amount);
     if (typeof converted !== 'number' || isNaN(converted)) {
-      return `${selectedCurrency.symbol}0.00`;
+      try {
+        const locale = settings?.locale || 'en-US';
+        return new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: selectedCurrency.code,
+        }).format(0);
+      } catch (e) {
+        return `${selectedCurrency.symbol}0.00`;
+      }
     }
-    return `${selectedCurrency.symbol}${converted.toFixed(2)}`;
+    try {
+      const locale = settings?.locale || 'en-US';
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: selectedCurrency.code,
+      }).format(converted);
+    } catch (e) {
+      return `${selectedCurrency.symbol}${converted.toFixed(2)}`;
+    }
   };
 
   return (
