@@ -27,6 +27,12 @@ export class BranchEntity extends BaseEntity {
   @Column({ type: 'text', name: 'ip_whitelist', nullable: true })
   ipWhitelist: string
 
+  @Column({ type: 'numeric', name: 'latitude', precision: 10, scale: 7, nullable: true })
+  latitude: number | null
+
+  @Column({ type: 'numeric', name: 'longitude', precision: 10, scale: 7, nullable: true })
+  longitude: number | null
+
   @Column({ type: 'uuid', name: 'tenant_id' })
   @Index()
   tenantId: string

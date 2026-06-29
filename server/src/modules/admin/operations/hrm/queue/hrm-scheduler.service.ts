@@ -22,6 +22,11 @@ export class HrmSchedulerService implements OnModuleInit {
         pattern: '0 8 * * *', // 08:00 daily
         jobId: 'hrm-document-expiry-alerts',
       },
+      {
+        name: 'auto-check-out',
+        pattern: '30 23 * * *', // 23:30 daily
+        jobId: 'hrm-auto-check-out',
+      },
     ]
 
     for (const job of jobs) {

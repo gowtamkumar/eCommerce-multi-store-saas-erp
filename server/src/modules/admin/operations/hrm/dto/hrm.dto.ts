@@ -117,6 +117,21 @@ export class SalaryConfigDto {
   @Type(() => AllowanceDeductionItemDto)
   @IsOptional()
   deductions?: AllowanceDeductionItemDto[]
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  standardMonthlyHours?: number
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  overtimeMultiplier?: number
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  lateDeductionMultiplier?: number
 }
 
 class EmergencyContactDto {

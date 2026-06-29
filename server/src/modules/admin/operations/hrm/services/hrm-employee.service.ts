@@ -9,6 +9,8 @@ import {
   UpdateHolidayDto,
 } from '../dto/hrm.dto'
 import { EmployeeEntity } from '../entities/employee.entity'
+import { LeaveQuotaEntity } from '../entities/leave.entity'
+import { LeaveType } from '@/common/enums/hrm/hrm-enums'
 import { assertProductionSafe } from '../hrm.helpers'
 import { HrmRepository } from '../hrm.repository'
 
@@ -73,6 +75,9 @@ export class HrmEmployeeService {
         })
       }
     }
+
+    const currentYear = new Date(data.joiningDate).getFullYear()
+    await this.initializeDefaultLeaveQuotas(employee.id, ctx.tenantId, currentYear)
 
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
@@ -423,6 +428,36 @@ export class HrmEmployeeService {
           tenantId,
         })
       }
+    }
+  }
+
+  async initializeDefaultLeaveQuotas(
+    employeeId: string,
+    tenantId: string,
+    year: number,
+  ) {
+    const existing = await this.hrmRepo.leaveQuotaRepo.find({ where: { employeeId, tenantId, year } })
+    if (existing.length > 0) return
+
+    const defaults = [
+      { leaveType: LeaveType.SICK, totalDays: 10 },
+      { leaveType: LeaveType.CASUAL, totalDays: 10 },
+      { leaveType: LeaveType.ANNUAL, totalDays: 15 },
+      { leaveType: LeaveType.MATERNITY, totalDays: 90 },
+      { leaveType: LeaveType.PATERNITY, totalDays: 10 },
+    ]
+
+    for (const d of defaults) {
+      await this.hrmRepo.leaveQuotaRepo.save(
+        this.hrmRepo.leaveQuotaRepo.create({
+          employeeId,
+          tenantId,
+          leaveType: d.leaveType,
+          totalDays: d.totalDays,
+          usedDays: 0,
+          year,
+        }),
+      )
     }
   }
 }

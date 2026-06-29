@@ -33,6 +33,7 @@ import { SingleProductPageSettingsDto } from './single-product-page.dto'
 import { OffersPageSettingsDto } from './offers-page.dto'
 import { SmsDto } from './sms.dto'
 import { ThemeSettingsDto } from './theme-settings.dto'
+import { FinanceConfigDto } from './financeConfig.dto'
 
 const ISO_4217_RE = /^[A-Z]{3}$/
 const IETF_LOCALE_RE = /^[a-z]{2,3}(-[A-Z]{2})?$/
@@ -160,6 +161,13 @@ export class UpdateSiteSettingsDto {
   @ValidateNested()
   @Type(() => ShippingConfigDto)
   shippingConfig?: ShippingConfigDto
+
+  @ApiProperty({ required: false })
+  @IsObject()
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FinanceConfigDto)
+  financeConfig?: FinanceConfigDto
 
   @ApiProperty({ required: false })
   @IsOptional()

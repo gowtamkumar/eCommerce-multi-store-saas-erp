@@ -13,6 +13,7 @@ import { AttendanceSessionEntity } from '../entities/attendance.entity'
 import { EmployeeEntity } from '../entities/employee.entity'
 import { LeaveRequestEntity } from '../entities/leave.entity'
 import { PayrollBatchEntity, PayrollSlipEntity } from '../entities/payroll.entity'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import {
   buildCheckInDateSet,
   buildHolidayDateSet,
@@ -66,6 +67,9 @@ export class HrmPayrollService {
     })
 
     return await this.hrmRepo.employeeRepo.manager.transaction(async (em) => {
+      const siteSettings = await em.findOne(SiteSettingsEntity, {
+        where: { tenantId: ctx.tenantId },
+      })
       const employeeRepo = em.getRepository(EmployeeEntity)
       const leaveRequestRepo = em.getRepository(LeaveRequestEntity)
       const attendanceSessionRepo = em.getRepository(AttendanceSessionEntity)
@@ -159,10 +163,14 @@ export class HrmPayrollService {
         const overtimeHours = sessions.reduce((sum, s) => sum + Number(s.overtimeHours ?? 0), 0)
         const lateMinutes = sessions.reduce((sum, s) => sum + Number(s.lateMinutes ?? 0), 0)
 
-        const hourlyRate = salary / 160
-        const overtimePay = parseFloat((overtimeHours * hourlyRate * 1.5).toFixed(2))
+        const standardMonthlyHours = Number(employee.salaryConfig?.standardMonthlyHours ?? siteSettings?.financeConfig?.hrmStandardMonthlyHours ?? 160)
+        const overtimeMultiplier = Number(employee.salaryConfig?.overtimeMultiplier ?? siteSettings?.financeConfig?.hrmOvertimeMultiplier ?? 1.5)
+        const lateDeductionMultiplier = Number(employee.salaryConfig?.lateDeductionMultiplier ?? siteSettings?.financeConfig?.hrmLateDeductionMultiplier ?? 0.5)
+
+        const hourlyRate = standardMonthlyHours > 0 ? salary / standardMonthlyHours : 0
+        const overtimePay = parseFloat((overtimeHours * hourlyRate * overtimeMultiplier).toFixed(2))
         const lateDeductions = parseFloat(
-          (Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2),
+          (Math.floor(lateMinutes / 30) * (hourlyRate * lateDeductionMultiplier)).toFixed(2),
         )
 
         const assignment = assignmentMap.get(employee.id) ?? null

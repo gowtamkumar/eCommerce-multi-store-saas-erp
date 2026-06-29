@@ -83,6 +83,9 @@ export class EmployeeEntity extends BaseEntity {
     basicSalary: number
     allowances?: { type: string; amount: number }[]
     deductions?: { type: string; amount: number }[]
+    standardMonthlyHours?: number
+    overtimeMultiplier?: number
+    lateDeductionMultiplier?: number
   }
 
   @Column({ type: 'date', name: 'joining_date' })

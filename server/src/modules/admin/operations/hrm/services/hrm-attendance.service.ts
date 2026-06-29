@@ -10,10 +10,12 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { AssignShiftDto, CreateShiftDto, UpdateShiftDto } from '../dto/hrm.dto'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import {
   computeLateMinutes,
   computeOvertimeHours,
   isIpAllowed,
+  calculateDistance,
 } from '../hrm.helpers'
 import { HrmRepository } from '../hrm.repository'
 import { HrmEmployeeService } from './hrm-employee.service'
@@ -125,6 +127,41 @@ export class HrmAttendanceService {
         )
         throw new ForbiddenException(
           'Unauthorized location. Please connect to the company network.',
+        )
+      }
+    }
+
+    const siteSettings = await this.hrmRepo.employeeRepo.manager.findOne(SiteSettingsEntity, {
+      where: { tenantId: ctx.tenantId },
+    })
+    const geofencingEnabled = siteSettings?.financeConfig?.hrmGeofencingEnabled ?? false
+    if (geofencingEnabled) {
+      if (options?.gpsLat === undefined || options?.gpsLong === undefined) {
+        throw new BadRequestException('GPS coordinates are required for check-in.')
+      }
+
+      if (
+        location &&
+        location.latitude !== null &&
+        location.longitude !== null &&
+        location.latitude !== undefined &&
+        location.longitude !== undefined
+      ) {
+        const distance = calculateDistance(
+          options.gpsLat,
+          options.gpsLong,
+          Number(location.latitude),
+          Number(location.longitude),
+        )
+        const allowedRadius = siteSettings?.financeConfig?.hrmGeofencingRadiusMeters ?? 200
+        if (distance > allowedRadius) {
+          throw new ForbiddenException(
+            `You are outside the allowed check-in radius. Proximity: ${Math.round(distance)}m. Allowed radius: ${allowedRadius}m.`,
+          )
+        }
+      } else {
+        this.logger.warn(
+          `GPS geofencing is enabled but branch location coordinates are not configured for branch ${employee.branchId}. Skipping GPS validation.`,
         )
       }
     }

@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator'
 
 export class FinanceConfigDto {
   /**
@@ -20,4 +20,24 @@ export class FinanceConfigDto {
   @IsString()
   @IsOptional()
   taxMode?: string
+
+  @IsNumber()
+  @IsOptional()
+  hrmStandardMonthlyHours?: number
+
+  @IsNumber()
+  @IsOptional()
+  hrmOvertimeMultiplier?: number
+
+  @IsNumber()
+  @IsOptional()
+  hrmLateDeductionMultiplier?: number
+
+  @IsBoolean()
+  @IsOptional()
+  hrmGeofencingEnabled?: boolean
+
+  @IsNumber()
+  @IsOptional()
+  hrmGeofencingRadiusMeters?: number
 }

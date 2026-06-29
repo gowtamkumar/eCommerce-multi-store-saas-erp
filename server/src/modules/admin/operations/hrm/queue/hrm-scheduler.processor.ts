@@ -1,12 +1,14 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Logger } from '@nestjs/common'
 import { Job } from 'bullmq'
-import { DataSource, In } from 'typeorm'
-import { EmployeeStatus } from '@/common/enums/hrm/hrm-enums'
+import { DataSource, In, IsNull } from 'typeorm'
+import { EmployeeStatus, AttendanceSource } from '@/common/enums/hrm/hrm-enums'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { EmployeeEntity } from '../entities/employee.entity'
+import { AttendanceSessionEntity } from '../entities/attendance.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { HrmRepository } from '../hrm.repository'
+import { computeOvertimeHours } from '../hrm.helpers'
 
 const DEFAULT_PROBATION_DAYS = 90
 const DOCUMENT_EXPIRY_ALERT_DAYS = 30
@@ -32,6 +34,9 @@ export class HrmSchedulerProcessor extends WorkerHost {
         break
       case 'document-expiry-alerts':
         await this.runDocumentExpiryAlerts()
+        break
+      case 'auto-check-out':
+        await this.runAutoCheckOut()
         break
       default:
         this.logger.warn(`Unknown HRM job name: ${job.name}`)
@@ -149,6 +154,87 @@ export class HrmSchedulerProcessor extends WorkerHost {
           )
         } catch (e: any) {
           this.logger.error(`Failed to send expiry alert for doc ${doc.id}: ${e.message}`)
+        }
+      }
+    }
+  }
+
+  private async runAutoCheckOut() {
+    const em = this.dataSource.manager
+    const attendanceRepo = em.getRepository(AttendanceSessionEntity)
+
+    // Find sessions where checkOut is null
+    const openSessions = await attendanceRepo.find({
+      where: { checkOut: IsNull() },
+      relations: { employee: { branch: true } },
+    })
+
+    this.logger.log(`Auto check-out: found ${openSessions.length} active session(s) to close`)
+    if (openSessions.length === 0) return
+
+    const now = new Date()
+
+    for (const session of openSessions) {
+      const assignment = await this.hrmRepo.findEmployeeShift(
+        session.employeeId,
+        session.checkIn,
+        session.tenantId,
+      )
+
+      let checkOutTime = new Date()
+      if (assignment?.shift) {
+        const [endH, endM, endS] = assignment.shift.endTime.split(':').map(Number)
+        checkOutTime = new Date(session.checkIn)
+        checkOutTime.setHours(endH, endM || 0, endS || 0, 0)
+        // Night shift: if shift starts on checkin day and ends next day
+        if (assignment.shift.isNightShift && checkOutTime < session.checkIn) {
+          checkOutTime.setDate(checkOutTime.getDate() + 1)
+        }
+      }
+
+      if (checkOutTime > now || Number.isNaN(checkOutTime.getTime())) {
+        checkOutTime = now
+      }
+
+      const diffMs = checkOutTime.getTime() - new Date(session.checkIn).getTime()
+      const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
+      const overtimeHours = computeOvertimeHours(new Date(session.checkIn), checkOutTime, assignment)
+
+      await attendanceRepo.update(session.id, {
+        checkOut: checkOutTime,
+        workHours: workHours > 0 ? workHours : 0,
+        overtimeHours,
+        note: session.note ? `${session.note} (Auto checked-out by system)` : 'Auto checked-out by system',
+      })
+
+      // Log CHECK_OUT event
+      try {
+        await this.hrmRepo.logAttendanceEvent({
+          employeeId: session.employeeId,
+          tenantId: session.tenantId,
+          eventType: 'CHECK_OUT',
+          source: AttendanceSource.SYSTEM,
+          timestamp: checkOutTime,
+        })
+      } catch (err: any) {
+        this.logger.error(`Failed to log auto check-out event for employee ${session.employeeId}: ${err.message}`)
+      }
+
+      // Notify employee
+      if (session.employee?.userId) {
+        try {
+          await this.notificationService.createNotification(
+            {
+              title: 'Auto Check-Out Registered',
+              message: `You were automatically checked out by the system for your shift on ${new Date(session.checkIn).toLocaleDateString()}.`,
+              type: 'INFO',
+              link: '/admin/profile',
+              userId: session.employee.userId,
+            },
+            session.tenantId,
+          )
+        } catch (e: any) {
+          this.logger.error(`Failed to notify employee ${session.employeeId} of auto check-out: ${e.message}`)
         }
       }
     }

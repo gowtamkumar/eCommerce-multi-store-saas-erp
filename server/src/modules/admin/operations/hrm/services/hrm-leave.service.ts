@@ -9,10 +9,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
-import { LeaveRequestEntity } from '../entities/leave.entity'
-import { countCalendarDays } from '../hrm.helpers'
+import { LeaveQuotaEntity, LeaveRequestEntity } from '../entities/leave.entity'
+import {
+  buildHolidayDateSet,
+  countWorkingDaysInRange,
+  resolveWorkingDays,
+} from '../hrm.helpers'
 import { HrmRepository } from '../hrm.repository'
 import { HrmEmployeeService } from './hrm-employee.service'
+import { EntityManager } from 'typeorm'
 
 @Injectable()
 export class HrmLeaveService {
@@ -38,7 +43,16 @@ export class HrmLeaveService {
       throw new BadRequestException('End date must be on or after start date')
     }
 
-    const totalDays = countCalendarDays(startDate, endDate)
+    const holidays = await this.hrmRepo.findHolidaysInRange(ctx.tenantId, startDate, endDate)
+    const holidayDateSet = buildHolidayDateSet(holidays)
+
+    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, startDate, ctx.tenantId)
+    const workingDays = resolveWorkingDays(assignment)
+
+    const totalDays = countWorkingDaysInRange(startDate, endDate, workingDays, holidayDateSet)
+    if (totalDays <= 0) {
+      throw new BadRequestException('The requested date range does not contain any working days.')
+    }
 
     const overlapping = await this.hrmRepo.findOverlappingLeaves(
       employeeId,
@@ -58,8 +72,13 @@ export class HrmLeaveService {
       ctx.tenantId,
     )
     const quota = quotas.find((q) => q.leaveType === data.leaveType)
-    if (quota && quota.usedDays + totalDays > quota.totalDays) {
-      throw new BadRequestException(`Insufficient leave balance for ${data.leaveType}`)
+    if (!quota) {
+      throw new BadRequestException(`Leave quota is not configured for ${data.leaveType} leave. Please contact HR to set up your leave quota.`)
+    }
+    if (quota.usedDays + totalDays > quota.totalDays) {
+      throw new BadRequestException(
+        `Insufficient leave balance for ${data.leaveType}. Available balance: ${quota.totalDays - quota.usedDays} days, requested: ${totalDays} days.`,
+      )
     }
 
     const res = await this.hrmRepo.createLeaveRequest({
@@ -134,7 +153,10 @@ export class HrmLeaveService {
       if (quotaResult.affected === 0) {
         const quota = await this.hrmRepo.findLeaveQuota(request.employeeId, year, ctx.tenantId)
         const match = quota.find((q) => q.leaveType === request.leaveType)
-        if (match && match.usedDays + request.totalDays > match.totalDays) {
+        if (!match) {
+          throw new BadRequestException(`Leave quota is not configured for ${request.leaveType} leave.`)
+        }
+        if (match.usedDays + request.totalDays > match.totalDays) {
           throw new BadRequestException(`Insufficient leave balance for ${request.leaveType}`)
         }
       }
@@ -231,5 +253,37 @@ export class HrmLeaveService {
       from: options?.from ? new Date(options.from) : undefined,
       to: options?.to ? new Date(options.to) : undefined,
     })
+  }
+
+  async initializeDefaultLeaveQuotas(
+    employeeId: string,
+    tenantId: string,
+    year: number,
+    em?: EntityManager,
+  ) {
+    const repo = em ? em.getRepository(LeaveQuotaEntity) : this.hrmRepo.leaveQuotaRepo
+    const existing = await repo.find({ where: { employeeId, tenantId, year } })
+    if (existing.length > 0) return
+
+    const defaults = [
+      { leaveType: LeaveType.SICK, totalDays: 10 },
+      { leaveType: LeaveType.CASUAL, totalDays: 10 },
+      { leaveType: LeaveType.ANNUAL, totalDays: 15 },
+      { leaveType: LeaveType.MATERNITY, totalDays: 90 },
+      { leaveType: LeaveType.PATERNITY, totalDays: 10 },
+    ]
+
+    for (const d of defaults) {
+      await repo.save(
+        repo.create({
+          employeeId,
+          tenantId,
+          leaveType: d.leaveType,
+          totalDays: d.totalDays,
+          usedDays: 0,
+          year,
+        }),
+      )
+    }
   }
 }

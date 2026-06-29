@@ -15,6 +15,8 @@ import { HrmEmployeeService } from './hrm-employee.service'
 import { EmployeeEntity } from '../entities/employee.entity'
 import { EmployeePersonalDetailsEntity } from '../entities/employee-personal-details.entity'
 import { ApplicantEntity } from '../entities/recruitment.entity'
+import { LeaveQuotaEntity } from '../entities/leave.entity'
+import { LeaveType } from '@/common/enums/hrm/hrm-enums'
 
 @Injectable()
 export class HrmRecruitmentService {
@@ -156,6 +158,8 @@ export class HrmRecruitmentService {
 
     const employee = await this.hrmRepo.employeeRepo.manager.transaction(async (em) => {
       const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.tenantId)
+      const basicSalary = applicant.jobPosting?.salaryRangeMin ? Number(applicant.jobPosting.salaryRangeMin) : 0
+
       const employeeEntity = em.create(EmployeeEntity, {
         tenantId: ctx.tenantId,
         userId: user.id,
@@ -163,6 +167,11 @@ export class HrmRecruitmentService {
         status: EmployeeStatus.PROBATION,
         employeeId: humanReadableId,
         joiningDate: new Date(),
+        salaryConfig: {
+          basicSalary,
+          allowances: [],
+          deductions: [],
+        },
       })
       const savedEmployee = await em.save(EmployeeEntity, employeeEntity)
 
@@ -173,6 +182,30 @@ export class HrmRecruitmentService {
         tenantId: ctx.tenantId,
       })
       await em.save(EmployeePersonalDetailsEntity, personalDetails)
+
+      // Initialize default leave quotas
+      const currentYear = new Date().getFullYear()
+      const leaveQuotaRepo = em.getRepository(LeaveQuotaEntity)
+      const defaults = [
+        { leaveType: LeaveType.SICK, totalDays: 10 },
+        { leaveType: LeaveType.CASUAL, totalDays: 10 },
+        { leaveType: LeaveType.ANNUAL, totalDays: 15 },
+        { leaveType: LeaveType.MATERNITY, totalDays: 90 },
+        { leaveType: LeaveType.PATERNITY, totalDays: 10 },
+      ]
+
+      for (const d of defaults) {
+        await leaveQuotaRepo.save(
+          leaveQuotaRepo.create({
+            employeeId: savedEmployee.id,
+            tenantId: ctx.tenantId,
+            leaveType: d.leaveType,
+            totalDays: d.totalDays,
+            usedDays: 0,
+            year: currentYear,
+          }),
+        )
+      }
 
       // Update applicant status to reflect onboarding completion
       await em.update(ApplicantEntity, id, { status: ApplicantStatus.JOINED })

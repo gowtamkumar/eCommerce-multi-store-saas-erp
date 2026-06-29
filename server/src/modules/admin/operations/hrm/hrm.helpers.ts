@@ -257,3 +257,46 @@ export function assertProductionSafe(action: string): void {
     throw new BadRequestException(`${action} is disabled in production environments`)
   }
 }
+
+export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3 // Earth radius in meters
+  const phi1 = (lat1 * Math.PI) / 180
+  const phi2 = (lat2 * Math.PI) / 180
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  return R * c
+}
+
+export function countWorkingDaysInRange(
+  startDate: Date,
+  endDate: Date,
+  workingDays: number[],
+  holidayDateSet: Set<string>,
+): number {
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  start.setHours(0, 0, 0, 0)
+  end.setHours(0, 0, 0, 0)
+  if (end < start) return 0
+
+  let count = 0
+  const current = new Date(start)
+  while (current <= end) {
+    const currentStr = toDateString(current)
+    const dayOfWeek = current.getDay()
+    const isHoliday = holidayDateSet.has(currentStr)
+    const isWeeklyOff = !workingDays.includes(dayOfWeek)
+
+    if (!isHoliday && !isWeeklyOff) {
+      count++
+    }
+    current.setDate(current.getDate() + 1)
+  }
+  return count
+}

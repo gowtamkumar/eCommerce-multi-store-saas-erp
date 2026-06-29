@@ -42,6 +42,7 @@ export enum AttendanceSource {
   BIOMETRIC = 'BIOMETRIC',
   POS = 'POS',
   KIOSK = 'KIOSK',
+  SYSTEM = 'SYSTEM',
 }
 
 export enum PayrollBatchStatus {
