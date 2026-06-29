@@ -29,6 +29,10 @@ import { AiProcurementAssistantService } from './services/domains/ai-procurement
 import { AiSalesAssistantService } from './services/domains/ai-sales-assistant.service'
 import { AiSupportAssistantService } from './services/domains/ai-support-assistant.service'
 import { TenantAiClientService } from './services/tenant-ai-client.service'
+import { UserModule } from '@/modules/admin/core/user/user.module'
+import { McpController } from './controllers/mcp.controller'
+import { McpService } from './services/mcp.service'
+import { McpAuthGuard } from './guards/mcp-auth.guard'
 
 @Module({
   imports: [
@@ -37,8 +41,9 @@ import { TenantAiClientService } from './services/tenant-ai-client.service'
     forwardRef(() => ProductModule),
     forwardRef(() => OrderModule),
     forwardRef(() => ReportModule),
+    UserModule,
   ],
-  controllers: [AiController],
+  controllers: [AiController, McpController],
   providers: [
     TenantAiClientService,
     AiAssistantBaseService,
@@ -59,6 +64,8 @@ import { TenantAiClientService } from './services/tenant-ai-client.service'
     AiUsageLogService,
     AiJobService,
     AiAutomationScheduler,
+    McpService,
+    McpAuthGuard,
   ],
   exports: [
     TenantAiClientService,
@@ -77,6 +84,7 @@ import { TenantAiClientService } from './services/tenant-ai-client.service'
     AiJobService,
     AiAutomationService,
     AdminCopilotService,
+    McpService,
   ],
 })
 export class AiModule {}
