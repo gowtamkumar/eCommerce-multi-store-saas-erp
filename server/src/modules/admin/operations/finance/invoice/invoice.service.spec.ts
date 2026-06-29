@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.repository'
-import { InvoiceService as InvoiceServiceBase } from './invoice.service'
 import { InvoiceRepository } from './invoice.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InvoiceService } from './invoice.service'
+import { AccountingOutboxService } from '@/modules/admin/operations/finance/accounting/services/accounting-outbox.service'
 
 describe('InvoiceService', () => {
   let service: InvoiceService
@@ -23,6 +23,12 @@ describe('InvoiceService', () => {
         {
           provide: CacheService,
           useValue: {},
+        },
+        {
+          provide: AccountingOutboxService,
+          useValue: {
+            enqueueJournalEntry: jest.fn(),
+          },
         },
       ],
     }).compile()

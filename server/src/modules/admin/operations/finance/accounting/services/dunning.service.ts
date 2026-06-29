@@ -126,6 +126,10 @@ export class DunningService {
 
       processedCount++
 
+      // Skip negligible balances (rounding differences under $1.00 should not trigger dunning)
+      const MINIMUM_DUNNING_AMOUNT = 1.0
+      if (totalOutstanding < MINIMUM_DUNNING_AMOUNT) continue
+
       // FIFO calculation of unpaid invoices
       const invoices = entries.filter((e) => e.type === ArTransactionType.INVOICE)
       const paymentsTotal = Math.abs(

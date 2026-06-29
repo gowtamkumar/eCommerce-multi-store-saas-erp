@@ -1,15 +1,15 @@
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.repository'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { EntityManager } from 'typeorm'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
-import { InvoiceService as InvoiceServiceBase } from './invoice.service'
 import { InvoiceRepository } from './invoice.repository'
 import { InvoiceEntity } from './entities/invoice.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { AccountingOutboxService } from '@/modules/admin/operations/finance/accounting/services/accounting-outbox.service'
+import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 
 @Injectable()
 export class InvoiceService {
@@ -19,7 +19,8 @@ export class InvoiceService {
     private readonly invoiceRepository: InvoiceRepository,
     private readonly orderRepo: OrderRepository,
     private readonly cacheService: CacheService,
-  ) {}
+    private readonly accountingOutboxService: AccountingOutboxService,
+  ) { }
 
   async createInvoice(
     createInvoiceDto: CreateInvoiceDto,
@@ -61,6 +62,28 @@ export class InvoiceService {
       } as any,
       ctx,
     )
+
+    // Post AR / Revenue GL journal when invoice is created (amount comes from the linked order)
+    try {
+      const totalAmount = Number((order as any).totalAmount || (order as any).grandTotal || 0)
+      if (totalAmount > 0) {
+        await this.accountingOutboxService.enqueueJournalEntry(
+          {
+            type: JournalType.SALES,
+            description: `Invoice Created - ${invoice.invoiceNumber}`,
+            referenceType: 'CUSTOMER_INVOICE',
+            referenceId: invoice.id,
+            lines: [
+              { accountCode: '1200', side: LedgerEntrySide.DEBIT, amount: totalAmount },  // Accounts Receivable
+              { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: totalAmount }, // Sales Revenue
+            ],
+          },
+          ctx,
+        )
+      }
+    } catch (glErr: any) {
+      this.logger.error(`Failed to enqueue GL for invoice ${invoice.id}: ${glErr.message}`)
+    }
 
     await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
     return invoice
@@ -152,6 +175,29 @@ export class InvoiceService {
     const tenantId = ctx.tenantId
     const invoice = await this.findOneInvoice(id, ctx)
     const removedInvoice = await this.invoiceRepository.removeInvoice(invoice)
+
+    // Post a reversal journal entry to undo the AR recognition
+    try {
+      const totalAmount = Number((invoice as any).totalAmount || (invoice as any).amount || 0)
+      if (totalAmount > 0) {
+        await this.accountingOutboxService.enqueueJournalEntry(
+          {
+            type: JournalType.SALES,
+            description: `Invoice Voided - ${invoice.invoiceNumber}`,
+            referenceType: 'CUSTOMER_INVOICE_VOID',
+            referenceId: invoice.id,
+            lines: [
+              { accountCode: '4000', side: LedgerEntrySide.DEBIT, amount: totalAmount },  // Reverse Revenue
+              { accountCode: '1200', side: LedgerEntrySide.CREDIT, amount: totalAmount }, // Reduce AR
+            ],
+          },
+          ctx,
+        )
+      }
+    } catch (glErr: any) {
+      this.logger.error(`Failed to enqueue void GL for invoice ${invoice.id}: ${glErr.message}`)
+    }
+
     await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
     await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
     return removedInvoice

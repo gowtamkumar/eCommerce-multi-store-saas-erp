@@ -59,9 +59,13 @@ export class ExpenseEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'reference_number', length: 100, nullable: true })
   referenceNumber: string
 
-  /** URL or storage key for an attached receipt image / PDF */
+  /** URL or storage key for an attached receipt image / PDF (legacy single-file) */
   @Column({ type: 'varchar', name: 'attachment_url', length: 500, nullable: true })
   attachmentUrl: string | null
+
+  /** Multiple receipt/document URLs stored as a JSONB array for richer audit evidence */
+  @Column({ type: 'jsonb', name: 'attachments', nullable: true, default: () => "'[]'" })
+  attachments: string[]
 
   /** Approval lifecycle */
   @Column({

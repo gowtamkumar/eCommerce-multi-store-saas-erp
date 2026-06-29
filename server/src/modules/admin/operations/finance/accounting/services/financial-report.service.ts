@@ -321,9 +321,13 @@ export class FinancialReportService {
           operatingIn += total
         } else if (referenceType === 'EQUITY_INJECTION' || referenceType === 'LOAN_RECEIPT') {
           financingIn += total
-        } else {
+        } else if (referenceType === 'ASSET_DISPOSAL' || referenceType === 'INVESTMENT_RECEIPT') {
+          investingIn += total
+        } else if (type === JournalType.GENERAL || type === JournalType.CASH_RECEIPT) {
+          // Unclassified debit impacts on cash — treat as operating inflow conservatively
           operatingIn += total
         }
+        // Other unrecognised types: silently ignore to avoid misclassification
       } else {
         // Cash Outflow
         if (
@@ -333,13 +337,15 @@ export class FinancialReportService {
           referenceType === 'SUPPLIER_PAYMENT'
         ) {
           operatingOut += total
-        } else if (referenceType === 'ASSET_PURCHASE') {
+        } else if (referenceType === 'ASSET_PURCHASE' || referenceType === 'CAPITAL_EXPENDITURE') {
           investingOut += total
         } else if (referenceType === 'LOAN_REPAYMENT' || referenceType === 'DIVIDEND_PAYMENT') {
           financingOut += total
-        } else {
+        } else if (type === JournalType.CASH_PAYMENT) {
+          // Generic cash payment — treat as operating outflow
           operatingOut += total
         }
+        // Other unrecognised types: silently ignore to avoid misclassification
       }
     }
 
@@ -359,6 +365,95 @@ export class FinancialReportService {
       netChange,
       startingBalance,
       endingBalance,
+    }
+  }
+
+  /**
+   * Generates a Trial Balance report — total debits, credits, and net balance for every GL account.
+   * Supports optional date scoping (from inception up to asOfDate).
+   */
+  async getTrialBalance(
+    ctx: RequestContextDto,
+    query?: { asOfDate?: string },
+  ): Promise<{
+    accounts: {
+      code: string
+      name: string
+      type: string
+      category: string
+      totalDebits: number
+      totalCredits: number
+      netBalance: number
+    }[]
+    totalDebits: number
+    totalCredits: number
+    isBalanced: boolean
+  }> {
+    const tenantId = ctx.tenantId
+    const accountsRepo = this.dataSource.getRepository(AccountEntity)
+    const accounts = await accountsRepo.find({ where: { tenantId }, order: { code: 'ASC' } })
+
+    const allAccountIds = accounts.map((a) => a.id)
+    if (allAccountIds.length === 0) {
+      return { accounts: [], totalDebits: 0, totalCredits: 0, isBalanced: true }
+    }
+
+    const qb = this.dataSource
+      .getRepository(LedgerEntryEntity)
+      .createQueryBuilder('le')
+      .select('le.accountId', 'accountId')
+      .addSelect('le.side', 'side')
+      .addSelect('SUM(le.amount)', 'total')
+      .leftJoin('le.journalEntry', 'je')
+      .where('le.tenantId = :tenantId', { tenantId })
+      .andWhere('le.accountId IN (:...allAccountIds)', { allAccountIds })
+
+    if (query?.asOfDate) {
+      const limitDate = new Date(query.asOfDate)
+      limitDate.setHours(23, 59, 59, 999)
+      qb.andWhere('je.date <= :limitDate', { limitDate })
+    }
+
+    qb.groupBy('le.accountId').addGroupBy('le.side')
+    const sums = await qb.getRawMany()
+
+    // Build debit/credit maps per account
+    const debitMap: Record<string, number> = {}
+    const creditMap: Record<string, number> = {}
+    for (const row of sums) {
+      if (row.side === LedgerEntrySide.DEBIT) {
+        debitMap[row.accountId] = (debitMap[row.accountId] ?? 0) + Number(row.total || 0)
+      } else {
+        creditMap[row.accountId] = (creditMap[row.accountId] ?? 0) + Number(row.total || 0)
+      }
+    }
+
+    let totalDebits = 0
+    let totalCredits = 0
+
+    const trialAccounts = accounts.map((a) => {
+      const debit = debitMap[a.id] ?? 0
+      const credit = creditMap[a.id] ?? 0
+      totalDebits += debit
+      totalCredits += credit
+      return {
+        code: a.code,
+        name: a.name,
+        type: a.type,
+        category: a.category,
+        totalDebits: debit,
+        totalCredits: credit,
+        netBalance: debit - credit,
+      }
+    }).filter((a) => a.totalDebits > 0 || a.totalCredits > 0)
+
+    const isBalanced = Math.abs(totalDebits - totalCredits) < 0.02
+
+    return {
+      accounts: trialAccounts,
+      totalDebits: Number(totalDebits.toFixed(2)),
+      totalCredits: Number(totalCredits.toFixed(2)),
+      isBalanced,
     }
   }
 }

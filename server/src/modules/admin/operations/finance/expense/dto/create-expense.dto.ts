@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
+import { IsArray, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator'
 import { ExpenseCategory } from 'src/common/enums/expense-category.enum'
 import {
   ExpenseRecurrence,
@@ -37,6 +37,12 @@ export class CreateExpenseDto {
   @IsString()
   @IsOptional()
   attachmentUrl?: string
+
+  /** Multiple receipt URLs for comprehensive audit evidence */
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  attachments?: string[]
 
   @IsEnum(ExpenseStatus)
   @IsOptional()

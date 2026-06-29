@@ -6,6 +6,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { AccountingService } from './accounting.service'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 
 @Injectable()
 export class WalletService {
@@ -15,6 +16,12 @@ export class WalletService {
     private readonly dataSource: DataSource,
     private readonly accountingService: AccountingService,
   ) {}
+
+  private async getTenantBaseCurrency(tenantId: string, em?: EntityManager): Promise<string> {
+    const repo = em ? em.getRepository(SiteSettingsEntity) : this.dataSource.getRepository(SiteSettingsEntity)
+    const settings = await repo.findOne({ where: { tenantId } })
+    return (settings?.currency || 'USD').toUpperCase()
+  }
 
   /**
    * Returns the current available wallet balance for a customer.
@@ -77,12 +84,14 @@ export class WalletService {
 
     const currentBalance = await this.getAvailableBalance(data.customerId, tenantId, em)
 
+    const baseCurrency = await this.getTenantBaseCurrency(tenantId, em)
+
     const entry = em.create(WalletLedgerEntity, {
       customerId: data.customerId,
       type: data.type,
       amount,
       balanceAfter: currentBalance + amount,
-      currency: 'BDT',
+      currency: baseCurrency,
       referenceType: data.referenceType || null,
       referenceId: data.referenceId || null,
       note: data.note || null,
@@ -161,12 +170,14 @@ export class WalletService {
       )
     }
 
+    const baseCurrency = await this.getTenantBaseCurrency(tenantId, em)
+
     const entry = em.create(WalletLedgerEntity, {
       customerId: data.customerId,
       type: WalletTransactionType.WALLET_SPEND,
       amount: -amount, // Negative — funds leaving the wallet
       balanceAfter: currentBalance - amount,
-      currency: 'BDT',
+      currency: baseCurrency,
       referenceType: data.referenceType || null,
       referenceId: data.referenceId || null,
       note: data.note || null,

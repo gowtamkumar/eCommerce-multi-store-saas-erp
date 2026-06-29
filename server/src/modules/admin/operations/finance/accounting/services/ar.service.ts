@@ -6,6 +6,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { AccountingService } from './accounting.service'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 
 @Injectable()
 export class ArService {
@@ -15,6 +16,12 @@ export class ArService {
     private readonly dataSource: DataSource,
     private readonly accountingService: AccountingService,
   ) {}
+
+  private async getTenantBaseCurrency(tenantId: string, manager?: EntityManager): Promise<string> {
+    const em = manager || this.dataSource.manager
+    const settings = await em.findOne(SiteSettingsEntity, { where: { tenantId } })
+    return (settings?.currency || 'USD').toUpperCase()
+  }
 
   /**
    * Sums all ledger amounts for a customer to find their current outstanding debt.
@@ -113,6 +120,7 @@ export class ArService {
       }
 
       // 2. Post AR Ledger Entry (negative amount to reduce outstanding balance)
+      const baseCurrency = await this.getTenantBaseCurrency(tenantId, em)
       const ledgerEntry = await this.postArTransaction(
         {
           customerId: data.customerId,
@@ -120,7 +128,7 @@ export class ArService {
           amount: -amount,
           referenceType: 'PAYMENT_RECEIPT',
           referenceId: data.transactionId,
-          currency: 'USD',
+          currency: baseCurrency,
         },
         ctx,
         em,
@@ -273,5 +281,82 @@ export class ArService {
       where: { customerId, tenantId },
       order: { createdAt: 'DESC', id: 'DESC' },
     })
+  }
+
+  /**
+   * Generates an Accounts Payable (AP) aging report scoped to a supplier entity.
+   * Mirrors getArAgingReport but for the payable side (supplier invoices vs. payments).
+   * Requires the purchase module's SupplierInvoice/SupplierPayment entities to be loaded.
+   */
+  async getApAgingReport(ctx: RequestContextDto): Promise<any[]> {
+    const tenantId = ctx.tenantId
+    const em = this.dataSource.manager
+
+    // Load all AP ledger entries (supplier invoices are positive, payments are negative)
+    const allEntries = await em.find(ArLedgerEntity, {
+      where: { tenantId, referenceType: 'SUPPLIER_INVOICE' },
+      order: { createdAt: 'ASC', id: 'ASC' },
+    })
+
+    const paymentEntries = await em.find(ArLedgerEntity, {
+      where: { tenantId, referenceType: 'SUPPLIER_PAYMENT' },
+      order: { createdAt: 'ASC', id: 'ASC' },
+    })
+
+    // Group by a proxy of supplier (referenceId grouping until SupplierEntity is added)
+    const allByRef = new Map<string, ArLedgerEntity[]>()
+    for (const entry of [...allEntries, ...paymentEntries]) {
+      const key = entry.customerId // reused as supplierId in AP context
+      const list = allByRef.get(key) ?? []
+      list.push(entry)
+      allByRef.set(key, list)
+    }
+
+    const now = new Date()
+    const report: any[] = []
+
+    for (const [supplierId, entries] of allByRef.entries()) {
+      const invoices = entries.filter((e) => e.referenceType === 'SUPPLIER_INVOICE')
+      const paymentsTotal = Math.abs(
+        entries
+          .filter((e) => e.referenceType === 'SUPPLIER_PAYMENT')
+          .reduce((sum, e) => sum + Number(e.amount), 0),
+      )
+
+      const totalOutstanding = invoices.reduce((sum, e) => sum + Number(e.amount), 0) - paymentsTotal
+      if (totalOutstanding <= 0) continue
+
+      let remainingPayment = paymentsTotal
+      let current = 0, d1to30 = 0, d31to60 = 0, d61to90 = 0, d90plus = 0
+
+      for (const invoice of invoices) {
+        const invAmt = Number(invoice.amount)
+        let unpaidAmt = invAmt
+        if (remainingPayment >= unpaidAmt) {
+          remainingPayment -= unpaidAmt
+          unpaidAmt = 0
+        } else {
+          unpaidAmt -= remainingPayment
+          remainingPayment = 0
+        }
+        if (unpaidAmt > 0) {
+          const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : new Date(invoice.createdAt)
+          const diffDays = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+          if (diffDays <= 0) current += unpaidAmt
+          else if (diffDays <= 30) d1to30 += unpaidAmt
+          else if (diffDays <= 60) d31to60 += unpaidAmt
+          else if (diffDays <= 90) d61to90 += unpaidAmt
+          else d90plus += unpaidAmt
+        }
+      }
+
+      report.push({
+        supplierId,
+        totalOutstanding,
+        aging: { current, '1-30': d1to30, '31-60': d31to60, '61-90': d61to90, '90+': d90plus },
+      })
+    }
+
+    return report
   }
 }

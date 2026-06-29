@@ -466,16 +466,18 @@ export class TaxService {
           acc.name.toLowerCase().includes('sales tax')
         ) {
           outputTaxTotal += amount
-          // Back-calculate taxable base based on standard 15% / 10% averages if base not stored
+          // Back-calculate taxable base: journalEntry totalAmount includes tax, so base = totalAmount - tax
           const estBase = je.totalAmount - amount
           taxableSalesTotal += estBase
+          // Dynamically compute tax rate from this transaction (avoid hardcoded 15%)
+          const computedRate = estBase > 0 ? Number(((amount / estBase) * 100).toFixed(4)) : 0
           transactionLogs.push({
             date: je.date,
             voucherId: je.id,
             description: je.description,
             type: 'OUTPUT (Sales)',
             taxableBase: estBase,
-            taxRate: 15.0, // standard parsed rate
+            taxRate: computedRate,
             taxAmount: amount,
           })
         }
@@ -493,13 +495,14 @@ export class TaxService {
           inputTaxTotal += amount
           const estBase = je.totalAmount - amount
           taxablePurchasesTotal += estBase
+          const computedRate = estBase > 0 ? Number(((amount / estBase) * 100).toFixed(4)) : 0
           transactionLogs.push({
             date: je.date,
             voucherId: je.id,
             description: je.description,
             type: 'INPUT (Purchases)',
             taxableBase: estBase,
-            taxRate: 15.0,
+            taxRate: computedRate,
             taxAmount: amount,
           })
         }

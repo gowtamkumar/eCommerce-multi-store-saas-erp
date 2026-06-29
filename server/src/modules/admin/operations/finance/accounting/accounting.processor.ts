@@ -37,34 +37,35 @@ export class AccountingProcessor extends WorkerHost {
             totalAmount,
           } = payload
           this.logger.log(`Posting Payroll Accrual for batch: ${batchId}`)
+
+          // Correct payroll accrual structure (avoids double-posting AP):
+          //   DR 6000 Salary Expense    = grossSalary (totalSalary)
+          //   CR 2200 Tax Liability      = taxesWithheld
+          //   CR 2100 Accounts Payable   = netPayable (gross - taxes - deductions)
+          const gross = Number(totalSalary || 0)
+          const tax = Number(totalTaxesWithheld || 0)
+          const deductions = Number(totalDeductions || 0)
+          const netPayable = gross - tax - deductions
+
+          const accrualLines: { accountCode: string; side: typeof LedgerEntrySide[keyof typeof LedgerEntrySide]; amount: number }[] = []
+
+          if (gross > 0) {
+            accrualLines.push({ accountCode: '6000', side: LedgerEntrySide.DEBIT, amount: gross })
+          }
+          if (tax > 0) {
+            accrualLines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: tax })
+          }
+          if (netPayable > 0) {
+            accrualLines.push({ accountCode: '2100', side: LedgerEntrySide.CREDIT, amount: netPayable })
+          }
+
           await this.accountingService.createJournalEntry(
             {
               type: JournalType.GENERAL,
               description: `Salary Accrual for Period ${period}: ${name}`,
               referenceType: 'PAYROLL_BATCH',
               referenceId: batchId,
-              lines: [
-                {
-                  accountCode: '6000',
-                  side: LedgerEntrySide.DEBIT,
-                  amount: totalSalary,
-                },
-                {
-                  accountCode: '2100',
-                  side: LedgerEntrySide.CREDIT,
-                  amount: totalAmount,
-                },
-                {
-                  accountCode: '2200',
-                  side: LedgerEntrySide.CREDIT,
-                  amount: totalTaxesWithheld,
-                },
-                {
-                  accountCode: '2100',
-                  side: LedgerEntrySide.CREDIT,
-                  amount: totalDeductions,
-                },
-              ].filter((line) => line.amount > 0),
+              lines: accrualLines,
             },
             ctx,
           )

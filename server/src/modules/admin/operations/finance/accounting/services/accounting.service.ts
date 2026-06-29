@@ -92,6 +92,20 @@ export class AccountingService {
         )
       }
 
+      // Idempotency guard: if a journal already exists for referenceType + referenceId, return existing entry
+      if (data.referenceType && data.referenceId) {
+        const existing = await em.findOne(JournalEntryEntity, {
+          where: { referenceType: data.referenceType, referenceId: data.referenceId, tenantId },
+        })
+        if (existing) {
+          this.logger.warn(
+            `Duplicate journal entry skipped for referenceType=${data.referenceType} referenceId=${data.referenceId}`,
+          )
+          if (queryRunner) await queryRunner.rollbackTransaction()
+          return existing
+        }
+      }
+
       // Determine Base Currency and Exchange Rate
       const settings = await em.findOne(SiteSettingsEntity, { where: { tenantId } })
       const baseCurrency = (settings?.currency || 'USD').toUpperCase()
