@@ -65,6 +65,10 @@ import {
   InventoryAnomalyResultDto,
 } from '../dto/generate-inventory-anomaly.dto'
 import { GenerateInvoiceOcrDto, InvoiceOcrResultDto } from '../dto/generate-invoice-ocr.dto'
+import {
+  GenerateThreeWayMatchDto,
+  ThreeWayMatchExplanationResultDto,
+} from '../dto/generate-three-way-match.dto'
 import { GenerateLeadFollowUpDto, LeadFollowUpResultDto } from '../dto/generate-lead-follow-up.dto'
 import {
   GenerateLoyaltyCopyDto,
@@ -733,6 +737,22 @@ export class AiController {
       success: true,
       statusCode: 200,
       message: 'GRN discrepancy notes generated successfully',
+      data,
+    }
+  }
+
+  @Post('generate/three-way-match')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE, SystemPermissions.PURCHASING_READ)
+  async generateThreeWayMatchExplainer(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: GenerateThreeWayMatchDto,
+  ): Promise<BaseApiSuccessResponse<ThreeWayMatchExplanationResultDto>> {
+    const data = await this.procurementAssistant.generateThreeWayMatchExplainer(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Three-way match explanation generated successfully',
       data,
     }
   }

@@ -7,6 +7,7 @@ import { CacheService } from '../../infra/cache/cache.service'
 import { CogsService } from '@/modules/admin/operations/finance/accounting/services/cogs.service'
 import { AccountingIntegrationService } from '@/modules/admin/operations/finance/accounting/services/accounting-integration.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { InventoryLedgerService } from './inventory-ledger.service'
 
 describe('InventoryLedgerService', () => {
@@ -43,6 +44,12 @@ describe('InventoryLedgerService', () => {
         {
           provide: NotificationService,
           useValue: {},
+        },
+        {
+          provide: MailService,
+          useValue: {
+            sendLowStockAlertEmail: jest.fn().mockResolvedValue(undefined),
+          },
         },
         {
           provide: DataSource,

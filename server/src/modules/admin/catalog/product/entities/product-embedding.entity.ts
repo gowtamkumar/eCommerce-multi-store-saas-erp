@@ -7,8 +7,23 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  ValueTransformer,
 } from 'typeorm'
 import { ProductEntity } from './product.entity'
+
+export const vectorTransformer: ValueTransformer = {
+  to: (value: number[] | null): string | null => {
+    if (!value) return null
+    return `[${value.join(',')}]`
+  },
+  from: (value: any): number[] | null => {
+    if (!value) return null
+    if (typeof value === 'string') {
+      return value.replace(/[\[\]]/g, '').split(',').map(Number)
+    }
+    return value
+  },
+}
 
 @Entity('product_embeddings')
 @Index(['tenantId'])
@@ -32,7 +47,12 @@ export class ProductEmbeddingEntity {
   @Column({ type: 'varchar', length: 128, name: 'embedding_model' })
   embeddingModel: string
 
-  @Column({ type: 'jsonb' })
+  @Column({
+    type: 'vector',
+    length: 1536,
+    transformer: vectorTransformer,
+    nullable: true,
+  })
   embedding: number[]
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })

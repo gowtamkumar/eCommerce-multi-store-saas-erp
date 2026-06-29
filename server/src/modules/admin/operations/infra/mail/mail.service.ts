@@ -346,7 +346,69 @@ export class MailService implements OnModuleDestroy {
     }
   }
 
-  async sendGenericEmail(options: { to: string; subject: string; html: string; tenantId: string }) {
+  async sendLowStockAlertEmail(
+    tenantId: string,
+    productName: string,
+    skuText: string,
+    currentStock: number,
+    threshold: number,
+    isOutOfStock: boolean,
+  ) {
+    this.logger.log(`${this.sendLowStockAlertEmail.name} Service Called`)
+    try {
+      const settings = await this.settingsService.findByTenantSettings({
+        tenantId,
+      } as RequestContextDto)
+      if (!settings || !settings.contactEmail) {
+        this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping low stock email alert.`)
+        return
+      }
+
+      const { transporter, from } = await this.getTransporter(tenantId)
+      const subject = isOutOfStock
+        ? `🚨 CRITICAL ALERT: Product Out of Stock - ${productName}${skuText}`
+        : `⚠️ WARNING: Low Stock Alert - ${productName}${skuText}`
+
+      const title = isOutOfStock ? 'Product Out of Stock' : 'Low Stock Alert'
+      const message = isOutOfStock
+        ? `Product "${productName}"${skuText} is completely out of stock!`
+        : `Product "${productName}"${skuText} is low on stock. Current quantity: ${currentStock} (Threshold: ${threshold}).`
+
+      const mailOptions = {
+        from: from,
+        to: settings.contactEmail,
+        subject: subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a202c;">
+            <h2 style="color: ${isOutOfStock ? '#e53e3e' : '#dd6b20'}; border-bottom: 2px solid #edf2f7; padding-bottom: 12px;">${title}</h2>
+            <p style="font-size: 16px; line-height: 1.5;">${message}</p>
+            <div style="background-color: #f7fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0;"><strong>Product Name:</strong> ${productName}</p>
+              ${skuText ? `<p style="margin: 4px 0 0 0;"><strong>SKU/Combination:</strong> ${skuText}</p>` : ''}
+              <p style="margin: 4px 0 0 0;"><strong>Current Stock:</strong> ${currentStock}</p>
+              <p style="margin: 4px 0 0 0;"><strong>Threshold:</strong> ${threshold}</p>
+            </div>
+            <p style="color: #718096; font-size: 14px; margin-top: 40px; border-top: 1px solid #edf2f7; padding-top: 20px;">
+              This is an automated notification from your eCommerce ERP platform. Please update your inventory.
+            </p>
+          </div>
+        `,
+      }
+
+      await transporter.sendMail(mailOptions)
+      this.logger.log(`Low stock email alert sent to ${settings.contactEmail} for ${productName}`)
+    } catch (error) {
+      this.logger.error(`Failed to send low stock email alert`, error)
+    }
+  }
+
+  async sendGenericEmail(options: {
+    to: string
+    subject: string
+    html: string
+    tenantId: string
+    attachments?: { filename: string; content: any }[]
+  }) {
     this.logger.log(`${this.sendGenericEmail.name} Service Called for ${options.to}`)
     const { transporter, from } = await this.getTransporter(options.tenantId)
 
@@ -355,6 +417,7 @@ export class MailService implements OnModuleDestroy {
       to: options.to,
       subject: options.subject,
       html: options.html,
+      attachments: options.attachments,
     }
 
     try {

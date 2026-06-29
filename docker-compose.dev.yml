@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:17-pgvector
     container_name: multi_tenant_postgres_db_dev
     environment:
       POSTGRES_USER: postgres

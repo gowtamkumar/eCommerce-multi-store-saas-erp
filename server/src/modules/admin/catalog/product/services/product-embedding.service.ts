@@ -479,6 +479,8 @@ export class ProductEmbeddingService {
       return []
     }
 
+    const queryVectorStr = `[${vector.join(',')}]`
+
     const qb = this.embeddingRepo
       .createQueryBuilder('embedding')
       .innerJoin(
@@ -488,7 +490,9 @@ export class ProductEmbeddingService {
       )
       .where('embedding.tenant_id = :tenantId', { tenantId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
-      .select(['embedding.productId', 'embedding.embedding'])
+      .select('embedding.productId', 'productId')
+      .addSelect('1 - (embedding.embedding <=> :vector)', 'score')
+      .setParameter('vector', queryVectorStr)
 
     if (filterDto.categoryId) {
       qb.andWhere('product.category_id = :categoryId', { categoryId: filterDto.categoryId })
@@ -497,17 +501,14 @@ export class ProductEmbeddingService {
       qb.andWhere('product.brand_id = :brandId', { brandId: filterDto.brandId })
     }
 
-    const rows = await qb.getMany()
-    const ranked = rows
-      .map((row) => ({
-        productId: row.productId,
-        score: cosineSimilarity(vector, row.embedding),
-      }))
-      .filter((row) => row.score >= 0.65)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
+    qb.orderBy('embedding.embedding <=> :vector', 'ASC')
+    qb.limit(limit)
 
-    return ranked.map((row) => row.productId)
+    const rows = await qb.getRawMany<{ productId: string; score: string | number }>()
+
+    return rows
+      .filter((row) => Number(row.score) >= 0.65)
+      .map((row) => row.productId)
   }
 
   async hybridSearchProductIds(

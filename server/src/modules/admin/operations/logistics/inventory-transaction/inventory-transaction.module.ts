@@ -22,6 +22,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { BullModule } from '@nestjs/bullmq'
 import { StockReservationSchedulerService } from './stock-reservation-scheduler.service'
 
@@ -47,6 +48,7 @@ import { InventoryProcessor } from './inventory.processor'
     AccountingModule,
     CacheModule,
     NotificationModule,
+    MailModule,
     BullModule.registerQueue({
       name: 'inventory',
     }),

@@ -30,6 +30,7 @@ import { AiSalesAssistantService } from './services/domains/ai-sales-assistant.s
 import { AiSupportAssistantService } from './services/domains/ai-support-assistant.service'
 import { TenantAiClientService } from './services/tenant-ai-client.service'
 import { UserModule } from '@/modules/admin/core/user/user.module'
+import { PurchaseModule } from '../operations/finance/purchase/purchase.module'
 import { McpController } from './controllers/mcp.controller'
 import { McpService } from './services/mcp.service'
 import { McpAuthGuard } from './guards/mcp-auth.guard'
@@ -42,6 +43,7 @@ import { McpAuthGuard } from './guards/mcp-auth.guard'
     forwardRef(() => OrderModule),
     forwardRef(() => ReportModule),
     UserModule,
+    forwardRef(() => PurchaseModule),
   ],
   controllers: [AiController, McpController],
   providers: [

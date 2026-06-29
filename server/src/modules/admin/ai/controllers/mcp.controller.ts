@@ -5,6 +5,7 @@ import { Public } from '@/common/decorators/public.decorator'
 import { McpAuthGuard } from '../guards/mcp-auth.guard'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { assertTenantContext } from '@/common/utils/assert-tenant-context.util'
 
 @Controller('ai/mcp')
 @UseGuards(McpAuthGuard)
@@ -22,6 +23,7 @@ export class McpController {
     @Res() res: Response,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<void> {
+    assertTenantContext(ctx.tenantId)
     await this.mcpService.handleSseConnection(req, res, ctx)
   }
 

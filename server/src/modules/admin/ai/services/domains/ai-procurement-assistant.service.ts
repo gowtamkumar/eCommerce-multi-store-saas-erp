@@ -20,12 +20,20 @@ import {
   GenerateSupplierProfileSummaryDto,
   SupplierProfileSummaryResultDto,
 } from '../../dto/generate-supplier-profile-summary.dto'
+import {
+  GenerateThreeWayMatchDto,
+  ThreeWayMatchExplanationResultDto,
+} from '../../dto/generate-three-way-match.dto'
 import { AiAssistantBaseService } from '../ai-assistant-base.service'
+import { SupplierInvoiceService } from '@/modules/admin/operations/finance/purchase/services/supplier-invoice.service'
+import { Inject, forwardRef } from '@nestjs/common'
 
 @Injectable()
 export class AiProcurementAssistantService {
   constructor(
     private readonly base: AiAssistantBaseService,
+    @Inject(forwardRef(() => SupplierInvoiceService))
+    private readonly supplierInvoiceService: SupplierInvoiceService,
   ) {}
 
   async generateRequisitionJustification(
@@ -288,6 +296,62 @@ Return exactly this JSON shape:
     return this.base.parseJsonResponse<SupplierProfileSummaryResultDto>(result.content, {
       profileSummary: result.content,
       supplierTags: [],
+    })
+  }
+
+  async generateThreeWayMatchExplainer(
+    tenantId: string,
+    dto: GenerateThreeWayMatchDto,
+  ): Promise<ThreeWayMatchExplanationResultDto> {
+    const invoice = await this.supplierInvoiceService.findOneInvoice(dto.invoiceId, { tenantId } as any)
+    if (!invoice) {
+      throw new Error('Supplier Invoice not found')
+    }
+
+    const prompt = `Perform a detailed 3-Way Match discrepancy explanation for the following accounts payable invoice context.
+Compare the invoice line items, purchase order line items, and actual goods received note (GRN) items. Explain in a professional, audit-friendly, and helpful tone what discrepancies exist (such as price mismatch, quantity overages, or item shortages) and propose recommended steps for the finance team.
+
+Supplier Invoice Details:
+- Invoice Number: ${invoice.invoiceNumber}
+- Invoice Date: ${invoice.invoiceDate}
+- Match Status: ${invoice.matchStatus}
+- Discrepancy Notes: ${invoice.discrepancyNotes || 'None'}
+- Total Amount: ${invoice.totalAmount}
+
+Line items in Supplier Invoice:
+${(invoice.items || []).map(item => `- Product ID: ${item.productId}, Qty: ${item.quantity}, Unit Price: ${item.unitPrice}`).join('\n')}
+
+Purchase Order context:
+- PO ID: ${invoice.purchaseOrderId}
+- PO Number: ${invoice.purchaseOrder?.referenceNumber || 'N/A'}
+- PO Total Amount: ${invoice.purchaseOrder?.totalAmount || 'N/A'}
+- PO Items:
+${(invoice.purchaseOrder?.items || []).map(item => `- Product ID: ${item.productId}, Qty: ${item.quantity}, Unit Price: ${item.unitPrice}`).join('\n')}
+
+Format your response strictly as JSON with the following keys:
+{
+  "explanationText": "A detailed 3-4 sentence paragraph summarizing the match analysis, identifying which products have pricing or quantity discrepancies, and why (referencing PO or GRN quantities). Include clear recommendations for resolving the discrepancies (e.g. contact supplier for credit memo, recount inventory, or request revised invoice).",
+  "discrepancies": ["A list of specific line-item discrepancies identified, formatted as clear bullet points."],
+  "matchStatus": "MATCHED" or "DISCREPANCY"
+}`
+
+    const result = await this.base.complete(
+      tenantId,
+      [
+        {
+          role: 'system',
+          content: 'You are an AI accounts payable audit specialist that performs three-way matching verification (comparing Purchase Order, Goods Received Note, and Invoice). Respond with valid JSON only, no markdown formatting fences or extra conversational text.',
+        },
+        { role: 'user', content: prompt }
+      ],
+      'ai/generate/three-way-match',
+      { temperature: 0.3 }
+    )
+
+    return this.base.parseJsonResponse<ThreeWayMatchExplanationResultDto>(result.content, {
+      explanationText: result.content,
+      discrepancies: [],
+      matchStatus: invoice.matchStatus === 'MATCHED' ? 'MATCHED' : 'DISCREPANCY',
     })
   }
 }

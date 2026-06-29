@@ -13,6 +13,7 @@ import { CogsService } from '@/modules/admin/operations/finance/accounting/servi
 import { AccountingIntegrationService } from '@/modules/admin/operations/finance/accounting/services/accounting-integration.service'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 
 @Injectable()
 export class InventoryLedgerService {
@@ -26,6 +27,7 @@ export class InventoryLedgerService {
     private readonly cogsService: CogsService,
     private readonly accountingIntegration: AccountingIntegrationService,
     private readonly notificationService: NotificationService,
+    private readonly mailService: MailService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -201,6 +203,14 @@ export class InventoryLedgerService {
           },
           tenantId,
         )
+        this.mailService.sendLowStockAlertEmail(
+          tenantId,
+          product.name,
+          skuText,
+          newGlobalStock,
+          threshold,
+          true,
+        ).catch((e) => this.logger.error(`Failed to send out of stock email: ${e.message}`))
       }
       // Low Stock Transition
       else if (
@@ -218,6 +228,14 @@ export class InventoryLedgerService {
           },
           tenantId,
         )
+        this.mailService.sendLowStockAlertEmail(
+          tenantId,
+          product.name,
+          skuText,
+          newGlobalStock,
+          threshold,
+          false,
+        ).catch((e) => this.logger.error(`Failed to send low stock email: ${e.message}`))
       }
     } catch (notifError: any) {
       this.logger.error(`Failed to trigger inventory notification: ${notifError.message}`)

@@ -11,15 +11,18 @@ import { ExpenseModule } from '../expense/expense.module'
 import { InvoiceModule } from '../invoice/invoice.module'
 import { PurchaseModule } from '../purchase/purchase.module'
 import { SupplierModule } from '../supplier/supplier.module'
+import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { SettingsModule } from '@/modules/admin/settings/settings.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
-
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { ReportSchedulerService } from './report-scheduler.service'
+import { ProductModule } from '@/modules/admin/catalog/product/product.module'
 
 @Module({
   imports: [
     SuperAdminModule,
     UserModule,
-    forwardRef(() => require('../../../catalog/product/product.module').ProductModule),
+    forwardRef(() => ProductModule),
     OrderModule,
     PageModule,
     PaymentModule,
@@ -29,9 +32,11 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
     InvoiceModule,
     CacheModule,
     TenantModule,
+    MailModule,
+    SettingsModule,
   ],
   controllers: [ReportController],
-  providers: [ReportService, ReportRepository],
-  exports: [ReportService, ReportRepository],
+  providers: [ReportService, ReportRepository, ReportSchedulerService],
+  exports: [ReportService, ReportRepository, ReportSchedulerService],
 })
-export class ReportModule {}
+export class ReportModule { }

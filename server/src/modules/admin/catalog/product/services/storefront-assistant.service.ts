@@ -5,6 +5,7 @@ import { CategoryRepository } from '@/modules/admin/catalog/category/category.re
 import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
 import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
+import { ProductEntity } from '../entities/product.entity'
 import {
   StorefrontAiStatusDto,
   StorefrontAssistantChatDto,
@@ -144,16 +145,42 @@ Return exactly this JSON shape:
     message: string,
     brandName?: string,
   ): Promise<string> {
-    const [categories, globalFaqs, matchedFaqsResult, matchedProductsResult, catalogProductsResult] =
+    let matchedProducts: ProductEntity[] = []
+    const canUseHybrid = await this.productEmbeddingService.canUseHybridSearch(tenantId)
+
+    if (canUseHybrid) {
+      try {
+        const matchedIds = await this.productEmbeddingService.hybridSearchProductIds(
+          tenantId,
+          { q: message, status: ProductStatus.ACTIVE },
+          12,
+        )
+        if (matchedIds.length > 0) {
+          matchedProducts = await this.productRepository.findByIdsWithFilters(
+            matchedIds,
+            { status: ProductStatus.ACTIVE },
+            tenantId,
+          )
+        }
+      } catch (error) {
+        this.logger.warn(`Hybrid search retrieval failed for storefront assistant RAG context`, error)
+      }
+    }
+
+    if (matchedProducts.length === 0) {
+      const [keywordProducts] = await this.productRepository.findAllWithFilters(
+        { page: 1, limit: 12, q: message, status: ProductStatus.ACTIVE },
+        tenantId,
+      )
+      matchedProducts = keywordProducts
+    }
+
+    const [categories, globalFaqs, matchedFaqsResult, catalogProductsResult] =
       await Promise.all([
         this.categoryRepository.findAllByTenant(tenantId),
         this.faqRepository.findGlobal(tenantId),
         this.faqRepository.findAllWithFilters(
           { page: 1, limit: 10, q: message, status: FaqStatus.ACTIVE },
-          tenantId,
-        ),
-        this.productRepository.findAllWithFilters(
-          { page: 1, limit: 12, q: message, status: ProductStatus.ACTIVE },
           tenantId,
         ),
         this.productRepository.findAllWithFilters(
@@ -166,7 +193,7 @@ Return exactly this JSON shape:
       categories,
       globalFaqs: globalFaqs.slice(0, 20),
       matchedFaqs: matchedFaqsResult.faqs,
-      matchedProducts: matchedProductsResult[0],
+      matchedProducts,
       catalogProducts: catalogProductsResult[0],
       brandName,
     })
