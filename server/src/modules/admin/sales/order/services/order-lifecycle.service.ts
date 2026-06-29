@@ -101,44 +101,79 @@ export class OrderLifecycleService {
       // Check for Order Cancellation to Restore Stock
       if (
         updateOrderDto.status === OrderStatus.CANCELLED &&
-        oldStatus !== OrderStatus.CANCELLED &&
-        oldStatus !== OrderStatus.COMPLETED // Don't restore if already completed? Usually, returns handle that.
+        oldStatus !== OrderStatus.CANCELLED
       ) {
         for (const item of order.items) {
           if (item.product?.productType === 'SERVICE') continue
 
-          // 1. Immutable RESERVATION_CANCEL ledger entry (keeps audit stream intact)
-          await this.inventoryService.createLedgerEntry(
-            {
-              productId: item.productId,
-              variantId: item.variantId,
-              quantity: item.quantity,
-              type: InventoryTransactionType.RESERVATION_CANCEL,
-              referenceType: InventoryTransactionReferenceType.ORDER,
-              referenceId: order.id,
-            },
-            ctx,
-            queryRunner.manager,
-          )
-
-          // 2. Transition the stock_reservations row to RELEASED for clean lifecycle state.
-          //    Look up by orderId + productId + variantId — the unique key for a reservation.
-          const existingReservation = await queryRunner.manager.findOne(StockReservationEntity, {
-            where: {
-              orderId: order.id,
-              productId: item.productId,
-              variantId: item.variantId ?? null,
-              tenantId,
-            },
-          })
-          if (existingReservation) {
-            await this.reservationService.release(
-              existingReservation.id,
-              null, // release all remaining
+          if (oldStatus === OrderStatus.COMPLETED) {
+            // COMPLETED → CANCELLED: stock was already physically fulfilled.
+            // Post a RETURN ledger entry to bring inventory back.
+            await this.inventoryService.createLedgerEntry(
+              {
+                productId: item.productId,
+                variantId: item.variantId,
+                quantity: item.quantity,
+                type: InventoryTransactionType.RETURN,
+                referenceType: InventoryTransactionReferenceType.SALES_RETURN,
+                referenceId: order.id,
+              },
               ctx,
               queryRunner.manager,
             )
+          } else {
+            // PENDING/CONFIRMED → CANCELLED: cancel the reservation.
+            await this.inventoryService.createLedgerEntry(
+              {
+                productId: item.productId,
+                variantId: item.variantId,
+                quantity: item.quantity,
+                type: InventoryTransactionType.RESERVATION_CANCEL,
+                referenceType: InventoryTransactionReferenceType.ORDER,
+                referenceId: order.id,
+              },
+              ctx,
+              queryRunner.manager,
+            )
+
+            // 2. Transition the stock_reservations row to RELEASED for clean lifecycle state.
+            const existingReservation = await queryRunner.manager.findOne(StockReservationEntity, {
+              where: {
+                orderId: order.id,
+                productId: item.productId,
+                variantId: item.variantId ?? null,
+                tenantId,
+              },
+            })
+            if (existingReservation) {
+              await this.reservationService.release(
+                existingReservation.id,
+                null,
+                ctx,
+                queryRunner.manager,
+              )
+            }
           }
+        }
+
+        // Post GL reversal for completed orders being cancelled
+        if (oldStatus === OrderStatus.COMPLETED) {
+          postCommitJobs.push(() =>
+            this.accountingQueue.add(
+              'post-order-cancellation-reversal',
+              {
+                ctx,
+                payload: {
+                  orderId: order.id,
+                  totalAmount: Number(order.totalAmount),
+                  taxAmount: Number(order.taxAmount || 0),
+                  currency: order.currency,
+                  exchangeRate: Number(order.currencyRate),
+                },
+              },
+              { removeOnComplete: true },
+            ),
+          )
         }
       }
 
@@ -189,6 +224,31 @@ export class OrderLifecycleService {
               ctx,
               payload: {
                 orderId: savedOrder.id,
+              },
+            },
+            { removeOnComplete: true },
+          ),
+        )
+      }
+
+      // COD cash collection: when admin marks paymentStatus=PAID for a COD order,
+      // recognise cash received in the GL immediately (not deferred until COMPLETED).
+      if (
+        updateOrderDto.paymentStatus === PaymentStatus.PAID &&
+        oldPaymentStatus !== PaymentStatus.PAID &&
+        savedOrder.paymentMethod === PaymentMethod.COD &&
+        savedOrder.status !== OrderStatus.COMPLETED // COMPLETED already posts via post-order-paid
+      ) {
+        postCommitJobs.push(() =>
+          this.accountingQueue.add(
+            'post-cod-payment-received',
+            {
+              ctx,
+              payload: {
+                orderId: savedOrder.id,
+                amount: Number(savedOrder.totalAmount),
+                currency: savedOrder.currency,
+                exchangeRate: Number(savedOrder.currencyRate),
               },
             },
             { removeOnComplete: true },

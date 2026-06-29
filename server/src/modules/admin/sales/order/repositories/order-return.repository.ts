@@ -2,7 +2,7 @@ import { BaseTenantRepository } from '@/common/base-repository'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Brackets, Repository } from 'typeorm'
+import { Brackets, EntityManager, Repository } from 'typeorm'
 import { FilterReturnDto } from '../dto/filter-return.dto'
 
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -18,14 +18,19 @@ export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntit
     super(OrderReturnEntity, repo)
 }
 
-  async createAndSaveReturn(dto: any, ctx: RequestContextDto): Promise<OrderReturnEntity> {
-    const returnRequest = this.repo.create({
+  async createAndSaveReturn(
+    dto: any,
+    ctx: RequestContextDto,
+    manager?: EntityManager,
+  ): Promise<OrderReturnEntity> {
+    const repo = manager ? manager.getRepository(OrderReturnEntity) : this.repo
+    const returnRequest = repo.create({
       ...dto,
       userId: ctx.userId,
       tenantId: ctx.tenantId,
       status: ReturnStatus.PENDING,
     } as any) as unknown as OrderReturnEntity
-    return await (this.repo.save(returnRequest) as Promise<OrderReturnEntity>)
+    return await (repo.save(returnRequest) as Promise<OrderReturnEntity>)
   }
 
   /**

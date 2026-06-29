@@ -8,6 +8,7 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { OrderProcessHelper } from './order-process.helper'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 describe('OrderCheckoutService', () => {
   let service: OrderCheckoutService
@@ -23,6 +24,7 @@ describe('OrderCheckoutService', () => {
         { provide: ArService, useValue: {} },
         { provide: WalletService, useValue: {} },
         { provide: OrderProcessHelper, useValue: {} },
+        { provide: NotificationService, useValue: { createNotification: jest.fn() } },
         { provide: getQueueToken('accounting'), useValue: { add: jest.fn() } },
         { provide: getQueueToken('invoice'), useValue: { add: jest.fn() } },
         { provide: getQueueToken('order'), useValue: { add: jest.fn() } },

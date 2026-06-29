@@ -44,7 +44,12 @@ export class OrderEntity extends BaseEntity {
   @Column({ type: 'decimal', name: 'shipping_fee', precision: 10, scale: 2, default: 0 })
   shippingFee: number
 
-  @Column({ type: 'varchar', name: 'currency', length: 10, default: 'BDT' })
+  /**
+   * Resolved order currency.
+   * Resolution chain: createOrderDto.currency → tenant SiteSettings.currency → 'USD'
+   * Default 'USD' kept in sync with the service-level fallback to avoid schema conflicts.
+   */
+  @Column({ type: 'varchar', name: 'currency', length: 10, default: 'USD' })
   currency: string
 
   @Column({ type: 'decimal', name: 'currency_rate', precision: 10, scale: 4, default: 1 })

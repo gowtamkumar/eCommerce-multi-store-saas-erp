@@ -11,6 +11,7 @@ import { RefundMethod } from '@/common/enums/refund-method.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderReturnEntity } from '../entities/order-return.entity'
 import { getQueueToken } from '@nestjs/bullmq'
+import { DataSource } from 'typeorm'
 
 describe('ReturnService', () => {
   let service: ReturnService
@@ -73,6 +74,10 @@ describe('ReturnService', () => {
         {
           provide: getQueueToken('accounting'),
           useValue: mockAccountingQueue,
+        },
+        {
+          provide: DataSource,
+          useValue: { transaction: jest.fn().mockImplementation(async (cb) => cb({})) },
         },
       ],
     }).compile()

@@ -11,15 +11,13 @@ import { OrderReturnRepository } from '@/modules/admin/sales/order/repositories/
 import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.repository'
 import { FilterReturnDto } from '../dto/filter-return.dto'
 import { OrderReturnEntity } from '../entities/order-return.entity'
-
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
-import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
+import { DataSource } from 'typeorm'
 
 /** Return window policy: returns are only accepted within this many days of the original order. */
 const RETURN_WINDOW_DAYS = 30
@@ -36,7 +34,8 @@ export class ReturnService {
     private readonly notificationService: NotificationService,
     private readonly walletService: WalletService,
     @InjectQueue('accounting') private readonly accountingQueue: Queue,
-  ) {}
+    private readonly dataSource: DataSource,
+  ) { }
 
   async createReturnRequest(
     ctx: RequestContextDto,
@@ -117,17 +116,20 @@ export class ReturnService {
       calculatedRefundAmount += itemRefundTotal
     }
 
-    const result = await this.returnRepository.createAndSaveReturn(
-      {
-        orderId,
-        reason,
-        items,
-        refundAmount: calculatedRefundAmount,
-        returnType: returnType ?? ReturnType.REFUND,
-        refundMethod: refundMethod ?? RefundMethod.STORE_CREDIT,
-      },
-      ctx,
-    )
+    const result = await this.dataSource.transaction(async (manager) => {
+      return this.returnRepository.createAndSaveReturn(
+        {
+          orderId,
+          reason,
+          items,
+          refundAmount: calculatedRefundAmount,
+          returnType: returnType ?? ReturnType.REFUND,
+          refundMethod: refundMethod ?? RefundMethod.STORE_CREDIT,
+        },
+        ctx,
+        manager,
+      )
+    })
 
     // Trigger Notification for Refund/Return Request
     try {

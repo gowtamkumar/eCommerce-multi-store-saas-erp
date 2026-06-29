@@ -23,6 +23,7 @@ import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
 import { LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class OrderCheckoutService {
@@ -39,6 +40,7 @@ export class OrderCheckoutService {
     @InjectQueue('order') private readonly orderQueue: Queue,
     private readonly arService: ArService,
     private readonly walletService: WalletService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createOrder(
@@ -401,6 +403,24 @@ export class OrderCheckoutService {
           },
           { removeOnComplete: true },
         )
+      }
+
+      // Send customer-facing Order Placed notification
+      if (result.order.userId) {
+        try {
+          await this.notificationService.createNotification(
+            {
+              title: 'Order Placed Successfully',
+              message: `Your order #${result.order.id.substring(0, 8)} has been placed and is being processed.`,
+              type: 'SUCCESS',
+              link: `/account/orders/${result.order.id}`,
+              userId: result.order.userId,
+            },
+            tenantId,
+          )
+        } catch (notifyErr: any) {
+          this.logger.error(`Failed to send customer order confirmation: ${notifyErr.message}`)
+        }
       }
     } catch (jobError: any) {
       this.logger.error('Failed to publish order placed event / enqueue notification', jobError)

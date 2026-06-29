@@ -24,6 +24,8 @@ import { PaymentModule } from '../payment/payment.module'
 import { BullModule } from '@nestjs/bullmq'
 import { OrderProcessor } from './queue/order.processor'
 import { OrderProcessHelper } from './services/order-process.helper'
+import { OrderSchedulerService } from './services/order-scheduler.service'
+import { ScheduleModule } from '@nestjs/schedule'
 
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
@@ -55,6 +57,7 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     NotificationModule,
     PricingModule,
     LoyaltyModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [OrderController, ReturnController], // Registered
   providers: [
@@ -64,6 +67,7 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     ReturnService,
     OrderProcessor,
     OrderProcessHelper,
+    OrderSchedulerService,
     OrderRepository,
     OrderReturnRepository,
   ],

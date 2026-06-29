@@ -1,7 +1,7 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { OrderSource } from '@/common/enums/order-source.enum'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
@@ -15,6 +15,7 @@ import { ProductBatchService } from '@/modules/admin/operations/logistics/invent
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource, In } from 'typeorm'
 import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
@@ -48,7 +49,7 @@ export class PosService {
     private readonly walletService: WalletService,
     private readonly dataSource: DataSource,
     private readonly batchService: ProductBatchService,
-  ) {}
+  ) { }
 
   // =========================================================================
   // REGISTER TERMINAL METHODS
@@ -202,6 +203,10 @@ export class PosService {
     let isNewSale = false
     let jobData: any = null
     await this.dataSource.transaction(async (manager) => {
+      // 0. Resolve tenant currency from site settings (never hardcode)
+      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
+      const tenantCurrency = settings?.currency || 'USD'
+
       // 1. Idempotency Check using offlineSaleId
       if (dto.offlineSaleId) {
         const orderRepo = manager.getRepository(OrderEntity)
@@ -242,14 +247,14 @@ export class PosService {
         customerName,
         customerEmail,
         customerPhone,
-        address: dto.shippingAddress || customerAddress, // Use custom shipping address if supplied!
-        totalAmount: 0, // Summed dynamically below
+        address: dto.shippingAddress || customerAddress,
+        totalAmount: 0,
         shippingFee: dto.shippingFee || 0,
         deliveryZone: dto.deliveryZone || undefined,
-        currency: 'USD',
+        currency: tenantCurrency, // Resolved from tenant SiteSettings — never hardcoded
         currencyRate: 1,
-        status: OrderStatus.COMPLETED, // POS sales are immediately fulfilled
-        orderSource: OrderSource.POS, // Explicit order type categorization!
+        status: OrderStatus.COMPLETED,
+        orderSource: OrderSource.POS,
         paymentMethod: dto.paymentMethod as unknown as PaymentMethod,
         paymentStatus:
           dto.paymentMethod === PaymentMethod.ON_ACCOUNT
@@ -276,8 +281,8 @@ export class PosService {
       const products =
         productIds.length > 0
           ? await manager.find(ProductEntity, {
-              where: { id: In(productIds), tenantId },
-            })
+            where: { id: In(productIds), tenantId },
+          })
           : []
       const productById = new Map(products.map((p) => [p.id, p]))
 
@@ -455,7 +460,7 @@ export class PosService {
         const limit = Number(customer.creditLimit || 0)
         if (currentOutstanding + onAccountAmount > limit) {
           throw new BadRequestException(
-            `Checkout blocked: POS sale remaining total ($${onAccountAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`,
+            `Checkout blocked: POS sale remaining total (${onAccountAmount}) exceeds customer credit limit (${limit}) with current debt (${currentOutstanding})`,
           )
         }
 
@@ -470,7 +475,7 @@ export class PosService {
             referenceType: 'ORDER',
             referenceId: savedOrder.id,
             dueDate,
-            currency: 'USD',
+            currency: tenantCurrency,
           },
           ctx,
           manager,
@@ -551,15 +556,20 @@ export class PosService {
         createdAt: dto.createdAt || null,
       }
 
-      // D. Increment coupon usage counter if valid
+      // D. Atomic coupon usage increment — conditional UPDATE prevents race over-redeem
       if (dto.appliedCoupon) {
-        const couponRepo = manager.getRepository(CouponEntity)
-        const coupon = await couponRepo.findOne({
-          where: { code: dto.appliedCoupon.toUpperCase().trim(), tenantId },
-        })
-        if (coupon) {
-          coupon.usedCount = Number(coupon.usedCount || 0) + 1
-          await couponRepo.save(coupon)
+        const result = await manager
+          .createQueryBuilder()
+          .update(CouponEntity)
+          .set({ usedCount: () => 'used_count + 1' })
+          .where('tenantId = :tenantId', { tenantId })
+          .andWhere('UPPER(code) = UPPER(:code)', { code: dto.appliedCoupon.trim() })
+          .andWhere('(usageLimit IS NULL OR usedCount < usageLimit)')
+          .execute()
+        if (result.affected === 0) {
+          this.logger.warn(
+            `POS coupon "${dto.appliedCoupon}" could not be incremented — limit reached or not found`,
+          )
         }
       }
     })

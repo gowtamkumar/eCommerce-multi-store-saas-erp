@@ -250,22 +250,43 @@ export class PaymentService {
     const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
     const validation = await strategy.validateCallback(gatewayResponse)
 
-    order.paymentStatus = PaymentStatus.FAILED
-    await this.orderRepository.saveOrder(order)
+    // Wrap in a transaction with a pessimistic write lock — failure callbacks can
+    // arrive concurrently from the gateway and must not create duplicate PaymentEntity rows.
+    const payment = await this.dataSource.transaction(async (manager) => {
+      const lockedOrder = await manager.findOne(OrderEntity, {
+        where: { id: order.id },
+        lock: { mode: 'pessimistic_write' },
+      })
+      if (!lockedOrder) throw new Error('Order not found')
 
-    // Record payment failure
-    const payment = await this.paymentRepository.createAndSave(
-      {
-        orderId: order.id,
-        transactionId: tran_id,
-        amount: order.totalAmount,
-        currency: order.currency,
-        method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
-        status: PaymentStatus.FAILED,
-        gatewayResponse: validation.gatewayResponse,
-      },
-      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
-    )
+      // Idempotency: already marked failed by a concurrent callback
+      if (lockedOrder.paymentStatus === PaymentStatus.FAILED) {
+        return null
+      }
+
+      lockedOrder.paymentStatus = PaymentStatus.FAILED
+      await manager.save(lockedOrder)
+
+      const existingPayment = await manager.findOne(PaymentEntity, {
+        where: { transactionId: tran_id, tenantId: lockedOrder.tenantId },
+      })
+      if (existingPayment) return existingPayment
+
+      return this.paymentRepository.createAndSave(
+        {
+          orderId: order.id,
+          transactionId: tran_id,
+          amount: order.totalAmount,
+          currency: order.currency,
+          method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+          status: PaymentStatus.FAILED,
+          gatewayResponse: validation.gatewayResponse,
+        },
+        { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+        manager,
+      )
+    })
+    if (!payment) return { success: false }
 
     await Promise.all([
       this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
@@ -310,10 +331,12 @@ export class PaymentService {
     const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
     const validation = await strategy.validateCallback(gatewayResponse)
 
-    order.paymentStatus = PaymentStatus.PENDING // Or CANCELLED if you have that status
+    // Customer cancelled the payment session — revert order to PENDING so they can retry.
+    // Record with CANCELLED status (not PENDING) so it's distinguishable in the payment ledger.
+    order.paymentStatus = PaymentStatus.PENDING
     await this.orderRepository.saveOrder(order)
 
-    // Record payment cancellation
+    // Record payment cancellation with proper CANCELLED status
     const payment = await this.paymentRepository.createAndSave(
       {
         orderId: order.id,
@@ -321,7 +344,7 @@ export class PaymentService {
         amount: order.totalAmount,
         currency: order.currency,
         method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
-        status: PaymentStatus.PENDING,
+        status: PaymentStatus.CANCELLED,
         gatewayResponse: validation.gatewayResponse,
       },
       { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
@@ -427,8 +450,8 @@ export class PaymentService {
   }
 
   /**
-   * Raw unpaginated payment fetch — intended for internal report/aggregation use only.
-   * The public admin endpoint uses `findAllPayments` with pagination and caching.
+   * Chunked payment fetch — iterates in 500-row pages to avoid loading 100k rows
+   * into memory at once. Safe for large tenants and report aggregation use.
    */
   async findAllPaymentsRaw(
     ctx: RequestContextDto,
@@ -437,15 +460,25 @@ export class PaymentService {
   ): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsRaw.name} Service Called`)
     const tenantId = ctx.tenantId
-    const [items] = await this.paymentRepository.findPaymentsByTenant(
-      tenantId,
-      1,
-      100000,
-      undefined,
-      startDate,
-      endDate,
-    )
-    return items
+    const CHUNK_SIZE = 500
+    const allItems: PaymentEntity[] = []
+    let page = 1
+    let hasMore = true
+
+    while (hasMore) {
+      const [items] = await this.paymentRepository.findPaymentsByTenant(
+        tenantId,
+        page,
+        CHUNK_SIZE,
+        undefined,
+        startDate,
+        endDate,
+      )
+      allItems.push(...items)
+      hasMore = items.length === CHUNK_SIZE
+      page++
+    }
+    return allItems
   }
 
   async findAllPaymentsByCustomer(
