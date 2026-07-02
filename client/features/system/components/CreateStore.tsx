@@ -548,7 +548,7 @@ export default function CreateStore() {
                                                 </div>
                                             </div>
                                             <div className="group">
-                                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">Account ID</label>
+                                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">Username</label>
                                                 <div className="relative">
                                                     <Sparkles className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
                                                     <input

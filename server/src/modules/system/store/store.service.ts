@@ -269,6 +269,7 @@ export class StoreService {
         accountRepo.create({
           ...coa,
           storeId: savedStore.id,
+          userId: savedUser.id,
         }),
       )
       await accountRepo.save(accounts)
