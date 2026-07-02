@@ -216,7 +216,7 @@ describe('StoreService', () => {
   })
 
   describe('createStore', () => {
-    it('should create a store, route database residency and seed dynamic Chart of Accounts (COA)', async () => {
+    it('should create a store and seed dynamic Chart of Accounts (COA)', async () => {
       const dto = {
         storeName: 'Acme Store',
         subdomain: 'acme',
@@ -228,7 +228,6 @@ describe('StoreService', () => {
         baseCurrency: 'USD',
         timezone: 'America/New_York',
         accountingStandard: 'US-GAAP',
-        residencyRegion: 'US',
       }
 
       mockRepo.create.mockClear()
@@ -236,15 +235,12 @@ describe('StoreService', () => {
       const result = await service.createStore(dto)
 
       expect(result.store).toBeDefined()
-      // Verify database residency routing fields
+      // Verify store fields created
       expect(mockRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           storeName: 'Acme Store',
           subdomain: 'acme',
           accountingStandard: 'US-GAAP',
-          residencyRegion: 'US',
-          dbHost: 'us-db.gowtam.com',
-          dbName: 'store_acme_us',
         }),
       )
 
@@ -257,7 +253,7 @@ describe('StoreService', () => {
       )
     })
 
-    it('should fall back to BAS and AS defaults if standard and region are not provided', async () => {
+    it('should fall back to BAS defaults if standard is not provided', async () => {
       const dto = {
         storeName: 'Fallback Store',
         subdomain: 'fallback',
@@ -281,9 +277,6 @@ describe('StoreService', () => {
           storeName: 'Fallback Store',
           subdomain: 'fallback',
           accountingStandard: 'BAS',
-          residencyRegion: 'AS',
-          dbHost: 'postgres',
-          dbName: 'multi_store_ecommerce',
         }),
       )
 

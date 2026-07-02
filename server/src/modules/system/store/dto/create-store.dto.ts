@@ -60,8 +60,4 @@ export class CreateStoreDto {
   @IsString()
   @IsOptional()
   accountingStandard?: string
-
-  @IsString()
-  @IsOptional()
-  residencyRegion?: string
 }

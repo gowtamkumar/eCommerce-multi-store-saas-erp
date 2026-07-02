@@ -113,24 +113,9 @@ export class StoreService {
       baseCurrency,
       timezone,
       accountingStandard,
-      residencyRegion,
     } = createStoreDto
 
-    // Resolve dynamic database routing/residency coordinates
-    const residency = residencyRegion || 'AS'
     const standard = accountingStandard || 'BAS'
-    let dbHost = 'postgres' // Default local host
-    let dbName = 'multi_store_ecommerce' // Default local DB name
-
-    if (residency.toUpperCase() === 'EU') {
-      dbHost = 'eu-db.gowtam.com'
-      dbName = `store_${rawSubdomain}_eu`
-    } else if (residency.toUpperCase() === 'US') {
-      dbHost = 'us-db.gowtam.com'
-      dbName = `store_${rawSubdomain}_us`
-    }
-
-    this.logger.log(`Store database residency routed to: ${residency} -> ${dbHost}/${dbName}`)
 
     let subdomain: string
     try {
@@ -186,9 +171,6 @@ export class StoreService {
         storeName,
         subdomain,
         accountingStandard: standard,
-        residencyRegion: residency,
-        dbHost,
-        dbName,
       })
       const savedStore = await storeRepo.save(store)
 

@@ -34,18 +34,10 @@ export class StoreEntity extends BaseEntity {
   @Column({ type: 'jsonb', name: 'ai_config', nullable: true })
   aiConfig?: StoreAiConfig | null
 
-  @Column({ name: 'accounting_standard', type: 'varchar', length: 50, nullable: true })
+  // accountingStandard is the standard used for accounting
+  @Column({ name: 'accounting_standard', length: 50, nullable: true })
   accountingStandard: string | null
-
-  @Column({ name: 'residency_region', type: 'varchar', length: 50, nullable: true })
-  residencyRegion: string | null
-
-  @Column({ name: 'db_host', type: 'varchar', length: 255, nullable: true })
-  dbHost: string | null
-
-  @Column({ name: 'db_name', type: 'varchar', length: 100, nullable: true })
-  dbName: string | null
-
+  // activeSubscriptionId is the id of the active subscription
   @Column({ name: 'active_subscription_id', type: 'uuid', nullable: true })
   activeSubscriptionId: string | null
 

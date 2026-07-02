@@ -62,9 +62,10 @@ export class SubscriptionPlanEntity extends BaseEntity {
   @Column({ name: 'max_storage_mb', type: 'int', default: 1024 })
   maxStorageMb: number
 
+  // when payment by stripe these field are used
   @Column({ name: 'stripe_price_id_monthly', type: 'varchar', nullable: true })
   stripePriceIdMonthly: string
-
+  // when payment by stripe these field are used
   @Column({ name: 'stripe_price_id_yearly', type: 'varchar', nullable: true })
   stripePriceIdYearly: string
 
