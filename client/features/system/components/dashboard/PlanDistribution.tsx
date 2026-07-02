@@ -21,10 +21,10 @@ export default function PlanDistribution({ stats }: { stats: DashboardStats }) {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-8 shadow-sm">
       <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Plan Distribution</h2>
-      <p className="text-xs text-slate-400 mb-6">{stats.totalTenants} tenants total</p>
+      <p className="text-xs text-slate-400 mb-6">{stats.totalTenants} stores total</p>
       <div className="space-y-5">
         {planEntries.length === 0 ? (
-          <p className="text-sm text-slate-400 italic text-center py-4">No tenant data yet</p>
+          <p className="text-sm text-slate-400 italic text-center py-4">No store data yet</p>
         ) : (
           planEntries.map(([plan, count]) => (
             <div key={plan}>

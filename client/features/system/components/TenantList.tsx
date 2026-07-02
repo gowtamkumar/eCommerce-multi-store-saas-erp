@@ -142,13 +142,13 @@ export default function TenantList({ initialTenants }: TenantListProps) {
           method: 'POST',
           body: JSON.stringify({ ids, status: 'suspended' }),
         });
-        toast.success(`${ids.length} tenants suspended`);
+        toast.success(`${ids.length} stores suspended`);
       } else if (bulkAction === 'activate') {
         await fetchSuperAdminAPI('/super-admin/tenants/bulk-status', {
           method: 'POST',
           body: JSON.stringify({ ids, status: 'active' }),
         });
-        toast.success(`${ids.length} tenants activated`);
+        toast.success(`${ids.length} stores activated`);
       }
       setSelectedIds(new Set());
       setBulkAction('');
@@ -183,7 +183,7 @@ export default function TenantList({ initialTenants }: TenantListProps) {
     },
     {
       key: 'storeName',
-      header: 'Merchant Details',
+      header: 'Store Details',
       className: 'px-6 py-4',
       cell: (tenant) => {
         const styles = getStatusStyles(tenant.status);
@@ -313,7 +313,7 @@ export default function TenantList({ initialTenants }: TenantListProps) {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Store Infrastructure</h1>
           <p className="text-slate-500 dark:text-slate-400">
-            {loading ? 'Loading...' : `${tenants.length} merchants`} in the cluster.
+            {loading ? 'Loading...' : `${tenants.length} stores`} in the cluster.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -323,7 +323,7 @@ export default function TenantList({ initialTenants }: TenantListProps) {
             <input
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search merchants..."
+              placeholder="Search stores..."
               className="pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm w-56"
             />
           </div>
@@ -447,7 +447,7 @@ export default function TenantList({ initialTenants }: TenantListProps) {
         columns={columns}
         getRowKey={tenant => tenant.id}
         loading={loading}
-        loadingLabel="Syncing merchants..."
+        loadingLabel="Syncing stores..."
         emptyLabel={
           <div className="flex flex-col items-center gap-2 text-slate-400 py-12">
             <Terminal className="w-8 h-8 opacity-20" />

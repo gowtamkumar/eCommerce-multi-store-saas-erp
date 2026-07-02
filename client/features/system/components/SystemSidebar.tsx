@@ -16,7 +16,7 @@ export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }:
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Overview', href: '/system' },
-        { icon: Globe, label: 'Tenants (Stores)', href: '/system/tenants' },
+        { icon: Globe, label: 'Stores', href: '/system/tenants' },
         { icon: Users, label: 'Global Users', href: '/system/users' },
         { icon: Activity, label: 'Platform Health', href: '/system/health' },
         { icon: Bell, label: 'Platform Alerts', href: '/system/notifications' },

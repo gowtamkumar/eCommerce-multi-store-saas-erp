@@ -35,7 +35,7 @@ export default function DashboardHeader({
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Platform Control Center</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">
-          Monitoring <span className="font-bold text-indigo-600 dark:text-indigo-400">{totalTenants}</span> merchants.{' '}
+          Monitoring <span className="font-bold text-indigo-600 dark:text-indigo-400">{totalTenants}</span> stores.{' '}
           <span className="text-xs text-slate-400">
             Last refreshed: {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
