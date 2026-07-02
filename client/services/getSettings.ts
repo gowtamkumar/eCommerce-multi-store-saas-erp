@@ -11,7 +11,7 @@ export async function getSiteSettings() {
         ...DEFAULT_SETTINGS,
         brandName: "LuxeSaaS",
         siteDescription: "The premium multi-tenant eCommerce platform.",
-        contactEmail: "support@luxesaas.com",
+        contactEmail: "support@gowtam.com",
         isSaaS: true,
       };
     }

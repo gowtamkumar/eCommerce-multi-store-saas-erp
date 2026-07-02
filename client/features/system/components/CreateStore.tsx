@@ -41,9 +41,42 @@ export default function CreateStore() {
     const [error, setError] = useState('');
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [fetchingPlans, setFetchingPlans] = useState(true);
+    const [platformSettings, setPlatformSettings] = useState<any>(null);
+    const [domainSuffix, setDomainSuffix] = useState('.gowtam.com');
     const searchParams = useSearchParams();
     const planIdFromUrl = searchParams.get('planId');
     const cycleFromUrl = searchParams.get('cycle');
+
+    useEffect(() => {
+        async function getPlatformSettings() {
+            try {
+                const res = await fetchAPI('/platform/settings');
+                if (res?.success && res?.data) {
+                    setPlatformSettings(res.data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch platform settings', err);
+            }
+        }
+        getPlatformSettings();
+
+        // Calculate domain suffix based on hostname
+        if (typeof window !== 'undefined') {
+            const hostname = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : '';
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                setDomainSuffix(`.localhost${port}`);
+            } else {
+                const parts = hostname.split('.');
+                if (parts.length > 2) {
+                    const mainDomain = parts.slice(1).join('.');
+                    setDomainSuffix(`.${mainDomain}${port}`);
+                } else {
+                    setDomainSuffix(`.${hostname}${port}`);
+                }
+            }
+        }
+    }, []);
 
     const [formData, setFormData] = useState({
         storeName: '',
@@ -170,8 +203,8 @@ export default function CreateStore() {
                             <div key={s.id} className="flex items-center flex-1 last:flex-none">
                                 <div className="relative flex flex-col items-center">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${step >= s.id
-                                            ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/40 scale-100'
-                                            : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 scale-90'
+                                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/40 scale-100'
+                                        : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 scale-90'
                                         }`}>
                                         <s.icon className={`w-5 h-5 ${step === s.id ? 'animate-bounce-subtle' : ''}`} />
                                     </div>
@@ -294,7 +327,7 @@ export default function CreateStore() {
                                                         placeholder="shop-name"
                                                     />
                                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                                                        .luxesaas.com
+                                                        {domainSuffix}
                                                     </div>
                                                 </div>
                                                 {formData.subdomain && (
@@ -304,7 +337,7 @@ export default function CreateStore() {
                                                         className="mt-3 text-xs text-slate-500 ml-1 flex items-center gap-2"
                                                     >
                                                         <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                                        Your store will be live at <span className="text-brand-600 dark:text-brand-400 font-bold underline">{formData.subdomain}.luxesaas.com</span>
+                                                        Your store will be live at <span className="text-brand-600 dark:text-brand-400 font-bold underline">{formData.subdomain}{domainSuffix}</span>
                                                     </motion.p>
                                                 )}
                                             </div>
@@ -596,7 +629,7 @@ export default function CreateStore() {
 
                 {/* Footer Info */}
                 <div className="mt-12 text-center text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">
-                    Powered by <span className="text-slate-900 dark:text-white">LuxeSaaS Enterprise Engine</span>
+                    Powered by <span className="text-slate-900 dark:text-white">{platformSettings?.brandName ? `${platformSettings.brandName} Engine` : 'LuxeSaaS Enterprise Engine'}</span>
                 </div>
             </div>
         </div>

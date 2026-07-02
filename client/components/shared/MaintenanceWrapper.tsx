@@ -16,6 +16,7 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [brandName, setBrandName] = useState('LuxeSaaS Enterprise');
   const pathname = usePathname();
   const { data: session, status } = useSession() as any;
 
@@ -39,6 +40,9 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
         if (res?.success && res?.data) {
           setIsMaintenance(!!res.data.isMaintenanceMode);
           setMessage(res.data.maintenanceMessage || 'Platform is currently undergoing scheduled upgrades. Please try again shortly.');
+          if (res.data.brandName) {
+            setBrandName(res.data.brandName);
+          }
         }
       } catch (err) {
         console.error('Error fetching maintenance settings:', err);
@@ -145,7 +149,7 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
 
         {/* Minimal system signature */}
         <p className="text-[10px] text-slate-600 font-bold uppercase tracking-[0.2em] mt-8 z-10">
-          Powered by LuxeSaaS Enterprise
+          Powered by {brandName}
         </p>
       </div>
     );

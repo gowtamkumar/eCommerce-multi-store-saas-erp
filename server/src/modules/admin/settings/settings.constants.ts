@@ -6,7 +6,7 @@ export const BASIC_DEFAULT_SETTINGS: UpdateSiteSettingsDto = {
   brandName: "LuxeAudio",
   siteDescription: "Elevating your audio experience with premium sound and design.",
   metaTitle: "",
-  contactEmail: "support@luxesaas.com",
+  contactEmail: "support@gowtam.com",
   contactPhone: "+8801722222222",
   whatsappPhone: "+8801722222222",
   address: "123 Audio Street, Sound City, SC 90210",

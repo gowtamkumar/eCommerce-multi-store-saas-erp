@@ -83,7 +83,7 @@ export class TenantService {
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
   private hydrateTenant(tenant: TenantEntity | null): TenantEntity | null {
     return tenant ? Object.assign(new TenantEntity(), tenant) : null
@@ -123,10 +123,10 @@ export class TenantService {
     let dbName = 'multi_tenant_ecommerce' // Default local DB name
 
     if (residency.toUpperCase() === 'EU') {
-      dbHost = 'eu-db.luxesaas.com'
+      dbHost = 'eu-db.gowtam.com'
       dbName = `tenant_${rawSubdomain}_eu`
     } else if (residency.toUpperCase() === 'US') {
-      dbHost = 'us-db.luxesaas.com'
+      dbHost = 'us-db.gowtam.com'
       dbName = `tenant_${rawSubdomain}_us`
     }
 

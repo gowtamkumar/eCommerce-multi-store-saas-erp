@@ -27,7 +27,7 @@ async function bootstrap() {
 
   // CORS: reflect any origin only in non-production. In production, restrict to
   // an explicit allowlist (CORS_ORIGINS, comma-separated) plus any subdomain of
-  // PLATFORM_HOST so tenant stores (e.g. acme.luxesaas.com) keep working.
+  // PLATFORM_HOST so tenant stores (e.g. acme.gowtam.com) keep working.
   const isProduction = process.env.NODE_ENV === 'production'
   const allowlist = (process.env.CORS_ORIGINS || '')
     .split(',')

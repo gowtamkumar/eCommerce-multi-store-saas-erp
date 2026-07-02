@@ -47,9 +47,9 @@ export async function getTenantId(
     if (
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
-      hostname === "luxesaas.com" ||
-      hostname === "www.luxesaas.com" ||
-      hostname === "api.luxesaas.com"
+      hostname === "gowtam.com" ||
+      hostname === "www.gowtam.com" ||
+      hostname === "api.gowtam.com"
     ) {
       return null;
     }
@@ -120,9 +120,9 @@ export async function getTenantId(
     if (
       hostname === "localhost" ||
       hostname === "127.0.0.1" ||
-      hostname === "luxesaas.com" ||
-      hostname === "www.luxesaas.com" ||
-      hostname === "api.luxesaas.com"
+      hostname === "gowtam.com" ||
+      hostname === "www.gowtam.com" ||
+      hostname === "api.gowtam.com"
     ) {
       return null;
     }

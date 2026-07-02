@@ -243,7 +243,7 @@ describe('TenantService', () => {
           subdomain: 'acme',
           accountingStandard: 'US-GAAP',
           residencyRegion: 'US',
-          dbHost: 'us-db.luxesaas.com',
+          dbHost: 'us-db.gowtam.com',
           dbName: 'tenant_acme_us',
         }),
       )
