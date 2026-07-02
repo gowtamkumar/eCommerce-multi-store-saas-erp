@@ -244,6 +244,7 @@ export class StoreService {
         branchId: savedBranch.id,
         storeId: savedStore.id,
         userId: savedUser.id,
+
       })
       await posRegisterRepo.save(defaultRegister)
 

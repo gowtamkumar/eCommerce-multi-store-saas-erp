@@ -20,7 +20,7 @@ export abstract class BaseEntity {
   @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
   deletedAt?: Date
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  @Column({ type: 'uuid', name: 'user_id' })
   @Index()
-  userId?: string | null
+  userId: string
 }
