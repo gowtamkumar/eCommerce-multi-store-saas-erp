@@ -191,15 +191,39 @@ export class StoreService {
       savedStore.activeSubscription = savedSub
       await storeRepo.save(savedStore)
 
+      // Create admin user linked to Main Branch
+      const hashedPassword = await bcrypt.hash(password, 10)
+      const verificationToken = crypto.randomBytes(32).toString('hex')
+      const user = userRepo.create({
+        name,
+        username,
+        email,
+        password: hashedPassword,
+        role: UserRole.ADMIN, // Keep for backward compat
+        storeId: savedStore.id,
+        isAdmin: false,
+        emailVerificationToken: verificationToken,
+      })
+      const savedUser = await userRepo.save(user)
+
+      // Link user to store
+      savedStore.userId = savedUser.id
+      await storeRepo.save(savedStore)
+
       // Create default Main Branch
       const branchRepo = manager.getRepository(BranchEntity)
       const defaultBranch = branchRepo.create({
         name: 'Main Branch',
         code: `MAIN-${subdomain.toUpperCase()}`,
         storeId: savedStore.id,
+        userId: savedUser.id,
         isActive: true,
       })
       const savedBranch = await branchRepo.save(defaultBranch)
+
+      // save branch to user
+      savedUser.branchId = savedBranch.id
+      await userRepo.save(savedUser)
 
       // Create default Warehouse
       const warehouseRepo = manager.getRepository(WarehouseEntity)
@@ -208,6 +232,7 @@ export class StoreService {
         code: `WH-${subdomain.toUpperCase()}`,
         storeId: savedStore.id,
         branchId: savedBranch.id,
+        userId: savedUser.id,
         isActive: true,
       })
       await warehouseRepo.save(defaultWarehouse)
@@ -218,29 +243,11 @@ export class StoreService {
         name: 'Main Till',
         branchId: savedBranch.id,
         storeId: savedStore.id,
+        userId: savedUser.id,
       })
       await posRegisterRepo.save(defaultRegister)
 
-      // Create admin user linked to Main Branch
-      const hashedPassword = await bcrypt.hash(password, 10)
-      const verificationToken = crypto.randomBytes(32).toString('hex')
 
-      const user = userRepo.create({
-        name,
-        username,
-        email,
-        password: hashedPassword,
-        role: UserRole.ADMIN, // Keep for backward compat
-        storeId: savedStore.id,
-        branch: savedBranch,
-        isAdmin: false,
-        emailVerificationToken: verificationToken,
-      })
-      const savedUser = await userRepo.save(user)
-
-      // Link user to store
-      savedStore.userId = savedUser.id
-      await storeRepo.save(savedStore)
 
       // Seed default roles and assign Super Admin to the new user
       const superAdminRole = await this.roleManagementService.seedSuperAdminRole(
@@ -276,7 +283,7 @@ export class StoreService {
 
       // Initialize Site Settings inside the transaction to guarantee onboarding atomicity
       await this.settingsService.createSetting(
-        { storeId: savedStore.id } as RequestContextDto,
+        { storeId: savedStore.id, userId: savedUser.id } as RequestContextDto,
         {
           userId: savedUser.id,
           brandName: storeName,

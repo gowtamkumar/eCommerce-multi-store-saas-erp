@@ -18,7 +18,7 @@ export class SettingsService {
     private settingsRepository: SiteSettingsRepository,
     private storeRepository: StoreRepository,
     private cacheService: CacheService,
-  ) {}
+  ) { }
 
   async findByStoreSettings(
     ctx: RequestContextDto,
