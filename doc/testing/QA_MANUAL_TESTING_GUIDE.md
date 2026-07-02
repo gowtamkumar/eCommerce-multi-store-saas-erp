@@ -70,6 +70,15 @@ graph TD
 
 #### Module 1: Super-Admin & Store Onboarding
 Verify the registration of a new store and seed resource instantiation.
+
+**Verification Checklist:**
+*   [ ] Feature 1.1: System Store Onboarding (DB schema initialization & Chart of Accounts seeding)
+*   [ ] Feature 1.2: Custom Domain Setup (Database configuration mapping)
+*   [ ] Feature 1.3: CNAME & DNS Validation (verification states & status transitions)
+*   [ ] Feature 1.4: Subscription Plan Gating (blocking premium modules based on plan limits)
+*   [ ] Feature 1.5: Subscription Expiry Enforcement (suspending access on expired dates)
+*   [ ] Feature 1.6: Super-Admin Metrics Dashboard (system resource and store count metrics)
+
 1.  **UI Step-by-Step**:
     *   Navigate to the Super-Admin panel: `http://system.localhost:3000/system` (or `/system`).
     *   Click **Onboard Store** and fill out the form:
@@ -113,6 +122,17 @@ Verify the registration of a new store and seed resource instantiation.
 
 #### Module 2: Authentication, Security & RBAC Scoping
 Verify user authentication, active sessions audit logs, and branch-level scoping restriction.
+
+**Verification Checklist:**
+*   [ ] Feature 2.1: User Login, JWT Token Issuance & Session Cookie Handling
+*   [ ] Feature 2.2: Active Session Logging and IP audit records
+*   [ ] Feature 2.3: Active Session Revocation and Logout tokens
+*   [ ] Feature 2.4: Staff Invitation Flow (MailHog sign-up invitation links)
+*   [ ] Feature 2.5: Invitation Acceptance (linking users to roles and scopes)
+*   [ ] Feature 2.6: Branch Scoping Gating (restricting cashier access to scoped locations)
+*   [ ] Feature 2.7: Warehouse Scoping Gating (limiting stock adjustment access to scoped warehouses)
+*   [ ] Feature 2.8: Direct User Permission Overrides (priority GRANT/REVOKE overrides)
+
 1.  **UI Step-by-Step**:
     *   Navigate to `http://lazzpharma.localhost:3000/admin/login`.
     *   Log in as `owner@lazzpharma.com`.
@@ -152,6 +172,13 @@ Verify user authentication, active sessions audit logs, and branch-level scoping
 
 #### Module 3: Physical & Financial Setup (COA)
 Verify creation of branches, warehouses, bins, and custom sub-accounts.
+
+**Verification Checklist:**
+*   [ ] Feature 3.1: Branch Configuration (creating branch locations by storeId)
+*   [ ] Feature 3.2: Warehouse & Bin Setup (creating parent-child shelf/bin hierarchies)
+*   [ ] Feature 3.3: Chart of Accounts Seeding (validating pre-seeded ledger codes)
+*   [ ] Feature 3.4: Custom Sub-Account Creation (adding nested account codes and rollups)
+
 1.  **UI Step-by-Step**:
     *   Log in as the Owner.
     *   Go to **Settings -> Organization -> Branches**. Click **Add Branch** (Create "Dhaka Branch" and "Sylhet Branch").
@@ -177,6 +204,12 @@ Verify creation of branches, warehouses, bins, and custom sub-accounts.
 
 #### Module 4: Product Catalog & Batch/FEFO Lot Registry
 Verify setup of products, pricing sheets, and batch expiration tracking.
+
+**Verification Checklist:**
+*   [ ] Feature 4.1: Product & Variant Configuration (SKU, pricing, and barcodes)
+*   [ ] Feature 4.2: Price Book Pricing (currency assignments and contextual price lookup)
+*   [ ] Feature 4.3: Batch Expiry (FEFO Lot) Registry (earliest expiring batch stock tracking)
+
 1.  **UI Step-by-Step**:
     *   Navigate to **Catalog -> Products**. Click **Add Product**.
     *   Create a product (e.g., "Napa Extra 500mg"). Add variations (e.g., "Box of 10", "Box of 100").
@@ -209,6 +242,13 @@ Verify setup of products, pricing sheets, and batch expiration tracking.
 
 #### Module 5: Procurement & Accounts Payable (AP)
 Verify creation of a Purchase Order (PO) and matching invoice verification.
+
+**Verification Checklist:**
+*   [ ] Feature 5.1: Purchase Requisition to PO Conversion (creating supplier PO and PDF generation)
+*   [ ] Feature 5.2: Supplier Invoice Intake (recording bill totals, tax, and PO links)
+*   [ ] Feature 5.3: 3-Way Matching Validation (verifying Invoice Qty against PO and GRN values)
+*   [ ] Feature 5.4: Supplier Payment Settlement (GL double-entry posting and paid status transitions)
+
 1.  **UI Step-by-Step**:
     *   Navigate to **Procurement -> Purchase Orders**. Click **Create Purchase Order**.
     *   Select a supplier, add "Napa Extra" (Qty: 100 boxes, Unit Cost: $5.00), and click **Submit for Approval**.
@@ -254,6 +294,11 @@ Verify creation of a Purchase Order (PO) and matching invoice verification.
 
 #### Module 6: Goods Received Note (GRN) & Lot Allocation
 Verify physical verification of incoming inventory, ledger postings, and batch registration.
+
+**Verification Checklist:**
+*   [ ] Feature 6.1: Goods Received Note (GRN) Verification (matching PO and incrementing stock)
+*   [ ] Feature 6.2: Lot Number Allocations (assigning batch numbers and shelf locations)
+
 1.  **UI Step-by-Step**:
     *   Navigate to **Logistics -> Goods Received Notes (GRN)**.
     *   Select the approved PO from Module 5 and click **Receive Goods**.
@@ -307,6 +352,12 @@ Verify physical verification of incoming inventory, ledger postings, and batch r
 
 #### Module 7: POS Shift Management & Drawer Control
 Verify float management, drawer transactions, and Z-report shift reconciliation.
+
+**Verification Checklist:**
+*   [ ] Feature 7.1: Cashier Shift Openings (recording drawer opening float)
+*   [ ] Feature 7.2: Drawer Payouts (recording petty cash withdrawals and logs)
+*   [ ] Feature 7.3: Shift Close & Reconciliation (daily Z-reports and counted cash discrepancies)
+
 1.  **UI Step-by-Step**:
     *   Log in as Cashier (`cashier@lazzpharma.com`) scoped to Dhaka Branch.
     *   Open the POS module. The screen will prompt: **Open New Shift**.
@@ -350,6 +401,12 @@ Verify float management, drawer transactions, and Z-report shift reconciliation.
 
 #### Module 8: POS Register Checkout & Payment Splits
 Verify cart assembly, barcode scanning, VAT computations, and multi-tender split payments.
+
+**Verification Checklist:**
+*   [ ] Feature 8.1: Barcode Scan Checkout (item scanner loading and cart totals)
+*   [ ] Feature 8.2: Multi-Tender Split Payments (split card/cash/wallet checkout logic)
+*   [ ] Feature 8.3: Inventory COGS Deductions (debiting COGS and crediting Inventory Asset on sale)
+
 1.  **UI Step-by-Step**:
     *   Ensure an active shift is open. Open the **POS Register Screen**.
     *   Add "Napa Extra" to the cart (scan barcode or search name). Add 2 boxes.
@@ -381,6 +438,12 @@ Verify cart assembly, barcode scanning, VAT computations, and multi-tender split
 
 #### Module 9: Offline POS Operations & Idempotent Sync
 Verify offline survival, local queueing, and network reconnection synchronization.
+
+**Verification Checklist:**
+*   [ ] Feature 9.1: Offline Cart Caching (saving offline orders to browser IndexedDB)
+*   [ ] Feature 9.2: Reconnection Sync (auto-uploading orders to API and clear cache)
+*   [ ] Feature 9.3: Sync Idempotency Guard (preventing double-deduction on duplicate requests)
+
 1.  **UI Step-by-Step**:
     *   Open the POS checkout page on a browser.
     *   **Simulate Offline Mode**: Open Browser Developer Tools (F12) -> Go to the **Network** tab -> Select the throttling dropdown and set to **Offline**.
@@ -422,6 +485,11 @@ Verify offline survival, local queueing, and network reconnection synchronizatio
 
 #### Module 10: Courier API Integrations & Webhooks
 Verify Steadfast & Pathao courier integrations and external status update webhooks.
+
+**Verification Checklist:**
+*   [ ] Feature 10.1: Picking & Packing Assignments (fulfilling items and state transitions)
+*   [ ] Feature 10.2: Courier API Webhook Updates (tracking status mapping for third-party shippers)
+
 1.  **UI Step-by-Step**:
     *   Log in as Owner. Go to **Sales -> Orders**. Select a packed order.
     *   Click **Assign Courier**. Select **Steadfast**. Enter weight, package details, and click **Submit**.
@@ -448,6 +516,12 @@ Verify Steadfast & Pathao courier integrations and external status update webhoo
 
 #### Module 11: Logistics Stock Transfers
 Verify inter-warehouse stock routing and transit states.
+
+**Verification Checklist:**
+*   [ ] Feature 11.1: Stock Transfer Request & Approvals (reviewing inter-branch stock demands)
+*   [ ] Feature 11.2: Stock Transfer Dispatches (decrementing origin stock to 'In-Transit')
+*   [ ] Feature 11.3: Stock Transfer Receipts (incrementing destination stock upon receipt)
+
 1.  **UI Step-by-Step**:
     *   Navigate to **Logistics -> Stock Transfers**. Click **New Request**.
     *   *Source*: Dhaka Central Warehouse. *Destination*: Sylhet Branch Warehouse.
@@ -479,7 +553,13 @@ Verify inter-warehouse stock routing and transit states.
         ```
 
 #### Module 12: Customer CRM & B2B Credit Systems
-Verify credit tier enforcement and loyalty ledger points allocation.
+Verify credit limit enforcement, prepaid wallet deposits, and loyalty points configuration.
+
+**Verification Checklist:**
+*   [ ] Feature 12.1: Credit Limit Check (blocking checkout if credit limit is exceeded)
+*   [ ] Feature 12.2: Wallet Prepaid Deposits (adding store credit balances and ledger mapping)
+*   [ ] Feature 12.3: CRM Loyalty Point Ledger (accruing points based on order checkout values)
+
 1.  **UI Step-by-Step**:
     *   Navigate to **CRM -> Customer Accounts**. Create a customer "ABC Retailers" (Type: B2B).
     *   Set their **Credit Limit** to `$500.00`.
@@ -497,6 +577,12 @@ Verify credit tier enforcement and loyalty ledger points allocation.
 
 #### Module 13: Sales Returns, Restocking & Refunds
 Verify return requests, warehouse item verification, and restocking entries.
+
+**Verification Checklist:**
+*   [ ] Feature 13.1: Return Quantity Audits (restricting return bounds to initial sale count)
+*   [ ] Feature 13.2: Restocking Journal Entries (returning items to stock and updating COGS)
+*   [ ] Feature 13.3: Wallet Refund Disbursements (refunding sales value back to wallet credit balances)
+
 1.  **UI Step-by-Step**:
     *   Go to **Sales -> Returns**. Click **Request Return**. Select invoice `INV-10001`.
     *   Select item: "Napa Extra" (Qty: 2 boxes). Select Reason: "Damaged packaging".
@@ -538,6 +624,11 @@ Verify return requests, warehouse item verification, and restocking entries.
 
 #### Module 14: Geofenced HRM Attendance System
 Verify employee geofenced punch operations.
+
+**Verification Checklist:**
+*   [ ] Feature 14.1: Geofenced Clock-In Punching (verifying coordinate locations match branch coordinates)
+*   [ ] Feature 14.2: Daily Session Aggregations (aggregating punched sessions into total working minutes)
+
 1.  **UI Step-by-Step**:
     *   Log in as an employee on a mobile web browser.
     *   Navigate to **HRM -> Clock In/Out**.
@@ -566,7 +657,13 @@ Verify employee geofenced punch operations.
         ```
 
 #### Module 15: Monthly Payroll & GL Integration
-Verify automated payroll processing, deductions, and payment release journal entries.
+Verify salary calculation runs, attendance deductions, and release journal entries.
+
+**Verification Checklist:**
+*   [ ] Feature 15.1: Monthly Payroll Runs (calculating late deductions, taxes, and net salaries)
+*   [ ] Feature 15.2: Payroll Batch Approvals (posting salary liabilities to General Ledger)
+*   [ ] Feature 15.3: Payroll Payment Releases (settling salaries with bank accounts and GL balancing)
+
 1.  **UI Step-by-Step**:
     *   Navigate to **HRM -> Payroll Runs**. Click **Process Monthly Payroll**.
     *   Select the target month and click **Generate Batch**.
@@ -597,6 +694,11 @@ Verify automated payroll processing, deductions, and payment release journal ent
 
 #### Module 16: Ledger, Auditing & Fiscal Period Locks
 Verify double-entry consistency checks and closed period enforcement.
+
+**Verification Checklist:**
+*   [ ] Feature 16.1: Balanced Ledger Checks (ensuring Debits sum exactly equals Credits)
+*   [ ] Feature 16.2: Fiscal Period Locking (restricting retro-postings on locked date ranges)
+
 1.  **UI Step-by-Step**:
     *   Navigate to **Accounting -> Fiscal Periods**.
     *   Click **Lock Period** for the previous calendar month.
@@ -625,6 +727,10 @@ Verify double-entry consistency checks and closed period enforcement.
 
 #### Module 17: Live Chat & Human Support
 Verify support client WebSocket connections and messages.
+
+**Verification Checklist:**
+*   [ ] Feature 17.1: Live Chat Client Connections (routing WebSocket support messages)
+
 1.  **UI Step-by-Step**:
     *   Open two windows:
         *   *Customer Window*: `http://lazzpharma.localhost:3000` (Click on chat support widget).
@@ -639,6 +745,10 @@ Verify support client WebSocket connections and messages.
 
 #### Module 18: Public Storefront Website (Customer Experience)
 Verify product visibility, shopping cart pipelines, and guest checkouts.
+
+**Verification Checklist:**
+*   [ ] Feature 18.1: Cart & Checkout Pipelines (validating placing storefront customer orders)
+
 1.  **UI Step-by-Step**:
     *   Open `http://lazzpharma.localhost:3000` (Store Public storefront website).
     *   Navigate the homepage, search for "Napa Extra", and verify correct currency and pricing.
@@ -654,6 +764,10 @@ Verify product visibility, shopping cart pipelines, and guest checkouts.
 
 #### Module 19: Storefront AI Integration (BYOK)
 Verify semantic search query matches and search fallback thresholds.
+
+**Verification Checklist:**
+*   [ ] Feature 19.1: Semantic Hybrid Search (merging vector index matching and text keyword search)
+
 1.  **UI Step-by-Step**:
     *   Go to `http://lazzpharma.localhost:3000`.
     *   In the main search bar, type a semantic query (e.g., "medication for headaches").
@@ -665,6 +779,10 @@ Verify semantic search query matches and search fallback thresholds.
 
 #### Module 20: System Caching, Notifications & Infrastructure
 Verify Redis caching eviction, push notifications, and MinIO storage assets.
+
+**Verification Checklist:**
+*   [ ] Feature 20.1: Caching Eviction (clearing Redis cache targets upon data updates)
+
 1.  **UI Step-by-Step**:
     *   Log in as Admin. Navigate to **Catalog -> Products**. Select "Napa Extra" and change the retail price from `$10.00` to `$12.00`.
     *   Navigate to the public storefront `http://lazzpharma.localhost:3000`.

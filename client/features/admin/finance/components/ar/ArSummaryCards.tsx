@@ -1,5 +1,6 @@
 'use client';
 
+import { useSettings } from '@/hooks/SettingsContext';
 import { AlertTriangle, CreditCard, TrendingDown } from 'lucide-react';
 
 export interface ArSummaryCardsProps {
@@ -9,7 +10,10 @@ export interface ArSummaryCardsProps {
     accountCount: number;
 }
 
+
 export default function ArSummaryCards({ totalOutstanding, totalOverdue, holdCount, accountCount }: ArSummaryCardsProps) {
+    const { formatPrice, convertPrice, selectedCurrency } = useSettings();
+
     return (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
@@ -20,7 +24,7 @@ export default function ArSummaryCards({ totalOutstanding, totalOverdue, holdCou
                     <p className="text-xs font-black uppercase tracking-widest text-slate-500">Total Outstanding</p>
                 </div>
                 <p className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-                    ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {formatPrice(totalOutstanding)}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">{accountCount} active B2B accounts</p>
             </div>
@@ -33,7 +37,7 @@ export default function ArSummaryCards({ totalOutstanding, totalOverdue, holdCou
                     <p className="text-xs font-black uppercase tracking-widest text-slate-500">Total Overdue</p>
                 </div>
                 <p className="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono">
-                    ${totalOverdue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {formatPrice(totalOverdue)}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">Past due invoices (1-90+ days)</p>
             </div>

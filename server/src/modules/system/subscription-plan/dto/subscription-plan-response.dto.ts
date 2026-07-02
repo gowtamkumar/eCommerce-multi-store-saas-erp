@@ -12,9 +12,6 @@ export class SubscriptionPlanResponseDto {
   description: string | null
 
   @Expose()
-  price: number
-
-  @Expose()
   monthlyPrice: number
 
   @Expose()

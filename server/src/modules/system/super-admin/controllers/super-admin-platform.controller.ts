@@ -85,7 +85,6 @@ export class SuperAdminPlatformController {
       {
         name: 'Starter',
         description: 'Basic storefront configuration and single-location catalog.',
-        price: 0,
         monthlyPrice: 0,
         yearlyPrice: 0,
         features: [
@@ -113,7 +112,6 @@ export class SuperAdminPlatformController {
       {
         name: 'Pro Seller',
         description: 'The essentials to get your store up and running with professional features.',
-        price: 29,
         monthlyPrice: 29,
         yearlyPrice: 290,
         features: [
@@ -155,7 +153,6 @@ export class SuperAdminPlatformController {
       {
         name: 'Enterprise',
         description: 'Scale your business with dedicated support and advanced infrastructure.',
-        price: 99,
         monthlyPrice: 99,
         yearlyPrice: 990,
         features: [

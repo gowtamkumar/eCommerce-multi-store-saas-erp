@@ -187,7 +187,6 @@ interface PlanSeed {
   code: string
   name: string
   description: string
-  price: number
   monthly_price: number
   yearly_price: number
   is_popular: boolean
@@ -207,7 +206,6 @@ const PLANS_TO_SEED: PlanSeed[] = [
     code: 'starter',
     name: 'Starter',
     description: 'Basic storefront configuration and single-location catalog.',
-    price: 0,
     monthly_price: 0,
     yearly_price: 0,
     is_popular: false,
@@ -225,7 +223,6 @@ const PLANS_TO_SEED: PlanSeed[] = [
     code: 'pro_seller',
     name: 'Pro Seller',
     description: 'The essentials to get your store up and running with professional features.',
-    price: 29,
     monthly_price: 29,
     yearly_price: 290,
     is_popular: true,
@@ -249,7 +246,6 @@ const PLANS_TO_SEED: PlanSeed[] = [
     code: 'enterprise',
     name: 'Enterprise',
     description: 'Scale your business with dedicated support and advanced infrastructure.',
-    price: 99,
     monthly_price: 99,
     yearly_price: 990,
     is_popular: false,
@@ -403,7 +399,7 @@ async function seed() {
       await dataSource.query(
         `INSERT INTO "subscription_plans" (
            id, name, description,
-           price, monthly_price, yearly_price,
+           monthly_price, yearly_price,
            billing_cycle, features,
            is_active, is_popular, trial_period_days,
            code, currency,
@@ -412,18 +408,17 @@ async function seed() {
            created_at, updated_at
          ) VALUES (
            uuid_generate_v4(), $1, $2,
-           $3, $4, $5,
-           'monthly', $6,
-           true, $7, $8,
-           $9, $10,
-           $11, $12, $13,
-           $14, $15, $16,
+           $3, $4,
+           'monthly', $5,
+           true, $6, $7,
+           $8, $9,
+           $10, $11, $12,
+           $13, $14, $15,
            now(), now()
          )`,
         [
           plan.name,
           plan.description,
-          plan.price,
           plan.monthly_price,
           plan.yearly_price,
           JSON.stringify(plan.features),

@@ -12,9 +12,6 @@ export class SubscriptionPlanEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description: string
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  price: number
-
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'monthly_price' })
   monthlyPrice: number
 

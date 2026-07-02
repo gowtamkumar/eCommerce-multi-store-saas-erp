@@ -21,10 +21,6 @@ export class CreateSubscriptionPlanDto {
 
   @IsNumber()
   @Min(0)
-  price: number
-
-  @IsNumber()
-  @Min(0)
   @IsOptional()
   monthlyPrice?: number
 
