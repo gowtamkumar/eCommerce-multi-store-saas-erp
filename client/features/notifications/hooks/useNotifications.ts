@@ -40,7 +40,7 @@ export function useNotifications({ isSystem = false, limit = 10 }: UseNotificati
         url += `&search=${encodeURIComponent(search)}`;
       }
 
-      const headers = isSystem ? { 'x-tenant-id': '' } : undefined;
+      const headers = isSystem ? { 'x-store-id': '' } : undefined;
       const data = await fetchAPI(url, headers ? { headers } : undefined);
 
       if (data.success && data.data) {
@@ -78,7 +78,7 @@ export function useNotifications({ isSystem = false, limit = 10 }: UseNotificati
 
   const markAllAsRead = async () => {
     try {
-      const headers = isSystem ? { 'x-tenant-id': '' } : undefined;
+      const headers = isSystem ? { 'x-store-id': '' } : undefined;
       await fetchAPI('/infra/notifications/read-all', {
         method: 'PATCH',
         ...(headers ? { headers } : {}),
@@ -95,7 +95,7 @@ export function useNotifications({ isSystem = false, limit = 10 }: UseNotificati
   const handleNotificationClick = async (notif: Notification, onRedirect?: (link?: string) => void) => {
     if (!notif.isRead) {
       try {
-        const headers = isSystem ? { 'x-tenant-id': '' } : undefined;
+        const headers = isSystem ? { 'x-store-id': '' } : undefined;
         await fetchAPI(`/infra/notifications/${notif.id}/read`, {
           method: 'PATCH',
           ...(headers ? { headers } : {}),

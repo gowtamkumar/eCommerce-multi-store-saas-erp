@@ -38,7 +38,7 @@ import { CustomThrottlerGuard } from './throttler.guard'
           {
             name: 'ai',
             ttl: 60000,
-            limit: 40, // tenant admin AI generate endpoints
+            limit: 40, // store admin AI generate endpoints
           },
           {
             name: 'ai-storefront',

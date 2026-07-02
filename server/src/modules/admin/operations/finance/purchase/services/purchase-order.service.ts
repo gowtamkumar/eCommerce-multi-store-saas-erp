@@ -47,7 +47,7 @@ export class PurchaseOrderService {
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     // Log incoming items and compute total to validate unitPrice values
     this.logger.log(`Creating PO - items: ${JSON.stringify(dto.items)}`)
     const totalAmount = dto.items.reduce(
@@ -55,11 +55,11 @@ export class PurchaseOrderService {
       0,
     )
     const result = await this.repository.createAndSave(
-      { ...dto, totalAmount, tenantId } as any,
+      { ...dto, totalAmount, storeId } as any,
       ctx,
       manager,
     )
-    await this.cacheService.delCacheByPattern(`po:list*`, tenantId)
+    await this.cacheService.delCacheByPattern(`po:list*`, storeId)
     return result
   }
 
@@ -79,15 +79,15 @@ export class PurchaseOrderService {
     totalPages: number
   }> {
     this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `po:list:p${page}:l${limit}:q${search || ''}:s${status || ''}:ps${paymentStatus || ''}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.repository.findAllByTenant(
-          tenantId,
+        const [items, total] = await this.repository.findAllByStore(
+          storeId,
           page,
           limit,
           search,
@@ -103,7 +103,7 @@ export class PurchaseOrderService {
         }
       },
       300, // 5 min cache
-      tenantId,
+      storeId,
     )
   }
 
@@ -112,14 +112,14 @@ export class PurchaseOrderService {
    */
   async findOnePurchaseOrder(id: string, ctx: RequestContextDto): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.findOnePurchaseOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `po:id:${id}`
 
     const order = await this.cacheService.rememberCache(
       cacheKey,
-      () => this.repository.findByIdWithRelations(id, tenantId),
+      () => this.repository.findByIdWithRelations(id, storeId),
       600, // 10 min cache
-      tenantId,
+      storeId,
     )
 
     if (!order) {
@@ -137,7 +137,7 @@ export class PurchaseOrderService {
     ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.updatePurchaseOrderStatus.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const order = await this.findOnePurchaseOrder(id, ctx)
 
     if (
@@ -155,8 +155,8 @@ export class PurchaseOrderService {
       result = await this.repository.savePurchaseOrder(order)
     }
 
-    await this.cacheService.delCacheByPattern(`po:list*`, tenantId)
-    await this.cacheService.delCache(`po:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`po:list*`, storeId)
+    await this.cacheService.delCache(`po:id:${id}`, storeId)
     return result
   }
 
@@ -166,7 +166,7 @@ export class PurchaseOrderService {
     ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.receivePurchaseOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
@@ -178,7 +178,7 @@ export class PurchaseOrderService {
     try {
       // 1. Re-fetch the order WITH items inside the transaction
       const orderWithItems = await queryRunner.manager.findOne(PurchaseOrderEntity, {
-        where: { id: order.id, tenantId },
+        where: { id: order.id, storeId },
         relations: {
           items: {
             product: true,
@@ -209,7 +209,7 @@ export class PurchaseOrderService {
 
       // 3. Strictly require warehouse / branch
       if (this.grnRepository) {
-        const grnNumber = await this.grnRepository.generateGrnNumber(tenantId)
+        const grnNumber = await this.grnRepository.generateGrnNumber(storeId)
 
         const warehouseId = dto.warehouseId
         const branchId = dto.branchId
@@ -250,7 +250,7 @@ export class PurchaseOrderService {
               referenceType: InventoryTransactionReferenceType.GOODS_RECEIVED_NOTE,
               referenceId: grnNumber, // use grnNumber as reference until id available
               supplierId: orderWithItems.supplierId,
-              tenantId,
+              storeId,
               unitCost: item.unitCost,
               warehouseId,
               branchId,
@@ -261,14 +261,14 @@ export class PurchaseOrderService {
         // 6. Update Supplier Accounts Payable Ledger
         if (totalGrnCost > 0) {
           await queryRunner.manager.findOne(SupplierEntity, {
-            where: { id: orderWithItems.supplierId, tenantId },
+            where: { id: orderWithItems.supplierId, storeId },
             lock: { mode: 'pessimistic_write' },
           })
 
           const lastEntry = await queryRunner.manager
             .createQueryBuilder(SupplierAPLedgerEntity, 'ap')
             .where('ap.supplierId = :supplierId', { supplierId: orderWithItems.supplierId })
-            .andWhere('ap.tenantId = :tenantId', { tenantId })
+            .andWhere('ap.storeId = :storeId', { storeId })
             .orderBy('ap.createdAt', 'DESC')
             .getOne()
 
@@ -276,7 +276,7 @@ export class PurchaseOrderService {
 
           const entry = queryRunner.manager.create(SupplierAPLedgerEntity, {
             supplierId: orderWithItems.supplierId,
-            tenantId,
+            storeId,
             referenceType: SupplierAPReferenceType.GRN,
             debit: 0,
             credit: totalGrnCost,
@@ -308,7 +308,7 @@ export class PurchaseOrderService {
             link: `/admin/procurement/purchases/${savedOrder.id}`,
             userId: null as any,
           },
-          tenantId,
+          storeId,
         )
       } catch (e: any) {
         this.logger.error(`Failed to trigger supplier invoice notification: ${e.message}`)
@@ -334,13 +334,13 @@ export class PurchaseOrderService {
     ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.recordSupplierPayment.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
-      const order = await this.repository.findById(id, tenantId, queryRunner.manager)
+      const order = await this.repository.findById(id, storeId, queryRunner.manager)
       if (!order) throw new NotFoundException('Purchase order not found')
 
       await this.paymentRepository.createAndSave(
@@ -348,7 +348,7 @@ export class PurchaseOrderService {
           ...dto,
           purchaseOrderId: order.id,
           supplierId: order.supplierId,
-          tenantId,
+          storeId,
           paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
         },
         ctx,
@@ -369,8 +369,8 @@ export class PurchaseOrderService {
       const savedOrder = await this.repository.savePurchaseOrder(order, queryRunner.manager)
       await queryRunner.commitTransaction()
 
-      await this.cacheService.delCacheByPattern(`po:list*`, tenantId)
-      await this.cacheService.delCache(`po:id:${id}`, tenantId)
+      await this.cacheService.delCacheByPattern(`po:list*`, storeId)
+      await this.cacheService.delCache(`po:id:${id}`, storeId)
 
       return savedOrder
     } catch (err: any) {
@@ -384,16 +384,16 @@ export class PurchaseOrderService {
 
   async findAllPurchaseOrdersRaw(ctx: RequestContextDto): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllPurchaseOrdersRaw.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `po:list:raw`
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items] = await this.repository.findAllByTenant(tenantId, 1, 9999)
+        const [items] = await this.repository.findAllByStore(storeId, 1, 9999)
         return items
       },
       300,
-      tenantId,
+      storeId,
     )
   }
 
@@ -402,8 +402,8 @@ export class PurchaseOrderService {
     ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllBySupplier.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.repository.findAllBySupplier(supplierId, tenantId)
+    const storeId = ctx.storeId
+    return await this.repository.findAllBySupplier(supplierId, storeId)
   }
 
   async findAllPaymentsBySupplier(
@@ -411,13 +411,13 @@ export class PurchaseOrderService {
     ctx: RequestContextDto,
   ): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsBySupplier.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.paymentRepository.findAllBySupplier(supplierId, tenantId)
+    const storeId = ctx.storeId
+    return await this.paymentRepository.findAllBySupplier(supplierId, storeId)
   }
 
   async findAllPaymentsByPurchaseOrder(ctx: RequestContextDto): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByPurchaseOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.paymentRepository.findAllPayments(tenantId)
+    const storeId = ctx.storeId
+    return await this.paymentRepository.findAllPayments(storeId)
   }
 }

@@ -2,31 +2,31 @@
 
 import { getSession } from "next-auth/react";
 import nestApiUrl from "../lib/api-url";
-import { getClientTenantId } from "../lib/store-tenant-id";
-import { getTenantId } from "./tenant";
+import { getClientStoreId } from "../lib/store-store-id";
+import { getStoreId } from "./store";
 import { authOptions } from "@/lib/authOptions";
 
 type FetchAPIOptions = RequestInit & {
-  tenantId?: string;
+  storeId?: string;
   silent404?: boolean;
 };
 
 export async function fetchAPI(endpoint: string, options: FetchAPIOptions = {}) {
-  const { tenantId: explicitTenantId, silent404, ...fetchOptions } = options;
+  const { storeId: explicitStoreId, silent404, ...fetchOptions } = options;
   const headers: any = { ...fetchOptions.headers };
-  // If tenant ID not provided in headers, try to resolve it
-  if (!headers["x-tenant-id"]) {
-    if (explicitTenantId) {
-      headers["x-tenant-id"] = explicitTenantId;
+  // If store ID not provided in headers, try to resolve it
+  if (!headers["x-store-id"]) {
+    if (explicitStoreId) {
+      headers["x-store-id"] = explicitStoreId;
     } else {
-      const resolvedId = await getTenantId(null, true);
+      const resolvedId = await getStoreId(null, true);
 
       if (resolvedId) {
-        headers["x-tenant-id"] = resolvedId;
+        headers["x-store-id"] = resolvedId;
       } else if (typeof window !== "undefined") {
-        const clientTenantId = getClientTenantId();
-        if (clientTenantId) {
-          headers["x-tenant-id"] = clientTenantId;
+        const clientStoreId = getClientStoreId();
+        if (clientStoreId) {
+          headers["x-store-id"] = clientStoreId;
         }
       }
     }

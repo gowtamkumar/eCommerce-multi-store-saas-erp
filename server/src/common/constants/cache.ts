@@ -1,1 +1,1 @@
-export const CACHE_PREFIX = 'multi-tenant-saas'
+export const CACHE_PREFIX = 'multi-store-saas'

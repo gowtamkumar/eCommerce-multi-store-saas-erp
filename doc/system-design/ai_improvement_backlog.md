@@ -21,7 +21,7 @@
 4. [Phase checklists (P0–P3)](#4-phase-checklists-p0p3)
 5. [Module-by-module checklists](#5-module-by-module-checklists)
 6. [Cross-cutting quality checklist](#6-cross-cutting-quality-checklist)
-7. [Testing checklist (per tenant)](#7-testing-checklist-per-tenant)
+7. [Testing checklist (per store)](#7-testing-checklist-per-store)
 8. [What must never be built](#8-what-must-never-be-built)
 9. [Related documents](#9-related-documents)
 
@@ -46,9 +46,9 @@ Use this doc as a **living checklist**. Mark items `[x]` when done in PRs; keep 
 
 | Layer | Maturity | Highest-impact next |
 |-------|----------|---------------------|
-| Tenant BYOK + config | ✅ Strong | Token usage dashboard |
+| Store BYOK + config | ✅ Strong | Token usage dashboard |
 | Admin inline assists | ✅ Very strong | AI Studio expansion |
-| Storefront AI | 🟢 Strong | Tenant assert + embedding lifecycle |
+| Storefront AI | 🟢 Strong | Store assert + embedding lifecycle |
 | Platform AI | 🟡 Early | Support tooling |
 | Async / jobs / metering | ⬜ Not built | **P0** |
 | Tests & observability | ⬜ Weak | **P0** |
@@ -73,10 +73,10 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 ### Platform infrastructure
 
-- [x] `ai_jobs` table (status, tenant_id, type, payload, result, error, tokens)
+- [x] `ai_jobs` table (status, store_id, type, payload, result, error, tokens)
 - [x] BullMQ `ai` queue + processor worker
-- [x] Persist token usage per request (`tenant_id`, endpoint, model, tokens, timestamp)
-- [x] Tenant AI usage dashboard (Settings → AI or dedicated tab)
+- [x] Persist token usage per request (`store_id`, endpoint, model, tokens, timestamp)
+- [x] Store AI usage dashboard (Settings → AI or dedicated tab)
 - [x] Rate limiting on `POST /ai/*` generate endpoints
 - [x] Rate limiting on storefront AI chat (`POST /products/storefront-ai/chat`)
 - [x] AI integration tests (config, status, sample generate, storefront status)
@@ -104,7 +104,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 - [x] Dashboard KPI copilot (`POST /ai/copilot/dashboard`)
 - [x] Admin copilot with read-only tools (`listOrders`, `getStockLevel`, etc.)
 - [x] Platform plan description AI
-- [x] Platform tenant health narrative
+- [x] Platform store health narrative
 - [x] Platform support tooling AI (ticket summary, onboarding hints)
 
 ### Documentation
@@ -125,10 +125,10 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | 1 | Design `ai_jobs` schema + migration | | [x] |
 | 2 | Register BullMQ `ai` queue in app module | | [x] |
 | 3 | `AiJobProcessor` — run job types: `embedding_batch`, `ocr`, `bulk_seo` | | [x] |
-| 4 | `ai_usage_logs` table + write from `TenantAiClientService` | | [x] |
+| 4 | `ai_usage_logs` table + write from `StoreAiClientService` | | [x] |
 | 5 | `@Throttle` on `/ai/generate/*` and storefront chat | | [x] |
-| 6 | E2E or integration test: tenant config → `/ai/status` → one generate | | [x] usage + job e2e |
-| 7 | E2E test: storefront status with valid `x-tenant-id` | | [ ] |
+| 6 | E2E or integration test: store config → `/ai/status` → one generate | | [x] usage + job e2e |
+| 7 | E2E test: storefront status with valid `x-store-id` | | [ ] |
 
 **P0 exit criteria:**
 
@@ -144,7 +144,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 |---|------|-------|--------|
 | 1 | Call embedding upsert on product create/update | | [x] |
 | 2 | Call `removeEmbeddingsForProducts` on product delete | | [x] |
-| 3 | `BadRequestException` when `tenantId` null on public storefront AI routes | | [x] |
+| 3 | `BadRequestException` when `storeId` null on public storefront AI routes | | [x] |
 | 4 | Settings UI: warn if `embeddingModel` empty but semantic search enabled | | [x] |
 | 5 | Settings UI: warn if Anthropic selected without embedding-capable provider | | [x] |
 | 6 | Update opportunity analysis summary table to match current ✅ status | | [x] |
@@ -153,7 +153,7 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 
 - [x] Product edit → embedding updated within same request or queued job
 - [x] Product delete → no orphan rows in `product_embeddings`
-- [x] Public AI routes fail fast with clear message when tenant missing
+- [x] Public AI routes fail fast with clear message when store missing
 
 ---
 
@@ -165,13 +165,13 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | 2 | AI Studio tab: Page SEO generator | | [x] |
 | 3 | AI Studio tab: Store SEO generator | | [x] |
 | 4 | Move invoice OCR to async job + progress UI | | [x] |
-| 5 | Tenant usage dashboard (tokens by day / endpoint) | | [x] |
+| 5 | Store usage dashboard (tokens by day / endpoint) | | [x] |
 | 6 | Support: conversation summary for handoff | | [x] |
 | 7 | Support: intent tags on messages (optional) | | [x] |
 
 **P2 exit criteria:**
 
-- [x] Tenant can see last 30 days token usage
+- [x] Store can see last 30 days token usage
 - [x] Large invoice PDF does not block HTTP request > 30s
 
 ---
@@ -330,9 +330,9 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Hybrid semantic search | — | [x] |
 | Product Q&A widget | — | [x] |
 | Shopping assistant widget | — | [x] |
-| Storefront AI toggles in tenant settings | — | [x] |
-| Explicit server reject when `tenantId` missing | P1 | [ ] |
-| Localhost `store_tenant_id` fallback documented | — | [x] |
+| Storefront AI toggles in store settings | — | [x] |
+| Explicit server reject when `storeId` missing | P1 | [ ] |
+| Localhost `store_store_id` fallback documented | — | [x] |
 | Search ranking tuning / fallback UX | P2 | [x] |
 | Assistant usage analytics | P2 | [x] |
 | Multilingual prompts | P3 | [x] |
@@ -347,9 +347,9 @@ High-level tracker. Details in [Section 4](#4-phase-checklists-p0p3) and [Sectio
 | Platform Settings → AI config UI | — | [x] |
 | Env fallback (`PLATFORM_AI_*`) | — | [x] |
 | Plan description assist | — | [x] |
-| Tenant health snapshot + narrative | — | [x] |
+| Store health snapshot + narrative | — | [x] |
 | Support tooling AI | P3 | [x] |
-| New tenant onboarding copy assist | P3 | [x] |
+| New store onboarding copy assist | P3 | [x] |
 | Churn narrative week-over-week trends | P3 | [ ] |
 
 ---
@@ -375,8 +375,8 @@ Use before merging significant AI changes.
 - [x] Prompt asks for JSON only where structured output expected
 - [x] Parsed JSON validated before returning to client
 - [x] No API keys in logs or API responses
-- [x] All DB queries scoped by `tenantId`
-- [x] `TenantAiClientService` used for tenant LLM calls (not raw axios in modules)
+- [x] All DB queries scoped by `storeId`
+- [x] `StoreAiClientService` used for store LLM calls (not raw axios in modules)
 - [x] Platform AI uses `PlatformAiClientService` only
 
 ### Client
@@ -385,14 +385,14 @@ Use before merging significant AI changes.
 - [x] Shows setup banner when `configured === false`
 - [x] Generated text is **applied to form** — user must save manually
 - [x] Loading and error toasts present
-- [x] Storefront widgets pass `tenantId` on public routes
+- [x] Storefront widgets pass `storeId` on public routes
 
 ### Security & compliance
 
-- [x] No cross-tenant data in prompts
+- [x] No cross-store data in prompts
 - [x] Finance/HRM prompts minimize PII where possible
 - [x] No auto-send of email/SMS/push
-- [x] Super Admin routes do not expose tenant BYOK keys
+- [x] Super Admin routes do not expose store BYOK keys
 
 ### Docs
 
@@ -401,15 +401,15 @@ Use before merging significant AI changes.
 
 ---
 
-## 7. Testing checklist (per tenant)
+## 7. Testing checklist (per store)
 
-Run for **each tenant** after config changes or releases. Requires valid `x-tenant-id`.
+Run for **each store** after config changes or releases. Requires valid `x-store-id`.
 
 ### Setup
 
 - [ ] Plan includes `ai` feature
 - [ ] Admin → Settings → AI: enabled, API key, default model set
-- [ ] Test connection succeeds (`POST /tenants/ai-config/test`)
+- [ ] Test connection succeeds (`POST /stores/ai-config/test`)
 - [ ] `GET /ai/status` returns `configured: true`
 
 ### Admin AI
@@ -430,15 +430,15 @@ Run for **each tenant** after config changes or releases. Requires valid `x-tena
 
 ### Isolation
 
-- [ ] Tenant A config does not affect Tenant B status endpoint
-- [ ] JWT tenant matches `x-tenant-id` on admin routes (403 on mismatch)
+- [ ] Store A config does not affect Store B status endpoint
+- [ ] JWT store matches `x-store-id` on admin routes (403 on mismatch)
 
 ### Platform AI (Super Admin only)
 
 - [ ] Platform Settings → AI configured
 - [ ] `GET /super-admin/ai/status` → `configured: true`
 - [ ] Plan description generate works in Plan form
-- [ ] Tenant health narrative generates from snapshot
+- [ ] Store health narrative generates from snapshot
 
 ---
 
@@ -451,7 +451,7 @@ Run for **each tenant** after config changes or releases. Requires valid `x-tena
 | Issue refunds or capture payments | Money movement |
 | Change prices, discounts, or tax rules | Commercial terms |
 | Grant/revoke permissions | Security |
-| Cross-tenant data in prompts | Tenant isolation |
+| Cross-store data in prompts | Store isolation |
 | Auto-publish products/campaigns | Draft-and-approve |
 | Auto-send email/SMS/push | Compliance and brand risk |
 | Checkout or cart mutation from storefront AI | Customer safety |

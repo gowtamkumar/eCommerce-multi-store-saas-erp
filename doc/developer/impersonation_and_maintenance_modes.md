@@ -1,6 +1,6 @@
 # Impersonation and Maintenance Modes Guide
 
-This document details the architecture, configuration, and implementation workflows for two critical administrative features of the multi-tenant SaaS platform:
+This document details the architecture, configuration, and implementation workflows for two critical administrative features of the multi-store SaaS platform:
 1. **Login As Merchant (Impersonation Mode)**: Allows Super Admins to securely access a merchant user's account context without credentials.
 2. **Platform-Wide Maintenance Mode**: Allows the platform owner to temporarily lock storefronts and merchant admin views during system migrations or maintenance, while allowing Super Admins to bypass.
 
@@ -42,12 +42,12 @@ sequenceDiagram
 - **NextAuth Integration**: NextAuth has been configured with an optional `impersonateToken` field in the credentials schema, routing requests through the `login-impersonated` backend controller.
 
 ### Key Code References
-- **Backend Service & Token Signer**: [auth.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/core/auth/services/auth.service.ts)
-- **Super Admin API Endpoint**: [super-admin.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/super-admin/super-admin.controller.ts)
-- **Credentials Validation Controller**: [admin-auth.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/core/auth/controllers/admin-auth.controller.ts)
-- **NextAuth Configurations**: [authOptions.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/lib/authOptions.ts)
-- **Frontend Action Button & Trigger**: [UserRow.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/system/components/UserRow.tsx) and [UserList.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/system/components/UserList.tsx)
-- **Auto-Login Hook & Loader**: [Login.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/storefront/auth/components/Login.tsx)
+- **Backend Service & Token Signer**: [auth.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/core/auth/services/auth.service.ts)
+- **Super Admin API Endpoint**: [super-admin.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/super-admin/super-admin.controller.ts)
+- **Credentials Validation Controller**: [admin-auth.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/core/auth/controllers/admin-auth.controller.ts)
+- **NextAuth Configurations**: [authOptions.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/lib/authOptions.ts)
+- **Frontend Action Button & Trigger**: [UserRow.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/system/components/UserRow.tsx) and [UserList.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/system/components/UserList.tsx)
+- **Auto-Login Hook & Loader**: [Login.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/storefront/auth/components/Login.tsx)
 
 ---
 
@@ -62,16 +62,16 @@ Settings are persisted in the global `PlatformSettings` entity:
 - `isMaintenanceMode` (`boolean`, default: `false`)
 - `maintenanceMessage` (`text`, default: `"Platform is currently undergoing scheduled upgrades. Please try again shortly."`)
 
-Entity location: [platform-settings.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/platform/entities/platform-settings.entity.ts)
+Entity location: [platform-settings.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/platform/entities/platform-settings.entity.ts)
 
 #### B. Backend API Protection (`MaintenanceGuard`)
-The global NestJS [MaintenanceGuard](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/common/guards/maintenance.guard.ts) enforces this block:
+The global NestJS [MaintenanceGuard](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/common/guards/maintenance.guard.ts) enforces this block:
 1. **Public Routes Bypass**: Routes decorated with `@Public()` (e.g. static landing assets, login endpoints, webhook receivers) bypass checks.
 2. **Super Admin Bypass**: Requests carrying a valid `SUPER_ADMIN` role token bypass the checks.
 3. **Rejection**: Any other request results in a `503 Service Unavailable` error returning the configured `maintenanceMessage`.
 
 #### C. Frontend UI Lock (`MaintenanceWrapper`)
-The client root layout implements a [MaintenanceWrapper](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/components/shared/MaintenanceWrapper.tsx) that wraps `{children}` inside [layout.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/app/layout.tsx):
+The client root layout implements a [MaintenanceWrapper](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/components/shared/MaintenanceWrapper.tsx) that wraps `{children}` inside [layout.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/app/layout.tsx):
 - Periodically checks platform settings status.
 - If maintenance mode is active, it locks the page, replacing the workspace/storefront with a custom-designed dark-mode splash page showing rotating gears, warning indicators, and the admin-configured warning message.
 - **Smart Path Bypass**: Bypasses paths starting with `/login`, `/system`, `/api`, and `/accept-invitation` so system owners can log in and manage the settings to disable maintenance.
@@ -90,11 +90,11 @@ Before committing any changes to these features, verify that both the client-sid
 
 ```bash
 # 1. Compile Check Client
-docker exec multi_tenant_client_dev npx tsc --noEmit
+docker exec multi_store_client_dev npx tsc --noEmit
 
 # 2. Compile Check Server
-docker exec multi_tenant_server_dev npx tsc --noEmit
+docker exec multi_store_server_dev npx tsc --noEmit
 
 # 3. Run Backend Jest Tests
-docker exec multi_tenant_server_dev npm run test
+docker exec multi_store_server_dev npm run test
 ```

@@ -5,80 +5,80 @@ describe('PermissionResolutionService', () => {
   let service: PermissionResolutionService
   let assignmentRepo: any
   let roleRepo: any
-  let tenantRepo: any
-  let tenantFeatureRepo: any
+  let storeRepo: any
+  let storeFeatureRepo: any
   let overrideRepo: any
   let cacheService: any
 
   beforeEach(() => {
     assignmentRepo = { find: jest.fn() }
     roleRepo = { find: jest.fn() }
-    tenantRepo = { findOne: jest.fn() }
-    tenantFeatureRepo = { find: jest.fn(), findOne: jest.fn() }
+    storeRepo = { findOne: jest.fn() }
+    storeFeatureRepo = { find: jest.fn(), findOne: jest.fn() }
     overrideRepo = { find: jest.fn(), findOne: jest.fn() }
     cacheService = { getCache: jest.fn(), setCache: jest.fn(), delCache: jest.fn() }
 
     service = new PermissionResolutionService(
       assignmentRepo,
       roleRepo,
-      tenantRepo,
-      tenantFeatureRepo,
+      storeRepo,
+      storeFeatureRepo,
       overrideRepo,
       cacheService,
     )
   })
 
-  describe('isFeatureEnabledForTenant', () => {
+  describe('isFeatureEnabledForStore', () => {
     it('returns true if a sub-feature (e.g. accounting) maps to an active plan feature (e.g. finance)', async () => {
-      tenantFeatureRepo.findOne.mockResolvedValue(null) // No overrides
-      tenantRepo.findOne.mockResolvedValue({
+      storeFeatureRepo.findOne.mockResolvedValue(null) // No overrides
+      storeRepo.findOne.mockResolvedValue({
         subscriptionPlan: {
           features: ['finance', 'orders'],
         },
       })
 
-      const isEnabled = await service.isFeatureEnabledForTenant('tenant-1', 'accounting')
+      const isEnabled = await service.isFeatureEnabledForStore('store-1', 'accounting')
       expect(isEnabled).toBe(true)
     })
 
     it('returns false if neither the sub-feature nor the mapped plan feature is in the subscription plan', async () => {
-      tenantFeatureRepo.findOne.mockResolvedValue(null)
-      tenantRepo.findOne.mockResolvedValue({
+      storeFeatureRepo.findOne.mockResolvedValue(null)
+      storeRepo.findOne.mockResolvedValue({
         subscriptionPlan: {
           features: ['orders'],
         },
       })
 
-      const isEnabled = await service.isFeatureEnabledForTenant('tenant-1', 'accounting')
+      const isEnabled = await service.isFeatureEnabledForStore('store-1', 'accounting')
       expect(isEnabled).toBe(false)
     })
 
     it('respects sub-feature specific overrides over plan features', async () => {
       // Explicitly disabled override for 'accounting' sub-feature
-      tenantFeatureRepo.findOne.mockResolvedValueOnce({ isEnabled: false }) // for 'accounting'
+      storeFeatureRepo.findOne.mockResolvedValueOnce({ isEnabled: false }) // for 'accounting'
 
-      tenantRepo.findOne.mockResolvedValue({
+      storeRepo.findOne.mockResolvedValue({
         subscriptionPlan: {
           features: ['finance'],
         },
       })
 
-      const isEnabled = await service.isFeatureEnabledForTenant('tenant-1', 'accounting')
+      const isEnabled = await service.isFeatureEnabledForStore('store-1', 'accounting')
       expect(isEnabled).toBe(false)
     })
 
     it('respects parent feature overrides if sub-feature override does not exist', async () => {
-      tenantFeatureRepo.findOne
+      storeFeatureRepo.findOne
         .mockResolvedValueOnce(null) // for specific 'accounting' sub-feature
         .mockResolvedValueOnce({ isEnabled: false }) // for parent 'finance' feature
 
-      tenantRepo.findOne.mockResolvedValue({
+      storeRepo.findOne.mockResolvedValue({
         subscriptionPlan: {
           features: ['finance'],
         },
       })
 
-      const isEnabled = await service.isFeatureEnabledForTenant('tenant-1', 'accounting')
+      const isEnabled = await service.isFeatureEnabledForStore('store-1', 'accounting')
       expect(isEnabled).toBe(false)
     })
   })
@@ -91,14 +91,14 @@ describe('PermissionResolutionService', () => {
         permissions: ['accounting:read', 'accounting:write'],
       })
 
-      const result = await service.resolvePermissionsFromManifest('user-1', 'tenant-1', [
+      const result = await service.resolvePermissionsFromManifest('user-1', 'store-1', [
         'accounting:read',
         'accounting:write',
       ])
 
       expect(result.denied).toBeNull()
       // Confirm no DB queries were run
-      expect(tenantRepo.findOne).not.toHaveBeenCalled()
+      expect(storeRepo.findOne).not.toHaveBeenCalled()
       expect(assignmentRepo.find).not.toHaveBeenCalled()
     })
 
@@ -109,7 +109,7 @@ describe('PermissionResolutionService', () => {
         permissions: ['catalog:read'],
       })
 
-      const result = await service.resolvePermissionsFromManifest('user-1', 'tenant-1', [
+      const result = await service.resolvePermissionsFromManifest('user-1', 'store-1', [
         'accounting:read', // finance feature not in featuresEnabled
       ])
 
@@ -123,7 +123,7 @@ describe('PermissionResolutionService', () => {
         permissions: ['accounting:read'], // no 'accounting:write'
       })
 
-      const result = await service.resolvePermissionsFromManifest('user-1', 'tenant-1', [
+      const result = await service.resolvePermissionsFromManifest('user-1', 'store-1', [
         'accounting:read',
         'accounting:write', // this one is missing
       ])
@@ -137,14 +137,14 @@ describe('PermissionResolutionService', () => {
       cacheService.getCache.mockResolvedValue(null) // Force cache miss to build manifest
 
       // Mock subscription plan with parent 'finance' feature enabled
-      tenantRepo.findOne.mockResolvedValue({
+      storeRepo.findOne.mockResolvedValue({
         subscriptionPlan: {
           features: ['finance'],
         },
       })
 
       // No overrides
-      tenantFeatureRepo.find.mockResolvedValue([])
+      storeFeatureRepo.find.mockResolvedValue([])
       overrideRepo.find.mockResolvedValue([])
 
       // Mock user permissions: accounting:read, hrm:read
@@ -159,7 +159,7 @@ describe('PermissionResolutionService', () => {
         },
       ])
 
-      const manifest = await service.resolvePermissionsManifest('user-1', 'tenant-1')
+      const manifest = await service.resolvePermissionsManifest('user-1', 'store-1')
 
       expect(manifest.permissions).toContain('accounting:read')
       expect(manifest.permissions).not.toContain('hrm:read')

@@ -15,7 +15,7 @@ export class StockReservationController {
 
   /**
    * GET /admin/inventory/reservations?productId=&status=&page=&limit=
-   * Paginated list of reservations for the current tenant.
+   * Paginated list of reservations for the current store.
    */
   @Get()
   async findAll(
@@ -25,7 +25,7 @@ export class StockReservationController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.reservationService.findAll(ctx.tenantId, {
+    return this.reservationService.findAll(ctx.storeId, {
       productId,
       status,
       page: page ? Number(page) : 1,
@@ -49,7 +49,7 @@ export class StockReservationController {
     const openReserved = await this.reservationService.getOpenReservedQty(
       productId,
       variantId ?? null,
-      ctx.tenantId,
+      ctx.storeId,
     )
     const atp = Math.max(0, physical - openReserved)
     return { productId, variantId: variantId ?? null, physicalBalance: physical, openReserved, atp }
@@ -64,6 +64,6 @@ export class StockReservationController {
     @RequestContext() ctx: RequestContextDto,
     @Param('orderId', ParseUUIDPipe) orderId: string,
   ) {
-    return this.reservationService.findByOrder(orderId, ctx.tenantId)
+    return this.reservationService.findByOrder(orderId, ctx.storeId)
   }
 }

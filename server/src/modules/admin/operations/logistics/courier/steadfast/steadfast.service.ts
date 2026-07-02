@@ -23,7 +23,7 @@ export class SteadfastService {
 
   private async getCredentials(ctx: RequestContextDto) {
     this.logger.log(`${this.getCredentials.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `steadfast:creds`
 
     return this.cacheService.rememberCache(
@@ -34,7 +34,7 @@ export class SteadfastService {
         let secretKey = this.configService.get<string>('STEADFAST_SECRET_KEY')
 
         try {
-          const settings = await this.settingsService.findByTenantSettings(ctx)
+          const settings = await this.settingsService.findByStoreSettings(ctx)
           if (settings?.steadfastCourier) {
             apiKey = settings.steadfastCourier.apiKey
             secretKey = settings.steadfastCourier.secretKey
@@ -46,7 +46,7 @@ export class SteadfastService {
         return { baseUrl, apiKey, secretKey }
       },
       600, // 10 minutes cache
-      tenantId,
+      storeId,
     )
   }
 
@@ -56,11 +56,11 @@ export class SteadfastService {
   ): Promise<any> {
     this.logger.log(`${this.createSteadfastOrder.name} Service Called`)
     const creds = await this.getCredentials(ctx)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { orderId } = createOrderDto
 
     if (!creds.apiKey || !creds.secretKey) {
-      this.logger.error(`Steadfast credentials missing for tenant: ${tenantId}`)
+      this.logger.error(`Steadfast credentials missing for store: ${storeId}`)
       throw new Error('Steadfast courier is not configured.')
     }
 

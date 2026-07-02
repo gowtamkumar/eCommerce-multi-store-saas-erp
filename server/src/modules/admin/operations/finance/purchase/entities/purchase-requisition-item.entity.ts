@@ -1,7 +1,7 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import { PurchaseRequisitionEntity } from './purchase-requisition.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 
 @Entity('purchase_requisition_items')
@@ -26,10 +26,10 @@ export class PurchaseRequisitionItemEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   notes: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

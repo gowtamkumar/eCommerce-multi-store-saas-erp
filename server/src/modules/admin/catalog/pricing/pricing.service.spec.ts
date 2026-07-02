@@ -69,7 +69,7 @@ describe('PricingService', () => {
         { productId: 'prod-1', price: 10.0, minQuantity: 1 },
       ])
 
-      const price = await service.getApplicablePrice('prod-1', null, 1, null, 'tenant-1', 'USD')
+      const price = await service.getApplicablePrice('prod-1', null, 1, null, 'store-1', 'USD')
       expect(price).toBe(10.0)
     })
 
@@ -87,7 +87,7 @@ describe('PricingService', () => {
         { productId: 'prod-1', price: 1200.0, minQuantity: 1 },
       ])
 
-      const price = await service.getApplicablePrice('prod-1', null, 1, null, 'tenant-1', 'USD')
+      const price = await service.getApplicablePrice('prod-1', null, 1, null, 'store-1', 'USD')
       expect(price).toBe(10.0)
     })
   })

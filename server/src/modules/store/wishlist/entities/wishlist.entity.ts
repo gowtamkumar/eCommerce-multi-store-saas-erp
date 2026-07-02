@@ -1,11 +1,11 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('wishlists')
-@Index(['userId', 'productId', 'tenantId'], { unique: true })
+@Index(['userId', 'productId', 'storeId'], { unique: true })
 export class WishlistEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
@@ -18,10 +18,10 @@ export class WishlistEntity extends BaseEntity {
   @JoinColumn({ name: 'product_id' })
   product: ProductEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

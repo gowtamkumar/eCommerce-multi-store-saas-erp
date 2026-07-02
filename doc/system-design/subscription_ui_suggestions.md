@@ -1,4 +1,4 @@
-# Multi-Tenant SaaS Subscription UI & Architecture Improvements
+# Multi-Store SaaS Subscription UI & Architecture Improvements
 
 This document outlines the recommendations and immediate enhancements implemented for the **Subscription Plan and Entitlement UI/UX**. It spans the Public SaaS Landing Pricing page, the Super Admin Dashboard Plan Builder, and the Merchant Billing Hub, ensuring an elite, high-fidelity experience in line with your ERP system's core capabilities.
 
@@ -9,12 +9,12 @@ This document outlines the recommendations and immediate enhancements implemente
 We reviewed the active client codebase and identified two major operational issues that have been immediately corrected:
 
 ### A. Pretty Resolved Labels in Super Admin Plan Grid
-* **File Modified:** [PlanList.tsx](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-tenant-saas/client/features/system/components/PlanList.tsx)
+* **File Modified:** [PlanList.tsx](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-store-saas/client/features/system/components/PlanList.tsx)
 * **The Issue:** The entitlement preview listed raw backend route paths (e.g., `/admin/pos`, `/admin/hrm`, `/admin/warehouses`) which looked overly technical and disrupted the premium visual layout.
 * **The Fix:** Integrated `getFeatureDisplay(feature)` to dynamically resolve raw feature routes into gorgeous, clean labels accompanied by their respective domain icons (e.g. Shopping Bag for Point of Sale, Warehouse for Warehouses).
 
 ### B. Fixed Duplicate Checklist Checkboxes in Plan Form
-* **File Modified:** [PlanForm.tsx](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-tenant-saas/client/features/system/components/PlanForm.tsx)
+* **File Modified:** [PlanForm.tsx](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-store-saas/client/features/system/components/PlanForm.tsx)
 * **The Issue:** Multiple navigation menu items map to the same backend route feature gate (for example, `/admin/hrm` is shared by Departments, Employees, payroll, etc.). This caused the Form checklist to render multiple duplicate checkboxes for `/admin/hrm`, which desynchronized state and confused administrators.
 * **The Fix:** Implemented route-slug deduplication when rendering the checkbox groups. Generic checklist labels like `"Dashboard"` are dynamically contextualized (e.g., `"Human Resources Dashboard"` or `"Finance Dashboard"`) to make plan building exceptionally clear.
 
@@ -53,7 +53,7 @@ graph TD
    * At the top of `PlanList.tsx`, display 3 luxury metric cards:
      * **Total Active MRR Contribution** (e.g., $14,290.00).
      * **Active Subscription Share** (a horizontal stacked pill progress bar reflecting Starter vs. Pro vs. Enterprise percentage split).
-     * **Avg. Upgrade Duration** (how long tenants stay on Pro before transitioning to Enterprise).
+     * **Avg. Upgrade Duration** (how long stores stay on Pro before transitioning to Enterprise).
 2. **Feature Priority Badging:**
    * Color-code entitlements in the checklist so administrators visually know the standard level:
      * Green tag: **Starter Core**
@@ -64,7 +64,7 @@ graph TD
 1. **Circular Resource Usage Gauges:**
    * Rather than simple static text, implement premium circular SVGs showing current plan quota consumption (e.g. **Products Used:** `140 / 500`, **Staff Accounts:** `3 / 5`).
 2. **The "Upstream Lock" Visual Hook:**
-   * In `SubscriptionOverview.tsx`, render a beautiful card section titled *"Unlocked by Upgrading"* listing 3 high-impact features from the next available tier (e.g. if the tenant is on Pro, show a visual preview of *General Ledger* and *Multi-Warehouse Inventory* with a padlock icon), serving as an extremely high-conversion upgrade hook.
+   * In `SubscriptionOverview.tsx`, render a beautiful card section titled *"Unlocked by Upgrading"* listing 3 high-impact features from the next available tier (e.g. if the store is on Pro, show a visual preview of *General Ledger* and *Multi-Warehouse Inventory* with a padlock icon), serving as an extremely high-conversion upgrade hook.
 
 ---
 
@@ -90,9 +90,9 @@ Ensure your NestJS route guards or middleware validate both the feature route sl
 
 ```typescript
 // Example: Checking products count against current plan limit
-async validateProductCreation(tenantId: string) {
-  const plan = await this.tenantService.getPlan(tenantId);
-  const currentCount = await this.productRepository.count({ where: { tenantId } });
+async validateProductCreation(storeId: string) {
+  const plan = await this.storeService.getPlan(storeId);
+  const currentCount = await this.productRepository.count({ where: { storeId } });
   
   if (currentCount >= plan.limits.maxProducts) {
     throw new HttpException('Product limit reached. Please upgrade your tier.', HttpStatus.PAYMENT_REQUIRED);

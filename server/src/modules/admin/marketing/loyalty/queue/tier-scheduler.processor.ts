@@ -36,8 +36,8 @@ export class TierSchedulerProcessor extends WorkerHost {
   }
 
   /**
-   * Sweep across tenants and retire any earn batches whose `expires_at`
-   * has passed. Per-tenant transaction inside the service keeps each tenant
+   * Sweep across stores and retire any earn batches whose `expires_at`
+   * has passed. Per-store transaction inside the service keeps each store
    * isolated from any failure in another.
    */
   private async runPointsExpiration(): Promise<void> {
@@ -48,24 +48,24 @@ export class TierSchedulerProcessor extends WorkerHost {
       if (!config.isEnabled || !config.pointsExpireAfterDays) continue
       try {
         const { batchesExpired, pointsExpired } = await this.loyaltyService.expirePoints(
-          config.tenantId,
+          config.storeId,
         )
         totalBatches += batchesExpired
         totalPoints += pointsExpired
         if (batchesExpired) {
           this.logger.log(
-            `tenant=${config.tenantId} expired batches=${batchesExpired} points=${pointsExpired}`,
+            `store=${config.storeId} expired batches=${batchesExpired} points=${pointsExpired}`,
           )
         }
       } catch (e: any) {
-        this.logger.error(`Expiry sweep failed for tenant ${config.tenantId}: ${e.message}`)
+        this.logger.error(`Expiry sweep failed for store ${config.storeId}: ${e.message}`)
       }
     }
     this.logger.log(`Points expiry sweep done: batches=${totalBatches} pts=${totalPoints}`)
   }
 
   /**
-   * Run membership tier assessments across all tenants.
+   * Run membership tier assessments across all stores.
    */
   private async runTiersAssessment() {
     const em = this.dataSource.manager
@@ -76,32 +76,32 @@ export class TierSchedulerProcessor extends WorkerHost {
 
     for (const config of configs) {
       if (!config.isEnabled) {
-        this.logger.log(`Loyalty is disabled for tenant ${config.tenantId}. Skipping.`)
+        this.logger.log(`Loyalty is disabled for store ${config.storeId}. Skipping.`)
         continue
       }
 
       try {
-        await this.assessTenantTiers(config)
+        await this.assessStoreTiers(config)
       } catch (err: any) {
-        this.logger.error(`Error assessing tiers for tenant ${config.tenantId}: ${err.message}`)
+        this.logger.error(`Error assessing tiers for store ${config.storeId}: ${err.message}`)
       }
     }
   }
 
   /**
-   * Process tier assessment for a single tenant.
+   * Process tier assessment for a single store.
    */
-  private async assessTenantTiers(config: LoyaltyConfigEntity) {
+  private async assessStoreTiers(config: LoyaltyConfigEntity) {
     const em = this.dataSource.manager
-    const tenantId = config.tenantId
+    const storeId = config.storeId
 
-    // Find all active customer users in this tenant
+    // Find all active customer users in this store
     const customers = await em.find(UserEntity, {
-      where: { tenantId, role: 'USER' as any }, // Only assess customer accounts
+      where: { storeId, role: 'USER' as any }, // Only assess customer accounts
     })
 
     this.logger.log(
-      `Assessing membership tiers for ${customers.length} customers in tenant ${tenantId}`,
+      `Assessing membership tiers for ${customers.length} customers in store ${storeId}`,
     )
 
     const oneYearAgo = new Date()
@@ -113,7 +113,7 @@ export class TierSchedulerProcessor extends WorkerHost {
         .createQueryBuilder(OrderEntity, 'order')
         .select('SUM(order.totalAmount)', 'totalSpent')
         .where('order.userId = :userId', { userId: customer.id })
-        .andWhere('order.tenantId = :tenantId', { tenantId })
+        .andWhere('order.storeId = :storeId', { storeId })
         .andWhere('order.paymentStatus = :paymentStatus', { paymentStatus: 'PAID' }) // Paid status
         .andWhere('order.createdAt >= :oneYearAgo', { oneYearAgo })
         .getRawOne()
@@ -156,7 +156,7 @@ export class TierSchedulerProcessor extends WorkerHost {
               link: '/store/loyalty',
               userId: customer.id, // Direct message to this customer user
             },
-            tenantId,
+            storeId,
           )
         } catch (e: any) {
           this.logger.error(`Failed to send tier notification to user ${customer.id}: ${e.message}`)

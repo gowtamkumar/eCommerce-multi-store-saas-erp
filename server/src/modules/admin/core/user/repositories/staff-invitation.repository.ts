@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { InvitationStatus, StaffInvitationEntity } from '../entities/staff-invit
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class StaffInvitationRepository extends BaseTenantRepository<StaffInvitationEntity> {
+export class StaffInvitationRepository extends BaseStoreRepository<StaffInvitationEntity> {
   constructor(
     @InjectRepository(StaffInvitationEntity)
     repo: Repository<StaffInvitationEntity>,
@@ -14,9 +14,9 @@ export class StaffInvitationRepository extends BaseTenantRepository<StaffInvitat
     super(StaffInvitationEntity, repo)
 }
 
-  async expireOldInvitations(email: string, tenantId: string): Promise<void> {
+  async expireOldInvitations(email: string, storeId: string): Promise<void> {
     await this.repo.update(
-      { email, tenantId, status: InvitationStatus.Pending },
+      { email, storeId, status: InvitationStatus.Pending },
       { status: InvitationStatus.Expired },
     )
   }
@@ -27,7 +27,7 @@ export class StaffInvitationRepository extends BaseTenantRepository<StaffInvitat
   ): Promise<StaffInvitationEntity> {
     const invitation = this.repo.create({
       ...data,
-      tenantId: data.tenantId || ctx.tenantId,
+      storeId: data.storeId || ctx.storeId,
     } as StaffInvitationEntity)
     return this.repo.save(invitation)
   }
@@ -36,20 +36,20 @@ export class StaffInvitationRepository extends BaseTenantRepository<StaffInvitat
     return this.repo.findOne({ where: { token } })
   }
 
-  async findByIdAndTenant(id: string, tenantId: string): Promise<StaffInvitationEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findByIdAndStore(id: string, storeId: string): Promise<StaffInvitationEntity | null> {
+    return this.repo.findOne({ where: { id, storeId } })
   }
 
-  async findAllByTenant(tenantId: string): Promise<StaffInvitationEntity[]> {
+  async findAllByStore(storeId: string): Promise<StaffInvitationEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       order: { createdAt: 'DESC' },
     })
   }
 
-  async findPendingByTenant(tenantId: string): Promise<StaffInvitationEntity[]> {
+  async findPendingByStore(storeId: string): Promise<StaffInvitationEntity[]> {
     return this.repo.find({
-      where: { tenantId, status: InvitationStatus.Pending },
+      where: { storeId, status: InvitationStatus.Pending },
       order: { createdAt: 'DESC' },
     })
   }

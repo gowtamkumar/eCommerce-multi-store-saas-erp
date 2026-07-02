@@ -19,7 +19,7 @@ We’ll use a **hybrid structure (clean + scalable)**.
 campaigns
 ---------
 id (uuid)
-tenant_id
+store_id
 name
 type ENUM ('email','sms','push')
 status ENUM ('draft','scheduled','running','completed')
@@ -155,7 +155,7 @@ You need users list:
 Option A (simple):
 
 ```sql
-SELECT * FROM users WHERE tenant_id = ?
+SELECT * FROM users WHERE store_id = ?
 ```
 
 Option B (advanced):
@@ -285,15 +285,15 @@ for (1 million users) → direct send ❌
 
 ---
 
-# 🔐 STEP 12: Multi-Tenant Safety
+# 🔐 STEP 12: Multi-Store Safety
 
 Every query must include:
 
 ```sql
-WHERE tenant_id = ?
+WHERE store_id = ?
 ```
 
-👉 Never trust frontend tenant_id
+👉 Never trust frontend store_id
 
 ---
 

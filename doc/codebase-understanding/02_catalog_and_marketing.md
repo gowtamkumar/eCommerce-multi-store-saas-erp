@@ -1,6 +1,6 @@
 # Codebase Understanding — Catalog, Content & Marketing Modules
 
-This document provides a detailed breakdown of the codebase implementation for the Catalog, Content, Marketing, and settings modules of the Enterprise Multi-Tenant SaaS ERP.
+This document provides a detailed breakdown of the codebase implementation for the Catalog, Content, Marketing, and settings modules of the Enterprise Multi-Store SaaS ERP.
 
 ---
 
@@ -10,7 +10,7 @@ Located at: `server/src/modules/admin/catalog/`.
 
 ### 1.1 Database Entities
 *   **`ProductEntity` (`product/entities/product.entity.ts`):**
-    The product master record. Stores `sku`, `name`, `barcode`, `description`, `lowStockThreshold`, and status fields. Scoped by `tenantId`.
+    The product master record. Stores `sku`, `name`, `barcode`, `description`, `lowStockThreshold`, and status fields. Scoped by `storeId`.
 *   **`ProductVariantEntity` (`product/entities/variant.entity.ts`):**
     Stores options (e.g. Size, Color) of a product. Holds standard fields like `purchasePrice`, `retailPrice`, and relationships to stock tracking.
 *   **`ProductAttributeEntity` (`product/entities/attribute.entity.ts`):**
@@ -62,7 +62,7 @@ Located at: `server/src/modules/admin/settings/`.
 
 ### 4.1 Database Entities
 *   **`SiteSettingsEntity` (`entities/site-settings.entity.ts`):**
-    Stores tenant-level configuration parameters. Keys include `storeName`, `contactEmail`, `defaultCurrency`, `removeBranding` (boolean flag to suppress "Powered by" footer on basic/premium plans), and custom theme layouts.
+    Stores store-level configuration parameters. Keys include `storeName`, `contactEmail`, `defaultCurrency`, `removeBranding` (boolean flag to suppress "Powered by" footer on basic/premium plans), and custom theme layouts.
 
 ### 4.2 Services & Controllers
 *   **`SettingsService` (`settings.service.ts`):**

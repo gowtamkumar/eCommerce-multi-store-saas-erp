@@ -1,4 +1,4 @@
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
 import { PushModule } from '@/modules/admin/operations/infra/push/push.module'
@@ -32,7 +32,7 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
 
 @Module({
   imports: [
-    TenantModule,
+    StoreModule,
     BullModule.registerQueue({
       name: 'order',
     }),

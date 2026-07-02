@@ -26,7 +26,7 @@
 **Part II — Module-by-Module Low-Level Design**
 
 11. [Module Catalog (Index)](#11-module-catalog-index)
-12. [System: Tenant](#12-system-tenant)
+12. [System: Store](#12-system-store)
 13. [System: Subscription (Plan + Billing)](#13-system-subscription-plan--billing)
 14. [System: Organization (Company / Branch / Warehouse)](#14-system-organization-company--branch--warehouse)
 15. [System: Audit Log](#15-system-audit-log)
@@ -77,10 +77,10 @@ Every HTTP request passes through a deterministic guard chain before touching an
                      HTTP Request Arrives
                             │
                   ┌─────────▼─────────┐
-                  │ TenantMiddleware  │  (Express Middleware)
+                  │ StoreMiddleware  │  (Express Middleware)
                   │  ─────────────────│  - Reads Host header
-                  │  Resolve tenant   │  - Queries tenants (Redis cached)
-                  │  from subdomain   │  - Sets req.tenantId
+                  │  Resolve store   │  - Queries stores (Redis cached)
+                  │  from subdomain   │  - Sets req.storeId
                   │  or custom domain │  - Not found → 404
                   └─────────┬─────────┘
                             │
@@ -129,15 +129,15 @@ Every HTTP request passes through a deterministic guard chain before touching an
 
 ## 2. `RequestContextDto` — The Context Contract
 
-Every service method that performs tenant-scoped work receives `RequestContextDto` as its first argument. This is the **single source of trust**.
+Every service method that performs store-scoped work receives `RequestContextDto` as its first argument. This is the **single source of trust**.
 
 ```typescript
 // server/src/common/dto/request-context.dto.ts
 export class RequestContextDto {
-  tenantId: string           // Resolved tenant UUID (never from request body)
+  storeId: string           // Resolved store UUID (never from request body)
   userId: string             // Authenticated user UUID
   userRole: UserRole         // SUPER_ADMIN | ADMIN | MANAGER | STAFF | USER
-  branchId?: string          // User's primary branch (nullable for tenant-level)
+  branchId?: string          // User's primary branch (nullable for store-level)
   warehouseId?: string       // User's primary warehouse (nullable)
   branchScope: string[]      // ['ALL'] or [uuid, ...] — branches the user can act on
   warehouseScope: string[]   // ['ALL'] or [uuid, ...] — warehouses the user can act on
@@ -145,11 +145,11 @@ export class RequestContextDto {
 ```
 
 **Service-layer rules:**
-- `tenantId` is **injected by middleware**, never trusted from `req.body` or `req.params`.
-- Services must pass `ctx` to every repository call. Repositories filter `WHERE tenantId = :tenantId` unconditionally.
-- Event payloads must always carry `tenantId` from `ctx`.
-- Cross-module service-to-service calls forward the `ctx` unchanged. The receiving service does not look up `tenantId` again.
-- Queue jobs serialize the minimal subset of `ctx` (typically `tenantId` + `userId`) into their payload.
+- `storeId` is **injected by middleware**, never trusted from `req.body` or `req.params`.
+- Services must pass `ctx` to every repository call. Repositories filter `WHERE storeId = :storeId` unconditionally.
+- Event payloads must always carry `storeId` from `ctx`.
+- Cross-module service-to-service calls forward the `ctx` unchanged. The receiving service does not look up `storeId` again.
+- Queue jobs serialize the minimal subset of `ctx` (typically `storeId` + `userId`) into their payload.
 
 ---
 
@@ -163,7 +163,7 @@ All background jobs must conform to strict typed schemas. Workers reject malform
 
 ```typescript
 interface StockUpdateJobPayload {
-  tenantId: string             // REQUIRED
+  storeId: string             // REQUIRED
   warehouseId: string          // REQUIRED
   variantId: string            // REQUIRED
   quantity: number             // positive = IN, negative = OUT
@@ -184,7 +184,7 @@ await productQueue.add('update-stock', payload, { jobId })
 
 ```typescript
 interface PostJournalJobPayload {
-  tenantId: string
+  storeId: string
   referenceType: 'ORDER' | 'GRN' | 'PAYROLL' | 'EXPENSE' | 'SUPPLIER_PAYMENT' | 'MANUAL' | 'RETURN' | 'WALLET' | 'ADJUSTMENT'
   referenceId: string
   description: string
@@ -195,7 +195,7 @@ interface PostJournalJobPayload {
     amount: number
     branchId?: string          // dimension tag
     currency?: string          // 3-letter ISO
-    fxRate?: number            // if currency ≠ tenant base
+    fxRate?: number            // if currency ≠ store base
   }>
 }
 
@@ -211,7 +211,7 @@ if (Math.abs(dr - cr) > 0.001) throw new JournalUnbalancedError(dr, cr)
 
 ```typescript
 interface SendEmailJobPayload {
-  tenantId: string
+  storeId: string
   to: string[]
   subject: string
   templateId: string           // 'order-confirmation' | 'payslip' | 'leave-approved' | ...
@@ -248,7 +248,7 @@ All workers run in a separate Node process pointing at the same code. Workers MU
 ```sql
 CREATE TABLE outbox (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id uuid NOT NULL,
+  store_id uuid NOT NULL,
   aggregate_type text NOT NULL,
   aggregate_id uuid NOT NULL,
   event_type text NOT NULL,
@@ -268,7 +268,7 @@ Finance has its own specialized outbox table `accounting_outbox` (already in cod
 
 ```typescript
 interface DomainEvent<T = unknown> {
-  tenantId: string             // REQUIRED — always present
+  storeId: string             // REQUIRED — always present
   eventType: string            // 'order.paid' | 'grn.verified' | ...
   aggregateType: string        // 'Order' | 'Grn' | ...
   aggregateId: string          // primary id of the aggregate
@@ -296,7 +296,7 @@ interface DomainEvent<T = unknown> {
 | `wallet.redeemed` | Sales (at order paid) | DR Store-Credit Liability / CR Revenue | — |
 | `stock.low` | Inventory | — | Procurement (auto-PR draft), notification |
 | `customer.credit.exceeded` | CRM | — | Notification, finance dashboard |
-| `tenant.subscription.changed` | System (subscription) | — | Cache invalidation, feature gate refresh |
+| `store.subscription.changed` | System (subscription) | — | Cache invalidation, feature gate refresh |
 
 **Rule:** an event is named in the past tense (`order.paid`, not `order.pay`).
 
@@ -306,7 +306,7 @@ Events MUST be emitted **after the DB transaction commits**. Emitting inside the
 
 ```typescript
 const result = await this.dataSource.transaction(async (m) => { /* writes + outbox insert */ })
-this.eventEmitter.emit('order.paid', { tenantId: ctx.tenantId, orderId: result.id, ... })
+this.eventEmitter.emit('order.paid', { storeId: ctx.storeId, orderId: result.id, ... })
 return result
 ```
 
@@ -404,15 +404,15 @@ async up(qr: QueryRunner) {
 
 // ✅ SAFE — index creation
 await qr.query(`
-  CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_inv_tenant_variant_wh"
-  ON "inventory_ledger" ("tenant_id", "variant_id", "warehouse_id")
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS "idx_inv_store_variant_wh"
+  ON "inventory_ledger" ("store_id", "variant_id", "warehouse_id")
 `)
 ```
 
 ### 6.3 Required code review checks for any migration
 
-- `tenant_id` included on every new business table and indexed first?
-- Foreign keys reference the right tenant (multi-tenant FK invariant)?
+- `store_id` included on every new business table and indexed first?
+- Foreign keys reference the right store (multi-store FK invariant)?
 - All `WHERE` indexes that the new feature relies on are created in the same migration?
 - `down()` is implemented and tested locally?
 - The migration runs in <30s on a copy of staging?
@@ -424,38 +424,38 @@ await qr.query(`
 ### 7.1 Key naming convention
 
 ```
-t:{tenantId}:{domain}:{resource}:{paramsHash}
+t:{storeId}:{domain}:{resource}:{paramsHash}
 ```
 
 | Pattern | Example | TTL |
 | --- | --- | --- |
-| `t:{tenantId}:settings` | `t:abc-123:settings` | 3600s |
-| `t:{tenantId}:plan` | `t:abc-123:plan` | 3600s |
-| `t:{tenantId}:features` | `t:abc-123:features` | 3600s |
-| `t:{tenantId}:stock:{warehouseId}:{variantId}` | `t:abc:stock:wh-1:v-55` | 120s |
-| `t:{tenantId}:reports:pl:{from}:{to}` | `t:abc:reports:pl:2026-01-01:2026-01-31` | 600s |
-| `t:{tenantId}:product:{slug}` | `t:abc:product:nike-air-max` | 600s |
-| `tenant:resolve:{host}` | `tenant:resolve:shop.abc.com` | 86400s |
+| `t:{storeId}:settings` | `t:abc-123:settings` | 3600s |
+| `t:{storeId}:plan` | `t:abc-123:plan` | 3600s |
+| `t:{storeId}:features` | `t:abc-123:features` | 3600s |
+| `t:{storeId}:stock:{warehouseId}:{variantId}` | `t:abc:stock:wh-1:v-55` | 120s |
+| `t:{storeId}:reports:pl:{from}:{to}` | `t:abc:reports:pl:2026-01-01:2026-01-31` | 600s |
+| `t:{storeId}:product:{slug}` | `t:abc:product:nike-air-max` | 600s |
+| `store:resolve:{host}` | `store:resolve:shop.abc.com` | 86400s |
 | `user:{userId}:permissions` | `user:u-7:permissions` | 600s |
 
-Every cache key MUST start with either `t:{tenantId}:` (tenant data) or `tenant:resolve:` / `user:` (platform-level).
+Every cache key MUST start with either `t:{storeId}:` (store data) or `store:resolve:` / `user:` (platform-level).
 
 ### 7.2 Invalidation triggers
 
 | Mutation | Keys to invalidate |
 | --- | --- |
-| Tenant updated | `tenant:resolve:*` for old + new hostname, `t:{tenantId}:settings` |
-| Subscription plan changed | `t:{tenantId}:plan`, `t:{tenantId}:features`, all `user:*:permissions` for that tenant |
+| Store updated | `store:resolve:*` for old + new hostname, `t:{storeId}:settings` |
+| Subscription plan changed | `t:{storeId}:plan`, `t:{storeId}:features`, all `user:*:permissions` for that store |
 | Permission/role updated | `user:*:permissions` for affected users |
-| Product saved | `t:{tenantId}:product:{slug}`, search index re-index event |
-| Stock movement posted | `t:{tenantId}:stock:{warehouseId}:{variantId}` |
-| Settings updated | `t:{tenantId}:settings` |
+| Product saved | `t:{storeId}:product:{slug}`, search index re-index event |
+| Stock movement posted | `t:{storeId}:stock:{warehouseId}:{variantId}` |
+| Settings updated | `t:{storeId}:settings` |
 
 ### 7.3 Helper
 
 ```typescript
-async invalidateTenantCache(tenantId: string, ...keys: string[]) {
-  const full = keys.map(k => `t:${tenantId}:${k}`)
+async invalidateStoreCache(storeId: string, ...keys: string[]) {
+  const full = keys.map(k => `t:${storeId}:${k}`)
   await this.cacheManager.del(...full)
 }
 ```
@@ -470,7 +470,7 @@ All mutating endpoints exposed to external systems (POS, payment gateways, couri
 
 ```sql
 CREATE TABLE idempotency_keys (
-  tenant_id uuid NOT NULL,
+  store_id uuid NOT NULL,
   key text NOT NULL,
   action_type text NOT NULL,
   request_hash text NOT NULL,
@@ -479,13 +479,13 @@ CREATE TABLE idempotency_keys (
   status text NOT NULL DEFAULT 'IN_PROGRESS',  -- IN_PROGRESS | SUCCEEDED | FAILED
   expires_at timestamptz NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (tenant_id, key)
+  PRIMARY KEY (store_id, key)
 );
 ```
 
 ### 8.2 Semantics
 
-- Same `(tenantId, key)` + same body → return the cached response.
+- Same `(storeId, key)` + same body → return the cached response.
 - Same key + different body → `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
 - TTL: 24h (configurable), then purgeable.
 
@@ -493,7 +493,7 @@ CREATE TABLE idempotency_keys (
 
 | Operation | Key |
 | --- | --- |
-| POS sale sync | `(tenantId, clientSaleId)` (DB unique index, not header-based) |
+| POS sale sync | `(storeId, clientSaleId)` (DB unique index, not header-based) |
 | Payment webhook | gateway transaction id (header or body) |
 | Courier webhook | `couriername:waybillId:eventType:eventTimestamp` |
 | Stock ledger BullMQ job | `stock:{referenceType}:{referenceId}:{variantId}` |
@@ -512,23 +512,23 @@ CREATE TABLE idempotency_keys (
 | Supplier AP balance | Pessimistic write | `SupplierApLedgerRepository.append()` |
 | POS shift totals | Pessimistic write on `pos_shifts` row | `PosService.recordSale()` |
 | Journal account running balance | Pessimistic write on `accounts` row | `AccountingService.postJournal()` |
-| Tenant entitlement counters (active users, branches) | Checks active subscription limits | `SubscriptionBillingService.checkCap()` |
+| Store entitlement counters (active users, branches) | Checks active subscription limits | `SubscriptionBillingService.checkCap()` |
 
 ### 9.2 Advisory lock key format
 
 ```
-tenant:{tenantId}:stock:{warehouseId}:{variantId}
-tenant:{tenantId}:ar:{customerId}
-tenant:{tenantId}:ap:{supplierId}
-tenant:{tenantId}:shift:{shiftId}
-tenant:{tenantId}:account:{accountId}
+store:{storeId}:stock:{warehouseId}:{variantId}
+store:{storeId}:ar:{customerId}
+store:{storeId}:ap:{supplierId}
+store:{storeId}:shift:{shiftId}
+store:{storeId}:account:{accountId}
 ```
 
 ### 9.3 Mandatory lock acquisition order (deadlock-free)
 
 When a single transaction needs multiple locks, acquire them in this fixed order:
 
-1. Tenant / subscription / account.
+1. Store / subscription / account.
 2. Customer / supplier.
 3. Product / variant.
 4. Warehouse / bin.
@@ -553,7 +553,7 @@ await this.txRunner.withDeadlockRetry({ maxAttempts: 3, baseDelayMs: 50 }, async
 
 Success:
 ```json
-{ "success": true, "statusCode": 200, "message": "...", "data": {...}, "meta": { "requestId": "uuid", "tenantId": "uuid" } }
+{ "success": true, "statusCode": 200, "message": "...", "data": {...}, "meta": { "requestId": "uuid", "storeId": "uuid" } }
 ```
 
 Error:
@@ -565,8 +565,8 @@ Error:
 
 | Code | HTTP | Meaning |
 | --- | ---: | --- |
-| `TENANT_NOT_FOUND` | 404 | Tenant could not be resolved from host |
-| `TENANT_SUSPENDED` | 403 | Tenant subscription is suspended |
+| `STORE_NOT_FOUND` | 404 | Store could not be resolved from host |
+| `STORE_SUSPENDED` | 403 | Store subscription is suspended |
 | `AUTH_INVALID` | 401 | JWT invalid or expired |
 | `FEATURE_NOT_ENABLED` | 403 | Subscription plan doesn't include the feature |
 | `PERMISSION_DENIED` | 403 | RBAC denies the action |
@@ -582,7 +582,7 @@ Error:
 | `JOURNAL_UNBALANCED` | 422 | DR ≠ CR |
 | `FISCAL_PERIOD_CLOSED` | 422 | Posting date locked |
 | `THREE_WAY_MATCH_FAILED` | 422 | PO/GRN/Invoice mismatch |
-| `RESOURCE_NOT_FOUND` | 404 | Entity not found within tenant scope |
+| `RESOURCE_NOT_FOUND` | 404 | Entity not found within store scope |
 | `RESERVATION_EXPIRED` | 409 | Stock reservation TTL elapsed |
 | `RETURN_WINDOW_EXPIRED` | 422 | Past the return window |
 | `COURIER_UNAVAILABLE` | 503 | External courier API failure |
@@ -600,7 +600,7 @@ Services throw typed exceptions (`StockInsufficientException`, `JournalUnbalance
 
 | # | Module | Source path |
 | --- | --- | --- |
-| 12 | Tenant | `modules/system/tenant` |
+| 12 | Store | `modules/system/store` |
 | 13 | Subscription (Plan + Billing) | `modules/system/{subscription-plan,subscription-billing}` |
 | 14 | Organization | `modules/system/organization` |
 | 15 | Audit Log | `modules/system/audit-log` |
@@ -638,60 +638,60 @@ Services throw typed exceptions (`StockInsufficientException`, `JournalUnbalance
 
 ---
 
-## 12. System: Tenant
+## 12. System: Store
 
 ### 12.1 Purpose & boundary
-Authoritative owner of the `tenants` aggregate: identity, subdomain, custom domain, plan link, status. Resolved by `TenantMiddleware` from host header on every request.
+Authoritative owner of the `stores` aggregate: identity, subdomain, custom domain, plan link, status. Resolved by `StoreMiddleware` from host header on every request.
 
 ### 12.2 Source layout
 ```
-modules/system/tenant/
-├─ entities/                       (tenant.entity.ts)
+modules/system/store/
+├─ entities/                       (store.entity.ts)
 ├─ dto/
-├─ tenant.repository.ts
-├─ tenant.service.ts
-├─ tenant.controller.ts            (super-admin scope)
-├─ public-tenant.controller.ts     (public lookups, e.g. domain status)
-└─ tenant.module.ts
+├─ store.repository.ts
+├─ store.service.ts
+├─ store.controller.ts            (super-admin scope)
+├─ public-store.controller.ts     (public lookups, e.g. domain status)
+└─ store.module.ts
 ```
 
 ### 12.3 Entities owned
-- `tenants` — `id`, `name`, `subdomain` (unique), `custom_domain` (unique nullable), `custom_domain_status`, `plan_id` (FK), `status` (ACTIVE | SUSPENDED | TRIAL | CANCELED), audit cols.
+- `stores` — `id`, `name`, `subdomain` (unique), `custom_domain` (unique nullable), `custom_domain_status`, `plan_id` (FK), `status` (ACTIVE | SUSPENDED | TRIAL | CANCELED), audit cols.
 
 ### 12.4 Controllers & routes
-- `tenant.controller.ts` — mounted under super-admin scope: CRUD tenants, suspend/reactivate, switch plan, set/verify custom domain.
-- `public-tenant.controller.ts` — read-only lookup of tenant by host (used by the resolver middleware on cache miss).
+- `store.controller.ts` — mounted under super-admin scope: CRUD stores, suspend/reactivate, switch plan, set/verify custom domain.
+- `public-store.controller.ts` — read-only lookup of store by host (used by the resolver middleware on cache miss).
 
 ### 12.5 Public services
 ```typescript
-class TenantService {
-  resolveByHost(host: string): Promise<TenantEntity | null>   // cached: tenant:resolve:{host}
-  getById(tenantId: string): Promise<TenantEntity>            // cached
-  create(input: CreateTenantDto, ctx: SuperAdminContext): Promise<TenantEntity>
-  update(tenantId, input: UpdateTenantDto, ctx): Promise<TenantEntity>
-  suspend(tenantId, reason, ctx): Promise<void>
-  reactivate(tenantId, ctx): Promise<void>
-  switchPlan(tenantId, planId, ctx): Promise<void>            // emits tenant.subscription.changed
-  setCustomDomain(tenantId, host, ctx): Promise<void>         // status=PENDING, needs DNS verification
+class StoreService {
+  resolveByHost(host: string): Promise<StoreEntity | null>   // cached: store:resolve:{host}
+  getById(storeId: string): Promise<StoreEntity>            // cached
+  create(input: CreateStoreDto, ctx: SuperAdminContext): Promise<StoreEntity>
+  update(storeId, input: UpdateStoreDto, ctx): Promise<StoreEntity>
+  suspend(storeId, reason, ctx): Promise<void>
+  reactivate(storeId, ctx): Promise<void>
+  switchPlan(storeId, planId, ctx): Promise<void>            // emits store.subscription.changed
+  setCustomDomain(storeId, host, ctx): Promise<void>         // status=PENDING, needs DNS verification
 }
 ```
 
 ### 12.6 Key DTOs
-`CreateTenantDto { name, subdomain, planId, ownerEmail }` — `subdomain` is normalized to lowercase, validated by regex `^[a-z0-9-]{3,60}$`. Reserved subdomains list rejected.
+`CreateStoreDto { name, subdomain, planId, ownerEmail }` — `subdomain` is normalized to lowercase, validated by regex `^[a-z0-9-]{3,60}$`. Reserved subdomains list rejected.
 
 ### 12.7 Events emitted / consumed
-- Emits `tenant.created`, `tenant.suspended`, `tenant.reactivated`, `tenant.subscription.changed`, `tenant.domain.verified`.
+- Emits `store.created`, `store.suspended`, `store.reactivated`, `store.subscription.changed`, `store.domain.verified`.
 - Consumes nothing critical; cache invalidates on its own mutations.
 
 ### 12.8 Transactions, locks, idempotency
 - All mutations are single-row, no cross-domain transactions.
-- `suspend()` issues a tenant-wide cache flush via `invalidateTenantCache`.
+- `suspend()` issues a store-wide cache flush via `invalidateStoreCache`.
 - No idempotency needed (super-admin operations).
 
 ### 12.9 Subscription gate, permissions, errors
 - Subscription gate: not applicable (super-admin scope).
-- Permissions: `tenant.read`, `tenant.update`, `tenant.suspend`, `tenant.plan.change`, `tenant.domain.manage` — all SUPER_ADMIN only.
-- Errors: `TENANT_NOT_FOUND`, `TENANT_SUBDOMAIN_TAKEN`, `TENANT_DOMAIN_NOT_VERIFIED`.
+- Permissions: `store.read`, `store.update`, `store.suspend`, `store.plan.change`, `store.domain.manage` — all SUPER_ADMIN only.
+- Errors: `STORE_NOT_FOUND`, `STORE_SUBDOMAIN_TAKEN`, `STORE_DOMAIN_NOT_VERIFIED`.
 
 ---
 
@@ -699,7 +699,7 @@ class TenantService {
 
 ### 13.1 Purpose & boundary
 - **Plan** module owns the catalog of plans + entitlements.
-- **Billing** module owns tenant subscription state, invoices, payment of recurring fees, and entitlement caps (e.g., max users, branches, warehouses, storage).
+- **Billing** module owns store subscription state, invoices, payment of recurring fees, and entitlement caps (e.g., max users, branches, warehouses, storage).
 
 ### 13.2 Source layout
 ```
@@ -722,8 +722,8 @@ modules/system/subscription-billing/
 ### 13.3 Entities owned
 - `subscription_plans` — `id`, `name`, `price_monthly`, `price_yearly`, `features` (JSONB), `caps` (JSONB), `is_active`.
 - `plan_features` (optional normalized table) — feature key → boolean / numeric cap.
-- `subscription_invoices` — billing invoices issued to tenants.
-- `usage_counters` — `tenant_id`, `feature_key`, `value`, `window_start` — for metered features (orders/month, storage MB).
+- `subscription_invoices` — billing invoices issued to stores.
+- `usage_counters` — `store_id`, `feature_key`, `value`, `window_start` — for metered features (orders/month, storage MB).
 
 ### 13.4 Controllers & routes
 | Route | Method | Scope |
@@ -732,9 +732,9 @@ modules/system/subscription-billing/
 | `GET /super-admin/plans` | SUPER_ADMIN | manage plans |
 | `POST /super-admin/plans` | SUPER_ADMIN | create |
 | `PATCH /super-admin/plans/:id` | SUPER_ADMIN | update |
-| `GET /billing/invoices` | tenant ADMIN | own subscription invoices |
-| `POST /billing/invoices/:id/pay` | tenant ADMIN | pay |
-| `GET /billing/usage` | tenant ADMIN | metered usage |
+| `GET /billing/invoices` | store ADMIN | own subscription invoices |
+| `POST /billing/invoices/:id/pay` | store ADMIN | pay |
+| `GET /billing/usage` | store ADMIN | metered usage |
 
 ### 13.5 Public services
 ```typescript
@@ -744,11 +744,11 @@ class SubscriptionPlanService {
   upsertPlan(input, ctx): Promise<PlanEntity>                // super-admin
 }
 class SubscriptionBillingService {
-  getActiveSubscription(ctx): Promise<TenantPlanView>
+  getActiveSubscription(ctx): Promise<StorePlanView>
   canUseFeature(ctx, featureKey): Promise<boolean>           // backs SubscriptionGuard
   incrementUsage(ctx, featureKey, by?): Promise<void>        // counters, capped
   checkCap(ctx, featureKey): Promise<{ allowed: boolean; usage: number; cap: number }>
-  generateMonthlyInvoice(tenantId): Promise<SubscriptionInvoice>  // cron job
+  generateMonthlyInvoice(storeId): Promise<SubscriptionInvoice>  // cron job
   recordPayment(invoiceId, amount, ref): Promise<void>
 }
 ```
@@ -759,11 +759,11 @@ class SubscriptionBillingService {
 
 ### 13.7 Events emitted / consumed
 - Emits `subscription.upgraded`, `subscription.downgraded`, `subscription.invoice.generated`, `subscription.invoice.paid`, `subscription.usage.limit.reached`.
-- Consumes `tenant.created` to provision a starter subscription.
+- Consumes `store.created` to provision a starter subscription.
 
 ### 13.8 Transactions, locks, idempotency
 - `incrementUsage` uses pessimistic write on the `usage_counters` row.
-- Payment recording is idempotent by `(tenantId, gatewayRef)`.
+- Payment recording is idempotent by `(storeId, gatewayRef)`.
 - Plan changes are single-row mutations.
 
 ### 13.9 Subscription gate, permissions, errors
@@ -775,7 +775,7 @@ class SubscriptionBillingService {
 ## 14. System: Organization (Company / Branch / Warehouse)
 
 ### 14.1 Purpose & boundary
-Owns the operational hierarchy under a tenant: `companies` (optional legal entities), `branches`, `warehouses`, `warehouse_bins`. These boundaries are referenced by virtually every other module.
+Owns the operational hierarchy under a store: `companies` (optional legal entities), `branches`, `warehouses`, `warehouse_bins`. These boundaries are referenced by virtually every other module.
 
 ### 14.2 Source layout
 ```
@@ -789,8 +789,8 @@ modules/system/organization/
 ```
 
 ### 14.3 Entities owned
-- `branches` — `id`, `tenant_id`, `name`, `type` (RETAIL | OFFICE | HQ), `address`, `is_active`.
-- `warehouses` — `id`, `tenant_id`, `name`, `type` (MAIN | TRANSIT | RETURN | CENTRAL), `branch_id` (nullable), `address`, `is_active`.
+- `branches` — `id`, `store_id`, `name`, `type` (RETAIL | OFFICE | HQ), `address`, `is_active`.
+- `warehouses` — `id`, `store_id`, `name`, `type` (MAIN | TRANSIT | RETURN | CENTRAL), `branch_id` (nullable), `address`, `is_active`.
 - `warehouse_bins` — `id`, `warehouse_id`, `zone`, `bin_code`.
 
 ### 14.4 Controllers & routes
@@ -809,7 +809,7 @@ modules/system/organization/
 ### 14.5 Public services
 ```typescript
 class BranchService {
-  list(ctx): Promise<BranchEntity[]>                        // tenant-scoped
+  list(ctx): Promise<BranchEntity[]>                        // store-scoped
   getById(ctx, branchId): Promise<BranchEntity>
   create(ctx, input: CreateBranchDto): Promise<BranchEntity>  // enforces subscription cap
   update(ctx, branchId, input): Promise<BranchEntity>
@@ -818,7 +818,7 @@ class BranchService {
 class WarehouseService {
   list(ctx, filter?): Promise<WarehouseEntity[]>
   getById(ctx, warehouseId): Promise<WarehouseEntity>
-  create(ctx, input: CreateWarehouseDto): Promise<WarehouseEntity>  // validates branch_id same tenant
+  create(ctx, input: CreateWarehouseDto): Promise<WarehouseEntity>  // validates branch_id same store
   update(ctx, warehouseId, input): Promise<WarehouseEntity>
   listBins(ctx, warehouseId): Promise<WarehouseBinEntity[]>
   addBin(ctx, warehouseId, input): Promise<WarehouseBinEntity>
@@ -826,8 +826,8 @@ class WarehouseService {
 ```
 
 ### 14.6 Key DTOs
-- `CreateBranchDto { name, type, address, contactPhone? }` — `tenant_id` injected by ctx.
-- `CreateWarehouseDto { name, type, branchId? | null, address }` — service validates `branchId` belongs to `ctx.tenantId`.
+- `CreateBranchDto { name, type, address, contactPhone? }` — `store_id` injected by ctx.
+- `CreateWarehouseDto { name, type, branchId? | null, address }` — service validates `branchId` belongs to `ctx.storeId`.
 
 ### 14.7 Events emitted / consumed
 - Emits `branch.created`, `branch.deactivated`, `warehouse.created`, `warehouse.deactivated`.
@@ -847,7 +847,7 @@ class WarehouseService {
 ## 15. System: Audit Log
 
 ### 15.1 Purpose & boundary
-Append-only mutation log for tenant-scoped high-risk actions. Every service that performs a high-risk action calls `AuditLogService.record()` inside the transaction.
+Append-only mutation log for store-scoped high-risk actions. Every service that performs a high-risk action calls `AuditLogService.record()` inside the transaction.
 
 ### 15.2 Source layout
 ```
@@ -861,7 +861,7 @@ modules/system/audit-log/
 ```
 
 ### 15.3 Entities owned
-- `audit_logs` — `id`, `tenant_id`, `actor_user_id`, `entity_type`, `entity_id`, `action`, `before_value` (JSONB), `after_value` (JSONB), `reason`, `ip`, `user_agent`, `created_at`.
+- `audit_logs` — `id`, `store_id`, `actor_user_id`, `entity_type`, `entity_id`, `action`, `before_value` (JSONB), `after_value` (JSONB), `reason`, `ip`, `user_agent`, `created_at`.
 
 ### 15.4 Controllers & routes
 | Route | Method | Permission |
@@ -900,7 +900,7 @@ class AuditLogService {
 - Partitioned by month for retention manageability.
 
 ### 15.9 Subscription gate, permissions, errors
-- Permission: `audit.read` (typically tenant ADMIN / AUDITOR roles).
+- Permission: `audit.read` (typically store ADMIN / AUDITOR roles).
 - Errors: `AUDIT_LOG_NOT_FOUND`.
 
 ---
@@ -908,7 +908,7 @@ class AuditLogService {
 ## 16. System: Super-Admin & Platform
 
 ### 16.1 Purpose & boundary
-Cross-tenant admin operations: platform users, traffic analytics, tenant lifecycle, subscription oversight, customer-support tools. NOT scoped to a tenant — uses `SUPER_ADMIN` role gating.
+Cross-store admin operations: platform users, traffic analytics, store lifecycle, subscription oversight, customer-support tools. NOT scoped to a store — uses `SUPER_ADMIN` role gating.
 
 ### 16.2 Source layout
 ```
@@ -926,9 +926,9 @@ modules/system/platform/
 ### 16.3 Routes
 | Route | Purpose |
 | --- | --- |
-| `GET /super-admin/dashboard` | KPIs across all tenants |
+| `GET /super-admin/dashboard` | KPIs across all stores |
 | `GET /super-admin/traffic` | platform-wide traffic counters |
-| `POST /super-admin/impersonate/:tenantId` | issue a short-lived token to impersonate tenant ADMIN (audit always) |
+| `POST /super-admin/impersonate/:storeId` | issue a short-lived token to impersonate store ADMIN (audit always) |
 
 ### 16.4 Services
 ```typescript
@@ -960,7 +960,7 @@ modules/admin/core/auth/
 ```
 
 ### 17.3 Entities owned
-- `sessions` — `id`, `tenant_id` (nullable for super-admin), `user_id`, `refresh_token_hash`, `ip`, `user_agent`, `expires_at`, `revoked_at`, `created_at`.
+- `sessions` — `id`, `store_id` (nullable for super-admin), `user_id`, `refresh_token_hash`, `ip`, `user_agent`, `expires_at`, `revoked_at`, `created_at`.
 
 ### 17.4 Routes
 | Route | Body | Returns |
@@ -1023,8 +1023,8 @@ modules/admin/core/rbac/
 ```
 
 ### 18.3 Entities owned
-- `users` — `id`, `tenant_id` (nullable for SUPER_ADMIN), `email`, `password_hash`, `name`, `role` (UserRole enum), `is_active`, `default_branch_id`, `default_warehouse_id`, `branch_scope` (text[] or relation), `warehouse_scope` (text[] or relation).
-- `roles` — `id`, `tenant_id` (nullable for system roles), `name`, `description`.
+- `users` — `id`, `store_id` (nullable for SUPER_ADMIN), `email`, `password_hash`, `name`, `role` (UserRole enum), `is_active`, `default_branch_id`, `default_warehouse_id`, `branch_scope` (text[] or relation), `warehouse_scope` (text[] or relation).
+- `roles` — `id`, `store_id` (nullable for system roles), `name`, `description`.
 - `permissions` — `id`, `code` (e.g. `inventory.adjust.approve`), `description`.
 - `role_permissions` — `role_id`, `permission_id`.
 - `user_role_assignments` — `user_id`, `role_id`.
@@ -1105,9 +1105,9 @@ modules/admin/catalog/product/
 ```
 
 ### 19.3 Entities owned
-- `products` — `id`, `tenant_id`, `sku` (unique per tenant), `slug` (unique per tenant), `name`, `description`, `brand_id`, `category_id`, `base_price`, `tax_rate_id`, `is_active`, `media` (JSONB).
-- `variants` — `id`, `product_id`, `tenant_id`, `sku` (unique per tenant), `attribute_values` (JSONB), `extra_price`, `barcode`.
-- `attributes` — `id`, `tenant_id`, `name`, `type` (COLOR | SIZE | TEXT | NUMBER), `options` (JSONB).
+- `products` — `id`, `store_id`, `sku` (unique per store), `slug` (unique per store), `name`, `description`, `brand_id`, `category_id`, `base_price`, `tax_rate_id`, `is_active`, `media` (JSONB).
+- `variants` — `id`, `product_id`, `store_id`, `sku` (unique per store), `attribute_values` (JSONB), `extra_price`, `barcode`.
+- `attributes` — `id`, `store_id`, `name`, `type` (COLOR | SIZE | TEXT | NUMBER), `options` (JSONB).
 
 ### 19.4 Routes
 | Route | Permission |
@@ -1123,7 +1123,7 @@ modules/admin/catalog/product/
 class ProductService {
   list(ctx, filter): Promise<ProductView[]>          // includes available stock summary
   getById(ctx, productId): Promise<ProductView>
-  getBySlug(ctx, slug): Promise<ProductView>         // cached at t:{tenantId}:product:{slug}
+  getBySlug(ctx, slug): Promise<ProductView>         // cached at t:{storeId}:product:{slug}
   create(ctx, input: CreateProductDto): Promise<ProductEntity>
   update(ctx, productId, input): Promise<ProductEntity>
   addVariant(ctx, productId, input): Promise<VariantEntity>
@@ -1131,7 +1131,7 @@ class ProductService {
 ```
 
 ### 19.6 Key DTOs
-`CreateProductDto { sku, slug, name, brandId?, categoryId?, basePrice, taxRateId?, media?, variants?: VariantInput[] }` — `tenant_id` from ctx.
+`CreateProductDto { sku, slug, name, brandId?, categoryId?, basePrice, taxRateId?, media?, variants?: VariantInput[] }` — `store_id` from ctx.
 
 ### 19.7 Events emitted / consumed
 - Emits `product.created`, `product.updated`, `product.deactivated`.
@@ -1160,8 +1160,8 @@ modules/admin/catalog/category/   (category.controller, .service, entities)
 ```
 
 ### 20.3 Entities owned
-- `brands` — `id`, `tenant_id`, `name`, `slug`, `logo_url`, `is_active`.
-- `categories` — `id`, `tenant_id`, `parent_id?`, `name`, `slug`, `path` (LTREE / text), `is_active`.
+- `brands` — `id`, `store_id`, `name`, `slug`, `logo_url`, `is_active`.
+- `categories` — `id`, `store_id`, `parent_id?`, `name`, `slug`, `path` (LTREE / text), `is_active`.
 
 ### 20.4 Routes
 - `GET/POST/PATCH/DELETE /brands`
@@ -1195,9 +1195,9 @@ modules/admin/catalog/pricing/
 ```
 
 ### 21.3 Entities owned
-- `price_books` — `id`, `tenant_id`, `name`, `currency`, `is_default`.
+- `price_books` — `id`, `store_id`, `name`, `currency`, `is_default`.
 - `price_book_items` — `price_book_id`, `variant_id`, `price`, `effective_from`, `effective_to`.
-- `currency_rates` — `tenant_id`, `from`, `to`, `rate`, `as_of_date`.
+- `currency_rates` — `store_id`, `from`, `to`, `rate`, `as_of_date`.
 
 ### 21.4 Routes
 - `GET/POST/PATCH /pricing/price-books`
@@ -1271,9 +1271,9 @@ modules/admin/sales/order/
 ```
 
 ### 23.3 Entities owned
-- `orders` — `id`, `tenant_id`, `branch_id?`, `user_id?` (customer), `order_no` (unique per tenant), `status` (DRAFT | PENDING | CONFIRMED | PAID | SHIPPED | DELIVERED | CANCELED | RETURNED), `subtotal`, `discount_total`, `tax_total`, `shipping_total`, `grand_total`, `currency`, `payment_method`, `payment_status`, `coupon_code?`, snapshot fields, audit cols.
-- `order_items` — `id`, `order_id`, `tenant_id`, `variant_id`, `name_snapshot`, `sku_snapshot`, `unit_price_snapshot`, `qty`, `discount`, `tax`, `line_total`.
-- `order_returns` — `id`, `tenant_id`, `order_id`, `reason`, `status` (PENDING | APPROVED | REJECTED | REFUNDED), `refund_method` (CASH | WALLET | ORIGINAL), `total_refunded`.
+- `orders` — `id`, `store_id`, `branch_id?`, `user_id?` (customer), `order_no` (unique per store), `status` (DRAFT | PENDING | CONFIRMED | PAID | SHIPPED | DELIVERED | CANCELED | RETURNED), `subtotal`, `discount_total`, `tax_total`, `shipping_total`, `grand_total`, `currency`, `payment_method`, `payment_status`, `coupon_code?`, snapshot fields, audit cols.
+- `order_items` — `id`, `order_id`, `store_id`, `variant_id`, `name_snapshot`, `sku_snapshot`, `unit_price_snapshot`, `qty`, `discount`, `tax`, `line_total`.
+- `order_returns` — `id`, `store_id`, `order_id`, `reason`, `status` (PENDING | APPROVED | REJECTED | REFUNDED), `refund_method` (CASH | WALLET | ORIGINAL), `total_refunded`.
 
 ### 23.4 Routes
 | Route | Permission |
@@ -1325,8 +1325,8 @@ class ReturnService {
 ### 23.8 Transactions, locks, idempotency
 - `createFromCart` opens a `QueryRunner`. Steps inside one tx: insert order + items + reservations + coupon usage + outbox.
 - `confirmPayment` opens a `QueryRunner`. Steps: insert payment, update order status, write inventory ledger (SALE), write AR ledger (if credit sale), insert outbox (accounting), reduce shift totals (for POS).
-- Stock reservations use advisory lock `tenant:{tenantId}:stock:{warehouseId}:{variantId}` before checking availability.
-- Idempotency: payment webhook keyed by `(tenantId, gatewayTxnId)`.
+- Stock reservations use advisory lock `store:{storeId}:stock:{warehouseId}:{variantId}` before checking availability.
+- Idempotency: payment webhook keyed by `(storeId, gatewayTxnId)`.
 
 ### 23.9 Subscription gate, permissions, errors
 - Subscription cap: `subscription.caps.orders_per_month` (metered via `incrementUsage`).
@@ -1391,8 +1391,8 @@ modules/admin/sales/coupon/
 ```
 
 ### 25.3 Entities owned
-- `coupons` — `id`, `tenant_id`, `code` (unique per tenant), `discount_type` (PERCENT | FIXED | FREE_SHIPPING), `value`, `min_order`, `max_uses_total`, `max_uses_per_user`, `starts_at`, `ends_at`, `is_active`.
-- `coupon_usages` — `id`, `tenant_id`, `coupon_id`, `user_id`, `order_id`, `applied_at`.
+- `coupons` — `id`, `store_id`, `code` (unique per store), `discount_type` (PERCENT | FIXED | FREE_SHIPPING), `value`, `min_order`, `max_uses_total`, `max_uses_per_user`, `starts_at`, `ends_at`, `is_active`.
+- `coupon_usages` — `id`, `store_id`, `coupon_id`, `user_id`, `order_id`, `applied_at`.
 
 ### 25.4 Services
 ```typescript
@@ -1466,7 +1466,7 @@ modules/admin/sales/payment/
 ```
 
 ### 27.3 Entities owned
-- `payments` — `id`, `tenant_id`, `order_id`, `method` (CASH | CARD | WALLET | BANK | COD | ACCOUNT), `amount`, `currency`, `status` (PENDING | CAPTURED | FAILED | REFUNDED), `gateway`, `gateway_ref`, `captured_at`.
+- `payments` — `id`, `store_id`, `order_id`, `method` (CASH | CARD | WALLET | BANK | COD | ACCOUNT), `amount`, `currency`, `status` (PENDING | CAPTURED | FAILED | REFUNDED), `gateway`, `gateway_ref`, `captured_at`.
 - `refunds` — `id`, `payment_id`, `amount`, `method`, `status`, `gateway_ref`.
 
 ### 27.4 Routes
@@ -1485,7 +1485,7 @@ class PaymentService {
 ```
 
 ### 27.6 Idempotency
-Webhook idempotency: `(tenantId, gateway, gatewayTxnId)` as DB unique. Repeated calls return cached response.
+Webhook idempotency: `(storeId, gateway, gatewayTxnId)` as DB unique. Repeated calls return cached response.
 
 ### 27.7 Events
 - Emits `payment.captured`, `payment.failed`, `refund.issued`.
@@ -1512,8 +1512,8 @@ modules/admin/sales/pos/
 ```
 
 ### 28.3 Entities owned
-- `pos_registers` — `id`, `tenant_id`, `branch_id`, `name`, `is_active`.
-- `pos_shifts` — `id`, `tenant_id`, `register_id`, `user_id`, `opened_at`, `closed_at?`, `opening_cash`, `expected_close_cash`, `actual_close_cash`, `variance`, `total_sales`, `total_returns`, `status` (OPEN | CLOSED | RECONCILED).
+- `pos_registers` — `id`, `store_id`, `branch_id`, `name`, `is_active`.
+- `pos_shifts` — `id`, `store_id`, `register_id`, `user_id`, `opened_at`, `closed_at?`, `opening_cash`, `expected_close_cash`, `actual_close_cash`, `variance`, `total_sales`, `total_returns`, `status` (OPEN | CLOSED | RECONCILED).
 - `pos_drawer_transactions` — `id`, `shift_id`, `type` (CASH_IN | CASH_OUT | PAYOUT | DROP), `amount`, `reason`, `user_id`, `at`.
 
 ### 28.4 Routes
@@ -1537,8 +1537,8 @@ class PosService {
 ```
 
 ### 28.6 Invariants enforced
-- One open shift per `(tenantId, userId)` — partial unique index `WHERE status = 'OPEN'`.
-- Sale sync idempotency — unique index `(tenantId, clientSaleId)`.
+- One open shift per `(storeId, userId)` — partial unique index `WHERE status = 'OPEN'`.
+- Sale sync idempotency — unique index `(storeId, clientSaleId)`.
 - Closed shift rejects new sales (`SHIFT_CLOSED`).
 - Cash variance always recorded with reason.
 
@@ -1573,11 +1573,11 @@ modules/admin/operations/logistics/inventory-transaction/
 ```
 
 ### 29.3 Entities owned
-- `inventory_ledger` — append-only: `id`, `tenant_id`, `warehouse_id`, `variant_id`, `qty_delta` (±), `type` (PURCHASE | SALE | TRANSFER_OUT | TRANSFER_IN | ADJUSTMENT_IN | ADJUSTMENT_OUT | RETURN_IN), `reference_type`, `reference_id`, `unit_cost?`, `batch_lot_id?`, `created_at`, `created_by`.
-- `stock_reservations` — `id`, `tenant_id`, `warehouse_id`, `variant_id`, `qty`, `status` (ACTIVE | CONSUMED | EXPIRED | RELEASED), `reference_type`, `reference_id`, `expires_at`.
-- `stock_transfers` — `id`, `tenant_id`, `source_warehouse_id`, `dest_warehouse_id`, `status` (DRAFT | APPROVED | IN_TRANSIT | RECEIVED | CANCELED), `requested_by`, `approved_by`, `received_by`, `notes`.
+- `inventory_ledger` — append-only: `id`, `store_id`, `warehouse_id`, `variant_id`, `qty_delta` (±), `type` (PURCHASE | SALE | TRANSFER_OUT | TRANSFER_IN | ADJUSTMENT_IN | ADJUSTMENT_OUT | RETURN_IN), `reference_type`, `reference_id`, `unit_cost?`, `batch_lot_id?`, `created_at`, `created_by`.
+- `stock_reservations` — `id`, `store_id`, `warehouse_id`, `variant_id`, `qty`, `status` (ACTIVE | CONSUMED | EXPIRED | RELEASED), `reference_type`, `reference_id`, `expires_at`.
+- `stock_transfers` — `id`, `store_id`, `source_warehouse_id`, `dest_warehouse_id`, `status` (DRAFT | APPROVED | IN_TRANSIT | RECEIVED | CANCELED), `requested_by`, `approved_by`, `received_by`, `notes`.
 - `stock_transfer_items` — `id`, `transfer_id`, `variant_id`, `qty_requested`, `qty_shipped`, `qty_received`.
-- `product_batches` — `id`, `tenant_id`, `variant_id`, `batch_no`, `expiry_date?`, `mfg_date?`, `received_qty`, `remaining_qty`.
+- `product_batches` — `id`, `store_id`, `variant_id`, `batch_no`, `expiry_date?`, `mfg_date?`, `received_qty`, `remaining_qty`.
 
 ### 29.4 Routes
 | Route | Permission |
@@ -1621,7 +1621,7 @@ class ProductBatchService {
 
 ### 29.7 Transactions, locks, idempotency
 - Every ledger append happens inside the caller's transaction.
-- `reserve()` acquires advisory lock `tenant:{tenantId}:stock:{warehouseId}:{variantId}` before computing availability.
+- `reserve()` acquires advisory lock `store:{storeId}:stock:{warehouseId}:{variantId}` before computing availability.
 - Negative on-hand requires explicit `permission inventory.negative.allow`.
 
 ### 29.8 Events
@@ -1708,7 +1708,7 @@ class DebitNoteService {
 ## 31. Procurement: Supplier (master + AP ledger + portal)
 
 ### 31.1 Purpose & boundary
-Supplier master data + tenant-wide AP ledger + optional supplier portal (where suppliers self-service quotes and invoices via a separate auth scope).
+Supplier master data + store-wide AP ledger + optional supplier portal (where suppliers self-service quotes and invoices via a separate auth scope).
 
 ### 31.2 Source layout
 ```
@@ -1723,8 +1723,8 @@ modules/admin/operations/finance/supplier/
 ```
 
 ### 31.3 Entities owned
-- `suppliers` — `id`, `tenant_id`, `name`, `code` (unique per tenant), `tax_id`, `payment_terms_days`, `default_currency`, `is_active`.
-- `supplier_ap_ledger` — append-only: `id`, `tenant_id`, `supplier_id`, `txn_type` (INVOICE | PAYMENT | DEBIT_NOTE | ADJUSTMENT), `amount` (±), `reference_type`, `reference_id`, `entry_date`.
+- `suppliers` — `id`, `store_id`, `name`, `code` (unique per store), `tax_id`, `payment_terms_days`, `default_currency`, `is_active`.
+- `supplier_ap_ledger` — append-only: `id`, `store_id`, `supplier_id`, `txn_type` (INVOICE | PAYMENT | DEBIT_NOTE | ADJUSTMENT), `amount` (±), `reference_type`, `reference_id`, `entry_date`.
 
 ### 31.4 Service
 ```typescript
@@ -1756,7 +1756,7 @@ modules/admin/operations/logistics/grn/
 ```
 
 ### 32.3 Entities owned
-- `goods_received_notes` — `id`, `tenant_id`, `po_id?`, `supplier_id`, `warehouse_id`, `received_by`, `received_at`, `status` (PENDING | VERIFIED | REJECTED), `total_value`.
+- `goods_received_notes` — `id`, `store_id`, `po_id?`, `supplier_id`, `warehouse_id`, `received_by`, `received_at`, `status` (PENDING | VERIFIED | REJECTED), `total_value`.
 - `grn_items` — `id`, `grn_id`, `po_item_id?`, `variant_id`, `qty_received`, `unit_cost`, `batch_no?`, `expiry_date?`.
 
 ### 32.4 Routes
@@ -1900,14 +1900,14 @@ modules/admin/operations/finance/accounting/
 ```
 
 ### 35.3 Entities owned
-- `accounts` — Chart of Accounts: `id`, `tenant_id`, `code`, `name`, `type` (ASSET | LIABILITY | EQUITY | REVENUE | EXPENSE), `parent_id?`, `is_active`.
-- `journal_entries` — header: `id`, `tenant_id`, `entry_date`, `description`, `reference_type`, `reference_id`, `posted_at`, `reversed_by_id?`.
-- `ledger_entries` — lines (the *real* double-entry rows): `id`, `journal_id`, `tenant_id`, `account_id`, `branch_id?`, `side` (DEBIT | CREDIT), `amount`, `currency`, `fx_rate`.
-- `ar_ledger` — append-only customer AR txns: `id`, `tenant_id`, `customer_id`, `txn_type` (INVOICE | PAYMENT | CREDIT_NOTE | ADJUSTMENT), `amount` (±), `reference_type`, `reference_id`.
-- `wallet_ledger` — append-only customer wallet/store-credit: `id`, `tenant_id`, `user_id`, `txn_type` (CREDIT | DEBIT | EXPIRY | REFUND), `amount` (±), `reference_type`, `reference_id`, `expires_at?`.
-- `fiscal_periods` — `id`, `tenant_id`, `name` (e.g. '2026-Q1'), `start`, `end`, `status` (OPEN | CLOSED).
-- `tax_rules` — `id`, `tenant_id`, `name`, `rate`, `jurisdiction`, `applies_to`.
-- `dunning_rules` — `id`, `tenant_id`, `name`, `trigger_days_overdue`, `action` (REMINDER | LATE_FEE | HOLD).
+- `accounts` — Chart of Accounts: `id`, `store_id`, `code`, `name`, `type` (ASSET | LIABILITY | EQUITY | REVENUE | EXPENSE), `parent_id?`, `is_active`.
+- `journal_entries` — header: `id`, `store_id`, `entry_date`, `description`, `reference_type`, `reference_id`, `posted_at`, `reversed_by_id?`.
+- `ledger_entries` — lines (the *real* double-entry rows): `id`, `journal_id`, `store_id`, `account_id`, `branch_id?`, `side` (DEBIT | CREDIT), `amount`, `currency`, `fx_rate`.
+- `ar_ledger` — append-only customer AR txns: `id`, `store_id`, `customer_id`, `txn_type` (INVOICE | PAYMENT | CREDIT_NOTE | ADJUSTMENT), `amount` (±), `reference_type`, `reference_id`.
+- `wallet_ledger` — append-only customer wallet/store-credit: `id`, `store_id`, `user_id`, `txn_type` (CREDIT | DEBIT | EXPIRY | REFUND), `amount` (±), `reference_type`, `reference_id`, `expires_at?`.
+- `fiscal_periods` — `id`, `store_id`, `name` (e.g. '2026-Q1'), `start`, `end`, `status` (OPEN | CLOSED).
+- `tax_rules` — `id`, `store_id`, `name`, `rate`, `jurisdiction`, `applies_to`.
+- `dunning_rules` — `id`, `store_id`, `name`, `trigger_days_overdue`, `action` (REMINDER | LATE_FEE | HOLD).
 - `dunning_log` — per-customer reminder/action audit trail.
 - `accounting_outbox` — specialized outbox for journal posting jobs.
 
@@ -2095,7 +2095,7 @@ modules/admin/operations/finance/report/
 Delegates to `FinancialReportService` (in accounting) for finance reports; defines its own queries for operational reports.
 
 ### 38.5 Caching
-Read responses cached at `t:{tenantId}:reports:pl:{from}:{to}` with 10-min TTL. Cache is **not** invalidated on every ledger write — it expires naturally.
+Read responses cached at `t:{storeId}:reports:pl:{from}:{to}` with 10-min TTL. Cache is **not** invalidated on every ledger write — it expires naturally.
 
 ### 38.6 Permissions & errors
 - `finance.report.{pl,bs,cf,operational}`.
@@ -2226,7 +2226,7 @@ modules/admin/marketing/loyalty/
 ```
 
 ### 42.3 Entities owned
-- `loyalty_programs` — `id`, `tenant_id`, `name`, `accrual_rate`, `redemption_rate`, `is_active`.
+- `loyalty_programs` — `id`, `store_id`, `name`, `accrual_rate`, `redemption_rate`, `is_active`.
 - `loyalty_tiers` — bronze/silver/gold with thresholds.
 - `loyalty_ledger` — append-only: `user_id`, `txn_type` (EARN | REDEEM | EXPIRY | ADJUSTMENT), `points` (±), `reference_type`, `reference_id`, `expires_at?`.
 - `referrals` — `inviter_user_id`, `invitee_email`, `code`, `status` (PENDING | JOINED | REWARDED).
@@ -2257,7 +2257,7 @@ class ReferralService {
 ## 43. Content: Page / FAQ / Site Settings
 
 ### 43.1 Purpose & boundary
-CMS-style page builder for storefront, FAQ collection, and tenant-wide site settings (theme, logo, social links, SEO defaults).
+CMS-style page builder for storefront, FAQ collection, and store-wide site settings (theme, logo, social links, SEO defaults).
 
 ### 43.2 Source layout
 ```
@@ -2307,7 +2307,7 @@ modules/admin/operations/hrm/
 ```
 
 ### 44.3 Entities owned
-- `employees` — `id`, `tenant_id`, `user_id?` (links to a portal-login user), `employee_code` (unique per tenant), `department_id`, `designation_id`, `branch_id?`, `joining_date`, `salary_base`, `status` (ACTIVE | ON_LEAVE | INACTIVE | TERMINATED).
+- `employees` — `id`, `store_id`, `user_id?` (links to a portal-login user), `employee_code` (unique per store), `department_id`, `designation_id`, `branch_id?`, `joining_date`, `salary_base`, `status` (ACTIVE | ON_LEAVE | INACTIVE | TERMINATED).
 - `employee_personal_details`, `employee_documents` — sensitive PII split off (stricter permission).
 - `departments`, `designations`, `shifts`.
 - `attendance`, `attendance_events` — daily attendance + raw punch events (GPS / geofence in code).
@@ -2373,7 +2373,7 @@ class HrmService {
 ## 45. Store: Cart / Wishlist / Wallet / Shipping Address
 
 ### 45.1 Purpose & boundary
-Storefront-facing variants of cart, wishlist, wallet (read), and shipping addresses. Same tenants/users as admin, but routed under `/store/*` and called by Next.js storefront.
+Storefront-facing variants of cart, wishlist, wallet (read), and shipping addresses. Same stores/users as admin, but routed under `/store/*` and called by Next.js storefront.
 
 ### 45.2 Source layout
 ```
@@ -2402,7 +2402,7 @@ Standard CRUD scoped to `ctx.userId` (customer self). Wallet routes are read-onl
 ## 46. Infra: Cache / Queue / File / Mail / Notification / Chat / Push / SMS
 
 ### 46.1 Purpose & boundary
-Cross-cutting infrastructure services that other modules depend on. All are tenant-aware.
+Cross-cutting infrastructure services that other modules depend on. All are store-aware.
 
 ### 46.2 Source layout
 ```
@@ -2424,25 +2424,25 @@ class CacheService {
   get<T>(key: string): Promise<T | null>
   set<T>(key: string, val: T, ttlSec?): Promise<void>
   del(...keys: string[]): Promise<void>
-  invalidateTenant(tenantId, ...suffixes): Promise<void>
+  invalidateStore(storeId, ...suffixes): Promise<void>
 }
 ```
-Keys MUST follow `t:{tenantId}:...` convention (see §7).
+Keys MUST follow `t:{storeId}:...` convention (see §7).
 
 ### 46.4 File service
-- Uploads go to S3-compatible storage at path `t/{tenantId}/{module}/{yyyy}/{mm}/{uuid}.{ext}`.
+- Uploads go to S3-compatible storage at path `t/{storeId}/{module}/{yyyy}/{mm}/{uuid}.{ext}`.
 - Returns pre-signed URLs valid for 15 min.
 - Virus-scan hook (configurable; off by default in dev).
 - Max upload size enforced by subscription tier.
 
 ### 46.5 Mail / SMS / Push
-- All take a `templateId` + variables + tenant-from configuration.
+- All take a `templateId` + variables + store-from configuration.
 - Backed by their respective queues (`email-queue`, `sms-queue`, `push-queue`).
 - Failed deliveries log to `notifications` table with retry counter.
 
 ### 46.6 Chat
-- Real-time tenant support chat over Socket.IO.
-- Rooms keyed by `t:{tenantId}:conversation:{id}`.
+- Real-time store support chat over Socket.IO.
+- Rooms keyed by `t:{storeId}:conversation:{id}`.
 - Auth via JWT (same as REST).
 
 ### 46.7 Notification

@@ -15,12 +15,12 @@ export class FinancialReportService {
    * dynamic historical ledger entries within a specified date range.
    */
   async getProfitAndLoss(ctx: RequestContextDto, query?: { startDate?: string; endDate?: string }) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const accountsRepo = this.dataSource.getRepository(AccountEntity)
 
     // Retrieve all Revenue and Expense accounts
     const accounts = await accountsRepo.find({
-      where: { tenantId },
+      where: { storeId },
     })
 
     const revenueAccounts = accounts.filter((a) => a.type === AccountType.REVENUE)
@@ -45,7 +45,7 @@ export class FinancialReportService {
         .addSelect('le.side', 'side')
         .addSelect('SUM(le.amount)', 'total')
         .leftJoin('le.journalEntry', 'je')
-        .where('le.tenantId = :tenantId', { tenantId })
+        .where('le.storeId = :storeId', { storeId })
         .andWhere('le.accountId IN (:...allPlAccountIds)', { allPlAccountIds })
 
       if (query?.startDate) {
@@ -149,11 +149,11 @@ export class FinancialReportService {
    * Generates a fully GL-backed Balance Sheet report supporting historical date (asOfDate) scoping.
    */
   async getBalanceSheet(ctx: RequestContextDto, query?: { asOfDate?: string }) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const accountsRepo = this.dataSource.getRepository(AccountEntity)
 
     // Load all Accounts
-    const accounts = await accountsRepo.find({ where: { tenantId } })
+    const accounts = await accountsRepo.find({ where: { storeId } })
     const allAccountIds = accounts.map((a) => a.id)
 
     // Map cumulative ledger balance from the beginning up to selected date
@@ -170,7 +170,7 @@ export class FinancialReportService {
         .addSelect('le.side', 'side')
         .addSelect('SUM(le.amount)', 'total')
         .leftJoin('le.journalEntry', 'je')
-        .where('le.tenantId = :tenantId', { tenantId })
+        .where('le.storeId = :storeId', { storeId })
         .andWhere('le.accountId IN (:...allAccountIds)', { allAccountIds })
 
       if (query?.asOfDate) {
@@ -252,12 +252,12 @@ export class FinancialReportService {
     ctx: RequestContextDto,
     query?: { startDate?: string; endDate?: string },
   ) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const repo = this.dataSource.getRepository(AccountEntity)
 
     // Find all cash and bank accounts
     const cashAccounts = await repo.find({
-      where: { tenantId, category: AccountCategory.CASH_BANK },
+      where: { storeId, category: AccountCategory.CASH_BANK },
     })
 
     const cashAccountIds = cashAccounts.map((a) => a.id)
@@ -282,7 +282,7 @@ export class FinancialReportService {
       .addSelect('SUM(le.amount)', 'total')
       .leftJoin('le.journalEntry', 'je')
       .where('le.accountId IN (:...cashAccountIds)', { cashAccountIds })
-      .andWhere('le.tenantId = :tenantId', { tenantId })
+      .andWhere('le.storeId = :storeId', { storeId })
 
     if (query?.startDate) {
       qb.andWhere('je.date >= :startDate', { startDate: new Date(query.startDate) })
@@ -389,9 +389,9 @@ export class FinancialReportService {
     totalCredits: number
     isBalanced: boolean
   }> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const accountsRepo = this.dataSource.getRepository(AccountEntity)
-    const accounts = await accountsRepo.find({ where: { tenantId }, order: { code: 'ASC' } })
+    const accounts = await accountsRepo.find({ where: { storeId }, order: { code: 'ASC' } })
 
     const allAccountIds = accounts.map((a) => a.id)
     if (allAccountIds.length === 0) {
@@ -405,7 +405,7 @@ export class FinancialReportService {
       .addSelect('le.side', 'side')
       .addSelect('SUM(le.amount)', 'total')
       .leftJoin('le.journalEntry', 'je')
-      .where('le.tenantId = :tenantId', { tenantId })
+      .where('le.storeId = :storeId', { storeId })
       .andWhere('le.accountId IN (:...allAccountIds)', { allAccountIds })
 
     if (query?.asOfDate) {

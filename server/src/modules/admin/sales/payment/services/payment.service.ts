@@ -37,10 +37,10 @@ export class PaymentService {
 
   async initPayment(dto: InitPaymentDto, ctx: RequestContextDto): Promise<{ gatewayUrl: string }> {
     this.logger.log(`${this.initPayment.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { orderId, callbackUrl } = dto
 
-    const order = await this.orderRepository.findOrderById(orderId, tenantId)
+    const order = await this.orderRepository.findOrderById(orderId, storeId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -48,12 +48,12 @@ export class PaymentService {
 
     this.validatePaymentMethodForCurrency(order.paymentMethod, order.currency)
 
-    const settings = await this.settingsService.findByTenantSettings(ctx)
+    const settings = await this.settingsService.findByStoreSettings(ctx)
     const strategy = PaymentStrategyFactory.create(order.paymentMethod)
 
     const result = await strategy.initiate(order, settings, {
       callbackUrl,
-      tenantId,
+      storeId,
     })
 
     if (result.success) {
@@ -106,9 +106,9 @@ export class PaymentService {
     let verifiedGatewayResponse: any = gatewayResponse
 
     if (typeof strategy.verifyTransaction === 'function') {
-      // Per-tenant gateway: load tenant payment credentials.
-      const settings = await this.settingsService.findByTenantSettings({
-        tenantId: order.tenantId,
+      // Per-store gateway: load store payment credentials.
+      const settings = await this.settingsService.findByStoreSettings({
+        storeId: order.storeId,
       } as RequestContextDto)
       const verification = await strategy.verifyTransaction({
         valId:
@@ -166,7 +166,7 @@ export class PaymentService {
 
       // Reuse an existing payment row for this transaction if one exists.
       const existingPayment = await manager.findOne(PaymentEntity, {
-        where: { transactionId: tran_id, tenantId: lockedOrder.tenantId },
+        where: { transactionId: tran_id, storeId: lockedOrder.storeId },
       })
 
       lockedOrder.paymentStatus = PaymentStatus.PAID
@@ -185,7 +185,7 @@ export class PaymentService {
             status: PaymentStatus.COMPLETED,
             gatewayResponse: verifiedGatewayResponse,
           },
-          { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+          { storeId: order.storeId, userId: order.userId } as RequestContextDto,
           manager,
         ))
 
@@ -201,13 +201,13 @@ export class PaymentService {
     await this.invoiceService.updateInvoiceStatusByOrderId(
       order.id,
       InvoiceStatus.PAID,
-      { tenantId: order.tenantId } as RequestContextDto, // Mocking ctx since we don't have it inside webhook handlers
+      { storeId: order.storeId } as RequestContextDto, // Mocking ctx since we don't have it inside webhook handlers
     )
 
     // Notify Admin
-    const orderWithRelations = await this.orderRepository.findOrderById(order.id, order.tenantId)
+    const orderWithRelations = await this.orderRepository.findOrderById(order.id, order.storeId)
     if (orderWithRelations) {
-      this.mailService.sendNewOrderNotification(orderWithRelations, order.tenantId)
+      this.mailService.sendNewOrderNotification(orderWithRelations, order.storeId)
     }
 
     await this.notifyPaymentEvent(
@@ -218,17 +218,17 @@ export class PaymentService {
     )
 
     await Promise.all([
-      this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
-      this.cacheService.delCacheByPattern('analytics*', order.tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', order.tenantId),
-      this.cacheService.delCacheByPattern('pnl*', order.tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', order.tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
-      this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
+      this.cacheService.delCacheByPattern('payments:list*', order.storeId),
+      this.cacheService.delCacheByPattern('analytics*', order.storeId),
+      this.cacheService.delCacheByPattern('dashboard*', order.storeId),
+      this.cacheService.delCacheByPattern('pnl*', order.storeId),
+      this.cacheService.delCacheByPattern('cashflow*', order.storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', order.storeId),
+      this.cacheService.delCacheByPattern('ledger:customer*', order.storeId),
     ])
 
     await this.auditLogService.log(
-      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+      { storeId: order.storeId, userId: order.userId } as RequestContextDto,
       {
         action: 'PAYMENT_SUCCESS',
         entity: 'Payment',
@@ -268,7 +268,7 @@ export class PaymentService {
       await manager.save(lockedOrder)
 
       const existingPayment = await manager.findOne(PaymentEntity, {
-        where: { transactionId: tran_id, tenantId: lockedOrder.tenantId },
+        where: { transactionId: tran_id, storeId: lockedOrder.storeId },
       })
       if (existingPayment) return existingPayment
 
@@ -282,24 +282,24 @@ export class PaymentService {
           status: PaymentStatus.FAILED,
           gatewayResponse: validation.gatewayResponse,
         },
-        { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+        { storeId: order.storeId, userId: order.userId } as RequestContextDto,
         manager,
       )
     })
     if (!payment) return { success: false }
 
     await Promise.all([
-      this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
-      this.cacheService.delCacheByPattern('analytics*', order.tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', order.tenantId),
-      this.cacheService.delCacheByPattern('pnl*', order.tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', order.tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
-      this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
+      this.cacheService.delCacheByPattern('payments:list*', order.storeId),
+      this.cacheService.delCacheByPattern('analytics*', order.storeId),
+      this.cacheService.delCacheByPattern('dashboard*', order.storeId),
+      this.cacheService.delCacheByPattern('pnl*', order.storeId),
+      this.cacheService.delCacheByPattern('cashflow*', order.storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', order.storeId),
+      this.cacheService.delCacheByPattern('ledger:customer*', order.storeId),
     ])
 
     await this.auditLogService.log(
-      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+      { storeId: order.storeId, userId: order.userId } as RequestContextDto,
       {
         action: 'PAYMENT_FAILED',
         entity: 'Payment',
@@ -347,21 +347,21 @@ export class PaymentService {
         status: PaymentStatus.CANCELLED,
         gatewayResponse: validation.gatewayResponse,
       },
-      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+      { storeId: order.storeId, userId: order.userId } as RequestContextDto,
     )
 
     await Promise.all([
-      this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
-      this.cacheService.delCacheByPattern('analytics*', order.tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', order.tenantId),
-      this.cacheService.delCacheByPattern('pnl*', order.tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', order.tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
-      this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
+      this.cacheService.delCacheByPattern('payments:list*', order.storeId),
+      this.cacheService.delCacheByPattern('analytics*', order.storeId),
+      this.cacheService.delCacheByPattern('dashboard*', order.storeId),
+      this.cacheService.delCacheByPattern('pnl*', order.storeId),
+      this.cacheService.delCacheByPattern('cashflow*', order.storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', order.storeId),
+      this.cacheService.delCacheByPattern('ledger:customer*', order.storeId),
     ])
 
     await this.auditLogService.log(
-      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+      { storeId: order.storeId, userId: order.userId } as RequestContextDto,
       {
         action: 'PAYMENT_CANCELLED',
         entity: 'Payment',
@@ -400,7 +400,7 @@ export class PaymentService {
           link: `/admin/orders/${order.id}`,
           userId: null as any,
         },
-        order.tenantId,
+        order.storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger payment notification: ${e.message}`)
@@ -427,15 +427,15 @@ export class PaymentService {
     totalPages: number
   }> {
     this.logger.log(`${this.findAllPayments.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search, startDate, endDate } = filterDto
     const cacheKey = `payments:list:p${page}:l${limit}:${startDate?.getTime()}:${endDate?.getTime()}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.paymentRepository.findPaymentsByTenant(
-          tenantId,
+        const [items, total] = await this.paymentRepository.findPaymentsByStore(
+          storeId,
           page,
           limit,
           search,
@@ -445,13 +445,13 @@ export class PaymentService {
         return { items, total, page, limit, totalPages: Math.ceil(total / limit) }
       },
       300,
-      tenantId,
+      storeId,
     )
   }
 
   /**
    * Chunked payment fetch — iterates in 500-row pages to avoid loading 100k rows
-   * into memory at once. Safe for large tenants and report aggregation use.
+   * into memory at once. Safe for large stores and report aggregation use.
    */
   async findAllPaymentsRaw(
     ctx: RequestContextDto,
@@ -459,15 +459,15 @@ export class PaymentService {
     endDate?: Date,
   ): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsRaw.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const CHUNK_SIZE = 500
     const allItems: PaymentEntity[] = []
     let page = 1
     let hasMore = true
 
     while (hasMore) {
-      const [items] = await this.paymentRepository.findPaymentsByTenant(
-        tenantId,
+      const [items] = await this.paymentRepository.findPaymentsByStore(
+        storeId,
         page,
         CHUNK_SIZE,
         undefined,
@@ -486,7 +486,7 @@ export class PaymentService {
     ctx: RequestContextDto,
   ): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByCustomer.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.paymentRepository.findPaymentsByUser(customerId, tenantId)
+    const storeId = ctx.storeId
+    return await this.paymentRepository.findPaymentsByUser(customerId, storeId)
   }
 }

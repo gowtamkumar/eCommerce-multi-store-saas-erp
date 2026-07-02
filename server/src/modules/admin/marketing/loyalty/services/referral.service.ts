@@ -25,7 +25,7 @@ export class ReferralService {
    */
   async generateUniqueReferralCode(
     name: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<string> {
     const em = manager || this.dataSource.manager
@@ -45,7 +45,7 @@ export class ReferralService {
       referralCode = `${prefix}-${suffix}`
 
       // Check if it already exists
-      const existing = await em.findOne(UserEntity, { where: { referralCode, tenantId } })
+      const existing = await em.findOne(UserEntity, { where: { referralCode, storeId } })
       if (!existing) {
         isUnique = true
       }
@@ -70,16 +70,16 @@ export class ReferralService {
   async linkReferral(
     refereeId: string,
     referralCode: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
     source?: string,
   ): Promise<{ attributed: boolean; alreadyAttributed?: boolean }> {
     const em = manager || this.dataSource.manager
     if (!referralCode) return { attributed: false }
 
-    const referrer = await em.findOne(UserEntity, { where: { referralCode, tenantId } })
+    const referrer = await em.findOne(UserEntity, { where: { referralCode, storeId } })
     if (!referrer) {
-      this.logger.warn(`Referral code "${referralCode}" not found for tenant ${tenantId}`)
+      this.logger.warn(`Referral code "${referralCode}" not found for store ${storeId}`)
       return { attributed: false }
     }
 
@@ -98,13 +98,13 @@ export class ReferralService {
         referralSource: source ?? null,
       })
       .where('id = :refereeId', { refereeId })
-      .andWhere('tenant_id = :tenantId', { tenantId })
+      .andWhere('store_id = :storeId', { storeId })
       .andWhere('referred_by_id IS NULL')
       .execute()
 
     if ((result.affected ?? 0) === 0) {
       const existing = await em.findOne(UserEntity, {
-        where: { id: refereeId, tenantId },
+        where: { id: refereeId, storeId },
         select: {
           id: true,
           referredById: true,
@@ -133,10 +133,10 @@ export class ReferralService {
     manager?: EntityManager,
   ): Promise<void> {
     const em = manager || this.dataSource.manager
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // 1. Get referee user info
-    const referee = await em.findOne(UserEntity, { where: { id: refereeId, tenantId } })
+    const referee = await em.findOne(UserEntity, { where: { id: refereeId, storeId } })
     if (!referee || !referee.referredById) {
       return // No referrer associated
     }
@@ -145,7 +145,7 @@ export class ReferralService {
     const priorOrdersCount = await em.count(OrderEntity, {
       where: {
         userId: refereeId,
-        tenantId,
+        storeId,
         paymentStatus: 'PAID' as any, // Only count successfully paid/completed orders
       },
     })
@@ -159,7 +159,7 @@ export class ReferralService {
     }
 
     // 3. Check loyalty configs
-    const config = await this.loyaltyService.getOrCreateConfig(tenantId, em)
+    const config = await this.loyaltyService.getOrCreateConfig(storeId, em)
     if (!config.isEnabled) {
       return
     }
@@ -229,7 +229,7 @@ export class ReferralService {
           link: '/account/wallet',
           userId: referrerId,
         },
-        ctx.tenantId,
+        ctx.storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger referral wallet notification: ${e.message}`)

@@ -108,7 +108,7 @@ describe('PaymentService', () => {
     it('should throw NotFoundException if order is not found', async () => {
       orderRepository.findOrderById.mockResolvedValue(null)
       const dto = { orderId: 'nonexistent-id', callbackUrl: 'http://localhost:3000/callback' }
-      const ctx = { tenantId: 'tenant-1' } as any
+      const ctx = { storeId: 'store-1' } as any
 
       await expect(service.initPayment(dto, ctx)).rejects.toThrow(NotFoundException)
     })
@@ -121,7 +121,7 @@ describe('PaymentService', () => {
       })
 
       const dto = { orderId: 'order-1', callbackUrl: 'http://localhost:3000/callback' }
-      const ctx = { tenantId: 'tenant-1' } as any
+      const ctx = { storeId: 'store-1' } as any
 
       await expect(service.initPayment(dto, ctx)).rejects.toThrow(BadRequestException)
       await expect(service.initPayment(dto, ctx)).rejects.toThrow('SSLCommerz only supports BDT')

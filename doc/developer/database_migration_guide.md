@@ -1,9 +1,9 @@
-# 📦 User Manual – eCommerce Multi-Tenant SaaS
+# 📦 User Manual – eCommerce Multi-Store SaaS
 
-This manual provides instructions for setting up, developing, and managing the eCommerce Multi-Tenant SaaS platform.
+This manual provides instructions for setting up, developing, and managing the eCommerce Multi-Store SaaS platform.
 
 ## 1. Project Overview
-The platform allows multiple tenants to create and manage their own eCommerce landing pages. It features a shared codebase with tenant isolation, custom domain support, and a scalable architecture.
+The platform allows multiple stores to create and manage their own eCommerce landing pages. It features a shared codebase with store isolation, custom domain support, and a scalable architecture.
 
 ## 2. Prerequisites
 Before you begin, ensure you have the following installed on your local machine:
@@ -18,7 +18,7 @@ The project uses Docker to manage the database, Redis, and application services.
 ### 1. Clone the repository
 ```bash
 git clone <repository-url>
-cd eCommerce-multi-tenant-saas
+cd eCommerce-multi-store-saas
 ```
 
 ### 2. Configure Environment Variables
@@ -218,5 +218,5 @@ The frontend is located in the `client` directory.
 
 ## 6. Architecture & Design
 For deep technical details on the system architecture, please refer to:
-- [System Design](file:///media/gowtamkumar/ba015ba5-d67a-4dd3-a76f-71a0b397e404/projects/eCommerce-multi-tenant-saas/doc/system-design.md)
-- [Super Admin Guidelines](file:///media/gowtamkumar/ba015ba5-d67a-4dd3-a76f-71a0b397e404/projects/eCommerce-multi-tenant-saas/doc/super-admin-guidelines.md)
+- [System Design](file:///media/gowtamkumar/ba015ba5-d67a-4dd3-a76f-71a0b397e404/projects/eCommerce-multi-store-saas/doc/system-design.md)
+- [Super Admin Guidelines](file:///media/gowtamkumar/ba015ba5-d67a-4dd3-a76f-71a0b397e404/projects/eCommerce-multi-store-saas/doc/super-admin-guidelines.md)

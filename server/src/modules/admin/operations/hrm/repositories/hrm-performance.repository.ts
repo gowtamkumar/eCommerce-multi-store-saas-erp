@@ -1,11 +1,11 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { PerformanceReviewEntity } from '../entities/performance.entity'
 
 @Injectable()
-export class HrmPerformanceRepository extends BaseTenantRepository<PerformanceReviewEntity> {
+export class HrmPerformanceRepository extends BaseStoreRepository<PerformanceReviewEntity> {
   constructor(
     @InjectRepository(PerformanceReviewEntity)
     private readonly performanceReviewRepo: Repository<PerformanceReviewEntity>,
@@ -19,9 +19,9 @@ export class HrmPerformanceRepository extends BaseTenantRepository<PerformanceRe
     return this.performanceReviewRepo.save(this.performanceReviewRepo.create(data))
   }
 
-  async findAllPerformanceReviews(tenantId: string): Promise<PerformanceReviewEntity[]> {
+  async findAllPerformanceReviews(storeId: string): Promise<PerformanceReviewEntity[]> {
     return this.performanceReviewRepo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         employee: {
           user: true,
@@ -37,10 +37,10 @@ export class HrmPerformanceRepository extends BaseTenantRepository<PerformanceRe
 
   async findEmployeeReviews(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<PerformanceReviewEntity[]> {
     return this.performanceReviewRepo.find({
-      where: { employeeId, tenantId },
+      where: { employeeId, storeId },
       relations: {
         reviewer: {
           user: true,

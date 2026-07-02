@@ -8,12 +8,12 @@ export class TrafficInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest()
-    const tenantId = request.tenantId || request.headers['x-tenant-id']
+    const storeId = request.storeId || request.headers['x-store-id']
 
-    if (tenantId) {
+    if (storeId) {
       // Log traffic asynchronously to not block the request
       this.trafficService
-        .logRequestTraffic(tenantId)
+        .logRequestTraffic(storeId)
         .catch((err) => console.error('Traffic log failed:', err))
     }
 

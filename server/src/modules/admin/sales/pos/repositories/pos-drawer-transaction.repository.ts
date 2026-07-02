@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
@@ -6,7 +6,7 @@ import { PosDrawerTransactionEntity } from '../entities/pos-drawer-transaction.e
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PosDrawerTransactionRepository extends BaseTenantRepository<PosDrawerTransactionEntity> {
+export class PosDrawerTransactionRepository extends BaseStoreRepository<PosDrawerTransactionEntity> {
   constructor(
     @InjectRepository(PosDrawerTransactionEntity)
     repo: Repository<PosDrawerTransactionEntity>,
@@ -14,9 +14,9 @@ export class PosDrawerTransactionRepository extends BaseTenantRepository<PosDraw
     super(PosDrawerTransactionEntity, repo)
 }
 
-  async findAllForShift(shiftId: string, tenantId: string): Promise<PosDrawerTransactionEntity[]> {
+  async findAllForShift(shiftId: string, storeId: string): Promise<PosDrawerTransactionEntity[]> {
     return this.repo.find({
-      where: { shiftId, tenantId },
+      where: { shiftId, storeId },
       relations: {
         user: true,
       },
@@ -32,7 +32,7 @@ export class PosDrawerTransactionRepository extends BaseTenantRepository<PosDraw
     const repository = this.txRepo(manager)
     const tx = repository.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     return repository.save(tx) as any
   }

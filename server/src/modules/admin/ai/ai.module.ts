@@ -1,6 +1,6 @@
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { CartEntity } from '@/modules/store/cart/entities/cart.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { BullModule } from '@nestjs/bullmq'
 import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
@@ -28,7 +28,7 @@ import { AiInventoryAssistantService } from './services/domains/ai-inventory-ass
 import { AiProcurementAssistantService } from './services/domains/ai-procurement-assistant.service'
 import { AiSalesAssistantService } from './services/domains/ai-sales-assistant.service'
 import { AiSupportAssistantService } from './services/domains/ai-support-assistant.service'
-import { TenantAiClientService } from './services/tenant-ai-client.service'
+import { StoreAiClientService } from './services/store-ai-client.service'
 import { UserModule } from '@/modules/admin/core/user/user.module'
 import { PurchaseModule } from '../operations/finance/purchase/purchase.module'
 import { McpController } from './controllers/mcp.controller'
@@ -37,7 +37,7 @@ import { McpAuthGuard } from './guards/mcp-auth.guard'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TenantEntity, RoleEntity, AiJobEntity, AiUsageLogEntity, CartEntity]),
+    TypeOrmModule.forFeature([StoreEntity, RoleEntity, AiJobEntity, AiUsageLogEntity, CartEntity]),
     BullModule.registerQueue({ name: 'ai' }),
     forwardRef(() => ProductModule),
     forwardRef(() => OrderModule),
@@ -47,7 +47,7 @@ import { McpAuthGuard } from './guards/mcp-auth.guard'
   ],
   controllers: [AiController, McpController],
   providers: [
-    TenantAiClientService,
+    StoreAiClientService,
     AiAssistantBaseService,
     AiCoreAssistantService,
     AiCatalogAssistantService,
@@ -70,7 +70,7 @@ import { McpAuthGuard } from './guards/mcp-auth.guard'
     McpAuthGuard,
   ],
   exports: [
-    TenantAiClientService,
+    StoreAiClientService,
     AiAssistantBaseService,
     AiCoreAssistantService,
     AiCatalogAssistantService,

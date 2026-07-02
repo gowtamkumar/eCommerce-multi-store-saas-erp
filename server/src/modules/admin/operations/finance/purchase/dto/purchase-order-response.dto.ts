@@ -28,7 +28,7 @@ export class PurchaseOrderResponseDto {
   items: any[]
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

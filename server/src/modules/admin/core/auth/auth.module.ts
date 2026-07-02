@@ -6,7 +6,7 @@ import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 import { UserModule } from '@/modules/admin/core/user/user.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
@@ -20,7 +20,7 @@ import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module
 @Module({
   imports: [
     UserModule,
-    TenantModule,
+    StoreModule,
     MailModule,
     RbacModule,
     NotificationModule,

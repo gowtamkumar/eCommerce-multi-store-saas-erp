@@ -40,9 +40,9 @@ export class CartService {
 
   private async findOrCreateCart(ctx: RequestContextDto): Promise<CartEntity> {
     this.logger.log(`${this.findOrCreateCart.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
-    let cart = await this.cartRepository.findByUserId(userId, tenantId)
+    let cart = await this.cartRepository.findByUserId(userId, storeId)
 
     if (!cart) {
       cart = await this.cartRepository.createAndSave(ctx)
@@ -59,10 +59,10 @@ export class CartService {
     abandonedOnly?: boolean,
   ): Promise<{ carts: any[]; total: number }> {
     this.logger.log(`${this.findAllAdminCarts.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const { carts, total } = await this.cartRepository.findAllAdminPaginated(
-      tenantId,
+      storeId,
       page,
       limit,
       search,
@@ -111,11 +111,11 @@ export class CartService {
 
   private async transformCart(cart: CartEntity, ctx: RequestContextDto): Promise<CartResponseDto> {
     this.logger.log(`${this.transformCart.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // 1. Fetch dependencies
     const [settings, activePromotions] = await Promise.all([
-      this.siteSettingsRepository.findByTenantId(tenantId),
+      this.siteSettingsRepository.findByStoreId(storeId),
       this.promotionService.findActivePromotions(ctx),
     ])
     const currency = settings?.currency || 'BDT'
@@ -134,7 +134,7 @@ export class CartService {
         quantity: item.quantity,
       })),
       userPriceBookCode,
-      tenantId,
+      storeId,
       currency,
     )
 
@@ -208,13 +208,13 @@ export class CartService {
     createCartItemDto: CreateCartItemDto,
   ): Promise<CartResponseDto> {
     this.logger.log(`${this.addToCart.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cart = await this.findOrCreateCart(ctx)
     let { productId, variantId, quantity } = createCartItemDto
 
     // If variantId is not provided, check if the product has variants and pick the first one
     if (!variantId) {
-      const product = await this.productRepository.findProductById(productId, tenantId)
+      const product = await this.productRepository.findProductById(productId, storeId)
 
       if (product && product.variants && product.variants.length > 0) {
         variantId = product.variants[0].id
@@ -255,9 +255,9 @@ export class CartService {
     updateCartItemDto: UpdateCartItemDto,
   ): Promise<CartResponseDto> {
     this.logger.log(`${this.updateCartItem.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
-    const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, tenantId)
+    const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, storeId)
 
     if (!cartItem) {
       throw new NotFoundException('Cart item not found')
@@ -274,9 +274,9 @@ export class CartService {
 
   async removeFromCart(ctx: RequestContextDto, cartItemId: string): Promise<CartResponseDto> {
     this.logger.log(`${this.removeFromCart.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
-    const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, tenantId)
+    const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, storeId)
 
     if (!cartItem) {
       throw new NotFoundException('Cart item not found')
@@ -299,7 +299,7 @@ export class CartService {
 
   async syncCart(ctx: RequestContextDto, items: CreateCartItemDto[]): Promise<CartResponseDto> {
     this.logger.log(`${this.syncCart.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cart = await this.findOrCreateCart(ctx)
 
     // Clear existing items
@@ -315,7 +315,7 @@ export class CartService {
     ]
     const productsNeedingVariant = await this.productRepository.findProductsByIds(
       idsNeedingVariant,
-      tenantId,
+      storeId,
     )
     const productById = new Map(productsNeedingVariant.map((p) => [p.id, p]))
 
@@ -352,7 +352,7 @@ export class CartService {
 
   async applyCoupon(ctx: RequestContextDto, code: string): Promise<CartResponseDto> {
     this.logger.log(`${this.applyCoupon.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cart = await this.findOrCreateCart(ctx)
 
     // Calculate current subtotal/payable before coupon to validate it

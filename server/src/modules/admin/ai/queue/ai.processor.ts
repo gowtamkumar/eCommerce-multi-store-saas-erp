@@ -8,7 +8,7 @@ import { AiJobService } from '../services/ai-job.service'
 
 interface AiQueuePayload {
   jobId: string
-  tenantId: string
+  storeId: string
   payload?: Record<string, unknown>
 }
 
@@ -26,60 +26,60 @@ export class AiProcessor extends WorkerHost {
   }
 
   async process(job: Job<AiQueuePayload>) {
-    const { jobId, tenantId } = job.data
+    const { jobId, storeId } = job.data
     const payload = job.data.payload ?? {}
-    this.logger.log(`Processing AI job ${jobId} (${job.name}) for tenant ${tenantId}`)
+    this.logger.log(`Processing AI job ${jobId} (${job.name}) for store ${storeId}`)
 
     await this.aiJobService.markRunning(jobId)
 
     try {
       switch (job.name) {
         case AiJobType.EMBEDDING_REINDEX: {
-          const result = await this.productEmbeddingService.reindexTenantCatalog(tenantId)
+          const result = await this.productEmbeddingService.reindexStoreCatalog(storeId)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }
 
         case AiJobType.EMBEDDING_BATCH: {
           const productIds = (payload.productIds as string[] | undefined) ?? []
-          const result = await this.productEmbeddingService.syncProductEmbeddings(tenantId, productIds)
+          const result = await this.productEmbeddingService.syncProductEmbeddings(storeId, productIds)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }
 
         case AiJobType.BULK_SEO: {
           const productId = String(payload.productId ?? '')
-          const result = await this.aiAutomationService.runProductSeoDraftJob(tenantId, productId)
+          const result = await this.aiAutomationService.runProductSeoDraftJob(storeId, productId)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }
 
         case AiJobType.BULK_DESCRIPTION_IMPORT: {
-          const result = await this.aiAutomationService.runBulkDescriptionImportJob(tenantId, payload)
+          const result = await this.aiAutomationService.runBulkDescriptionImportJob(storeId, payload)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }
 
         case AiJobType.CART_ABANDONED_DRAFT: {
-          const result = await this.aiAutomationService.runCartAbandonedDraftJob(tenantId, payload)
+          const result = await this.aiAutomationService.runCartAbandonedDraftJob(storeId, payload)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }
 
         case AiJobType.OCR: {
-          const result = await this.aiAutomationService.runInvoiceOcrJob(tenantId, payload)
+          const result = await this.aiAutomationService.runInvoiceOcrJob(storeId, payload)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }
 
         case AiJobType.DEMAND_FORECAST: {
-          const result = await this.aiAutomationService.runDemandForecastJob(tenantId)
+          const result = await this.aiAutomationService.runDemandForecastJob(storeId)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }
 
         case AiJobType.AUTOMATION_DISPATCH: {
-          const result = await this.aiAutomationService.dispatchAutomationEvent(tenantId, payload)
+          const result = await this.aiAutomationService.dispatchAutomationEvent(storeId, payload)
           await this.aiJobService.markCompleted(jobId, result)
           return result
         }

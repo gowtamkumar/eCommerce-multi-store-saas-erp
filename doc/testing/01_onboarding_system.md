@@ -1,6 +1,6 @@
 # Functional Testing Document (fdoc) — Module 1: Platform Onboarding System
 
-This document is the official functional testing playbook for **Module 1: Platform Administration & Tenant Onboarding**. Follow these step-by-step UI actions, API specifications, and database validation queries to test the onboarding system from A to Z.
+This document is the official functional testing playbook for **Module 1: Platform Administration & Store Onboarding**. Follow these step-by-step UI actions, API specifications, and database validation queries to test the onboarding system from A to Z.
 
 ---
 
@@ -16,14 +16,14 @@ Before starting, ensure the following local configurations are active:
 
 ---
 
-## 🔍 Feature 1.1: System Tenant Onboarding
+## 🔍 Feature 1.1: System Store Onboarding
 
 ### 1.1.1 Objective
-Verify that a new tenant (business/store) can register on the platform, receive an isolated database sandbox, and have default roles and a standard Chart of Accounts (COA) seeded automatically.
+Verify that a new store (business/store) can register on the platform, receive an isolated database sandbox, and have default roles and a standard Chart of Accounts (COA) seeded automatically.
 
 ### 1.1.2 Step-by-Step UI Flow
 1. Open your browser and navigate to `http://localhost:3000/system` (Super-Admin Panel).
-2. Click on the **Onboard Tenant** button.
+2. Click on the **Onboard Store** button.
 3. Fill out the form with the following values:
    * **Store Name**: `Lazz Pharma`
    * **Subdomain**: `lazzpharma`
@@ -61,34 +61,34 @@ Verify that a new tenant (business/store) can register on the platform, receive 
   ```
 
 ### 1.1.4 Database Verification
-Connect to your database via terminal or GUI and run the following queries to verify database seeding and tenant isolation:
+Connect to your database via terminal or GUI and run the following queries to verify database seeding and store isolation:
 
-1. **Verify Tenant Record Creation**:
+1. **Verify Store Record Creation**:
    ```sql
    SELECT id, store_name, subdomain, status, active_subscription_id 
-   FROM tenants 
+   FROM stores 
    WHERE subdomain = 'lazzpharma';
    -- Expect 1 row: status = 'ACTIVE'
    ```
 2. **Verify Owner User Creation**:
    ```sql
-   SELECT id, email, is_staff, tenant_id 
+   SELECT id, email, is_staff, store_id 
    FROM users 
    WHERE email = 'owner@lazzpharma.com';
-   -- Expect 1 row: is_staff = false, tenant_id matches the tenant UUID above.
+   -- Expect 1 row: is_staff = false, store_id matches the store UUID above.
    ```
-3. **Verify Seeded Tenant-Specific Roles**:
+3. **Verify Seeded Store-Specific Roles**:
    ```sql
    SELECT id, name, is_system_role 
    FROM roles 
-   WHERE tenant_id = 'YOUR_TENANT_UUID';
+   WHERE store_id = 'YOUR_STORE_UUID';
    -- Expect default roles: Owner, Administrator, Cashier, Inventory Supervisor, Accountant, HR Manager.
    ```
 4. **Verify Seeded Chart of Accounts (COA)**:
    ```sql
    SELECT code, name, type 
    FROM accounts 
-   WHERE tenant_id = 'YOUR_TENANT_UUID'
+   WHERE store_id = 'YOUR_STORE_UUID'
    ORDER BY code ASC;
    -- Expect default accounting codes: 1000 (Cash), 1100 (Inventory), 1200 (AR), 2100 (AP), 2200 (Tax), 2300 (Wallet), 4000 (Revenue), 5000 (COGS).
    ```
@@ -98,17 +98,17 @@ Connect to your database via terminal or GUI and run the following queries to ve
 ## 🔍 Feature 1.2: Custom Domain Setup & DNS Resolution
 
 ### 1.2.1 Objective
-Verify that a tenant can configure their own custom business domain and successfully verify the CNAME/DNS records to route traffic.
+Verify that a store can configure their own custom business domain and successfully verify the CNAME/DNS records to route traffic.
 
 ### 1.2.2 Step-by-Step UI Flow
-1. Log in to the tenant panel: `http://lazzpharma.localhost:3000/admin`.
+1. Log in to the store panel: `http://lazzpharma.localhost:3000/admin`.
 2. Go to **Settings -> Domains**.
 3. Input custom domain: `lazzpharma.com` in the text field.
 4. Click **Request Custom Domain Verification**.
 
 ### 1.2.3 API Specification
 * **Request Domain Mapping**:
-  * **Endpoint**: `POST /api/v1/system/tenants/domain`
+  * **Endpoint**: `POST /api/v1/system/stores/domain`
   * **Payload**:
     ```json
     {
@@ -116,7 +116,7 @@ Verify that a tenant can configure their own custom business domain and successf
     }
     ```
 * **Trigger DNS Mock Resolution (Local Testing)**:
-  * **Endpoint**: `POST /api/v1/system/tenants/domain/verify`
+  * **Endpoint**: `POST /api/v1/system/stores/domain/verify`
   * **Payload**:
     ```json
     {
@@ -138,7 +138,7 @@ Verify that a tenant can configure their own custom business domain and successf
 Run this query to check that the domain configuration status is updated:
 ```sql
 SELECT custom_domain, custom_domain_status, custom_domain_verified_at, ssl_enabled 
-FROM tenants 
+FROM stores 
 WHERE subdomain = 'lazzpharma';
 -- Expect: custom_domain_status = 'VERIFIED', ssl_enabled = true, and verified timestamp populated.
 ```
@@ -151,12 +151,12 @@ WHERE subdomain = 'lazzpharma';
 Ensure that premium services are gated by active subscription plans and expire when subscription dates have passed.
 
 ### 1.3.2 Step-by-Step UI Flow & Simulation
-1. Onboard a tenant on a "Basic Tier" plan.
+1. Onboard a store on a "Basic Tier" plan.
 2. Attempt to open **Admin -> AI Settings** page (`/admin/settings/ai`).
 3. Verify that the UI displays a restriction modal or locks the page.
 4. Now, log in to your database tool and manually expire the subscription:
    ```sql
-   UPDATE tenants 
+   UPDATE stores 
    SET subscription_ends_at = NOW() - INTERVAL '1 day' 
    WHERE subdomain = 'lazzpharma';
    ```
@@ -164,12 +164,12 @@ Ensure that premium services are gated by active subscription plans and expire w
 
 ### 1.3.3 Expected Results
 * The page displays a full-screen banner: **"Subscription Expired. Access Suspended."**
-* Any HTTP calls made to API routes for the tenant return `403 Forbidden` with header message `Subscription Expired`.
+* Any HTTP calls made to API routes for the store return `403 Forbidden` with header message `Subscription Expired`.
 
 ---
 
 ## 🏁 Verification Status Checklist
-* [ ] Tenant creation succeeds on API.
+* [ ] Store creation succeeds on API.
 * [ ] Owner user is assigned the default Owner role.
 * [ ] Default COA entries are successfully seeded in `accounts` table.
 * [ ] Subdomain resolves correctly on local browser.

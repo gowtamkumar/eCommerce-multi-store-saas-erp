@@ -206,7 +206,7 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
                                         ))}
                                     </select>
                                     <p className="text-[11px] text-slate-400">
-                                        Set to <strong>Pending approval</strong> for expenses above your tenant&apos;s configured threshold.
+                                        Set to <strong>Pending approval</strong> for expenses above your store&apos;s configured threshold.
                                     </p>
                                 </div>
                             </div>

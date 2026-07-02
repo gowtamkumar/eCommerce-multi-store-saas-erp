@@ -43,7 +43,7 @@ export class AuthController {
 
     const authPayload = await this.authService.register(
       registerCredentialDto,
-      ctx.tenantId,
+      ctx.storeId,
       ipStr,
       userAgent,
     )
@@ -170,7 +170,7 @@ export class AuthController {
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called forgotPassword.`)
     const { email } = body
-    await this.authService.forgotPassword(email, ctx.tenantId)
+    await this.authService.forgotPassword(email, ctx.storeId)
     return {
       success: true,
       statusCode: 200,

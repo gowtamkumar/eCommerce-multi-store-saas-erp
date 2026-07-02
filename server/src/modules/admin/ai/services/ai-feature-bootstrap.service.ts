@@ -4,7 +4,7 @@ import { Repository } from 'typeorm'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 
 /**
- * Ensures existing tenants can use AI after the feature was introduced.
+ * Ensures existing stores can use AI after the feature was introduced.
  * Uses SQL inserts only — never TypeORM save() on partial permission relations.
  */
 @Injectable()

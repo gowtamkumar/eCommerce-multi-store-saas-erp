@@ -2,12 +2,12 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { RefundMethod, ReturnType } from '@/common/enums/refund-method.enum'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { OrderEntity } from './order.entity'
 
 @Entity('order_returns')
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'status'])
 export class OrderReturnEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
   @Index()
@@ -80,10 +80,10 @@ export class OrderReturnEntity extends BaseEntity {
   @Column({ type: 'timestamp', name: 'received_at', nullable: true })
   receivedAt: Date | null
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

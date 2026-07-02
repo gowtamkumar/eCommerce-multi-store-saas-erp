@@ -1,7 +1,7 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { PosShiftEntity } from './pos-shift.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 export enum PosDrawerTransactionType {
@@ -10,14 +10,14 @@ export enum PosDrawerTransactionType {
 }
 
 @Entity('pos_drawer_transactions')
-@Index(['tenantId', 'shiftId'])
+@Index(['storeId', 'shiftId'])
 export class PosDrawerTransactionEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'shift_id' })
   shiftId: string

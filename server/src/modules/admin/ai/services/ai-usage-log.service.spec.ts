@@ -29,7 +29,7 @@ describe('AiUsageLogService', () => {
 
   it('records usage with trimmed endpoint', async () => {
     await service.record({
-      tenantId: 'tenant-1',
+      storeId: 'store-1',
       endpoint: 'ai/chat',
       operation: 'chat',
       model: 'gpt-4o-mini',
@@ -40,7 +40,7 @@ describe('AiUsageLogService', () => {
 
     expect(repo.insert).toHaveBeenCalledWith(
       expect.objectContaining({
-        tenantId: 'tenant-1',
+        storeId: 'store-1',
         endpoint: 'ai/chat',
         totalTokens: 30,
       }),
@@ -56,7 +56,7 @@ describe('AiUsageLogService', () => {
     }
     repo.createQueryBuilder.mockReturnValue(qb as never)
 
-    const summary = await service.getSummary('tenant-1', 7)
+    const summary = await service.getSummary('store-1', 7)
 
     expect(summary.totalTokens).toBe(0)
     expect(summary.totalRequests).toBe(0)
@@ -92,7 +92,7 @@ describe('AiUsageLogService', () => {
     }
     repo.createQueryBuilder.mockReturnValue(qb as never)
 
-    const summary = await service.getSummary('tenant-1', 30)
+    const summary = await service.getSummary('store-1', 30)
 
     expect(summary.totalTokens).toBe(350)
     expect(summary.totalRequests).toBe(3)

@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,7 +7,7 @@ import { SupplierAPLedgerEntity } from './entities/supplier-ap-ledger.entity'
 import { SupplierAPReferenceType } from './enums/supplier-ap-Refernce-type.enum'
 
 @Injectable()
-export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPLedgerEntity> {
+export class SupplierAPLedgerRepository extends BaseStoreRepository<SupplierAPLedgerEntity> {
   constructor(
     @InjectRepository(SupplierAPLedgerEntity)
     private readonly repository: Repository<SupplierAPLedgerEntity>,
@@ -18,7 +18,7 @@ export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPL
   async createEntry(
     data: {
       supplierId: string
-      tenantId: string
+      storeId: string
       referenceType: SupplierAPReferenceType
       referenceId?: string
       debit?: number
@@ -34,7 +34,7 @@ export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPL
       .createQueryBuilder('ap')
       .setLock('pessimistic_write')
       .where('ap.supplierId = :supplierId', { supplierId: data.supplierId })
-      .andWhere('ap.tenantId = :tenantId', { tenantId: data.tenantId })
+      .andWhere('ap.storeId = :storeId', { storeId: data.storeId })
       .orderBy('ap.createdAt', 'DESC')
       .getOne()
 
@@ -46,7 +46,7 @@ export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPL
 
     const entry = repo.create({
       supplierId: data.supplierId,
-      tenantId: data.tenantId,
+      storeId: data.storeId,
       referenceType: data.referenceType,
       referenceId: data.referenceId,
       debit,
@@ -58,9 +58,9 @@ export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPL
     return repo.save(entry)
   }
 
-  async getBalance(supplierId: string, tenantId: string): Promise<number> {
+  async getBalance(supplierId: string, storeId: string): Promise<number> {
     const lastEntry = await this.repository.findOne({
-      where: { supplierId, tenantId },
+      where: { supplierId, storeId },
       order: { createdAt: 'DESC' },
     })
     return lastEntry ? Number(lastEntry.balanceAfter) : 0
@@ -71,7 +71,7 @@ export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPL
    * suppliers in a single query (avoids N+1 on supplier list endpoints).
    * Returns a map of supplierId -> outstanding balance (defaults to 0).
    */
-  async getBalances(supplierIds: string[], tenantId: string): Promise<Map<string, number>> {
+  async getBalances(supplierIds: string[], storeId: string): Promise<Map<string, number>> {
     const balances = new Map<string, number>()
     if (supplierIds.length === 0) return balances
 
@@ -86,11 +86,11 @@ export class SupplierAPLedgerRepository extends BaseTenantRepository<SupplierAPL
           ap.balance_after AS "balanceAfter"
         FROM supplier_ap_ledger ap
         WHERE ap.supplier_id = ANY($1::uuid[])
-          AND ap.tenant_id = $2::uuid
+          AND ap.store_id = $2::uuid
           AND ap.deleted_at IS NULL
         ORDER BY ap.supplier_id ASC, ap.created_at DESC
       `,
-      [supplierIds, tenantId],
+      [supplierIds, storeId],
     )
 
     for (const row of rows) {

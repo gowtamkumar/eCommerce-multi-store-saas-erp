@@ -929,8 +929,8 @@ export class UserService implements OnApplicationBootstrap {
     ctx: RequestContextDto,
   ): Promise<{ users: UserEntity[]; total: number }> {
     this.logger.log(`${this.getUsers.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const [users, total] = await this.userRepo.findAllWithFilters(filterUserDto, tenantId)
+    const storeId = ctx.storeId
+    const [users, total] = await this.userRepo.findAllWithFilters(filterUserDto, storeId)
     return { users, total }
   }
 
@@ -943,9 +943,9 @@ export class UserService implements OnApplicationBootstrap {
 
   async findOneUser(id: string, ctx: RequestContextDto): Promise<UserEntity> {
     this.logger.log(`${this.findOneUser.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const user = await this.userRepo.findByIdAndTenant(id, tenantId)
-    if (!user) throw new NotFoundException(`User with id ${id} not found in this tenant.`)
+    const storeId = ctx.storeId
+    const user = await this.userRepo.findByIdAndStore(id, storeId)
+    if (!user) throw new NotFoundException(`User with id ${id} not found in this store.`)
     return user
   }
 
@@ -970,14 +970,14 @@ export class UserService implements OnApplicationBootstrap {
     return user
   }
 
-  async findUserByUsername(username: string, tenantId?: string): Promise<UserEntity | null> {
+  async findUserByUsername(username: string, storeId?: string): Promise<UserEntity | null> {
     this.logger.log(`${this.findUserByUsername.name} Service Called`)
-    return this.userRepo.findByUsername(username, tenantId)
+    return this.userRepo.findByUsername(username, storeId)
   }
 
-  async findUserByEmail(email: string, tenantId?: string): Promise<UserEntity | null> {
+  async findUserByEmail(email: string, storeId?: string): Promise<UserEntity | null> {
     this.logger.log(`${this.findUserByEmail.name} Service Called`)
-    return this.userRepo.findByEmail(email, tenantId)
+    return this.userRepo.findByEmail(email, storeId)
   }
 
   async createUser(createUserDto: CreateUserDto, ctx: RequestContextDto): Promise<UserEntity> {
@@ -990,8 +990,8 @@ export class UserService implements OnApplicationBootstrap {
       } as any,
       ctx,
     )
-    if (ctx.tenantId) {
-      await this.cacheService.delCache('team:members', ctx.tenantId)
+    if (ctx.storeId) {
+      await this.cacheService.delCache('team:members', ctx.storeId)
     }
     return user
   }
@@ -1002,15 +1002,15 @@ export class UserService implements OnApplicationBootstrap {
     ctx?: RequestContextDto,
   ): Promise<UserEntity> {
     this.logger.log(`${this.updateUser.name} Service Called for ID: ${id}`)
-    const user = ctx?.tenantId ? await this.findOneUser(id, ctx) : await this.getUser(id)
+    const user = ctx?.storeId ? await this.findOneUser(id, ctx) : await this.getUser(id)
     const result = await this.userRepo.updateAndSave(user, updateUserDto)
 
     const cacheKey = `user:profile:${id}`
     await this.cacheService.delCache(cacheKey)
     this.logger.verbose(`Cache INVALIDATED for ${cacheKey} due to profile update`)
 
-    if (user.tenantId) {
-      await this.cacheService.delCache('team:members', user.tenantId)
+    if (user.storeId) {
+      await this.cacheService.delCache('team:members', user.storeId)
     }
 
     return result
@@ -1023,7 +1023,7 @@ export class UserService implements OnApplicationBootstrap {
   ): Promise<UserEntity> {
     this.logger.log(`${this.updatePassword.name} Service Called`)
     const { currentPassword, newPassword } = updatePasswordDto
-    const user = ctx?.tenantId ? await this.findOneUser(id, ctx) : await this.getUser(id)
+    const user = ctx?.storeId ? await this.findOneUser(id, ctx) : await this.getUser(id)
 
     const valid = await this.validateUser(user, currentPassword)
     if (!valid) throw new UnauthorizedException('Password is not valid')
@@ -1043,10 +1043,10 @@ export class UserService implements OnApplicationBootstrap {
 
   async deleteUser(id: string, ctx?: RequestContextDto): Promise<UserEntity> {
     this.logger.log(`${this.deleteUser.name} Service Called`)
-    const user = ctx?.tenantId ? await this.findOneUser(id, ctx) : await this.getUser(id)
+    const user = ctx?.storeId ? await this.findOneUser(id, ctx) : await this.getUser(id)
     const result = await this.userRepo.deleteUser(user)
-    if (user.tenantId) {
-      await this.cacheService.delCache('team:members', user.tenantId)
+    if (user.storeId) {
+      await this.cacheService.delCache('team:members', user.storeId)
     }
     return result
   }
@@ -1097,10 +1097,10 @@ export class UserService implements OnApplicationBootstrap {
     } as any)
   }
 
-  async countByTenant(ctx: RequestContextDto): Promise<number> {
-    this.logger.log(`${this.countByTenant.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.userRepo.countByTenant(tenantId)
+  async countByStore(ctx: RequestContextDto): Promise<number> {
+    this.logger.log(`${this.countByStore.name} Service Called`)
+    const storeId = ctx.storeId
+    return await this.userRepo.countByStore(storeId)
   }
 
   async setCurrentRefreshToken(refreshToken: string, userId: string): Promise<void> {
@@ -1139,20 +1139,20 @@ export class UserService implements OnApplicationBootstrap {
     ctx: RequestContextDto,
   ): Promise<{ members: UserEntity[]; pendingInvitations: StaffInvitationEntity[] }> {
     this.logger.log(`${this.getTeamMembers.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = 'team:members'
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
         const [members, pendingInvitations] = await Promise.all([
-          this.userRepo.findTeamMembers(tenantId),
-          this.invitationService.findPendingByTenant(ctx),
+          this.userRepo.findTeamMembers(storeId),
+          this.invitationService.findPendingByStore(ctx),
         ])
         return { members, pendingInvitations }
       },
       600, // 10 min cache
-      tenantId,
+      storeId,
     )
   }
 
@@ -1162,10 +1162,10 @@ export class UserService implements OnApplicationBootstrap {
     ctx: RequestContextDto,
   ): Promise<UserEntity> {
     this.logger.log(`${this.updateTeamMemberRole.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // SUPER_ADMIN is a platform-level role that bypasses all RBAC checks. It must
-    // never be grantable through tenant team management, otherwise any user with
+    // never be grantable through store team management, otherwise any user with
     // this endpoint's permission could escalate themselves/others to god-mode.
     if (role === UserRole.SUPER_ADMIN) {
       throw new ForbiddenException('The super admin role cannot be assigned.')
@@ -1173,20 +1173,20 @@ export class UserService implements OnApplicationBootstrap {
 
     const actorRole = (ctx.user?.role || '').toString().toLowerCase()
     const actorIsPrivileged = actorRole === UserRole.SUPER_ADMIN || actorRole === UserRole.ADMIN
-    // Only an existing admin/super-admin may grant the tenant ADMIN role.
+    // Only an existing admin/super-admin may grant the store ADMIN role.
     if (role === UserRole.ADMIN && !actorIsPrivileged) {
       throw new ForbiddenException('Only an administrator can grant the admin role.')
     }
 
-    const user = await this.userRepo.findByIdAndTenant(memberId, tenantId)
+    const user = await this.userRepo.findByIdAndStore(memberId, storeId)
     if (!user) throw new NotFoundException('Team member not found.')
-    // Never let a tenant operation modify an existing platform super admin.
+    // Never let a store operation modify an existing platform super admin.
     if (user.role === UserRole.SUPER_ADMIN) {
       throw new ForbiddenException('This user cannot be modified.')
     }
     const result = await this.userRepo.updateAndSave(user, { role })
-    await this.cacheService.delCache('team:members', tenantId)
-    await this.cacheService.delCache(`rbac:manifest:${tenantId}:${memberId}`)
+    await this.cacheService.delCache('team:members', storeId)
+    await this.cacheService.delCache(`rbac:manifest:${storeId}:${memberId}`)
     return result
   }
 }

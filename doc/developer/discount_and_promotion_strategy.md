@@ -1,20 +1,20 @@
 # A-Z Discount & Promotion Strategy Guideline
-## For Multi-Tenant eCommerce SaaS
+## For Multi-Store eCommerce SaaS
 
-This document provides a comprehensive blueprint for implementing and scaling a robust discount and promotion engine. It balances immediate marketing needs with long-term architectural scalability, ensuring each tenant can maintain their own unique sales strategies.
+This document provides a comprehensive blueprint for implementing and scaling a robust discount and promotion engine. It balances immediate marketing needs with long-term architectural scalability, ensuring each store can maintain their own unique sales strategies.
 
 ---
 
 ## 1. Strategic Architecture
-In a multi-tenant environment, the strategy resides in a **Rules-Based Engine** rather than hardcoded logic.
+In a multi-store environment, the strategy resides in a **Rules-Based Engine** rather than hardcoded logic.
 
 ### A. Core Distinction
 *   **Coupons (Manual)**: Customer enters a code at checkout. Validated against usage limits and expiry.
 *   **Promotions (Automatic)**: Applied automatically based on cart conditions (e.g., "Buy 2 get 1 free").
 *   **Direct Discounts (Product-Level)**: Strikethrough pricing (MSRP vs. Sales Price).
 
-### B. Tenant Isolation
-Every rule, coupon, and promotion **must** include a `tenant_id` foreign key. Pricing calculations must be scoped strictly to the current tenant context to prevent "leaking" discounts across stores.
+### B. Store Isolation
+Every rule, coupon, and promotion **must** include a `store_id` foreign key. Pricing calculations must be scoped strictly to the current store context to prevent "leaking" discounts across stores.
 
 ---
 
@@ -51,12 +51,12 @@ Extend the existing schema to support complex conditions.
 Do not calculate discounts in controllers. Create a `PricingEngineService`.
 1.  **Input**: Cart Items + Customer Context + Applied Coupons.
 2.  **Logic**:
-    *   Identify all active Automatic Promotions for the tenant.
+    *   Identify all active Automatic Promotions for the store.
     *   Validate Applied Coupons.
     *   **Prioritize Rules**: Apply "Product Level" first, then "Cart Automatic", then "Manual Coupon".
 3.  **Output**: A detailed breakdown object showing original price, total savings, and final price.
 
-### Phase 3: Admin Management (Tenant Dashboard)
+### Phase 3: Admin Management (Store Dashboard)
 Give store owners a powerful UI to manage campaigns:
 *   **Campaign Wizard**: A step-by-step UI to create "Flash Sales".
 *   **Exclusions Toggle**: Easily exclude "On Sale" enlightened items from further coupon discounts.
@@ -69,11 +69,11 @@ Give store owners a powerful UI to manage campaigns:
 
 ---
 
-## 4. Multi-Tenant Edge Cases & Rules
+## 4. Multi-Store Edge Cases & Rules
 ### I. Stacking Logic
-Define a "Strictly One" vs "Cumulative" policy per tenant.
-*   **Global Rule**: Most tenants prefer "Coupons cannot be used on already discounted items."
-*   **SaaS Setting**: Allow the tenant to choose their stacking policy in their Store Settings.
+Define a "Strictly One" vs "Cumulative" policy per store.
+*   **Global Rule**: Most stores prefer "Coupons cannot be used on already discounted items."
+*   **SaaS Setting**: Allow the store to choose their stacking policy in their Store Settings.
 
 ### II. Geographic Restrictions
 Restrict coupons to specific regions or postal codes (useful for shipping-heavy promotions).
@@ -85,7 +85,7 @@ Link promotions to **Customer Groups** (e.g., `Wholesale`, `VIP`, `Staff`).
 
 ## 5. Performance Engineering
 In a SaaS with millions of requests, calculating discounts on every page load is expensive.
-*   **Cache Results**: Cache the "Calculated Price" for active promotions in Redis, keyed by `tenant_id:product_id`.
+*   **Cache Results**: Cache the "Calculated Price" for active promotions in Redis, keyed by `store_id:product_id`.
 *   **Pre-computing**: Compute the "Final Display Price" and store it in a `search_index` (Elasticsearch/Typesense) to avoid heavy SQL JOINs.
 
 ---
@@ -188,7 +188,7 @@ export class PricingService {
 ---
 
 ## Summary Checklist
-- [x] Tenant-ID scoped schema.
+- [x] Store-ID scoped schema.
 - [x] Centralized `PricingEngine` service using **Strategy Pattern**.
 - [x] Support for Percentage, Fixed, and Free Shipping.
 - [x] Expiry dates and usage limits per customer.

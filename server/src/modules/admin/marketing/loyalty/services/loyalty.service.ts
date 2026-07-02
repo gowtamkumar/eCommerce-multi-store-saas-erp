@@ -19,13 +19,13 @@ export class LoyaltyService {
   ) {}
 
   /**
-   * Retrieves the tenant's loyalty configuration or creates a default one if it doesn't exist.
+   * Retrieves the store's loyalty configuration or creates a default one if it doesn't exist.
    */
-  async getOrCreateConfig(tenantId: string, manager?: EntityManager): Promise<LoyaltyConfigEntity> {
+  async getOrCreateConfig(storeId: string, manager?: EntityManager): Promise<LoyaltyConfigEntity> {
     const em = manager || this.dataSource.manager
-    let config = await em.findOne(LoyaltyConfigEntity, { where: { tenantId } })
+    let config = await em.findOne(LoyaltyConfigEntity, { where: { storeId } })
     if (!config) {
-      config = em.create(LoyaltyConfigEntity, { tenantId })
+      config = em.create(LoyaltyConfigEntity, { storeId })
       config = await em.save(LoyaltyConfigEntity, config)
     }
     return config
@@ -36,11 +36,11 @@ export class LoyaltyService {
    */
   async getAvailablePoints(
     customerId: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<number> {
     const em = manager || this.dataSource.manager
-    const user = await em.findOne(UserEntity, { where: { id: customerId, tenantId } })
+    const user = await em.findOne(UserEntity, { where: { id: customerId, storeId } })
     return user ? user.loyaltyPointsBalance : 0
   }
 
@@ -101,11 +101,11 @@ export class LoyaltyService {
     em: EntityManager,
     points: number,
   ): Promise<LoyaltyLedgerEntity | null> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // Row lock user for update to prevent race conditions on balance updates
     const user = await em.findOne(UserEntity, {
-      where: { id: data.customerId, tenantId },
+      where: { id: data.customerId, storeId },
       lock: { mode: 'pessimistic_write' },
     })
 
@@ -114,7 +114,7 @@ export class LoyaltyService {
     }
 
     // Try to insert the ledger entry first; if a duplicate row already
-    // exists for the same (tenant, customer, type, referenceType, referenceId)
+    // exists for the same (store, customer, type, referenceType, referenceId)
     // we skip the balance update entirely — that's how we guarantee a
     // single earn per order/referral/etc.
     const ledgerEntry = em.create(LoyaltyLedgerEntity, {
@@ -125,7 +125,7 @@ export class LoyaltyService {
       referenceType: data.referenceType,
       referenceId: data.referenceId,
       note: data.note,
-      tenantId,
+      storeId,
       createdBy: data.createdBy || ctx.userId,
       expiresAt: data.expiresAt ?? null,
       remainingPoints: points,
@@ -192,11 +192,11 @@ export class LoyaltyService {
     em: EntityManager,
     points: number,
   ): Promise<LoyaltyLedgerEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // Row lock user for update
     const user = await em.findOne(UserEntity, {
-      where: { id: data.customerId, tenantId },
+      where: { id: data.customerId, storeId },
       lock: { mode: 'pessimistic_write' },
     })
 
@@ -218,8 +218,8 @@ export class LoyaltyService {
     let remaining = points
     const batches = await em
       .createQueryBuilder(LoyaltyLedgerEntity, 'l')
-      .where('l.tenant_id = :tenantId AND l.customer_id = :customerId', {
-        tenantId,
+      .where('l.store_id = :storeId AND l.customer_id = :customerId', {
+        storeId,
         customerId: data.customerId,
       })
       .andWhere('l.remaining_points > 0')
@@ -248,7 +248,7 @@ export class LoyaltyService {
       referenceType: data.referenceType,
       referenceId: data.referenceId,
       note: data.note,
-      tenantId,
+      storeId,
       createdBy: data.createdBy || ctx.userId,
       remainingPoints: 0,
     })
@@ -262,12 +262,12 @@ export class LoyaltyService {
    * unique partial index on (referenceType='EXPIRY', referenceId=batchId)
    * keeps repeated runs safe.
    */
-  async expirePoints(tenantId: string): Promise<{ batchesExpired: number; pointsExpired: number }> {
+  async expirePoints(storeId: string): Promise<{ batchesExpired: number; pointsExpired: number }> {
     return this.dataSource.transaction(async (em) => {
       const now = new Date()
       const expired = await em
         .createQueryBuilder(LoyaltyLedgerEntity, 'l')
-        .where('l.tenant_id = :tenantId', { tenantId })
+        .where('l.store_id = :storeId', { storeId })
         .andWhere('l.remaining_points > 0')
         .andWhere('l.expires_at IS NOT NULL AND l.expires_at <= :now', { now })
         .setLock('pessimistic_write')
@@ -281,7 +281,7 @@ export class LoyaltyService {
         // Lock the user and adjust their balance down by what's actually
         // still available (never below zero).
         const user = await em.findOne(UserEntity, {
-          where: { id: batch.customerId, tenantId },
+          where: { id: batch.customerId, storeId },
           lock: { mode: 'pessimistic_write' },
         })
         if (!user) continue
@@ -300,7 +300,7 @@ export class LoyaltyService {
           referenceType: 'EXPIRY',
           referenceId: batch.id,
           note: `Auto-expired ${reduce} pts from earn dated ${batch.createdAt?.toISOString?.() ?? batch.createdAt}`,
-          tenantId,
+          storeId,
           remainingPoints: 0,
         })
         try {
@@ -316,16 +316,16 @@ export class LoyaltyService {
   }
 
   /**
-   * Outstanding loyalty liability per tenant — sum of unredeemed,
+   * Outstanding loyalty liability per store — sum of unredeemed,
    * unexpired remaining_points. Used by the finance/marketing dashboards
    * to surface deferred-revenue exposure.
    */
-  async getLiability(tenantId: string): Promise<{ outstandingPoints: number; customers: number }> {
+  async getLiability(storeId: string): Promise<{ outstandingPoints: number; customers: number }> {
     const row = await this.dataSource
       .createQueryBuilder(LoyaltyLedgerEntity, 'l')
       .select('COALESCE(SUM(l.remaining_points), 0)', 'pts')
       .addSelect('COUNT(DISTINCT l.customer_id)', 'customers')
-      .where('l.tenant_id = :tenantId', { tenantId })
+      .where('l.store_id = :storeId', { storeId })
       .andWhere('l.remaining_points > 0')
       .andWhere('(l.expires_at IS NULL OR l.expires_at > NOW())')
       .getRawOne<{ pts: string; customers: string }>()
@@ -355,7 +355,7 @@ export class LoyaltyService {
           link: '/account/loyalty',
           userId: customerId,
         },
-        ctx.tenantId,
+        ctx.storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger loyalty points notification: ${e.message}`)
@@ -371,7 +371,7 @@ export class LoyaltyService {
     manager?: EntityManager,
   ): Promise<void> {
     const em = manager || this.dataSource.manager
-    const config = await this.getOrCreateConfig(ctx.tenantId, em)
+    const config = await this.getOrCreateConfig(ctx.storeId, em)
     if (!config.isEnabled) {
       return
     }
@@ -382,7 +382,7 @@ export class LoyaltyService {
     }
 
     // Resolve membership tier multiplier
-    const user = await em.findOne(UserEntity, { where: { id: customerId, tenantId: ctx.tenantId } })
+    const user = await em.findOne(UserEntity, { where: { id: customerId, storeId: ctx.storeId } })
     if (!user) {
       return
     }
@@ -405,7 +405,7 @@ export class LoyaltyService {
     // Load full order details with items and product categories
     const resolvedOrder =
       (await em.findOne(OrderEntity, {
-        where: { id: order.id, tenantId: ctx.tenantId },
+        where: { id: order.id, storeId: ctx.storeId },
         relations: {
           items: {
             product: true,
@@ -417,7 +417,7 @@ export class LoyaltyService {
 
     // Load active and valid dynamic rules
     const activeRules = await em.find(LoyaltyRuleEntity, {
-      where: { tenantId: ctx.tenantId, isActive: true },
+      where: { storeId: ctx.storeId, isActive: true },
     })
 
     const validRules = activeRules.filter((rule) => {
@@ -505,25 +505,25 @@ export class LoyaltyService {
   /**
    * Fetches full history log for a customer.
    */
-  async getPointsHistory(customerId: string, tenantId: string): Promise<LoyaltyLedgerEntity[]> {
+  async getPointsHistory(customerId: string, storeId: string): Promise<LoyaltyLedgerEntity[]> {
     return await this.dataSource.manager.find(LoyaltyLedgerEntity, {
-      where: { customerId, tenantId },
+      where: { customerId, storeId },
       order: { createdAt: 'DESC' },
     })
   }
 
   // --- Loyalty Rules CRUD ---
 
-  async findAllRules(tenantId: string): Promise<LoyaltyRuleEntity[]> {
+  async findAllRules(storeId: string): Promise<LoyaltyRuleEntity[]> {
     return this.dataSource.manager.find(LoyaltyRuleEntity, {
-      where: { tenantId },
+      where: { storeId },
       order: { createdAt: 'DESC' },
     })
   }
 
-  async findRuleById(id: string, tenantId: string): Promise<LoyaltyRuleEntity> {
+  async findRuleById(id: string, storeId: string): Promise<LoyaltyRuleEntity> {
     const rule = await this.dataSource.manager.findOne(LoyaltyRuleEntity, {
-      where: { id, tenantId },
+      where: { id, storeId },
     })
     if (!rule) {
       throw new BadRequestException(`Loyalty rule with ID ${id} not found`)
@@ -531,11 +531,11 @@ export class LoyaltyService {
     return rule
   }
 
-  async createRule(data: Partial<LoyaltyRuleEntity>, tenantId: string): Promise<LoyaltyRuleEntity> {
+  async createRule(data: Partial<LoyaltyRuleEntity>, storeId: string): Promise<LoyaltyRuleEntity> {
     const em = this.dataSource.manager
     const rule = em.create(LoyaltyRuleEntity, {
       ...data,
-      tenantId,
+      storeId,
     })
     return em.save(LoyaltyRuleEntity, rule)
   }
@@ -543,17 +543,17 @@ export class LoyaltyService {
   async updateRule(
     id: string,
     data: Partial<LoyaltyRuleEntity>,
-    tenantId: string,
+    storeId: string,
   ): Promise<LoyaltyRuleEntity> {
     const em = this.dataSource.manager
-    const rule = await this.findRuleById(id, tenantId)
+    const rule = await this.findRuleById(id, storeId)
     Object.assign(rule, data)
     return em.save(LoyaltyRuleEntity, rule)
   }
 
-  async deleteRule(id: string, tenantId: string): Promise<void> {
+  async deleteRule(id: string, storeId: string): Promise<void> {
     const em = this.dataSource.manager
-    const rule = await this.findRuleById(id, tenantId)
+    const rule = await this.findRuleById(id, storeId)
     await em.softRemove(LoyaltyRuleEntity, rule)
   }
 }

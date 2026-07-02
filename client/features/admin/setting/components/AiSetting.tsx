@@ -161,7 +161,7 @@ export function AiSetting() {
           <p className="font-bold text-slate-800 dark:text-slate-100">Enable AI features for this store</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Connect OpenRouter, OpenAI, Anthropic, Google Gemini, Azure OpenAI, or a custom provider.
-            Credentials are stored per tenant and never shared across stores.
+            Credentials are stored per store and never shared across stores.
           </p>
         </div>
       </div>
@@ -194,7 +194,7 @@ export function AiSetting() {
             hint={
               apiKeyPreview
                 ? `Saved key: ${apiKeyPreview}. Enter a new key only to replace it.`
-                : "Required for AI features. Stored securely on your tenant record."
+                : "Required for AI features. Stored securely on your store record."
             }
           />
         </div>

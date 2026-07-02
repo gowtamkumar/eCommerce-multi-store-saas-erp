@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { AiProviderType } from '@/common/types/tenant-ai-config.types'
+import { AiProviderType } from '@/common/types/store-ai-config.types'
 import {
   IsBoolean,
   IsNumber,

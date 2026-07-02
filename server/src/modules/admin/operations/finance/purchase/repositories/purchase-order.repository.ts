@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -8,7 +8,7 @@ import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-stat
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderEntity> {
+export class PurchaseOrderRepository extends BaseStoreRepository<PurchaseOrderEntity> {
   constructor(
     @InjectRepository(PurchaseOrderEntity)
     repo: Repository<PurchaseOrderEntity>,
@@ -28,7 +28,7 @@ export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderE
     const repo = this.getRepo(manager)
     const purchaseOrder = repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as PurchaseOrderEntity)
     return repo.save(purchaseOrder)
@@ -38,8 +38,8 @@ export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderE
    * Fetches paginated purchase orders with optimized relations.
    * Supports server-side filtering by status and searching on reference #.
    */
-  async findAllByTenant(
-    tenantId: string,
+  async findAllByStore(
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -50,7 +50,7 @@ export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderE
       .createQueryBuilder('po')
       .leftJoinAndSelect('po.supplier', 'supplier')
       .leftJoinAndSelect('po.user', 'user')
-      .where('po.tenantId = :tenantId', { tenantId })
+      .where('po.storeId = :storeId', { storeId })
       .orderBy('po.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -72,12 +72,12 @@ export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderE
 
   async findByIdWithRelations(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         supplier: true,
         items: {
@@ -92,12 +92,12 @@ export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderE
 
   async findById(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 
@@ -109,9 +109,9 @@ export class PurchaseOrderRepository extends BaseTenantRepository<PurchaseOrderE
     return await repo.save(order)
   }
 
-  async findAllBySupplier(supplierId: string, tenantId: string): Promise<PurchaseOrderEntity[]> {
+  async findAllBySupplier(supplierId: string, storeId: string): Promise<PurchaseOrderEntity[]> {
     return await this.repo.find({
-      where: { supplierId, tenantId },
+      where: { supplierId, storeId },
       relations: {
         items: true,
       },

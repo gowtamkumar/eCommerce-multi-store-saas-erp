@@ -1,19 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { DataSource, Between, MoreThanOrEqual } from 'typeorm'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreService } from '@/modules/system/store/store.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { TrafficService } from './traffic.service'
 import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SubscriptionInvoiceEntity } from '../subscription-billing/entities/subscription-invoice.entity'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
-import { TenantHealthAggregate } from './types/tenant-health.types'
+import { StoreHealthAggregate } from './types/store-health.types'
 
 @Injectable()
 export class SuperAdminService {
@@ -21,7 +21,7 @@ export class SuperAdminService {
 
   constructor(
     private readonly userService: UserService,
-    private readonly tenantService: TenantService,
+    private readonly storeService: StoreService,
     private readonly orderService: OrderService,
     private readonly trafficService: TrafficService,
     private readonly productService: ProductService,
@@ -64,24 +64,24 @@ export class SuperAdminService {
   async getOverview(days?: number): Promise<any> {
     const daysNum = Number(days) || 7
     const [
-      tenantOverview,
+      storeOverview,
       userOverview,
       productOverview,
       orderOverview,
       traffic,
       totalReviews,
-      tenantTrend,
+      storeTrend,
       userTrend,
       orderTrend,
       reviewTrend,
     ] = await Promise.all([
-      this.tenantService.tenantOverview(),
+      this.storeService.storeOverview(),
       this.userService.userOverview(),
       this.productService.productOverview(),
       this.orderService.orderOverview(),
       this.trafficService.getGlobalTrafficStats(daysNum),
       this.dataSource.getRepository(ReviewEntity).count(),
-      this.calculateTrendForRepository(this.dataSource.getRepository(TenantEntity), daysNum),
+      this.calculateTrendForRepository(this.dataSource.getRepository(StoreEntity), daysNum),
       this.calculateTrendForRepository(this.dataSource.getRepository(UserEntity), daysNum),
       this.calculateTrendForRepository(this.dataSource.getRepository(OrderEntity), daysNum),
       this.calculateTrendForRepository(this.dataSource.getRepository(ReviewEntity), daysNum),
@@ -106,7 +106,7 @@ export class SuperAdminService {
         : null
 
     return {
-      ...tenantOverview,
+      ...storeOverview,
       ...userOverview,
       ...productOverview,
       ...orderOverview,
@@ -114,7 +114,7 @@ export class SuperAdminService {
       traffic,
       totalRequestsLast24h,
       trends: {
-        tenants: tenantTrend,
+        stores: storeTrend,
         users: userTrend,
         orders: orderTrend,
         reviews: reviewTrend,
@@ -125,9 +125,9 @@ export class SuperAdminService {
 
   async getOverviewCompare(days?: number): Promise<any> {
     const daysNum = Number(days) || 7
-    const [tenantTrend, userTrend, orderTrend, reviewTrend, traffic, prevTraffic] =
+    const [storeTrend, userTrend, orderTrend, reviewTrend, traffic, prevTraffic] =
       await Promise.all([
-        this.calculateTrendForRepository(this.dataSource.getRepository(TenantEntity), daysNum),
+        this.calculateTrendForRepository(this.dataSource.getRepository(StoreEntity), daysNum),
         this.calculateTrendForRepository(this.dataSource.getRepository(UserEntity), daysNum),
         this.calculateTrendForRepository(this.dataSource.getRepository(OrderEntity), daysNum),
         this.calculateTrendForRepository(this.dataSource.getRepository(ReviewEntity), daysNum),
@@ -145,7 +145,7 @@ export class SuperAdminService {
         : null
 
     return {
-      tenants: tenantTrend,
+      stores: storeTrend,
       users: userTrend,
       orders: orderTrend,
       reviews: reviewTrend,
@@ -212,7 +212,7 @@ export class SuperAdminService {
 
     const qb = invoiceRepo
       .createQueryBuilder('inv')
-      .leftJoinAndSelect('inv.tenant', 'tenant')
+      .leftJoinAndSelect('inv.store', 'store')
       .leftJoinAndSelect('inv.subscriptionPlan', 'plan')
       .orderBy('inv.billingDate', 'DESC')
       .skip((pageNum - 1) * limitNum)
@@ -224,7 +224,7 @@ export class SuperAdminService {
 
     if (search) {
       qb.andWhere(
-        '(tenant.storeName ILIKE :search OR inv.invoiceNumber ILIKE :search OR inv.transactionId ILIKE :search)',
+        '(store.storeName ILIKE :search OR inv.invoiceNumber ILIKE :search OR inv.transactionId ILIKE :search)',
         { search: `%${search}%` },
       )
     }
@@ -265,7 +265,7 @@ export class SuperAdminService {
   }
 
   async getChurnAnalytics(): Promise<any[]> {
-    const tenants = await this.dataSource.getRepository(TenantEntity).find({
+    const stores = await this.dataSource.getRepository(StoreEntity).find({
       relations: {
         activeSubscription: {
           subscriptionPlan: true,
@@ -273,11 +273,11 @@ export class SuperAdminService {
       },
     })
 
-    const churned = tenants
+    const churned = stores
       .filter((t) => {
         const subStatus = t.subscriptionStatus
         return (
-          t.status === TenantStatus.SUSPENDED ||
+          t.status === StoreStatus.SUSPENDED ||
           subStatus === SubscriptionStatus.EXPIRED ||
           subStatus === SubscriptionStatus.CANCELED ||
           subStatus === SubscriptionStatus.PAST_DUE
@@ -296,19 +296,19 @@ export class SuperAdminService {
     return churned
   }
 
-  async getTenantHealthAggregate(days?: number): Promise<TenantHealthAggregate> {
+  async getStoreHealthAggregate(days?: number): Promise<StoreHealthAggregate> {
     const periodDays = Number(days) || 7
     const now = new Date()
     const trialExpiryHorizon = new Date(now)
     trialExpiryHorizon.setDate(trialExpiryHorizon.getDate() + 7)
 
-    const [overview, billing, tenants, bulkAnalytics] = await Promise.all([
+    const [overview, billing, stores, bulkAnalytics] = await Promise.all([
       this.getOverview(periodDays),
       this.getBillingOverview(),
-      this.dataSource.getRepository(TenantEntity).find({
+      this.dataSource.getRepository(StoreEntity).find({
         relations: { activeSubscription: { subscriptionPlan: true } },
       }),
-      this.tenantService.getBulkTenantAnalytics(),
+      this.storeService.getBulkStoreAnalytics(),
     ])
 
     const byPlanTier: Record<string, number> = {}
@@ -317,11 +317,11 @@ export class SuperAdminService {
     let pastDueCount = 0
     let atRiskSubscriptionCount = 0
 
-    for (const tenant of tenants) {
-      const planName = tenant.subscriptionPlan?.name?.trim() || 'Unassigned'
+    for (const store of stores) {
+      const planName = store.subscriptionPlan?.name?.trim() || 'Unassigned'
       byPlanTier[planName] = (byPlanTier[planName] || 0) + 1
 
-      const subStatus = tenant.subscriptionStatus || 'none'
+      const subStatus = store.subscriptionStatus || 'none'
       bySubscriptionStatus[subStatus] = (bySubscriptionStatus[subStatus] || 0) + 1
 
       if (subStatus === SubscriptionStatus.PAST_DUE) {
@@ -332,33 +332,33 @@ export class SuperAdminService {
         subStatus === SubscriptionStatus.PAST_DUE ||
         subStatus === SubscriptionStatus.EXPIRED ||
         subStatus === SubscriptionStatus.CANCELED ||
-        tenant.status === TenantStatus.SUSPENDED
+        store.status === StoreStatus.SUSPENDED
       ) {
         atRiskSubscriptionCount += 1
       }
 
-      if (subStatus === SubscriptionStatus.TRIAL && tenant.subscriptionEndsAt) {
-        const endsAt = new Date(tenant.subscriptionEndsAt)
+      if (subStatus === SubscriptionStatus.TRIAL && store.subscriptionEndsAt) {
+        const endsAt = new Date(store.subscriptionEndsAt)
         if (endsAt >= now && endsAt <= trialExpiryHorizon) {
           trialsExpiringWithin7Days += 1
         }
       }
     }
 
-    const activeTenantAnalytics = bulkAnalytics.filter(
-      (row) => (row.status || '').toLowerCase() === TenantStatus.ACTIVE,
+    const activeStoreAnalytics = bulkAnalytics.filter(
+      (row) => (row.status || '').toLowerCase() === StoreStatus.ACTIVE,
     )
-    const orderCounts = activeTenantAnalytics.map((row) => row.stats?.orders || 0)
-    const tenantsWithZeroOrders = orderCounts.filter((count) => count === 0).length
-    const tenantsWithZeroProducts = activeTenantAnalytics.filter(
+    const orderCounts = activeStoreAnalytics.map((row) => row.stats?.orders || 0)
+    const storesWithZeroOrders = orderCounts.filter((count) => count === 0).length
+    const storesWithZeroProducts = activeStoreAnalytics.filter(
       (row) => (row.stats?.products || 0) === 0,
     ).length
-    const lowActivityTenantCount = activeTenantAnalytics.filter(
+    const lowActivityStoreCount = activeStoreAnalytics.filter(
       (row) => (row.stats?.orders || 0) === 0 && (row.stats?.products || 0) === 0,
     ).length
 
     const sortedOrderCounts = [...orderCounts].sort((a, b) => a - b)
-    const medianOrdersPerActiveTenant =
+    const medianOrdersPerActiveStore =
       sortedOrderCounts.length === 0
         ? 0
         : sortedOrderCounts.length % 2 === 1
@@ -375,16 +375,16 @@ export class SuperAdminService {
       0,
     )
 
-    const tenantStats = await this.tenantService.tenantOverview()
+    const storeStats = await this.storeService.storeOverview()
 
     return {
       periodDays,
       generatedAt: now.toISOString(),
-      tenants: {
-        total: tenantStats.totalTenants,
-        active: tenantStats.activeTenants,
-        suspended: tenantStats.suspendedTenants,
-        archived: tenantStats.archivedTenants,
+      stores: {
+        total: storeStats.totalStores,
+        active: storeStats.activeStores,
+        suspended: storeStats.suspendedStores,
+        archived: storeStats.archivedStores,
         byPlanTier,
         bySubscriptionStatus,
         trialsExpiringWithin7Days,
@@ -401,10 +401,10 @@ export class SuperAdminService {
         totalUsers: overview.totalUsers || 0,
         totalOrders: overview.totalOrders || 0,
         totalProducts: overview.totalProducts || 0,
-        tenantsWithZeroOrders,
-        tenantsWithZeroProducts,
-        lowActivityTenantCount,
-        medianOrdersPerActiveTenant,
+        storesWithZeroOrders,
+        storesWithZeroProducts,
+        lowActivityStoreCount,
+        medianOrdersPerActiveStore,
       },
       trends: overview.trends || {},
       traffic: { requestsInPeriod },
@@ -415,7 +415,7 @@ export class SuperAdminService {
     const invoiceRepo = this.dataSource.getRepository(SubscriptionInvoiceEntity)
     return await invoiceRepo.find({
       relations: {
-        tenant: true,
+        store: true,
         subscriptionPlan: true,
       },
       order: { billingDate: 'DESC' },

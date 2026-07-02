@@ -4,10 +4,10 @@ import {
   PlanDescriptionResultDto,
 } from '../dto/generate-plan-description.dto'
 import { PlatformAiClientService } from './platform-ai-client.service'
-import { TenantHealthAggregate } from '@/modules/system/super-admin/types/tenant-health.types'
+import { StoreHealthAggregate } from '@/modules/system/super-admin/types/store-health.types'
 import {
-  TenantHealthNarrativeResultDto,
-} from '@/modules/system/super-admin/dto/tenant-health.dto'
+  StoreHealthNarrativeResultDto,
+} from '@/modules/system/super-admin/dto/store-health.dto'
 import {
   GenerateOnboardingHintsDto,
   OnboardingHintsResultDto,
@@ -45,7 +45,7 @@ ${dto.quotaSummary ? `Resource limits: ${dto.quotaSummary}` : ''}
 ${dto.existingDescription ? `Existing description to improve or replace: ${dto.existingDescription}` : ''}
 ${dto.tone ? `Tone: ${dto.tone}` : 'Tone: confident, clear, and conversion-focused'}
 
-Audience: merchants evaluating a multi-tenant e-commerce / ERP SaaS platform.
+Audience: merchants evaluating a multi-store e-commerce / ERP SaaS platform.
 Write customer-facing pricing page copy — not internal technical notes.
 
 Return exactly this JSON shape:
@@ -70,10 +70,10 @@ Return exactly this JSON shape:
     })
   }
 
-  async generateTenantHealthNarrative(
-    snapshot: TenantHealthAggregate,
-  ): Promise<Omit<TenantHealthNarrativeResultDto, 'snapshot'>> {
-    const prompt = `Analyze platform tenant health and churn risk using ONLY the aggregate metrics below.
+  async generateStoreHealthNarrative(
+    snapshot: StoreHealthAggregate,
+  ): Promise<Omit<StoreHealthNarrativeResultDto, 'snapshot'>> {
+    const prompt = `Analyze platform store health and churn risk using ONLY the aggregate metrics below.
 Do NOT invent individual merchant names, emails, or identifiers. This is a Super Admin SaaS platform overview.
 
 Metrics JSON:
@@ -84,7 +84,7 @@ Write an executive churn-risk narrative for the platform operator as JSON only (
 Rules:
 - Use only the provided aggregate counts and percentages you can derive from them
 - Flag billing, trial conversion, engagement, and subscription status risks
-- recommendedActions must be operational (e.g. dunning, trial outreach) without naming tenants
+- recommendedActions must be operational (e.g. dunning, trial outreach) without naming stores
 - riskLevel: low | moderate | elevated | critical
 
 Return exactly this JSON shape:
@@ -100,14 +100,14 @@ Return exactly this JSON shape:
         {
           role: 'system',
           content:
-            'You are a B2B SaaS customer success analyst. Respond with valid JSON only, no extra text. Never reference individual tenants.',
+            'You are a B2B SaaS customer success analyst. Respond with valid JSON only, no extra text. Never reference individual stores.',
         },
         { role: 'user', content: prompt },
       ],
       { temperature: 0.4, maxTokens: 900 },
     )
 
-    return this.parseJsonResponse<Omit<TenantHealthNarrativeResultDto, 'snapshot'>>(result.content, {
+    return this.parseJsonResponse<Omit<StoreHealthNarrativeResultDto, 'snapshot'>>(result.content, {
       summary: result.content.slice(0, 600),
       riskLevel: 'moderate',
       keySignals: [],
@@ -124,7 +124,7 @@ ${dto.tone ? `Tone: ${dto.tone}` : 'Tone: clear, neutral, and actionable'}
 Conversation / ticket notes:
 ${dto.conversationText}
 
-${dto.tenantContext ? `Tenant context:\n${dto.tenantContext}` : 'No tenant context provided.'}
+${dto.storeContext ? `Store context:\n${dto.storeContext}` : 'No store context provided.'}
 ${dto.issueSummary ? `Issue reference:\n${dto.issueSummary}` : ''}
 
 Return exactly this JSON shape:
@@ -135,7 +135,7 @@ Return exactly this JSON shape:
   "escalationHint": "string (when to escalate to engineering or billing, 1-2 sentences)"
 }
 
-Rules: Do not invent order ids, emails, or tenant facts not in the input. Draft for human agents only.`
+Rules: Do not invent order ids, emails, or store facts not in the input. Draft for human agents only.`
 
     const result = await this.platformAiClient.chatCompletion(
       [
@@ -160,7 +160,7 @@ Rules: Do not invent order ids, emails, or tenant facts not in the input. Draft 
   async generateOnboardingHints(
     dto: GenerateOnboardingHintsDto,
   ): Promise<OnboardingHintsResultDto> {
-    const prompt = `Write onboarding guidance for a new merchant on a multi-tenant e-commerce / ERP SaaS platform as JSON only (no markdown fences).
+    const prompt = `Write onboarding guidance for a new merchant on a multi-store e-commerce / ERP SaaS platform as JSON only (no markdown fences).
 Store name: ${dto.storeName}
 ${dto.subdomain ? `Subdomain: ${dto.subdomain}` : ''}
 ${dto.planName ? `Plan: ${dto.planName}` : ''}
@@ -168,7 +168,7 @@ ${dto.enabledFeatures ? `Enabled modules: ${dto.enabledFeatures}` : ''}
 ${dto.merchantProfile ? `Merchant profile: ${dto.merchantProfile}` : ''}
 ${dto.tone ? `Tone: ${dto.tone}` : 'Tone: welcoming and practical'}
 
-Audience: store owner setting up their tenant for the first time.
+Audience: store owner setting up their store for the first time.
 Do not invent integrations or features not implied by enabled modules.
 
 Return exactly this JSON shape:

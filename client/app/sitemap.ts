@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 import { headers } from 'next/headers'
 import nestApiUrl from '@/lib/api-url'
-import { getTenantId } from '@/services/tenant'
+import { getStoreId } from '@/services/store'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,7 @@ const STATIC_ROUTES = [
   '/register',
 ] as const
 
-/** Resolve the tenant's own canonical base URL (custom domain wins). */
+/** Resolve the store's own canonical base URL (custom domain wins). */
 async function resolveBaseUrl(): Promise<string> {
   const headerList = await headers()
   const host = headerList.get('host') ?? ''
@@ -25,8 +25,8 @@ async function resolveBaseUrl(): Promise<string> {
   )
 }
 
-async function fetchTenantSlugs(
-  tenantId: string,
+async function fetchStoreSlugs(
+  storeId: string,
   pathPrefix: string,
   endpoint: string,
 ): Promise<{ url: string; lastModified?: Date }[]> {
@@ -34,7 +34,7 @@ async function fetchTenantSlugs(
     // We deliberately request a generous page size and treat any failure as
     // a no-op — a partial sitemap is fine, a 500'd sitemap is not.
     const res = await fetch(`${nestApiUrl}${endpoint}`, {
-      headers: { 'x-tenant-id': tenantId },
+      headers: { 'x-store-id': storeId },
       cache: 'no-store',
     })
     if (!res.ok) return []
@@ -53,7 +53,7 @@ async function fetchTenantSlugs(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = await resolveBaseUrl()
-  const tenantId = await getTenantId(null, false)
+  const storeId = await getStoreId(null, false)
 
   const staticEntries = STATIC_ROUTES.map((route) => ({
     url: `${baseUrl}${route}`,
@@ -62,17 +62,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '' ? 1 : 0.7,
   }))
 
-  if (!tenantId) {
+  if (!storeId) {
     // SaaS landing — only the static marketing pages are crawl-worthy.
     return staticEntries
   }
 
-  // Best-effort: enrich with the tenant's own pages and products. Both are
+  // Best-effort: enrich with the store's own pages and products. Both are
   // optional — if the endpoints don't exist or return unexpected shapes we
   // still ship the static skeleton.
   const [pageRows, productRows] = await Promise.all([
-    fetchTenantSlugs(tenantId, '/pages', '/store/pages'),
-    fetchTenantSlugs(tenantId, '/products', '/products?status=published'),
+    fetchStoreSlugs(storeId, '/pages', '/store/pages'),
+    fetchStoreSlugs(storeId, '/products', '/products?status=published'),
   ])
 
   const dynamicEntries = [...pageRows, ...productRows].map(({ url, lastModified }) => ({

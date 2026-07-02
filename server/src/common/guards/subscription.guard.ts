@@ -1,5 +1,5 @@
-import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreFeatureEntity } from '@/modules/system/store/entities/store-feature.entity'
+import { StoreService } from '@/modules/system/store/store.service'
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -11,10 +11,10 @@ import { UserRole } from '../enums/user/user-role.enum'
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
   constructor(
-    private readonly tenantService: TenantService,
+    private readonly storeService: StoreService,
     private readonly reflector: Reflector,
-    @InjectRepository(TenantFeatureEntity)
-    private readonly tenantFeatureRepo: Repository<TenantFeatureEntity>,
+    @InjectRepository(StoreFeatureEntity)
+    private readonly storeFeatureRepo: Repository<StoreFeatureEntity>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -28,7 +28,7 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest()
-    const tenantId = request.tenantId
+    const storeId = request.storeId
     const user = request.user
 
     // 1. Allow Super Admin to bypass all feature checks
@@ -36,8 +36,8 @@ export class SubscriptionGuard implements CanActivate {
       return true
     }
 
-    if (!tenantId) {
-      return true // No tenant context, let other guards handle it
+    if (!storeId) {
+      return true // No store context, let other guards handle it
     }
 
     // 2. Identify required feature for this route
@@ -53,10 +53,10 @@ export class SubscriptionGuard implements CanActivate {
     const featureSlug = requiredFeature
 
     try {
-      // 3. Verify if feature is explicitly enabled/disabled in tenant_features
-      const featureDb = await this.tenantFeatureRepo.findOne({
+      // 3. Verify if feature is explicitly enabled/disabled in store_features
+      const featureDb = await this.storeFeatureRepo.findOne({
         where: {
-          tenantId,
+          storeId,
           featureSlug,
         },
       })
@@ -76,12 +76,12 @@ export class SubscriptionGuard implements CanActivate {
       }
 
       // 4. Fallback check: verify if plan has the feature
-      const tenant = await this.tenantService.findOneTenants(tenantId)
-      if (!tenant) {
-        throw new ForbiddenException('Tenant not found')
+      const store = await this.storeService.findOneStores(storeId)
+      if (!store) {
+        throw new ForbiddenException('Store not found')
       }
 
-      const planFeatures = tenant.subscriptionPlan?.features || []
+      const planFeatures = store.subscriptionPlan?.features || []
 
       // Check if plan features contains featureSlug or requiredFeature (fallback)
       const hasPlanAccess =

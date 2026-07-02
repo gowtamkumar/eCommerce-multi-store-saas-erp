@@ -4,13 +4,13 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { PurchaseOrderItemEntity } from '@/modules/admin/operations/finance/purchase/entities/purchase-order-item.entity'
 import { SupplierPaymentEntity } from '@/modules/admin/operations/finance/purchase/entities/supplier-payment.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
 
 @Entity('purchase_orders')
-@Index(['tenantId', 'createdAt'])
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'createdAt'])
+@Index(['storeId', 'status'])
 export class PurchaseOrderEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, name: 'reference_number' })
   @Index()
@@ -55,12 +55,12 @@ export class PurchaseOrderEntity extends BaseEntity {
   @OneToMany(() => SupplierPaymentEntity, (payment: SupplierPaymentEntity) => payment.purchaseOrder)
   payments: SupplierPaymentEntity[]
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { nullable: false, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { nullable: false, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

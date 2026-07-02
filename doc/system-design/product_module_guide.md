@@ -1,4 +1,4 @@
-# Multi-Tenant Product & Inventory System Guide
+# Multi-Store Product & Inventory System Guide
 
 This document provides a comprehensive analysis of the **Product Catalog & Inventory Module** in the eCommerce SaaS platform. It serves as a master guide for both **operators (users)** and **engineers (developers)** to understand how products are structured, how inventory is tracked with double-entry precision, and how database relations/workflows function.
 
@@ -19,15 +19,15 @@ The catalog system supports four distinct types of products. The type dictates h
 
 ## 2. Entity Relationship Diagram (ERD)
 
-This entity diagram demonstrates the database architecture of the Product module. Notice that every core entity is strictly scoped to a **`TenantEntity`** (multi-tenant isolation) and is linked to the **`UserEntity`** who performed the creation or modification.
+This entity diagram demonstrates the database architecture of the Product module. Notice that every core entity is strictly scoped to a **`StoreEntity`** (multi-store isolation) and is linked to the **`UserEntity`** who performed the creation or modification.
 
 ```mermaid
 erDiagram
-    Tenants ||--o{ Products : owns
-    Tenants ||--o{ ProductVariants : owns
-    Tenants ||--o{ ProductAttributes : owns
-    Tenants ||--o{ InventoryLedger : owns
-    Tenants ||--o{ ProductPrices : owns
+    Stores ||--o{ Products : owns
+    Stores ||--o{ ProductVariants : owns
+    Stores ||--o{ ProductAttributes : owns
+    Stores ||--o{ InventoryLedger : owns
+    Stores ||--o{ ProductPrices : owns
 
     Brands ||--o{ Products : labels
     Categories ||--o{ Products : categorizes
@@ -60,7 +60,7 @@ erDiagram
         uuid category_id FK
         uuid brand_id FK
         uuid supplier_id FK
-        uuid tenant_id FK
+        uuid store_id FK
         uuid user_id FK
         boolean is_new
         boolean is_hot
@@ -77,7 +77,7 @@ erDiagram
         boolean is_default
         jsonb combination "e.g. {'Color': 'Red', 'Size': 'M'}"
         uuid product_id FK
-        uuid tenant_id FK
+        uuid store_id FK
         uuid user_id FK
     }
 
@@ -86,7 +86,7 @@ erDiagram
         varchar name "e.g. Color"
         simple-array values "e.g. ['Red', 'Blue']"
         uuid product_id FK
-        uuid tenant_id FK
+        uuid store_id FK
         uuid user_id FK
     }
 
@@ -106,7 +106,7 @@ erDiagram
         decimal cogs_amount
         enum reference_type "PURCHASE_ORDER|STOCK_ADJUSTMENT|ORDER_CHECKOUT"
         varchar reference_id
-        uuid tenant_id FK
+        uuid store_id FK
         uuid user_id FK
     }
 
@@ -117,7 +117,7 @@ erDiagram
         uuid variant_id FK "Optional"
         integer min_quantity
         decimal price
-        uuid tenant_id FK
+        uuid store_id FK
     }
 ```
 
@@ -206,7 +206,7 @@ sequenceDiagram
 
 ### B. How stock is dynamically aggregated:
 The system **never** reads a mutable `stock` column on the product table directly. Instead, when the catalog is listed or a product details page loads, `ProductService.populateProductsStock` dynamically calculates inventory levels:
-1. Executes `InventoryLedgerService.getStockSums(tenantId)` to aggregate all balances.
+1. Executes `InventoryLedgerService.getStockSums(storeId)` to aggregate all balances.
 2. For **Simple Products**: Sums the logged quantity transactions for `productId` where `variantId IS NULL`.
 3. For **Variable Products**: Groups and sums balances per `variantId`, then sums all variants to calculate the base product's global stock level.
 
@@ -268,17 +268,17 @@ if (filterDto.attributes) {
 
 ---
 
-### C. Smart Catalog Caching & Multi-Tenant Invalidation
+### C. Smart Catalog Caching & Multi-Store Invalidation
 To achieve extremely high storefront speeds, the catalog uses a structured caching layer. 
 - List pages, filters, and detailed pages are cached.
-- **Cache Invalidation**: Whenever an operator updates or creates a product, the cache for lists, latest products, and filters is invalidated selectively, scoped precisely to the active `tenantId` to ensure merchants never affect each other's cache layers:
+- **Cache Invalidation**: Whenever an operator updates or creates a product, the cache for lists, latest products, and filters is invalidated selectively, scoped precisely to the active `storeId` to ensure merchants never affect each other's cache layers:
 
 ```typescript
 // Selective cache invalidation in ProductService
-await this.cache.delCache(`product:${id}`, tenantId);
-await this.cache.delCacheByPattern('products:list:*', tenantId);
-await this.cache.delCacheByPattern('products:latest:*', tenantId);
-await this.cache.delCacheByPattern('products:filter-options:*', tenantId);
+await this.cache.delCache(`product:${id}`, storeId);
+await this.cache.delCacheByPattern('products:list:*', storeId);
+await this.cache.delCacheByPattern('products:latest:*', storeId);
+await this.cache.delCacheByPattern('products:filter-options:*', storeId);
 ```
 
 ---

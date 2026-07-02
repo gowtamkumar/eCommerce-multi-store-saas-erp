@@ -16,8 +16,8 @@ export class StaffInvitationEntity extends BaseEntity {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.OPERATOR })
   role: UserRole
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
-  tenantId: string
+  @Column({ name: 'store_id', type: 'uuid' })
+  storeId: string
 
   @Column({ unique: true })
   token: string

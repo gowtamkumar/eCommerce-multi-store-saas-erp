@@ -38,7 +38,7 @@ export class FulfillmentService {
     ctx: RequestContextDto,
   ): Promise<FulfillmentTaskEntity | null> {
     const order = await this.orderRepository.findOne({
-      where: { id: orderId, tenantId: ctx.tenantId },
+      where: { id: orderId, storeId: ctx.storeId },
       relations: {
         items: {
           product: true,
@@ -56,7 +56,7 @@ export class FulfillmentService {
     if (physicalItems.length === 0) {
       // If there are no physical items to fulfill, we mark order as SHIPPED immediately
       await this.orderRepository.update(orderId, { status: OrderStatus.SHIPPED })
-      await this.notifyOrderShipped(order.id, ctx.tenantId)
+      await this.notifyOrderShipped(order.id, ctx.storeId)
       return null
     }
 
@@ -66,7 +66,7 @@ export class FulfillmentService {
     //      order. Prefer the one with the highest minimum-coverage across items.
     //   3. Fall back to the first active warehouse.
     const warehouses = await this.dataSource.getRepository(WarehouseEntity).find({
-      where: { tenantId: ctx.tenantId, isActive: true },
+      where: { storeId: ctx.storeId, isActive: true },
     })
 
     let warehouseId: string | null = (ctx as any).warehouseId || null
@@ -80,7 +80,7 @@ export class FulfillmentService {
         let minRatio = Infinity
         for (const item of physicalItems) {
           const live = await this.inventoryService
-            .getLiveStock(item.productId, item.variantId || null, ctx.tenantId, wh.id)
+            .getLiveStock(item.productId, item.variantId || null, ctx.storeId, wh.id)
             .catch(() => 0)
           const needed = Number(item.quantity)
           const ratio = needed > 0 ? Number(live) / needed : 1
@@ -96,7 +96,7 @@ export class FulfillmentService {
 
     const task = await this.repository.createTask({
       orderId: order.id,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       status: FulfillmentStatus.PENDING,
       warehouseId: warehouseId,
       items: physicalItems.map((item) => ({
@@ -115,7 +115,7 @@ export class FulfillmentService {
     userId: string,
     ctx: RequestContextDto,
   ): Promise<FulfillmentTaskEntity> {
-    const task = await this.repository.findTaskById(taskId, ctx.tenantId)
+    const task = await this.repository.findTaskById(taskId, ctx.storeId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
 
     if (task.status !== FulfillmentStatus.PENDING) {
@@ -128,7 +128,7 @@ export class FulfillmentService {
       startedAt: new Date(),
     })
 
-    return this.repository.findTaskById(taskId, ctx.tenantId) as Promise<FulfillmentTaskEntity>
+    return this.repository.findTaskById(taskId, ctx.storeId) as Promise<FulfillmentTaskEntity>
   }
 
   async pickItem(
@@ -138,7 +138,7 @@ export class FulfillmentService {
     binId: string | undefined,
     ctx: RequestContextDto,
   ): Promise<void> {
-    const task = await this.repository.findTaskById(taskId, ctx.tenantId)
+    const task = await this.repository.findTaskById(taskId, ctx.storeId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
 
     const item = task.items.find((i) => i.id === itemId)
@@ -169,7 +169,7 @@ export class FulfillmentService {
     lines: { itemId: string; quantity: number; binId?: string }[],
     ctx: RequestContextDto,
   ): Promise<FulfillmentTaskEntity> {
-    const task = await this.repository.findTaskById(taskId, ctx.tenantId)
+    const task = await this.repository.findTaskById(taskId, ctx.storeId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
 
     // Pre-validate the whole batch up-front.
@@ -214,11 +214,11 @@ export class FulfillmentService {
       }
     })
 
-    return (await this.repository.findTaskById(taskId, ctx.tenantId))!
+    return (await this.repository.findTaskById(taskId, ctx.storeId))!
   }
 
   async completePacking(taskId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity> {
-    const task = await this.repository.findTaskById(taskId, ctx.tenantId)
+    const task = await this.repository.findTaskById(taskId, ctx.storeId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
 
     // Check if all items are picked
@@ -231,11 +231,11 @@ export class FulfillmentService {
       status: FulfillmentStatus.PACKED,
     })
 
-    return this.repository.findTaskById(taskId, ctx.tenantId) as Promise<FulfillmentTaskEntity>
+    return this.repository.findTaskById(taskId, ctx.storeId) as Promise<FulfillmentTaskEntity>
   }
 
   async shipOrder(taskId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity> {
-    const task = await this.repository.findTaskById(taskId, ctx.tenantId)
+    const task = await this.repository.findTaskById(taskId, ctx.storeId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
 
     if (task.status !== FulfillmentStatus.PACKED) {
@@ -251,7 +251,7 @@ export class FulfillmentService {
             orderId: task.orderId,
             productId: item.productId,
             variantId: item.variantId ?? null,
-            tenantId: ctx.tenantId,
+            storeId: ctx.storeId,
           },
         })
 
@@ -286,7 +286,7 @@ export class FulfillmentService {
         let allocations: { batchId: string; quantity: number }[] = []
         try {
           allocations = await this.batchService.allocateFEFOStock(
-            ctx.tenantId,
+            ctx.storeId,
             item.productId,
             item.variantId ?? null,
             item.quantity,
@@ -344,14 +344,14 @@ export class FulfillmentService {
         status: OrderStatus.SHIPPED,
       })
 
-      return this.repository.findTaskById(taskId, ctx.tenantId) as Promise<FulfillmentTaskEntity>
+      return this.repository.findTaskById(taskId, ctx.storeId) as Promise<FulfillmentTaskEntity>
     })
 
-    await this.notifyOrderShipped(task.orderId, ctx.tenantId)
+    await this.notifyOrderShipped(task.orderId, ctx.storeId)
     return shippedTask
   }
 
-  private async notifyOrderShipped(orderId: string, tenantId: string): Promise<void> {
+  private async notifyOrderShipped(orderId: string, storeId: string): Promise<void> {
     try {
       await this.notificationService.createNotification(
         {
@@ -361,7 +361,7 @@ export class FulfillmentService {
           link: `/admin/orders/${orderId}`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger fulfillment notification: ${e.message}`)
@@ -369,11 +369,11 @@ export class FulfillmentService {
   }
 
   async findAllTasks(ctx: RequestContextDto, status?: string): Promise<FulfillmentTaskEntity[]> {
-    return this.repository.findAllTasksByTenant(ctx.tenantId, status)
+    return this.repository.findAllTasksByStore(ctx.storeId, status)
   }
 
   async getTask(taskId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity> {
-    const task = await this.repository.findTaskById(taskId, ctx.tenantId)
+    const task = await this.repository.findTaskById(taskId, ctx.storeId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
     return task
   }

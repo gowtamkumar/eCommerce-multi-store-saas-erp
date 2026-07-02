@@ -15,7 +15,7 @@ import { GenerateInvoiceOcrDto } from '../dto/generate-invoice-ocr.dto'
 
 export interface AiJobResponseDto {
   id: string
-  tenantId: string
+  storeId: string
   type: AiJobType
   status: AiJobStatus
   payload: Record<string, unknown> | null
@@ -38,7 +38,7 @@ export class AiJobService {
   toResponse(job: AiJobEntity): AiJobResponseDto {
     return {
       id: job.id,
-      tenantId: job.tenantId,
+      storeId: job.storeId,
       type: job.type,
       status: job.status,
       payload: job.payload,
@@ -51,8 +51,8 @@ export class AiJobService {
     }
   }
 
-  async findByIdForTenant(jobId: string, tenantId: string): Promise<AiJobEntity> {
-    const job = await this.jobRepo.findOne({ where: { id: jobId, tenantId } })
+  async findByIdForStore(jobId: string, storeId: string): Promise<AiJobEntity> {
+    const job = await this.jobRepo.findOne({ where: { id: jobId, storeId } })
     if (!job) {
       throw new NotFoundException('AI job not found')
     }
@@ -60,13 +60,13 @@ export class AiJobService {
   }
 
   async createAndEnqueue(
-    tenantId: string,
+    storeId: string,
     type: AiJobType,
     payload: Record<string, unknown> = {},
   ): Promise<AiJobEntity> {
     const job = await this.jobRepo.save(
       this.jobRepo.create({
-        tenantId,
+        storeId,
         type,
         status: AiJobStatus.QUEUED,
         payload,
@@ -75,7 +75,7 @@ export class AiJobService {
 
     const bullJob = await this.aiQueue.add(
       type,
-      { jobId: job.id, tenantId, payload },
+      { jobId: job.id, storeId, payload },
       { jobId: job.id },
     )
 
@@ -83,31 +83,31 @@ export class AiJobService {
     return this.jobRepo.save(job)
   }
 
-  async enqueueEmbeddingReindex(tenantId: string): Promise<AiJobEntity> {
-    return this.createAndEnqueue(tenantId, AiJobType.EMBEDDING_REINDEX, {})
+  async enqueueEmbeddingReindex(storeId: string): Promise<AiJobEntity> {
+    return this.createAndEnqueue(storeId, AiJobType.EMBEDDING_REINDEX, {})
   }
 
-  async enqueueEmbeddingBatch(tenantId: string, productIds: string[]): Promise<AiJobEntity | null> {
+  async enqueueEmbeddingBatch(storeId: string, productIds: string[]): Promise<AiJobEntity | null> {
     const uniqueIds = [...new Set(productIds.filter(Boolean))]
     if (uniqueIds.length === 0) {
       return null
     }
 
-    return this.createAndEnqueue(tenantId, AiJobType.EMBEDDING_BATCH, { productIds: uniqueIds })
+    return this.createAndEnqueue(storeId, AiJobType.EMBEDDING_BATCH, { productIds: uniqueIds })
   }
 
-  async enqueueProductSeoDraft(tenantId: string, productId: string): Promise<AiJobEntity> {
-    return this.createAndEnqueue(tenantId, AiJobType.BULK_SEO, {
+  async enqueueProductSeoDraft(storeId: string, productId: string): Promise<AiJobEntity> {
+    return this.createAndEnqueue(storeId, AiJobType.BULK_SEO, {
       productId,
       draftOnly: true,
     })
   }
 
   async enqueueBulkDescriptionImport(
-    tenantId: string,
+    storeId: string,
     payload: { importBatchId: string; productIds: string[] },
   ): Promise<AiJobEntity> {
-    return this.createAndEnqueue(tenantId, AiJobType.BULK_DESCRIPTION_IMPORT, {
+    return this.createAndEnqueue(storeId, AiJobType.BULK_DESCRIPTION_IMPORT, {
       importBatchId: payload.importBatchId,
       productIds: [...new Set(payload.productIds.filter(Boolean))],
       applyToProducts: true,
@@ -115,35 +115,35 @@ export class AiJobService {
   }
 
   async enqueueCartAbandonedDraft(
-    tenantId: string,
+    storeId: string,
     event: CartAbandonedEvent,
   ): Promise<AiJobEntity> {
-    return this.createAndEnqueue(tenantId, AiJobType.CART_ABANDONED_DRAFT, { ...event })
+    return this.createAndEnqueue(storeId, AiJobType.CART_ABANDONED_DRAFT, { ...event })
   }
 
   async enqueueInvoiceOcr(
-    tenantId: string,
+    storeId: string,
     dto: GenerateInvoiceOcrDto,
   ): Promise<AiJobEntity> {
-    return this.createAndEnqueue(tenantId, AiJobType.OCR, { ...dto })
+    return this.createAndEnqueue(storeId, AiJobType.OCR, { ...dto })
   }
 
-  async enqueueDemandForecast(tenantId: string): Promise<AiJobEntity> {
-    return this.createAndEnqueue(tenantId, AiJobType.DEMAND_FORECAST, { scheduled: 'weekly' })
+  async enqueueDemandForecast(storeId: string): Promise<AiJobEntity> {
+    return this.createAndEnqueue(storeId, AiJobType.DEMAND_FORECAST, { scheduled: 'weekly' })
   }
 
   async enqueueAutomationDispatch(
-    tenantId: string,
+    storeId: string,
     payload: AiAutomationDispatchPayload,
   ): Promise<AiJobEntity> {
-    return this.createAndEnqueue(tenantId, AiJobType.AUTOMATION_DISPATCH, { ...payload })
+    return this.createAndEnqueue(storeId, AiJobType.AUTOMATION_DISPATCH, { ...payload })
   }
 
   async enqueueProductCreatedAutomation(
-    tenantId: string,
-    event: Omit<ProductCreatedEvent, 'tenantId'>,
+    storeId: string,
+    event: Omit<ProductCreatedEvent, 'storeId'>,
   ): Promise<AiJobEntity> {
-    return this.enqueueAutomationDispatch(tenantId, {
+    return this.enqueueAutomationDispatch(storeId, {
       eventType: 'product.created',
       productId: event.productId,
       productName: event.productName,
@@ -153,10 +153,10 @@ export class AiJobService {
   }
 
   async enqueueCartAbandonedAutomation(
-    tenantId: string,
-    event: Omit<CartAbandonedEvent, 'tenantId'>,
+    storeId: string,
+    event: Omit<CartAbandonedEvent, 'storeId'>,
   ): Promise<AiJobEntity> {
-    return this.enqueueAutomationDispatch(tenantId, {
+    return this.enqueueAutomationDispatch(storeId, {
       eventType: 'cart.abandoned',
       cartId: event.cartId,
       customerName: event.customerName,
@@ -169,7 +169,7 @@ export class AiJobService {
   }
 
   async hasRecentPayloadJob(
-    tenantId: string,
+    storeId: string,
     type: AiJobType,
     payloadKey: string,
     payloadValue: string,
@@ -179,7 +179,7 @@ export class AiJobService {
 
     const count = await this.jobRepo
       .createQueryBuilder('job')
-      .where('job.tenant_id = :tenantId', { tenantId })
+      .where('job.store_id = :storeId', { storeId })
       .andWhere('job.type = :type', { type })
       .andWhere('job.created_at >= :since', { since })
       .andWhere(`job.payload ->> :payloadKey = :payloadValue`, { payloadKey, payloadValue })
@@ -192,7 +192,7 @@ export class AiJobService {
   }
 
   async hasRecentCartAbandonedAutomation(
-    tenantId: string,
+    storeId: string,
     cartId: string,
     withinHours: number,
   ): Promise<boolean> {
@@ -200,7 +200,7 @@ export class AiJobService {
 
     const count = await this.jobRepo
       .createQueryBuilder('job')
-      .where('job.tenant_id = :tenantId', { tenantId })
+      .where('job.store_id = :storeId', { storeId })
       .andWhere('job.created_at >= :since', { since })
       .andWhere(`job.payload ->> 'cartId' = :cartId`, { cartId })
       .andWhere('job.type IN (:...types)', {
@@ -215,7 +215,7 @@ export class AiJobService {
   }
 
   async findCompletedCartIdsWithDrafts(
-    tenantId: string,
+    storeId: string,
     cartIds: string[],
   ): Promise<Set<string>> {
     const uniqueIds = [...new Set(cartIds.filter(Boolean))]
@@ -226,7 +226,7 @@ export class AiJobService {
     const rows = await this.jobRepo
       .createQueryBuilder('job')
       .select(`job.payload ->> 'cartId'`, 'cartId')
-      .where('job.tenant_id = :tenantId', { tenantId })
+      .where('job.store_id = :storeId', { storeId })
       .andWhere('job.type = :type', { type: AiJobType.CART_ABANDONED_DRAFT })
       .andWhere('job.status = :status', { status: AiJobStatus.COMPLETED })
       .andWhere(`job.payload ->> 'cartId' IN (:...cartIds)`, { cartIds: uniqueIds })
@@ -236,14 +236,14 @@ export class AiJobService {
   }
 
   async findLatestByPayload(
-    tenantId: string,
+    storeId: string,
     type: AiJobType,
     payloadKey: string,
     payloadValue: string,
   ): Promise<AiJobEntity | null> {
     return this.jobRepo
       .createQueryBuilder('job')
-      .where('job.tenant_id = :tenantId', { tenantId })
+      .where('job.store_id = :storeId', { storeId })
       .andWhere('job.type = :type', { type })
       .andWhere(`job.payload ->> :payloadKey = :payloadValue`, { payloadKey, payloadValue })
       .andWhere('job.status = :status', { status: AiJobStatus.COMPLETED })

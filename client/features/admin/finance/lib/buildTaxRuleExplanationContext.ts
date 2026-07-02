@@ -7,7 +7,7 @@ function formatRate(rate: number | string | undefined): string {
 
 export function buildTaxRuleSummary(rule: Pick<TaxRule, "name" | "rate" | "country" | "state" | "category" | "isActive" | "isSystem">): string {
   return [
-    "Context: tenant tax rule",
+    "Context: store tax rule",
     `Name: ${rule.name}`,
     `Rate: ${formatRate(rule.rate)}`,
     `Country: ${rule.country}`,
@@ -31,9 +31,9 @@ export function buildTaxRuleFormSummary(form: TaxRuleFormData): string {
 
 export function buildRelatedTaxRulesSummary(rules: TaxRule[], excludeId?: string): string {
   const others = rules.filter((rule) => rule.id !== excludeId);
-  if (!others.length) return "No other tenant tax rules configured.";
+  if (!others.length) return "No other store tax rules configured.";
 
-  const lines = [`Other tenant tax rules (${others.length}):`];
+  const lines = [`Other store tax rules (${others.length}):`];
   others.forEach((rule, index) => {
     lines.push(
       `${index + 1}. ${rule.name} | ${rule.country}${rule.state ? `/${rule.state}` : ""} | ${rule.category} | ${formatRate(rule.rate)} | ${rule.isSystem ? "system" : "custom"}`,

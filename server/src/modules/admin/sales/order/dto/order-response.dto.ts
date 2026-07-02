@@ -97,7 +97,7 @@ export class OrderResponseDto {
   userId?: string | null
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   @Type(() => OrderItemResponseDto)

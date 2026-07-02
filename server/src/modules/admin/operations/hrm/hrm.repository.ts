@@ -94,12 +94,12 @@ export class HrmRepository {
     return this.organizationRepository.createDepartment(data)
   }
 
-  async findAllDepartments(tenantId: string): Promise<DepartmentEntity[]> {
-    return this.organizationRepository.findAllDepartments(tenantId)
+  async findAllDepartments(storeId: string): Promise<DepartmentEntity[]> {
+    return this.organizationRepository.findAllDepartments(storeId)
   }
 
-  async findDepartmentById(id: string, tenantId: string): Promise<DepartmentEntity | null> {
-    return this.organizationRepository.findDepartmentById(id, tenantId)
+  async findDepartmentById(id: string, storeId: string): Promise<DepartmentEntity | null> {
+    return this.organizationRepository.findDepartmentById(id, storeId)
   }
 
   async updateDepartment(id: string, data: Partial<DepartmentEntity>): Promise<void> {
@@ -115,12 +115,12 @@ export class HrmRepository {
     return this.organizationRepository.createDesignation(data)
   }
 
-  async findAllDesignations(tenantId: string): Promise<DesignationEntity[]> {
-    return this.organizationRepository.findAllDesignations(tenantId)
+  async findAllDesignations(storeId: string): Promise<DesignationEntity[]> {
+    return this.organizationRepository.findAllDesignations(storeId)
   }
 
-  async findDesignationById(id: string, tenantId: string): Promise<DesignationEntity | null> {
-    return this.organizationRepository.findDesignationById(id, tenantId)
+  async findDesignationById(id: string, storeId: string): Promise<DesignationEntity | null> {
+    return this.organizationRepository.findDesignationById(id, storeId)
   }
 
   async updateDesignation(id: string, data: Partial<DesignationEntity>): Promise<void> {
@@ -137,7 +137,7 @@ export class HrmRepository {
   }
 
   async findAllEmployees(
-    tenantId: string,
+    storeId: string,
     branchId?: string,
     options?: {
       page?: number
@@ -147,15 +147,15 @@ export class HrmRepository {
       q?: string
     },
   ): Promise<PaginatedResult<EmployeeEntity>> {
-    return this.employeeRepository.findAllEmployees(tenantId, branchId, options)
+    return this.employeeRepository.findAllEmployees(storeId, branchId, options)
   }
 
-  async findEmployeesAll(tenantId: string, branchId?: string): Promise<EmployeeEntity[]> {
-    return this.employeeRepository.findEmployeesAll(tenantId, branchId)
+  async findEmployeesAll(storeId: string, branchId?: string): Promise<EmployeeEntity[]> {
+    return this.employeeRepository.findEmployeesAll(storeId, branchId)
   }
 
-  async findEmployeeById(id: string, tenantId: string): Promise<EmployeeEntity | null> {
-    return this.employeeRepository.findEmployeeById(id, tenantId)
+  async findEmployeeById(id: string, storeId: string): Promise<EmployeeEntity | null> {
+    return this.employeeRepository.findEmployeeById(id, storeId)
   }
 
   async updateEmployee(id: string, data: Partial<EmployeeEntity>): Promise<void> {
@@ -167,12 +167,12 @@ export class HrmRepository {
     return this.attendanceRepository.createShift(data)
   }
 
-  async findAllShifts(tenantId: string): Promise<ShiftEntity[]> {
-    return this.attendanceRepository.findAllShifts(tenantId)
+  async findAllShifts(storeId: string): Promise<ShiftEntity[]> {
+    return this.attendanceRepository.findAllShifts(storeId)
   }
 
-  async findShiftById(id: string, tenantId: string): Promise<ShiftEntity | null> {
-    return this.attendanceRepository.findShiftById(id, tenantId)
+  async findShiftById(id: string, storeId: string): Promise<ShiftEntity | null> {
+    return this.attendanceRepository.findShiftById(id, storeId)
   }
 
   async updateShift(id: string, data: Partial<ShiftEntity>): Promise<void> {
@@ -191,25 +191,25 @@ export class HrmRepository {
 
   async findEmployeeShiftAssignments(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<EmployeeShiftAssignmentEntity[]> {
-    return this.attendanceRepository.findEmployeeShiftAssignments(employeeId, tenantId)
+    return this.attendanceRepository.findEmployeeShiftAssignments(employeeId, storeId)
   }
 
   async findEmployeeShift(
     employeeId: string,
     date: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<EmployeeShiftAssignmentEntity | null> {
-    return this.attendanceRepository.findEmployeeShift(employeeId, date, tenantId)
+    return this.attendanceRepository.findEmployeeShift(employeeId, date, storeId)
   }
 
   async findEmployeeShiftsForEmployees(
     employeeIds: string[],
     date: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<EmployeeShiftAssignmentEntity[]> {
-    return this.attendanceRepository.findEmployeeShiftsForEmployees(employeeIds, date, tenantId)
+    return this.attendanceRepository.findEmployeeShiftsForEmployees(employeeIds, date, storeId)
   }
 
   // --- Attendance ---
@@ -225,13 +225,13 @@ export class HrmRepository {
 
   async findLatestAttendanceSession(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<AttendanceSessionEntity | null> {
-    return this.attendanceRepository.findLatestAttendanceSession(employeeId, tenantId)
+    return this.attendanceRepository.findLatestAttendanceSession(employeeId, storeId)
   }
 
   async findAllAttendanceSessions(
-    tenantId: string,
+    storeId: string,
     branchId?: string,
     options?: {
       page?: number
@@ -241,20 +241,20 @@ export class HrmRepository {
       to?: Date
     },
   ): Promise<PaginatedResult<AttendanceSessionEntity>> {
-    return this.attendanceRepository.findAllAttendanceSessions(tenantId, branchId, options)
+    return this.attendanceRepository.findAllAttendanceSessions(storeId, branchId, options)
   }
 
   async findAttendanceSessionsForEmployee(
     employeeId: string,
     startDate: Date,
     endDate: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<AttendanceSessionEntity[]> {
     return this.attendanceRepository.findAttendanceSessionsForEmployee(
       employeeId,
       startDate,
       endDate,
-      tenantId,
+      storeId,
     )
   }
 
@@ -262,13 +262,13 @@ export class HrmRepository {
     employeeIds: string[],
     startDate: Date,
     endDate: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<AttendanceSessionEntity[]> {
     return this.attendanceRepository.findAttendanceSessionsForEmployees(
       employeeIds,
       startDate,
       endDate,
-      tenantId,
+      storeId,
     )
   }
 
@@ -281,12 +281,12 @@ export class HrmRepository {
     return this.leaveRepository.updateLeaveRequest(id, data)
   }
 
-  async findLeaveRequestById(id: string, tenantId: string): Promise<LeaveRequestEntity | null> {
-    return this.leaveRepository.findLeaveRequestById(id, tenantId)
+  async findLeaveRequestById(id: string, storeId: string): Promise<LeaveRequestEntity | null> {
+    return this.leaveRepository.findLeaveRequestById(id, storeId)
   }
 
   async findAllLeaveRequests(
-    tenantId: string,
+    storeId: string,
     options?: {
       page?: number
       limit?: number
@@ -296,21 +296,21 @@ export class HrmRepository {
       to?: Date
     },
   ): Promise<PaginatedResult<LeaveRequestEntity>> {
-    return this.leaveRepository.findAllLeaveRequests(tenantId, options)
+    return this.leaveRepository.findAllLeaveRequests(storeId, options)
   }
 
   async findOverlappingLeaves(
     employeeId: string,
     startDate: Date,
     endDate: Date,
-    tenantId: string,
+    storeId: string,
     excludeId?: string,
   ): Promise<LeaveRequestEntity[]> {
     return this.leaveRepository.findOverlappingLeaves(
       employeeId,
       startDate,
       endDate,
-      tenantId,
+      storeId,
       excludeId,
     )
   }
@@ -318,33 +318,33 @@ export class HrmRepository {
   async findLeaveQuota(
     employeeId: string,
     year: number,
-    tenantId: string,
+    storeId: string,
   ): Promise<LeaveQuotaEntity[]> {
-    return this.leaveRepository.findLeaveQuota(employeeId, year, tenantId)
+    return this.leaveRepository.findLeaveQuota(employeeId, year, storeId)
   }
 
   // --- Payroll ---
   async findActivePayrollBatchForPeriod(
-    tenantId: string,
+    storeId: string,
     period: string,
   ): Promise<PayrollBatchEntity | null> {
-    return this.payrollRepository.findActivePayrollBatchForPeriod(tenantId, period)
+    return this.payrollRepository.findActivePayrollBatchForPeriod(storeId, period)
   }
 
-  async findAllPayrollBatches(tenantId: string): Promise<PayrollBatchEntity[]> {
-    return this.payrollRepository.findAllPayrollBatches(tenantId)
+  async findAllPayrollBatches(storeId: string): Promise<PayrollBatchEntity[]> {
+    return this.payrollRepository.findAllPayrollBatches(storeId)
   }
 
-  async findPayrollBatchById(id: string, tenantId: string): Promise<PayrollBatchEntity | null> {
-    return this.payrollRepository.findPayrollBatchById(id, tenantId)
+  async findPayrollBatchById(id: string, storeId: string): Promise<PayrollBatchEntity | null> {
+    return this.payrollRepository.findPayrollBatchById(id, storeId)
   }
 
   async updatePayrollBatch(id: string, data: Partial<PayrollBatchEntity>): Promise<void> {
     return this.payrollRepository.updatePayrollBatch(id, data)
   }
 
-  async findPayrollSlipsByBatch(batchId: string, tenantId: string): Promise<PayrollSlipEntity[]> {
-    return this.payrollRepository.findPayrollSlipsByBatch(batchId, tenantId)
+  async findPayrollSlipsByBatch(batchId: string, storeId: string): Promise<PayrollSlipEntity[]> {
+    return this.payrollRepository.findPayrollSlipsByBatch(batchId, storeId)
   }
 
   // --- Recruitment ---
@@ -352,20 +352,20 @@ export class HrmRepository {
     return this.recruitmentRepository.createJobPosting(data)
   }
 
-  async findAllJobPostings(tenantId: string): Promise<JobPostingEntity[]> {
-    return this.recruitmentRepository.findAllJobPostings(tenantId)
+  async findAllJobPostings(storeId: string): Promise<JobPostingEntity[]> {
+    return this.recruitmentRepository.findAllJobPostings(storeId)
   }
 
   async createApplicant(data: Partial<ApplicantEntity>): Promise<ApplicantEntity> {
     return this.recruitmentRepository.createApplicant(data)
   }
 
-  async findAllApplicants(tenantId: string): Promise<ApplicantEntity[]> {
-    return this.recruitmentRepository.findAllApplicants(tenantId)
+  async findAllApplicants(storeId: string): Promise<ApplicantEntity[]> {
+    return this.recruitmentRepository.findAllApplicants(storeId)
   }
 
-  async findApplicantById(id: string, tenantId: string): Promise<ApplicantEntity | null> {
-    return this.recruitmentRepository.findApplicantById(id, tenantId)
+  async findApplicantById(id: string, storeId: string): Promise<ApplicantEntity | null> {
+    return this.recruitmentRepository.findApplicantById(id, storeId)
   }
 
   async updateApplicantStatus(id: string, status: ApplicantStatus): Promise<void> {
@@ -378,9 +378,9 @@ export class HrmRepository {
 
   async findInterviewsByApplicant(
     applicantId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<InterviewEntity[]> {
-    return this.recruitmentRepository.findInterviewsByApplicant(applicantId, tenantId)
+    return this.recruitmentRepository.findInterviewsByApplicant(applicantId, storeId)
   }
 
   // --- Performance ---
@@ -390,25 +390,25 @@ export class HrmRepository {
     return this.performanceRepository.createPerformanceReview(data)
   }
 
-  async findAllPerformanceReviews(tenantId: string): Promise<PerformanceReviewEntity[]> {
-    return this.performanceRepository.findAllPerformanceReviews(tenantId)
+  async findAllPerformanceReviews(storeId: string): Promise<PerformanceReviewEntity[]> {
+    return this.performanceRepository.findAllPerformanceReviews(storeId)
   }
 
   async findEmployeeReviews(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<PerformanceReviewEntity[]> {
-    return this.performanceRepository.findEmployeeReviews(employeeId, tenantId)
+    return this.performanceRepository.findEmployeeReviews(employeeId, storeId)
   }
 
   // --- Holidays ---
   async findHolidaysInRange(
-    tenantId: string,
+    storeId: string,
     startDate: Date,
     endDate: Date,
     branchId?: string,
   ): Promise<HolidayEntity[]> {
-    return this.employeeRepository.findHolidaysInRange(tenantId, startDate, endDate, branchId)
+    return this.employeeRepository.findHolidaysInRange(storeId, startDate, endDate, branchId)
   }
 
   async findHolidaysExpiringSoon(referenceDate: Date): Promise<EmployeeDocumentEntity[]> {
@@ -431,22 +431,22 @@ export class HrmRepository {
   }
 
   // --- Employee ID sequence ---
-  async nextEmployeeId(tenantId: string): Promise<string> {
-    return this.employeeRepository.nextEmployeeId(tenantId)
+  async nextEmployeeId(storeId: string): Promise<string> {
+    return this.employeeRepository.nextEmployeeId(storeId)
   }
 
-  async getStats(tenantId: string, branchId?: string) {
+  async getStats(storeId: string, branchId?: string) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const employeeWhere: FindOptionsWhere<EmployeeEntity> = { tenantId }
+    const employeeWhere: FindOptionsWhere<EmployeeEntity> = { storeId }
     const attendanceWhere: FindOptionsWhere<AttendanceSessionEntity> = {
-      tenantId,
+      storeId,
       checkIn: MoreThanOrEqual(today) as any,
     }
-    const jobWhere: FindOptionsWhere<JobPostingEntity> = { tenantId, status: 'PUBLISHED' as any }
-    const applicantWhere: FindOptionsWhere<ApplicantEntity> = { tenantId }
-    const leaveWhere: FindOptionsWhere<LeaveRequestEntity> = { tenantId, status: 'PENDING' as any }
+    const jobWhere: FindOptionsWhere<JobPostingEntity> = { storeId, status: 'PUBLISHED' as any }
+    const applicantWhere: FindOptionsWhere<ApplicantEntity> = { storeId }
+    const leaveWhere: FindOptionsWhere<LeaveRequestEntity> = { storeId, status: 'PENDING' as any }
 
     if (branchId) {
       employeeWhere.branchId = branchId

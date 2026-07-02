@@ -65,7 +65,7 @@
 | :--- | :---: | :--- |
 | Employee records | **Complete** | Full HR profile entity with personal details (DOB, NID, passport, blood group, address), emergency contact (name/relationship/phone), multi-step creation form (Account → Work → Personal → Emergency → Payroll), contract type & end date, branch assignment, reporting manager linkage, salary config (basic + allowances + deductions), and a live document vault (upload/view/delete employment contracts, IDs, certificates). |
 | Attendance & payroll | **Complete** | Real-time clock-in/out, automatic work & overtime hour tracking, and late arrival minutes computation. Deep double-entry payroll engine that transactionally aggregates monthly salaries, applies overtime premiums, performs tax withholding, handles late check-in penalties, pro-rates unpaid absences/leaves, generates draft batches, posts automated GL accrual journal entries, and executes payout releases. Includes full-featured Admin Boards, simulated Quick Controls, and employee-facing interactive Punch panels. |
-| Advanced RBAC | **Complete** | Expanded SystemPermissions enum and seeding logic from coarse modules to 80+ fine-grained, ERP-grade per-action capabilities (e.g. `pos:override-price`, `catalog:edit-price`, `inventory:adjust`, `hrm:approve-payroll`). Built 7 multi-scoped default tenant roles (Branch Manager, HR Manager, Accountant, Inventory Manager, Procurement Officer, Sales Associate, Viewer) mapped cleanly to these codes, supporting explicit ALLOW/DENY overrides and branch/warehouse scopes. |
+| Advanced RBAC | **Complete** | Expanded SystemPermissions enum and seeding logic from coarse modules to 80+ fine-grained, ERP-grade per-action capabilities (e.g. `pos:override-price`, `catalog:edit-price`, `inventory:adjust`, `hrm:approve-payroll`). Built 7 multi-scoped default store roles (Branch Manager, HR Manager, Accountant, Inventory Manager, Procurement Officer, Sales Associate, Viewer) mapped cleanly to these codes, supporting explicit ALLOW/DENY overrides and branch/warehouse scopes. |
 
 ### 1.6 CRM & customer loyalty
 
@@ -92,9 +92,9 @@ The subscription doc describes **plan-scoped feature keys** such as `custom_doma
 
 | Documented key | Approximate product support | Status |
 | :--- | :--- | :---: |
-| `custom_domain` | `TenantEntity` fields `custom_domain`, `custom_domain_status`, migrations | **Complete** (domain model) |
+| `custom_domain` | `StoreEntity` fields `custom_domain`, `custom_domain_status`, migrations | **Complete** (domain model) |
 | `advanced_analytics` | `SubscriptionGuard` maps this key to all 8 granular report route slugs; 7 frontend BI dashboards consume these APIs end-to-end with Redis caching | **Complete** |
-| `remove_branding` | Full end-to-end implementation: `removeBranding` boolean field in `SiteSettingsEntity` & response DTOs, validated against the tenant's plan in `SettingsService` (forced to false if not allowed), dynamic `remove_branding` guard mapping, and conditional suppression of the "Crafted by" brand badge in the storefront `Footer` component | **Complete** |
+| `remove_branding` | Full end-to-end implementation: `removeBranding` boolean field in `SiteSettingsEntity` & response DTOs, validated against the store's plan in `SettingsService` (forced to false if not allowed), dynamic `remove_branding` guard mapping, and conditional suppression of the "Crafted by" brand badge in the storefront `Footer` component | **Complete** |
 | `unlimited_products` | Plan-level restriction resolving logical key to `/admin/products` creation and listings | **Complete** |
 | `staff_accounts` | Plan-level restriction resolving logical key to `/admin/hrm` employees, work profiles, and team roles | **Complete** |
 | `multi_currency` | Full end-to-end implementation: `supportedCurrencies` JSONB array in `SiteSettingsEntity` (code/symbol/rate/name), `SettingsContext` persists user selection to `localStorage`, `CurrencySwitcher` navbar component, `convertPrice`/`formatPrice` hooks applied globally, `currencyRate` stored on `OrderEntity`, SSLCommerz gateway divides by rate for local currency conversion | **Complete** |
@@ -111,13 +111,13 @@ The subscription doc describes **plan-scoped feature keys** such as `custom_doma
 
 ## 3. Quick alignment with `FEATURES.md`
 
-Capabilities called out in `FEATURES.md` (multi-tenant, orders, Pathao/Steadfast, SSLCommerz, coupons, expenses, reviews, SEO, etc.) are now fully backed by a comprehensive ERP & retail suite—including multi-branch inventory, FEFO batch expiry management, high-speed offline POS with split tenders, integrated GRN documents with PO workflows, self-service supplier portals, strict double-entry General Ledger and Accounts Payable subledgers, a dynamic tax/VAT engine, full employee records and payroll accrual accounting, dynamic loyalty points engines, and custom scoped RBAC permission management.
+Capabilities called out in `FEATURES.md` (multi-store, orders, Pathao/Steadfast, SSLCommerz, coupons, expenses, reviews, SEO, etc.) are now fully backed by a comprehensive ERP & retail suite—including multi-branch inventory, FEFO batch expiry management, high-speed offline POS with split tenders, integrated GRN documents with PO workflows, self-service supplier portals, strict double-entry General Ledger and Accounts Payable subledgers, a dynamic tax/VAT engine, full employee records and payroll accrual accounting, dynamic loyalty points engines, and custom scoped RBAC permission management.
 
 ---
 
 ## 4. Suggested next steps (optional)
 
-1. **Automated BI Reports:** Implement a BullMQ repeatable job or NestJS `@Cron` scheduler to compile and email P&L / Cash Flow CSV snapshots to tenant admins on a weekly or monthly cadence.
+1. **Automated BI Reports:** Implement a BullMQ repeatable job or NestJS `@Cron` scheduler to compile and email P&L / Cash Flow CSV snapshots to store admins on a weekly or monthly cadence.
 
 ---
 

@@ -93,8 +93,8 @@ To maintain a consistent order state inside the ERP, third-party status strings 
 
 To make the integration extremely robust, we recommend adding the following enhancements:
 
-1. **Public Webhook Guard Bypass with Tenant Context Binding**:
-   - Since third-party servers call webhook endpoints, they do not include JWT auth headers. We will introduce a public webhook route bypass and query the `tenant_id` from the matching Order in the database to bind context before updating the database.
+1. **Public Webhook Guard Bypass with Store Context Binding**:
+   - Since third-party servers call webhook endpoints, they do not include JWT auth headers. We will introduce a public webhook route bypass and query the `store_id` from the matching Order in the database to bind context before updating the database.
 2. **Post-Delivery Cash Clearing Double-Entry Integration**:
    - When a status updates to `DELIVERED` via Cash-on-Delivery (COD) webhook, the system will automatically post a journal entry clearing the AR ledger:
      * **Debit:** `1000 - Cash & Bank`

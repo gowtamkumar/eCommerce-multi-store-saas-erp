@@ -6,7 +6,7 @@ import { ExpenseEntity } from './entities/expense.entity'
 import { ExpenseRepository } from './expense.repository'
 import { ExpenseService } from './expense.service'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { SettingsModule } from '@/modules/admin/settings/settings.module'
 
@@ -14,7 +14,7 @@ import { SettingsModule } from '@/modules/admin/settings/settings.module'
   imports: [
     TypeOrmModule.forFeature([ExpenseEntity]),
     CacheModule,
-    TenantModule,
+    StoreModule,
     NotificationModule,
     SettingsModule,
   ],

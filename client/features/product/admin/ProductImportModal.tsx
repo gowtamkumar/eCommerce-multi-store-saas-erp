@@ -42,7 +42,7 @@ export default function ProductImportModal({ isOpen, onClose, onSuccess }: Produ
     setParseErrors([]);
     setResult(null);
 
-    void fetchAPI("/tenants/ai-config")
+    void fetchAPI("/stores/ai-config")
       .then((res) => {
         const enabled = Boolean(res.data?.enabled);
         const bulkDefault = res.data?.automation?.bulkDescriptionOnImport !== false;

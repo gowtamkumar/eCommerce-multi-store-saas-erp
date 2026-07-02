@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { RfqEntity, RFQStatus } from '../entities/rfq.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class RfqRepository extends BaseTenantRepository<RfqEntity> {
+export class RfqRepository extends BaseStoreRepository<RfqEntity> {
   constructor(
     @InjectRepository(RfqEntity)
     repo: Repository<RfqEntity>,
@@ -18,9 +18,9 @@ export class RfqRepository extends BaseTenantRepository<RfqEntity> {
     return this.txRepo(manager)
   }
 
-  async generateRFQNumber(tenantId: string, manager?: EntityManager): Promise<string> {
+  async generateRFQNumber(storeId: string, manager?: EntityManager): Promise<string> {
     const repo = this.getRepo(manager)
-    const count = await repo.count({ where: { tenantId } })
+    const count = await repo.count({ where: { storeId } })
     return `RFQ-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
   }
 
@@ -30,18 +30,18 @@ export class RfqRepository extends BaseTenantRepository<RfqEntity> {
     manager?: EntityManager,
   ): Promise<RfqEntity> {
     const repo = this.getRepo(manager)
-    const rfqNumber = await this.generateRFQNumber(ctx.tenantId, manager)
+    const rfqNumber = await this.generateRFQNumber(ctx.storeId, manager)
     const rfq = repo.create({
       ...data,
       rfqNumber,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       createdById: ctx.userId,
     } as RfqEntity)
     return repo.save(rfq)
   }
 
-  async findAllByTenant(
-    tenantId: string,
+  async findAllByStore(
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -53,7 +53,7 @@ export class RfqRepository extends BaseTenantRepository<RfqEntity> {
       .leftJoinAndSelect('rfq.createdBy', 'createdBy')
       .leftJoinAndSelect('rfq.quotations', 'quotations')
       .leftJoinAndSelect('quotations.supplier', 'supplier')
-      .where('rfq.tenantId = :tenantId', { tenantId })
+      .where('rfq.storeId = :storeId', { storeId })
       .orderBy('rfq.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -71,12 +71,12 @@ export class RfqRepository extends BaseTenantRepository<RfqEntity> {
 
   async findByIdWithRelations(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<RfqEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         purchaseRequisition: {
           items: true,
@@ -89,10 +89,10 @@ export class RfqRepository extends BaseTenantRepository<RfqEntity> {
     })
   }
 
-  async findById(id: string, tenantId: string, manager?: EntityManager): Promise<RfqEntity | null> {
+  async findById(id: string, storeId: string, manager?: EntityManager): Promise<RfqEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 

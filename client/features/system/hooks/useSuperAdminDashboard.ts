@@ -7,14 +7,14 @@ import { buildDashboardStats } from '../lib/dashboard';
 import type {
   BillingOverview,
   DashboardStats,
-  TenantAnalytics,
+  StoreAnalytics,
   TrafficData,
 } from '../types/dashboard.types';
 
 interface UseSuperAdminDashboardArgs {
   initialStats: DashboardStats;
   initialTraffic: TrafficData[];
-  initialAnalytics: TenantAnalytics[];
+  initialAnalytics: StoreAnalytics[];
 }
 
 const AUTO_REFRESH_MS = 60_000;
@@ -32,7 +32,7 @@ export function useSuperAdminDashboard({
   const [days, setDays] = useState(7);
   const [stats, setStats] = useState(initialStats);
   const [traffic, setTraffic] = useState(initialTraffic);
-  const [analytics, setAnalytics] = useState<TenantAnalytics[]>(initialAnalytics);
+  const [analytics, setAnalytics] = useState<StoreAnalytics[]>(initialAnalytics);
   const [billing, setBilling] = useState<BillingOverview | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -45,17 +45,17 @@ export function useSuperAdminDashboard({
     try {
       const [overview, analyticsRes, billingRes] = await Promise.all([
         fetchSuperAdminAPI(`/super-admin/overview?days=${selectedDays}`),
-        fetchSuperAdminAPI('/super-admin/tenants/analytics'),
+        fetchSuperAdminAPI('/super-admin/stores/analytics'),
         fetchSuperAdminAPI('/super-admin/billing/overview').catch(() => null),
       ]);
 
       // Latest-wins guard: ignore stale responses from earlier/auto refreshes.
       if (requestId !== requestIdRef.current) return;
 
-      const tenants: TenantAnalytics[] = analyticsRes.data || [];
-      setStats(buildDashboardStats(overview.data, tenants));
+      const stores: StoreAnalytics[] = analyticsRes.data || [];
+      setStats(buildDashboardStats(overview.data, stores));
       setTraffic(overview.data?.traffic || []);
-      setAnalytics(tenants);
+      setAnalytics(stores);
       if (billingRes?.success) setBilling(billingRes.data);
       setLastRefreshed(new Date());
     } catch {

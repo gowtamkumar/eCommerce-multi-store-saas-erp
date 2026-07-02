@@ -3,7 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import OffersPage from '@/features/promotion/shop/OffersPage';
 import { fetchAPI } from '@/services/api';
 import { getSiteSettings } from '@/services/getSettings';
-import { getTenantId } from '@/services/tenant';
+import { getStoreId } from '@/services/store';
 import Link from 'next/link';
 
 // ISR: Regenerate every 60 seconds. Offers change infrequently;
@@ -32,9 +32,9 @@ async function getOffersData() {
 }
 
 export default async function OffersRoutePage() {
-    const tenantId = await getTenantId();
+    const storeId = await getStoreId();
 
-    if (!tenantId) {
+    if (!storeId) {
         return (
             <main className="min-h-screen flex items-center justify-center p-4">
                 <div className="text-center">

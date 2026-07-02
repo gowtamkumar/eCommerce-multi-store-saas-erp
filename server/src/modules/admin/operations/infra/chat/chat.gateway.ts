@@ -37,7 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const auth = client.handshake.auth || {}
       let token = auth.token || client.handshake.headers?.authorization
       const visitorId = auth.visitorId || client.handshake.query?.visitorId
-      const tenantId = auth.tenantId || client.handshake.query?.tenantId || null
+      const storeId = auth.storeId || client.handshake.query?.storeId || null
 
       // 1. Authenticate if the client is an Agent (dashboard)
       if (token) {
@@ -52,21 +52,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.data = {
           isAgent: true,
           userId: payload.sub || payload.id,
-          tenantId: payload.tenantId || null,
+          storeId: payload.storeId || null,
           role: payload.role,
         }
 
-        // Join tenant-wide agent room
-        const agentRoom = `room:tenant_${client.data.tenantId}_agents`
+        // Join store-wide agent room
+        const agentRoom = `room:store_${client.data.storeId}_agents`
         client.join(agentRoom)
 
-        this.logger.log(`Agent ${client.id} connected for tenant: ${client.data.tenantId}`)
+        this.logger.log(`Agent ${client.id} connected for store: ${client.data.storeId}`)
       } else if (visitorId) {
         // 2. Identify client as Storefront Visitor
         client.data = {
           isAgent: false,
           visitorId,
-          tenantId,
+          storeId,
         }
 
         // Join personal visitor room
@@ -74,7 +74,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.join(visitorRoom)
 
         this.logger.log(
-          `Visitor ${client.id} connected for tenant: ${tenantId}, visitorId: ${visitorId}`,
+          `Visitor ${client.id} connected for store: ${storeId}, visitorId: ${visitorId}`,
         )
       } else {
         this.logger.warn(`Disconnecting client ${client.id}: No agent token or visitorId provided.`)
@@ -92,8 +92,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * Authorizes a client to act on a conversation:
-   *  - Agents: the conversation must belong to the agent's (JWT) tenant.
-   *  - Visitors: the conversation must belong to the visitor's tenant AND be
+   *  - Agents: the conversation must belong to the agent's (JWT) store.
+   *  - Visitors: the conversation must belong to the visitor's store AND be
    *    owned by that visitorId. Both come from the (untrusted) handshake, so we
    *    require an exact match against the stored conversation.
    */
@@ -103,8 +103,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): Promise<boolean> {
     if (!conversationId) return false
     try {
-      const tenantId = client.data?.tenantId ?? null
-      const conversation = await this.chatService.assertConversation(conversationId, tenantId)
+      const storeId = client.data?.storeId ?? null
+      const conversation = await this.chatService.assertConversation(conversationId, storeId)
       if (client.data?.isAgent) {
         return true
       }
@@ -134,7 +134,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.chatService.markAsRead(
       data.conversationId,
       data.senderType,
-      client.data?.tenantId ?? null,
+      client.data?.storeId ?? null,
     )
 
     // Notify others in the room
@@ -181,9 +181,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Broadcast message to everyone in the conversation room
     this.server.to(room).emit('message.receive', savedMessage)
 
-    // If sent by visitor, alert all tenant agents so they see the badge updates
+    // If sent by visitor, alert all store agents so they see the badge updates
     if (data.senderType === 'VISITOR') {
-      const agentRoom = `room:tenant_${client.data.tenantId}_agents`
+      const agentRoom = `room:store_${client.data.storeId}_agents`
       this.server.to(agentRoom).emit('agent.conversation_updated', {
         conversationId: data.conversationId,
         visitorId: client.data.visitorId,

@@ -2,7 +2,7 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { PosRegisterEntity } from './pos-register.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { PosDrawerTransactionEntity } from './pos-drawer-transaction.entity'
 
@@ -13,7 +13,7 @@ export enum PosShiftStatus {
 
 @Entity('pos_shifts')
 @Index(['registerId'])
-@Index(['tenantId'])
+@Index(['storeId'])
 @Index(['branchId'])
 export class PosShiftEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
@@ -77,12 +77,12 @@ export class PosShiftEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, name: 'difference' })
   difference: number
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'text', nullable: true })
   remarks: string

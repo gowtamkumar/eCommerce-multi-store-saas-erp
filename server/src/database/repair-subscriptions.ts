@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from '../app.module'
-import { TenantEntity } from '../modules/system/tenant/entities/tenant.entity'
-import { TenantSubscriptionEntity } from '../modules/system/tenant/entities/tenant-subscription.entity'
+import { StoreEntity } from '../modules/system/store/entities/store.entity'
+import { StoreSubscriptionEntity } from '../modules/system/store/entities/store-subscription.entity'
 import { SubscriptionPlanEntity } from '../modules/system/subscription-plan/entities/subscription-plan.entity'
 import { SubscriptionStatus } from '../common/enums/subscription/subscription-status.enum'
 import { SubscriptionBillingCycle } from '../common/enums/subscription/billing-cycle.enum'
-import { TenantStatus } from '../common/enums/tenant/tenant-status.enum'
+import { StoreStatus } from '../common/enums/store/store-status.enum'
 import { DataSource } from 'typeorm'
 
 async function bootstrap() {
@@ -17,8 +17,8 @@ async function bootstrap() {
   const dataSource = app.get(DataSource)
 
   try {
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    const subRepo = dataSource.getRepository(TenantSubscriptionEntity)
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    const subRepo = dataSource.getRepository(StoreSubscriptionEntity)
     const planRepo = dataSource.getRepository(SubscriptionPlanEntity)
 
     // 1. Get default plan
@@ -30,24 +30,24 @@ async function bootstrap() {
     }
     logger.log(`Using plan ${defaultPlan.name} as default for recovery.`)
 
-    // 2. Find all tenants without active subscription
-    const tenants = await tenantRepo.find({
+    // 2. Find all stores without active subscription
+    const stores = await storeRepo.find({
       relations: {
         activeSubscription: true,
       },
     })
 
-    for (const tenant of tenants) {
-      if (!tenant.activeSubscriptionId) {
+    for (const store of stores) {
+      if (!store.activeSubscriptionId) {
         logger.log(
-          `Tenant ${tenant.storeName} (${tenant.id}) has no active subscription. Creating one...`,
+          `Store ${store.storeName} (${store.id}) has no active subscription. Creating one...`,
         )
         const now = new Date()
         const endsAt = new Date()
         endsAt.setDate(endsAt.getDate() + 30) // 30 days trial/access
 
         const sub = subRepo.create({
-          tenantId: tenant.id,
+          storeId: store.id,
           subscriptionPlanId: defaultPlan.id,
           status: SubscriptionStatus.ACTIVE,
           billingCycle: SubscriptionBillingCycle.MONTHLY,
@@ -56,13 +56,13 @@ async function bootstrap() {
         })
         const savedSub = await subRepo.save(sub)
 
-        tenant.activeSubscriptionId = savedSub.id
-        tenant.status = TenantStatus.ACTIVE
-        await tenantRepo.save(tenant)
-        logger.log(`Restored subscription for tenant ${tenant.storeName}.`)
+        store.activeSubscriptionId = savedSub.id
+        store.status = StoreStatus.ACTIVE
+        await storeRepo.save(store)
+        logger.log(`Restored subscription for store ${store.storeName}.`)
       } else {
         logger.log(
-          `Tenant ${tenant.storeName} (${tenant.id}) already has active subscription: ${tenant.activeSubscriptionId}`,
+          `Store ${store.storeName} (${store.id}) already has active subscription: ${store.activeSubscriptionId}`,
         )
       }
     }

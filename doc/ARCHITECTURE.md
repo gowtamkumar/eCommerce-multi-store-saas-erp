@@ -1,9 +1,9 @@
-# E-Commerce Multi-Tenant SaaS - Architecture Document
+# E-Commerce Multi-Store SaaS - Architecture Document
 
 > **Version:** 1.0  
 > **Date:** 2026-06-07  
 > **Author:** OWL (AI Assistant)  
-> **Repository:** [eCommerce-multi-tenant-saas](https://github.com/gowtamkumar/eCommerce-multi-tenant-saas.git)
+> **Repository:** [eCommerce-multi-store-saas](https://github.com/gowtamkumar/eCommerce-multi-store-saas.git)
 
 ---
 
@@ -14,7 +14,7 @@
 3. [High-Level Architecture](#3-high-level-architecture)
 4. [Technology Stack](#4-technology-stack)
 5. [Module Architecture](#5-module-architecture)
-6. [Multi-Tenant Architecture](#6-multi-tenant-architecture)
+6. [Multi-Store Architecture](#6-multi-store-architecture)
 7. [Authentication & Authorization](#7-authentication--authorization)
 8. [Database Architecture](#8-database-architecture)
 9. [Infrastructure & Deployment](#9-infrastructure--deployment)
@@ -25,9 +25,9 @@
 
 ## 1. Executive Summary
 
-This is a **modular-monolith, multi-tenant SaaS ERP platform** designed to run the full back-office of retail businesses. It supports:
+This is a **modular-monolith, multi-store SaaS ERP platform** designed to run the full back-office of retail businesses. It supports:
 
-- **Multi-tenant store and ERP management**
+- **Multi-store store and ERP management**
 - **Multi-branch and multi-warehouse operations**
 - **Retail POS and online sales**
 - **Inventory ledger and warehouse workflows**
@@ -42,7 +42,7 @@ This is a **modular-monolith, multi-tenant SaaS ERP platform** designed to run t
 | Aspect                   | Description                            |
 | ------------------------ | -------------------------------------- |
 | **Architecture Pattern** | Modular Monolith                       |
-| **Tenant Isolation**     | Strict per-tenant data isolation       |
+| **Store Isolation**     | Strict per-store data isolation       |
 | **Data Consistency**     | Strong consistency for money & stock   |
 | **Async Processing**     | Event-driven with transactional outbox |
 | **Offline Support**      | POS supports offline operations        |
@@ -57,12 +57,12 @@ The system is organized into 12 bounded contexts plus cross-cutting infrastructu
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           E-COMMERCE MULTI-TENANT SaaS                         │
+│                           E-COMMERCE MULTI-STORE SaaS                         │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
 │  │   System    │  │  Identity   │  │   Catalog   │  │    Sales    │            │
-│  │  (Tenant,   │  │  (Auth,     │  │  (Product,  │  │  (Order,    │            │
+│  │  (Store,   │  │  (Auth,     │  │  (Product,  │  │  (Order,    │            │
 │  │   Sub, Org) │  │   RBAC)     │  │   Pricing)  │  │   POS)      │            │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘            │
 │                                                                                 │
@@ -85,7 +85,7 @@ The system is organized into 12 bounded contexts plus cross-cutting infrastructu
 
 | #   | Context               | Source Location                                            | Key Entities                                      |
 | --- | --------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
-| 1   | **System**            | `modules/system/*`                                         | Tenant, Subscription, Branch, Warehouse, AuditLog |
+| 1   | **System**            | `modules/system/*`                                         | Store, Subscription, Branch, Warehouse, AuditLog |
 | 2   | **Identity & Access** | `modules/admin/core/{auth,user,rbac}`                      | User, Role, Permission, UserRoleAssignment        |
 | 3   | **Catalog**           | `modules/admin/catalog/*`                                  | Product, Variant, Category, Brand, PriceBook      |
 | 4   | **Sales**             | `modules/admin/sales/*`                                    | Order, Cart, Coupon, Promotion, Payment           |
@@ -118,7 +118,7 @@ flowchart TB
     end
 
     subgraph Core["⚙️ Modular-Monolith Core (NestJS)"]
-        SystemMod["System Module<br/>Tenant · Subscription · Org · Audit"]
+        SystemMod["System Module<br/>Store · Subscription · Org · Audit"]
         IdentityMod["Identity Module<br/>Auth · RBAC · Permissions"]
         CatalogMod["Catalog Module<br/>Product · Variant · Pricing"]
         SalesMod["Sales Module<br/>Order · POS · Coupon · Cart"]
@@ -183,8 +183,8 @@ HTTP Request
 │                    GUARD CHAIN EXECUTION                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  1. TenantContextMiddleware                                     │
-│     └─> Resolve tenant from JWT / subdomain / custom domain     │
+│  1. StoreContextMiddleware                                     │
+│     └─> Resolve store from JWT / subdomain / custom domain     │
 │                                                                 │
 │  2. MaintenanceGuard                                            │
 │     └─> Check if system is in maintenance mode                  │
@@ -192,14 +192,14 @@ HTTP Request
 │  3. JwtAuthGuard                                                │
 │     └─> Verify JWT token, load user from DB                     │
 │                                                                 │
-│  4. TenantIsolationGuard                                        │
-│     └─> Ensure tenant context is valid                          │
+│  4. StoreIsolationGuard                                        │
+│     └─> Ensure store context is valid                          │
 │                                                                 │
-│  5. TenantStatusGuard                                           │
-│     └─> Check tenant subscription status                        │
+│  5. StoreStatusGuard                                           │
+│     └─> Check store subscription status                        │
 │                                                                 │
 │  6. SubscriptionGuard                                           │
-│     └─> Verify @RequireFeature() against tenant plan            │
+│     └─> Verify @RequireFeature() against store plan            │
 │                                                                 │
 │  7. PermissionsGuard                                            │
 │     └─> Verify @RequirePermission() against user permissions    │
@@ -233,7 +233,7 @@ HTTP Request
 ┌─────────────────────────────────────────────────────────────────┐
 │                    REPOSITORY                                   │
 ├─────────────────────────────────────────────────────────────────┤
-│  - Tenant-filtered queries                                      │
+│  - Store-filtered queries                                      │
 │  - TypeORM operations                                           │
 └─────────────────────────────────────────────────────────────────┘
      │
@@ -306,14 +306,14 @@ server/src/
 │   │   ├── branch-scope.guard.ts
 │   │   ├── maintenance.guard.ts
 │   │   ├── permissions.guard.ts
-│   │   ├── tenant-isolation.guard.ts
-│   │   └── tenant-status.guard.ts
+│   │   ├── store-isolation.guard.ts
+│   │   └── store-status.guard.ts
 │   ├── interceptors/                # Global interceptors
 │   │   ├── audit-log.interceptor.ts
 │   │   ├── logging.interceptor.ts
 │   │   └── transform.interceptor.ts
 │   ├── middleware/                  # Global middleware
-│   │   └── tenant-context.middleware.ts
+│   │   └── store-context.middleware.ts
 │   ├── exception/                   # Exception handling
 │   │   └── exception-filter.ts
 │   ├── decorators/                  # Custom decorators
@@ -362,7 +362,7 @@ server/src/
     │   │       ├── fulfillment/
     │   │       ├── grn/
     │   │       └── inventory-transaction/
-    │   └── settings/                # Tenant settings
+    │   └── settings/                # Store settings
     ├── store/                       # Storefront domain
     │   ├── cart/
     │   ├── return/
@@ -370,7 +370,7 @@ server/src/
     │   ├── wallet/
     │   └── wishlist/
     └── system/                      # System domain
-        ├── tenant/                  # Tenant management
+        ├── store/                  # Store management
         ├── organization/            # Branch & warehouse
         ├── audit-log/               # Audit logging
         ├── subscription-plan/       # Plan definitions
@@ -423,7 +423,7 @@ graph TB
 
     %% System domain
     AppModule --> SystemModule
-    SystemModule --> TenantModule
+    SystemModule --> StoreModule
     SystemModule --> OrganizationModule
     SystemModule --> AuditLogModule
     SystemModule --> SubscriptionPlanModule
@@ -482,7 +482,7 @@ graph TB
     classDef core fill:#6b7280,stroke:#4b5563,color:#fff
 
     class AppModule root
-    class SystemModule,TenantModule,OrganizationModule,AuditLogModule system
+    class SystemModule,StoreModule,OrganizationModule,AuditLogModule system
     class AdminModule,AuthModule,CatalogModule,SalesModule admin
     class OperationsModule,FinanceModule,HRMModule,LogisticsModule operations
     class StoreCartModule,StoreReturnModule,ShippingAddressModule store
@@ -491,73 +491,73 @@ graph TB
 
 ---
 
-## 6. Multi-Tenant Architecture
+## 6. Multi-Store Architecture
 
-### 6.1 Tenant Hierarchy
+### 6.1 Store Hierarchy
 
 ```mermaid
 flowchart TB
     Platform["🏢 Platform<br/>(Super Admin)"]
 
-    Platform --> Tenant1["🏪 Tenant A<br/>(Fashion Store)"]
-    Platform --> Tenant2["🏪 Tenant B<br/>(Electronics)"]
-    Platform --> Tenant3["🏪 Tenant C<br/>(Grocery)"]
+    Platform --> Store1["🏪 Store A<br/>(Fashion Store)"]
+    Platform --> Store2["🏪 Store B<br/>(Electronics)"]
+    Platform --> Store3["🏪 Store C<br/>(Grocery)"]
 
-    Tenant1 --> Branch1["📍 Branch A1<br/>(Downtown)"]
-    Tenant1 --> Branch2["📍 Branch A2<br/>(Mall)"]
+    Store1 --> Branch1["📍 Branch A1<br/>(Downtown)"]
+    Store1 --> Branch2["📍 Branch A2<br/>(Mall)"]
 
     Branch1 --> Warehouse1["📦 Warehouse A1-W1"]
     Branch1 --> Warehouse2["📦 Warehouse A1-W2"]
     Branch2 --> Warehouse3["📦 Warehouse A2-W1"]
 
-    Tenant1 --> CentralWH["📦 Central Warehouse<br/>(Tenant-level)"]
+    Store1 --> CentralWH["📦 Central Warehouse<br/>(Store-level)"]
 
     Warehouse1 --> Bin1["🗄️ Bin A-01"]
     Warehouse1 --> Bin2["🗄️ Bin A-02"]
 
     classDef platform fill:#1f2937,stroke:#111827,color:#fff
-    classDef tenant fill:#2563eb,stroke:#1d4ed8,color:#fff
+    classDef store fill:#2563eb,stroke:#1d4ed8,color:#fff
     classDef branch fill:#16a34a,stroke:#15803d,color:#fff
     classDef warehouse fill:#f59e0b,stroke:#d97706,color:#111
     classDef bin fill:#fef3c7,stroke:#a16207,color:#111
 
     class Platform platform
-    class Tenant1,Tenant2,Tenant3 tenant
+    class Store1,Store2,Store3 store
     class Branch1,Branch2 branch
     class Warehouse1,Warehouse2,Warehouse3,CentralWH warehouse
     class Bin1,Bin2 bin
 ```
 
-### 6.2 Tenant Isolation Layers
+### 6.2 Store Isolation Layers
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    TENANT ISOLATION MODEL                        │
+│                    STORE ISOLATION MODEL                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  Layer 1: HTTP Guard Chain                                      │
-│  ├─ TenantContextMiddleware (resolve from JWT/host)             │
-│  ├─ TenantIsolationGuard (validate tenant context)              │
-│  └─ TenantStatusGuard (check subscription status)               │
+│  ├─ StoreContextMiddleware (resolve from JWT/host)             │
+│  ├─ StoreIsolationGuard (validate store context)              │
+│  └─ StoreStatusGuard (check subscription status)               │
 │                                                                 │
 │  Layer 2: Service Layer                                         │
-│  ├─ RequestContextDto (tenantId from context, NOT body)         │
-│  └─ All services receive tenant-scoped context                  │
+│  ├─ RequestContextDto (storeId from context, NOT body)         │
+│  └─ All services receive store-scoped context                  │
 │                                                                 │
 │  Layer 3: Repository Layer                                      │
-│  ├─ All queries include tenant filter                           │
-│  └─ .andWhere('e.tenantId = :tenantId', ctx)                    │
+│  ├─ All queries include store filter                           │
+│  └─ .andWhere('e.storeId = :storeId', ctx)                    │
 │                                                                 │
 │  Layer 4: Database Layer                                        │
-│  ├─ Composite FK (tenant_id, id) references                     │
+│  ├─ Composite FK (store_id, id) references                     │
 │  ├─ Composite UK for business keys                              │
 │  └─ Row-Level Security (optional)                               │
 │                                                                 │
 │  Layer 5: Infrastructure Layer                                  │
-│  ├─ Cache keys: t:{tenantId}:key                                │
-│  ├─ File paths: t/{tenantId}/path                               │
-│  ├─ Queue jobs: { tenantId } in payload                         │
-│  └─ Search index: tenant-scoped                                 │
+│  ├─ Cache keys: t:{storeId}:key                                │
+│  ├─ File paths: t/{storeId}/path                               │
+│  ├─ Queue jobs: { storeId } in payload                         │
+│  └─ Search index: store-scoped                                 │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -566,14 +566,14 @@ flowchart TB
 
 | Data Entity           | Scope     | Branch Link                | Notes                   |
 | --------------------- | --------- | -------------------------- | ----------------------- |
-| **Product/Variant**   | Tenant    | None                       | One SKU per tenant      |
-| **Customer**          | Tenant    | `preferredBranchId` (info) | Can shop at any branch  |
-| **Supplier**          | Tenant    | None                       | Serves any branch       |
-| **Employee**          | Tenant    | `defaultBranchId`          | Single HR profile       |
-| **Chart of Accounts** | Tenant    | None                       | Branch is dimension     |
-| **Order**             | Tenant    | `branchId` (transaction)   | Attribution dimension   |
+| **Product/Variant**   | Store    | None                       | One SKU per store      |
+| **Customer**          | Store    | `preferredBranchId` (info) | Can shop at any branch  |
+| **Supplier**          | Store    | None                       | Serves any branch       |
+| **Employee**          | Store    | `defaultBranchId`          | Single HR profile       |
+| **Chart of Accounts** | Store    | None                       | Branch is dimension     |
+| **Order**             | Store    | `branchId` (transaction)   | Attribution dimension   |
 | **Inventory**         | Warehouse | Via warehouse              | Physical stock location |
-| **Journal Entry**     | Tenant    | `branchId` (dimension)     | Reporting slice         |
+| **Journal Entry**     | Store    | `branchId` (dimension)     | Reporting slice         |
 
 ---
 
@@ -655,8 +655,8 @@ flowchart LR
 
 | Persona              | Branch Scope        | Warehouse Scope | Typical Permissions              |
 | -------------------- | ------------------- | --------------- | -------------------------------- |
-| **Tenant Owner**     | ALL                 | ALL             | Full access                      |
-| **Tenant Admin**     | ALL                 | ALL             | Full access (except super-admin) |
+| **Store Owner**     | ALL                 | ALL             | Full access                      |
+| **Store Admin**     | ALL                 | ALL             | Full access (except super-admin) |
 | **Branch Manager**   | EXPLICIT [B1]       | Derived         | Branch P&L, staff, POS           |
 | **Regional Manager** | EXPLICIT [B1,B2,B3] | Derived         | Multi-branch oversight           |
 | **Cashier**          | EXPLICIT [B1]       | Read-only       | POS checkout only                |
@@ -674,7 +674,7 @@ flowchart LR
 ```mermaid
 erDiagram
     %% System Domain
-    TENANT {
+    STORE {
         uuid id PK
         varchar storeName
         varchar subdomain UK
@@ -687,7 +687,7 @@ erDiagram
 
     BRANCH {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar name
         varchar address
         boolean isActive
@@ -695,7 +695,7 @@ erDiagram
 
     WAREHOUSE {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid branchId FK "nullable"
         varchar name
         enum type "MAIN,RETAIL,TRANSIT,DROPSHIP"
@@ -704,7 +704,7 @@ erDiagram
     %% Identity Domain
     USER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar email
         varchar passwordHash
         boolean isStaff
@@ -713,7 +713,7 @@ erDiagram
 
     ROLE {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar name
         boolean isSystemRole
     }
@@ -739,7 +739,7 @@ erDiagram
     %% Catalog Domain
     PRODUCT {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar sku
         varchar name
         uuid categoryId FK
@@ -756,21 +756,21 @@ erDiagram
 
     CATEGORY {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar name
         uuid parentId FK "self-ref"
     }
 
     BRAND {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar name
     }
 
     %% Sales Domain
     ORDER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid branchId FK "nullable"
         uuid customerId FK
         enum status
@@ -802,7 +802,7 @@ erDiagram
     %% Inventory Domain
     INVENTORY_LEDGER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid variantId FK
         uuid warehouseId FK
         int qtyDelta
@@ -813,7 +813,7 @@ erDiagram
 
     STOCK_RESERVATION {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid variantId FK
         uuid warehouseId FK
         uuid orderId FK
@@ -823,7 +823,7 @@ erDiagram
 
     STOCK_TRANSFER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid sourceWarehouseId FK
         uuid destWarehouseId FK
         enum status
@@ -832,7 +832,7 @@ erDiagram
     %% Procurement Domain
     PURCHASE_ORDER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid supplierId FK
         uuid warehouseId FK
         enum status
@@ -841,7 +841,7 @@ erDiagram
 
     GOODS_RECEIVED_NOTE {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid purchaseOrderId FK
         uuid warehouseId FK
         date receivedDate
@@ -850,7 +850,7 @@ erDiagram
     %% Finance Domain
     CHART_OF_ACCOUNTS {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar code
         varchar name
         enum type "ASSET,LIABILITY,EQUITY,REVENUE,EXPENSE"
@@ -858,7 +858,7 @@ erDiagram
 
     JOURNAL_ENTRY {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid branchId FK "dimension"
         varchar reference
         date entryDate
@@ -876,7 +876,7 @@ erDiagram
     %% CRM Domain
     CUSTOMER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         varchar email
         uuid preferredBranchId FK "info only"
         enum membershipTier
@@ -884,7 +884,7 @@ erDiagram
 
     WALLET_LEDGER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid userId FK
         decimal amount
         varchar refType
@@ -893,7 +893,7 @@ erDiagram
 
     LOYALTY_LEDGER {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid userId FK
         int points
         varchar refType
@@ -903,7 +903,7 @@ erDiagram
     %% HRM Domain
     EMPLOYEE {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid userId FK
         uuid defaultBranchId FK
         varchar employeeId
@@ -912,7 +912,7 @@ erDiagram
 
     ATTENDANCE {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid employeeId FK
         uuid branchId FK
         timestamp checkIn
@@ -921,7 +921,7 @@ erDiagram
 
     PAYSLIP {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid employeeId FK
         uuid branchId FK
         decimal grossSalary
@@ -932,7 +932,7 @@ erDiagram
     %% Audit Domain
     AUDIT_LOG {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid userId FK
         varchar action
         varchar resourceType
@@ -943,63 +943,63 @@ erDiagram
     }
 
     %% Relationships
-    TENANT ||--o{ BRANCH : "has"
-    TENANT ||--o{ WAREHOUSE : "has"
+    STORE ||--o{ BRANCH : "has"
+    STORE ||--o{ WAREHOUSE : "has"
     BRANCH ||--o{ WAREHOUSE : "owns (optional)"
-    TENANT ||--o{ USER : "has"
-    TENANT ||--o{ ROLE : "has"
+    STORE ||--o{ USER : "has"
+    STORE ||--o{ ROLE : "has"
     ROLE ||--o{ USER_ROLE_ASSIGNMENT : "assigned via"
     USER ||--o{ USER_ROLE_ASSIGNMENT : "has"
     ROLE ||--o{ ROLE_PERMISSION : "has"
     PERMISSION ||--o{ ROLE_PERMISSION : "granted via"
-    TENANT ||--o{ PRODUCT : "has"
+    STORE ||--o{ PRODUCT : "has"
     PRODUCT ||--o{ PRODUCT_VARIANT : "has"
-    TENANT ||--o{ ORDER : "has"
+    STORE ||--o{ ORDER : "has"
     ORDER ||--o{ ORDER_ITEM : "contains"
-    TENANT ||--o{ INVENTORY_LEDGER : "tracks"
-    TENANT ||--o{ CUSTOMER : "has"
-    TENANT ||--o{ EMPLOYEE : "has"
-    TENANT ||--o{ AUDIT_LOG : "logs"
+    STORE ||--o{ INVENTORY_LEDGER : "tracks"
+    STORE ||--o{ CUSTOMER : "has"
+    STORE ||--o{ EMPLOYEE : "has"
+    STORE ||--o{ AUDIT_LOG : "logs"
 ```
 
 ### 8.2 Key Database Constraints
 
 ```sql
--- Composite unique indexes for tenant-scoped business keys
-CREATE UNIQUE INDEX uq_product_sku_tenant
-  ON products (tenant_id, sku) WHERE deleted_at IS NULL;
+-- Composite unique indexes for store-scoped business keys
+CREATE UNIQUE INDEX uq_product_sku_store
+  ON products (store_id, sku) WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX uq_customer_email_tenant
-  ON customers (tenant_id, email) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_customer_email_store
+  ON customers (store_id, email) WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX uq_branch_code_tenant
-  ON branches (tenant_id, code) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_branch_code_store
+  ON branches (store_id, code) WHERE deleted_at IS NULL;
 
--- Composite foreign keys for tenant consistency
+-- Composite foreign keys for store consistency
 ALTER TABLE warehouses
-  ADD CONSTRAINT warehouses_branch_same_tenant_fk
-  FOREIGN KEY (tenant_id, branch_id)
-  REFERENCES branches (tenant_id, id);
+  ADD CONSTRAINT warehouses_branch_same_store_fk
+  FOREIGN KEY (store_id, branch_id)
+  REFERENCES branches (store_id, id);
 
 -- Partial indexes for common queries
-CREATE INDEX idx_orders_tenant_status
-  ON orders (tenant_id, status) WHERE deleted_at IS NULL;
+CREATE INDEX idx_orders_store_status
+  ON orders (store_id, status) WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_inventory_ledger_variant_warehouse
-  ON inventory_ledger (tenant_id, variant_id, warehouse_id);
+  ON inventory_ledger (store_id, variant_id, warehouse_id);
 ```
 
 ### 8.3 Ledger-First Design
 
 | Truth                   | Source Table                              | Aggregation Method                         |
 | ----------------------- | ----------------------------------------- | ------------------------------------------ |
-| **Stock on hand**       | `inventory_ledger`                        | SUM by (tenantId, variantId, warehouseId)  |
+| **Stock on hand**       | `inventory_ledger`                        | SUM by (storeId, variantId, warehouseId)  |
 | **Available stock**     | `inventory_ledger` - `stock_reservations` | Computed in StockReservationService        |
-| **Customer AR balance** | `ar_ledger`                               | SUM by (tenantId, customerId)              |
-| **Supplier AP balance** | `supplier_ap_ledger`                      | SUM by (tenantId, supplierId)              |
-| **GL account balance**  | `ledger_entries`                          | SUM by (tenantId, accountId, fiscalPeriod) |
-| **Wallet balance**      | `wallet_ledger`                           | SUM by (tenantId, userId)                  |
-| **Loyalty points**      | `loyalty_ledger`                          | SUM by (tenantId, userId)                  |
+| **Customer AR balance** | `ar_ledger`                               | SUM by (storeId, customerId)              |
+| **Supplier AP balance** | `supplier_ap_ledger`                      | SUM by (storeId, supplierId)              |
+| **GL account balance**  | `ledger_entries`                          | SUM by (storeId, accountId, fiscalPeriod) |
+| **Wallet balance**      | `wallet_ledger`                           | SUM by (storeId, userId)                  |
+| **Loyalty points**      | `loyalty_ledger`                          | SUM by (storeId, userId)                  |
 
 > **Important:** No code path may UPDATE these aggregates directly. New rows only.
 
@@ -1273,12 +1273,12 @@ flowchart TB
 | #   | Principle                         | Description                                                                         |
 | --- | --------------------------------- | ----------------------------------------------------------------------------------- |
 | 1   | **Ledger First**                  | Stock and money are always derived from append-only ledgers, never mutable counters |
-| 2   | **Tenant Isolation Everywhere**   | Every row, cache key, queue job, file path carries `tenantId`                       |
+| 2   | **Store Isolation Everywhere**   | Every row, cache key, queue job, file path carries `storeId`                       |
 | 3   | **Strong Consistency**            | DB transactions wrap source-of-truth writes; side effects go async via outbox       |
 | 4   | **Idempotent Operations**         | Webhooks, POS sync, queue jobs are safe to retry                                    |
 | 5   | **Human Approval for High-Risk**  | Stock adjustments, payments, payroll require permission + audit + reason            |
 | 6   | **Feature-Gated by Subscription** | Plan entitlement checked separately from RBAC permission                            |
-| 7   | **Boundary-Respecting**           | Tenant → Branch → Warehouse hierarchy enforced consistently                         |
+| 7   | **Boundary-Respecting**           | Store → Branch → Warehouse hierarchy enforced consistently                         |
 | 8   | **Reversibility**                 | Every business mutation has a reversal path                                         |
 | 9   | **Snapshots Over Joins**          | Order items, invoices store snapshots at time of event                              |
 | 10  | **Boring Before Clever**          | Deterministic ERP first; AI/analytics on top later                                  |
@@ -1287,13 +1287,13 @@ flowchart TB
 
 | ❌ Anti-Pattern                 | ✅ Correct Approach                       |
 | ------------------------------- | ----------------------------------------- |
-| Globally unique SKU index       | Composite unique (tenant_id, sku)         |
-| Read tenantId from request body | Read from RequestContextDto               |
+| Globally unique SKU index       | Composite unique (store_id, sku)         |
+| Read storeId from request body | Read from RequestContextDto               |
 | Update variant.stock directly   | Insert row in inventory_ledger            |
 | Move stock with UPDATE          | Create stock_transfer document            |
 | Branch-specific products        | One SKU + warehouse stock + price book    |
-| Hard-delete tenant              | Soft delete + retention worker            |
-| Cross-tenant joins in app code  | Platform-level only with super-admin auth |
+| Hard-delete store              | Soft delete + retention worker            |
+| Cross-store joins in app code  | Platform-level only with super-admin auth |
 
 ---
 
@@ -1314,8 +1314,8 @@ flowchart TB
 
 | Term                 | Definition                                                |
 | -------------------- | --------------------------------------------------------- |
-| **Tenant**           | A business using the SaaS. Top-level isolation boundary.  |
-| **Branch**           | Physical/logical business location belonging to a tenant. |
+| **Store**           | A business using the SaaS. Top-level isolation boundary.  |
+| **Branch**           | Physical/logical business location belonging to a store. |
 | **Warehouse**        | Physical storage location owning stock.                   |
 | **Bin**              | Subdivision inside a warehouse (rack, shelf, zone).       |
 | **Inventory Ledger** | Immutable append-only log of all stock movements.         |

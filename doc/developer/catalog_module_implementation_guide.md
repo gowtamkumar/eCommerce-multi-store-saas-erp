@@ -2,7 +2,7 @@
 
 > **Document Purpose:** This guide defines the architecture, data model, business rules, and UI design for a production-grade ERP Catalog Module. It is the single source of truth for all product and catalog development decisions.
 > 
-> **Context:** This system supports Multi-Tenant SaaS with both Retail (B2C) and Wholesale (B2B) business models, backed by an Immutable Inventory Ledger Engine.
+> **Context:** This system supports Multi-Store SaaS with both Retail (B2C) and Wholesale (B2B) business models, backed by an Immutable Inventory Ledger Engine.
 
 ---
 
@@ -56,7 +56,7 @@ The category is a **hierarchical tree** (parent-child). Each category can have s
 | `description` | text | SEO content |
 | `isActive` | boolean | Soft disable |
 | `sortOrder` | int | Manual ordering |
-| `tenantId` | UUID | Multi-tenant isolation |
+| `storeId` | UUID | Multi-store isolation |
 
 **Business Rules:**
 - A category can have unlimited levels of depth.
@@ -79,7 +79,7 @@ Brands help customers filter and build trust. They are also important for procur
 | `description` | text | About the brand |
 | `website` | string | External URL |
 | `isActive` | boolean | Soft disable |
-| `tenantId` | UUID | Multi-tenant isolation |
+| `storeId` | UUID | Multi-store isolation |
 
 ---
 
@@ -153,7 +153,7 @@ When a product has options (e.g., Color, Size), each combination becomes a **Var
 |---|---|---|
 | `id` | UUID | Primary Key |
 | `productId` | UUID | Parent product |
-| `sku` | string (unique per tenant) | The actual sellable code |
+| `sku` | string (unique per store) | The actual sellable code |
 | `barcode` | string | EAN/UPC for this variant |
 | `combination` | jsonb | `{ "Color": "Red", "Size": "XL" }` |
 | `isDefault` | boolean | Which variant is shown by default |
@@ -186,7 +186,7 @@ When a product has options (e.g., Color, Size), each combination becomes a **Var
 | `images` | string[] | Variant-specific images (e.g., "Red" color photo) |
 
 **Business Rules:**
-- A variant's `sku` must be globally unique within a tenant.
+- A variant's `sku` must be globally unique within a store.
 - `stock` must NEVER be set by the product form. It is exclusively controlled by the Inventory Ledger.
 - `averageCost` must NEVER be editable by users. It is calculated automatically by the Ledger Engine on each `PURCHASE` transaction.
 
@@ -415,14 +415,14 @@ Each row in the variant table must show:
 
 | Rule | Where Enforced |
 |---|---|
-| SKU must be unique per tenant | Database unique index + API validation |
+| SKU must be unique per store | Database unique index + API validation |
 | `stock` cannot be set via Product API | API strips the field before save |
 | `averageCost` cannot be set via Product API | API strips the field before save |
 | `wholesalePrice` cannot exceed `retailPrice` | API + frontend validation |
 | `minWholesaleQty` must be >= 1 | API validation |
 | Deleting a product with stock > 0 is blocked | API blocks, shows error |
 | Category must exist before assigning | Foreign key constraint |
-| Variants must have unique SKU within tenant | DB unique index on (sku, tenantId) |
+| Variants must have unique SKU within store | DB unique index on (sku, storeId) |
 
 ---
 

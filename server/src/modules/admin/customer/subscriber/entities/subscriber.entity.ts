@@ -1,6 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm'
 
 export enum SubscriberStatus {
@@ -15,15 +15,15 @@ export enum SubscriberStatus {
 }
 
 /**
- * Database Index: Optimizes chronological and tenant-based lookups
- * Unique Constraint: Ensures an email is only subscribed once per tenant
+ * Database Index: Optimizes chronological and store-based lookups
+ * Unique Constraint: Ensures an email is only subscribed once per store
  *
  * Email is stored lowercase, see normalization in service layer + migration.
  */
 @Index(['createdAt'])
-@Index(['tenantId'])
-@Index(['tenantId', 'status'])
-@Unique('UQ_subscribers_tenant_email', ['tenantId', 'email'])
+@Index(['storeId'])
+@Index(['storeId', 'status'])
+@Unique('UQ_subscribers_store_email', ['storeId', 'email'])
 @Entity('subscribers')
 export class SubscriberEntity extends BaseEntity {
   @Column({ type: 'varchar' })
@@ -72,12 +72,12 @@ export class SubscriberEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, name: 'consent_user_agent', nullable: true })
   consentUserAgent: string | null
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

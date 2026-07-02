@@ -30,7 +30,7 @@ export default function PlatformCampaignForm({ campaign, onClose, onSuccess }: P
         body: (campaign as any)?.messages?.[0]?.body || '',
         imageUrl: (campaign as any)?.messages?.[0]?.imageUrl || '',
         scheduleTime: campaign?.scheduleTime ? new Date(campaign.scheduleTime).toISOString().slice(0, 16) : '',
-        targetTenants: campaign?.targetTenants ?? true,
+        targetStores: campaign?.targetStores ?? true,
         targetSubscribers: campaign?.targetSubscribers ?? false,
         targetUsers: campaign?.targetUsers ?? false,
     });
@@ -155,9 +155,9 @@ export default function PlatformCampaignForm({ campaign, onClose, onSuccess }: P
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Target Audience</label>
                                     <div className="grid grid-cols-1 gap-3">
                                         {[
-                                            { id: 'targetTenants', label: 'Registered Store Owners', count: 'Tenant Admins' },
+                                            { id: 'targetStores', label: 'Registered Store Owners', count: 'Store Admins' },
                                             { id: 'targetSubscribers', label: 'Platform Subscribers', count: 'Landing Page Subscriptions' },
-                                            { id: 'targetUsers', label: 'All Tenant Users', count: 'Non-SuperAdmin Users' },
+                                            { id: 'targetUsers', label: 'All Store Users', count: 'Non-SuperAdmin Users' },
                                         ].map((audience) => (
                                             <label
                                                 key={audience.id}

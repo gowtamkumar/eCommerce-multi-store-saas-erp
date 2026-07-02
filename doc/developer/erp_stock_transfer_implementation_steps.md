@@ -1,6 +1,6 @@
 # Step-by-Step Implementation Guide: Document-Based Stock Transfers
 
-This guide outlines the exact step-by-step engineering blueprint required to build a state-tracked, document-based Stock Transfer system between warehouses within a multi-tenant ERP platform.
+This guide outlines the exact step-by-step engineering blueprint required to build a state-tracked, document-based Stock Transfer system between warehouses within a multi-store ERP platform.
 
 ---
 
@@ -8,12 +8,12 @@ This guide outlines the exact step-by-step engineering blueprint required to bui
 To prevent direct, un-audited database writes, we represent stock transfers as formal documents composed of a parent record and a set of nested child line items.
 
 1. **Create the Parent Table (`stock_transfers`):**
-   * Fields: `id` (UUID, Primary Key), `tenant_id` (UUID, Indexed), `transfer_number` (String, Unique per tenant), `source_warehouse_id` (UUID), `destination_warehouse_id` (UUID), `status` (Enum: `DRAFT`, `APPROVED`, `IN_TRANSIT`, `RECEIVED`, `CANCELLED`), `remarks` (Text), `user_id` (UUID), `created_at`, `updated_at`.
+   * Fields: `id` (UUID, Primary Key), `store_id` (UUID, Indexed), `transfer_number` (String, Unique per store), `source_warehouse_id` (UUID), `destination_warehouse_id` (UUID), `status` (Enum: `DRAFT`, `APPROVED`, `IN_TRANSIT`, `RECEIVED`, `CANCELLED`), `remarks` (Text), `user_id` (UUID), `created_at`, `updated_at`.
 2. **Create the Line Items Table (`stock_transfer_items`):**
    * Fields: `id` (UUID, Primary Key), `transfer_id` (UUID, Foreign Key referencing parent table with `ON DELETE CASCADE`), `product_id` (UUID), `variant_id` (UUID, Nullable), `quantity_requested` (Numeric), `quantity_received` (Numeric).
 3. **Establish Database Indexes:**
-   * Create index on `[tenant_id, status]` for query scoping.
-   * Create index on `[tenant_id, transfer_number]` for rapid search.
+   * Create index on `[store_id, status]` for query scoping.
+   * Create index on `[store_id, transfer_number]` for rapid search.
 
 ---
 
@@ -51,7 +51,7 @@ Implement state-transition methods inside a NestJS service wrapped in atomic Typ
 async ship(id: string, ctx: RequestContextDto) {
   return this.connection.transaction(async (manager) => {
     // 1. Lock the row to prevent race conditions
-    const doc = await manager.findOne(StockTransferDocEntity, { where: { id, tenantId: ctx.tenantId }, relations: ['items'] });
+    const doc = await manager.findOne(StockTransferDocEntity, { where: { id, storeId: ctx.storeId }, relations: ['items'] });
     
     // 2. Enforce state sequence validation
     if (doc.status !== 'APPROVED') throw new BadRequestException('Can only ship approved transfers');

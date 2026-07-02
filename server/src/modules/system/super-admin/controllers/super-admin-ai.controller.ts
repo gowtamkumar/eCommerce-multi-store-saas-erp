@@ -11,10 +11,10 @@ import {
 import { PlatformAiService } from '../../platform/services/platform-ai.service'
 import { SuperAdminService } from '../super-admin.service'
 import {
-  GenerateTenantHealthNarrativeDto,
-  TenantHealthAggregateDto,
-  TenantHealthNarrativeResultDto,
-} from '../dto/tenant-health.dto'
+  GenerateStoreHealthNarrativeDto,
+  StoreHealthAggregateDto,
+  StoreHealthNarrativeResultDto,
+} from '../dto/store-health.dto'
 import {
   GenerateOnboardingHintsDto,
   OnboardingHintsResultDto,
@@ -43,15 +43,15 @@ export class SuperAdminAiController {
     }
   }
 
-  @Get('tenant-health/snapshot')
-  async getTenantHealthSnapshot(
+  @Get('store-health/snapshot')
+  async getStoreHealthSnapshot(
     @Query('days') days?: number,
-  ): Promise<BaseApiSuccessResponse<TenantHealthAggregateDto>> {
-    const data = await this.superAdminService.getTenantHealthAggregate(days)
+  ): Promise<BaseApiSuccessResponse<StoreHealthAggregateDto>> {
+    const data = await this.superAdminService.getStoreHealthAggregate(days)
     return {
       success: true,
       statusCode: 200,
-      message: 'Tenant health snapshot retrieved',
+      message: 'Store health snapshot retrieved',
       data,
     }
   }
@@ -70,17 +70,17 @@ export class SuperAdminAiController {
     }
   }
 
-  @Post('generate/tenant-health-narrative')
+  @Post('generate/store-health-narrative')
   @HttpCode(200)
-  async generateTenantHealthNarrative(
-    @Body() body: GenerateTenantHealthNarrativeDto,
-  ): Promise<BaseApiSuccessResponse<TenantHealthNarrativeResultDto>> {
-    const snapshot = await this.superAdminService.getTenantHealthAggregate(body.days)
-    const narrative = await this.platformAiService.generateTenantHealthNarrative(snapshot)
+  async generateStoreHealthNarrative(
+    @Body() body: GenerateStoreHealthNarrativeDto,
+  ): Promise<BaseApiSuccessResponse<StoreHealthNarrativeResultDto>> {
+    const snapshot = await this.superAdminService.getStoreHealthAggregate(body.days)
+    const narrative = await this.platformAiService.generateStoreHealthNarrative(snapshot)
     return {
       success: true,
       statusCode: 200,
-      message: 'Tenant health narrative generated',
+      message: 'Store health narrative generated',
       data: { ...narrative, snapshot },
     }
   }

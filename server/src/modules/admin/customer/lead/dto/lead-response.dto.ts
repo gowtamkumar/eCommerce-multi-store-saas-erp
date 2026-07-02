@@ -27,7 +27,7 @@ export class LeadResponseDto {
   status: LeadStatus
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

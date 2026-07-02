@@ -16,7 +16,7 @@ import type {
 } from '../types';
 
 // Server caps `limit` at 100 - walk pages until we have everything (capped at
-// 10k orders / 100 pages so a runaway tenant doesn't freeze the page).
+// 10k orders / 100 pages so a runaway store doesn't freeze the page).
 async function fetchAllOrders(): Promise<MarketingOrder[]> {
     const PAGE_SIZE = 100;
     const PAGE_HARD_CAP = 100;

@@ -12,8 +12,8 @@ A modern, full-stack e-commerce landing page built with Next.js 16, React 19, Mo
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/gowtamkumar/eCommerce-multi-tenant-saasLanding-Page.git
-cd eCommerce-multi-tenant-saasLanding-Page
+git clone https://github.com/gowtamkumar/eCommerce-multi-store-saasLanding-Page.git
+cd eCommerce-multi-store-saasLanding-Page
 ```
 
 ### 2️⃣ Setup Environment

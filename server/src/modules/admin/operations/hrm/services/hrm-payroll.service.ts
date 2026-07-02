@@ -40,7 +40,7 @@ export class HrmPayrollService {
   async processPayroll(period: string, name: string, ctx: RequestContextDto) {
     this.logger.log(`Starting payroll process for period ${period}`)
 
-    const existing = await this.hrmRepo.findActivePayrollBatchForPeriod(ctx.tenantId, period)
+    const existing = await this.hrmRepo.findActivePayrollBatchForPeriod(ctx.storeId, period)
     if (existing) {
       throw new BadRequestException(
         `Payroll for period ${period} has already been processed and is in ${existing.status} status.`,
@@ -58,17 +58,17 @@ export class HrmPayrollService {
     const endDate = new Date(year, month, 0, 23, 59, 59, 999)
     const totalDaysInMonth = new Date(year, month, 0).getDate()
 
-    const holidays = await this.hrmRepo.findHolidaysInRange(ctx.tenantId, startDate, endDate)
+    const holidays = await this.hrmRepo.findHolidaysInRange(ctx.storeId, startDate, endDate)
     const holidayDateSet = buildHolidayDateSet(holidays)
 
     const taxBrackets = await this.hrmRepo.taxBracketRepo.find({
-      where: { tenantId: ctx.tenantId, fiscalYear: year },
+      where: { storeId: ctx.storeId, fiscalYear: year },
       order: { sortOrder: 'ASC', minAmount: 'ASC' },
     })
 
     return await this.hrmRepo.employeeRepo.manager.transaction(async (em) => {
       const siteSettings = await em.findOne(SiteSettingsEntity, {
-        where: { tenantId: ctx.tenantId },
+        where: { storeId: ctx.storeId },
       })
       const employeeRepo = em.getRepository(EmployeeEntity)
       const leaveRequestRepo = em.getRepository(LeaveRequestEntity)
@@ -76,7 +76,7 @@ export class HrmPayrollService {
       const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
 
       const employees = await employeeRepo.find({
-        where: { tenantId: ctx.tenantId },
+        where: { storeId: ctx.storeId },
         relations: {
           user: true,
           department: true,
@@ -95,7 +95,7 @@ export class HrmPayrollService {
       const [approvedLeaves, allSessions] = await Promise.all([
         leaveRequestRepo.find({
           where: {
-            tenantId: ctx.tenantId,
+            storeId: ctx.storeId,
             status: LeaveStatus.APPROVED,
             startDate: LessThanOrEqual(endDate),
             endDate: MoreThanOrEqual(startDate),
@@ -105,7 +105,7 @@ export class HrmPayrollService {
           ? attendanceSessionRepo.find({
               where: {
                 employeeId: In(employeeIds),
-                tenantId: ctx.tenantId,
+                storeId: ctx.storeId,
                 checkIn: Between(startDate, endDate),
               },
               order: { checkIn: 'ASC' },
@@ -116,7 +116,7 @@ export class HrmPayrollService {
       const shiftAssignments = await this.hrmRepo.findEmployeeShiftsForEmployees(
         employeeIds,
         startDate,
-        ctx.tenantId,
+        ctx.storeId,
       )
 
       const assignmentMap = new Map<string, typeof shiftAssignments[0]>()
@@ -137,7 +137,7 @@ export class HrmPayrollService {
         payrollBatchRepo.create({
           name,
           period,
-          tenantId: ctx.tenantId,
+          storeId: ctx.storeId,
           status: PayrollBatchStatus.DRAFT,
         }),
       )
@@ -218,7 +218,7 @@ export class HrmPayrollService {
         const slip = em.create(PayrollSlipEntity, {
           batchId: batch.id,
           employeeId: employee.id,
-          tenantId: ctx.tenantId,
+          storeId: ctx.storeId,
           basicSalary: salary,
           totalAllowances: allowances,
           totalDeductions: parseFloat(
@@ -279,12 +279,12 @@ export class HrmPayrollService {
   }
 
   async approvePayrollBatch(batchId: string, approvedById: string, ctx: RequestContextDto) {
-    await this.employeeService.validateEmployeeInTenant(approvedById, ctx.tenantId)
+    await this.employeeService.validateEmployeeInStore(approvedById, ctx.storeId)
 
     return await this.hrmRepo.payrollBatchRepo.manager.transaction(async (em) => {
       const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
       const batch = await payrollBatchRepo.findOne({
-        where: { id: batchId, tenantId: ctx.tenantId },
+        where: { id: batchId, storeId: ctx.storeId },
       })
       if (!batch) throw new NotFoundException('Payroll batch not found')
 
@@ -295,7 +295,7 @@ export class HrmPayrollService {
         throw new BadRequestException(`Cannot approve a batch in ${batch.status} status`)
       }
 
-      const slips = await this.hrmRepo.findPayrollSlipsByBatch(batchId, ctx.tenantId)
+      const slips = await this.hrmRepo.findPayrollSlipsByBatch(batchId, ctx.storeId)
       let totalGrossSalaries = 0
       let totalTaxesWithheld = 0
       let totalBaseDeductions = 0
@@ -363,7 +363,7 @@ export class HrmPayrollService {
     return await this.hrmRepo.payrollBatchRepo.manager.transaction(async (em) => {
       const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
       const batch = await payrollBatchRepo.findOne({
-        where: { id: batchId, tenantId: ctx.tenantId },
+        where: { id: batchId, storeId: ctx.storeId },
       })
       if (!batch) throw new NotFoundException('Payroll batch not found')
       if (batch.status === PayrollBatchStatus.PAID) {
@@ -394,7 +394,7 @@ export class HrmPayrollService {
       })
 
       const updatedBatch = await payrollBatchRepo.findOne({
-        where: { id: batchId, tenantId: ctx.tenantId },
+        where: { id: batchId, storeId: ctx.storeId },
       })
 
       await this.auditLogService.log(ctx, {
@@ -409,10 +409,10 @@ export class HrmPayrollService {
   }
 
   async findAllPayrollBatches(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllPayrollBatches(ctx.tenantId)
+    return this.hrmRepo.findAllPayrollBatches(ctx.storeId)
   }
 
   async findPayrollSlipsByBatch(batchId: string, ctx: RequestContextDto) {
-    return this.hrmRepo.findPayrollSlipsByBatch(batchId, ctx.tenantId)
+    return this.hrmRepo.findPayrollSlipsByBatch(batchId, ctx.storeId)
   }
 }

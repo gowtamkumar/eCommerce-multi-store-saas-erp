@@ -7,13 +7,13 @@ import {
 } from 'typeorm'
 
 @Entity('ai_usage_logs')
-@Index(['tenantId', 'createdAt'])
+@Index(['storeId', 'createdAt'])
 export class AiUsageLogEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
-  tenantId: string
+  @Column({ name: 'store_id', type: 'uuid' })
+  storeId: string
 
   @Column({ type: 'varchar', length: 128 })
   endpoint: string

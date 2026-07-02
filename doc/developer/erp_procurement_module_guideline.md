@@ -33,10 +33,10 @@ The Procurement module manages the entire lifecycle of acquiring goods and servi
 - **Supplier Invoice**: Matching the PO, GRN, and Invoice (3-Way Matching).
 - **Debit Note**: Formal documentation for returns and credit adjustments.
 
-## Multi-Tenant Security Rules
-- All procurement records MUST contain `tenant_id`.
-- PR/PO approvals must be scoped to the user's assigned branch or the main tenant admin.
-- Supplier lists can be shared globally across a tenant's branches but never across different tenants.
+## Multi-Store Security Rules
+- All procurement records MUST contain `store_id`.
+- PR/PO approvals must be scoped to the user's assigned branch or the main store admin.
+- Supplier lists can be shared globally across a store's branches but never across different stores.
 
 ## Integration Points
 - **Audit Log**: Every status change (e.g., PO Draft -> Approved) MUST be logged.

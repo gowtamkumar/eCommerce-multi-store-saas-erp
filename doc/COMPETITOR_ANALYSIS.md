@@ -1,16 +1,16 @@
 # Competitor Analysis & Strategic Positioning Report
 
-This document outlines the competitive landscape for your **Multi-Tenant SaaS eCommerce ERP**, comparing its architecture and features against both global platforms and regional/local competitors in the South Asian (specifically Bangladeshi) market.
+This document outlines the competitive landscape for your **Multi-Store SaaS eCommerce ERP**, comparing its architecture and features against both global platforms and regional/local competitors in the South Asian (specifically Bangladeshi) market.
 
 ---
 
 ## 🏆 Executive Summary & Project Positioning
 
-Your project is positioned as a **Unified Cloud-Native SaaS ERP** designed specifically for retail and eCommerce businesses. While most businesses currently rely on a disconnected array of tools (e.g., Shopify for online sales, a standalone POS for physical retail, Tally/Excel for bookkeeping, and WhatsApp/Biometric devices for attendance), your platform integrates **eCommerce, POS, Warehouse Management (WMS), HRM & Geofenced Attendance, Double-Entry Accounting, and Local Courier API Automation** into a single multi-tenant codebase.
+Your project is positioned as a **Unified Cloud-Native SaaS ERP** designed specifically for retail and eCommerce businesses. While most businesses currently rely on a disconnected array of tools (e.g., Shopify for online sales, a standalone POS for physical retail, Tally/Excel for bookkeeping, and WhatsApp/Biometric devices for attendance), your platform integrates **eCommerce, POS, Warehouse Management (WMS), HRM & Geofenced Attendance, Double-Entry Accounting, and Local Courier API Automation** into a single multi-store codebase.
 
 ```
        [ Disconnected Stack (Legacy) ]                 [ Your Unified SaaS ERP (Modern) ]
- Shopify (Sales) + Standalone POS + Tally (Acc)    ===>   One Single Database Scoped by Tenant Subdomains.
+ Shopify (Sales) + Standalone POS + Tally (Acc)    ===>   One Single Database Scoped by Store Subdomains.
    + Courier Panels + Excel/WhatsApp (HR)                Next.js & NestJS Stack + Real-Time Sync.
 ```
 
@@ -27,7 +27,7 @@ Your project is positioned as a **Unified Cloud-Native SaaS ERP** designed speci
     *   *Weakness*: High implementation cost, slow onboarding cycles, and not optimized for modern, high-volume consumer-facing retail/eCommerce POS.
 *   **TallyPrime (South Asia)**: The standard desktop-based accounting-first tool.
     *   *Strength*: Immense market trust for tax, VAT, and daily general bookkeeping.
-    *   *Weakness*: Extremely dated desktop UI; lacks native multi-tenant SaaS storefront, POS register integration, and courier API automation.
+    *   *Weakness*: Extremely dated desktop UI; lacks native multi-store SaaS storefront, POS register integration, and courier API automation.
 
 ### 1.2 Global Competitors
 *   **Shopify (Global)**: The market leader in eCommerce and retail POS.
@@ -44,7 +44,7 @@ Your project is positioned as a **Unified Cloud-Native SaaS ERP** designed speci
 | Feature / System Module | Your Project | Shopify (with POS) | Odoo ERP | Biznify | TallyPrime |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Technology Stack** | **Next.js, NestJS, Pgvector** (Modern, fast, headless-ready) | Ruby, Liquid, Proprietary (Closed ecosystem) | Python, XML, PostgreSQL (Heavy, complex template engine) | PHP / Laravel, MySQL (Standard monolithic) | Desktop Delphi/C++ (Legacy, on-premise) |
-| **Multi-Tenant Architecture** | **Built-in Subdomains & Isolation** (SaaS-native) | Multi-tenant but high custom subscription fees | Multi-tenant available in Enterprise (Expensive) | Tenant-per-DB or custom cloud configs | On-premise (No native SaaS multi-tenancy) |
+| **Multi-Store Architecture** | **Built-in Subdomains & Isolation** (SaaS-native) | Multi-store but high custom subscription fees | Multi-store available in Enterprise (Expensive) | Store-per-DB or custom cloud configs | On-premise (No native SaaS multi-tenancy) |
 | **Double-Entry Accounting** | **Yes (COA, balance check, lock dates)** | No (Requires external QuickBooks/Xero link) | Yes (Comprehensive but complex configuration) | Yes (Basic bookkeeping ledger sheets) | **Yes (Gold Standard in South Asia)** |
 | **WMS Bin & FEFO Lot Expiration** | **Yes (Bin routing, earliest-expiry check)** | No (Requires 3rd party inventory app) | Yes (Requires advanced inventory configuration) | Yes (Basic batch numbers, no automatic FEFO) | No (Basic storage locations) |
 | **POS Offline Resilience** | **Yes (IndexedDB cache + Idempotent sync)** | Yes (Pro version only, expensive) | Yes (Prone to local storage conflicts) | Basic offline (Fails on deep syncs) | No (Offline desktop app, no sync) |

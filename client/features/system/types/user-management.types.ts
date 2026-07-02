@@ -12,7 +12,7 @@ export interface User {
   image?: string;
   phone?: string;
   address?: string;
-  tenantId?: {
+  storeId?: {
     id: string;
     storeName: string;
     subdomain: string;

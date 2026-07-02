@@ -15,7 +15,7 @@ describe('TaxService', () => {
     const mockRepo = {
       findOne: jest.fn((options) => {
         // Distinguish Settings query vs TaxRule query by looking at the target table or query properties
-        if (options?.where?.hasOwnProperty('locale') || (options?.where?.hasOwnProperty('tenantId') && !options?.where?.hasOwnProperty('country'))) {
+        if (options?.where?.hasOwnProperty('locale') || (options?.where?.hasOwnProperty('storeId') && !options?.where?.hasOwnProperty('country'))) {
           return mockFindOneSettings(options)
         }
         return mockFindOneRule(options)
@@ -50,7 +50,7 @@ describe('TaxService', () => {
       mockFindOneSettings.mockResolvedValue({ locale: 'en-US' })
       mockFindOneRule.mockResolvedValue(null) // force fallback
 
-      const ctx = { tenantId: 'tenant-1' } as any
+      const ctx = { storeId: 'store-1' } as any
       const result = await service.calculateTax(ctx, {
         country: 'US',
         state: '90210', // Beverly Hills, CA
@@ -65,10 +65,10 @@ describe('TaxService', () => {
     })
 
     it('should apply EU VAT reverse charge (0%) for cross-border EU transactions if valid B2B VAT number is provided', async () => {
-      // Germany tenant (DE), France customer (FR)
+      // Germany store (DE), France customer (FR)
       mockFindOneSettings.mockResolvedValue({ locale: 'de-DE' })
 
-      const ctx = { tenantId: 'tenant-1' } as any
+      const ctx = { storeId: 'store-1' } as any
       const result = await service.calculateTax(ctx, {
         country: 'FR',
         state: '',
@@ -84,14 +84,14 @@ describe('TaxService', () => {
     })
 
     it('should NOT apply EU VAT reverse charge (0%) for cross-border EU transactions if B2B VAT number is missing or invalid', async () => {
-      // Germany tenant (DE), France customer (FR)
+      // Germany store (DE), France customer (FR)
       mockFindOneSettings.mockResolvedValue({ locale: 'de-DE' })
       mockFindOneRule.mockResolvedValue({
         name: 'FR Standard VAT',
         rate: 20.0,
       })
 
-      const ctx = { tenantId: 'tenant-1' } as any
+      const ctx = { storeId: 'store-1' } as any
       const result = await service.calculateTax(ctx, {
         country: 'FR',
         state: '',
@@ -106,14 +106,14 @@ describe('TaxService', () => {
     })
 
     it('should apply standard VAT if EU transaction is domestic', async () => {
-      // Germany tenant (DE), Germany customer (DE)
+      // Germany store (DE), Germany customer (DE)
       mockFindOneSettings.mockResolvedValue({ locale: 'de-DE' })
       mockFindOneRule.mockResolvedValue({
         name: 'DE Standard VAT',
         rate: 19.0,
       })
 
-      const ctx = { tenantId: 'tenant-1' } as any
+      const ctx = { storeId: 'store-1' } as any
       const result = await service.calculateTax(ctx, {
         country: 'DE',
         state: '',
@@ -136,7 +136,7 @@ describe('TaxService', () => {
         },
       })
 
-      const ctx = { tenantId: 'tenant-1' } as any
+      const ctx = { storeId: 'store-1' } as any
       const result = await service.calculateTax(ctx, {
         country: 'US',
         state: 'NY',

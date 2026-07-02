@@ -5,7 +5,7 @@ export class AuditLogResponseDto {
   id: string
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

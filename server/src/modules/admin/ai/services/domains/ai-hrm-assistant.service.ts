@@ -30,7 +30,7 @@ export class AiHrmAssistantService {
   ) {}
 
   async generateRecruitmentJobCopy(
-    tenantId: string,
+    storeId: string,
     dto: GenerateRecruitmentJobCopyDto,
   ): Promise<RecruitmentJobCopyResultDto> {
     const prompt = `Write recruitment HR copy for a job posting as JSON only (no markdown fences).
@@ -51,7 +51,7 @@ Return exactly this JSON shape:
 Draft only — HR reviews before publishing. Do not invent benefits or compensation not in context.`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -82,7 +82,7 @@ Draft only — HR reviews before publishing. Do not invent benefits or compensat
   }
 
   async generatePerformanceReviewPhrases(
-    tenantId: string,
+    storeId: string,
     dto: GeneratePerformanceReviewPhrasesDto,
   ): Promise<PerformanceReviewPhrasesResultDto> {
     const focusGuide =
@@ -117,7 +117,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -149,7 +149,7 @@ Return exactly this JSON shape:
   }
 
   async generatePayslipExplanation(
-    tenantId: string,
+    storeId: string,
     dto: GeneratePayslipExplanationDto,
   ): Promise<PayslipExplanationResultDto> {
     const prompt = `Write an employee-facing payslip explanation message as JSON only (no markdown fences).
@@ -176,7 +176,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -207,7 +207,7 @@ Return exactly this JSON shape:
     }
   }
 
-  async generateLeaveFaq(tenantId: string, dto: GenerateLeaveFaqDto): Promise<LeaveFaqResultDto> {
+  async generateLeaveFaq(storeId: string, dto: GenerateLeaveFaqDto): Promise<LeaveFaqResultDto> {
     const seedQsBlock = dto.seedQuestions?.length
       ? `\nSeed questions to definitely include:\n${dto.seedQuestions.map((q) => `- ${q}`).join('\n')}`
       : ''
@@ -243,7 +243,7 @@ Return exactly this JSON shape:
 Generate 8-12 FAQ items covering the most common questions employees ask about this policy.`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -288,7 +288,7 @@ Generate 8-12 FAQ items covering the most common questions employees ask about t
   }
 
   async generateApplicantScreening(
-    tenantId: string,
+    storeId: string,
     dto: GenerateApplicantScreeningDto,
   ): Promise<ApplicantScreeningResultDto> {
     const count = dto.count ?? 8
@@ -333,7 +333,7 @@ Return exactly this JSON shape:
 Do not include candidate names, contact details, or any PII. Draft only — hiring manager reviews before use.`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

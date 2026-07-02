@@ -41,8 +41,8 @@ The central identity record for all authenticated users (staff and customers):
 
 | Column | Type | Purpose |
 | :--- | :--- | :--- |
-| `tenantId` | UUID | Strict tenant isolation |
-| `email` | VARCHAR | Login identifier (unique per tenant) |
+| `storeId` | UUID | Strict store isolation |
+| `email` | VARCHAR | Login identifier (unique per store) |
 | `passwordHash` | VARCHAR | bcrypt-hashed credential |
 | `firstName`, `lastName` | VARCHAR | Display name |
 | `membershipTier` | ENUM | CRM tier (BRONZE, SILVER, GOLD, PLATINUM) |
@@ -53,7 +53,7 @@ The central identity record for all authenticated users (staff and customers):
 
 ### 1.2 `RoleEntity` (`user/entities/role.entity.ts`)
 
-Tenant-specific role definitions:
+Store-specific role definitions:
 - `name` — Human-readable label (e.g. "Branch Manager", "Procurement Officer")
 - `description` — Guidance notes
 - `isSystemRole` — Protects built-in roles (Owner, Super Admin) from being deleted
@@ -61,7 +61,7 @@ Tenant-specific role definitions:
 
 ### 1.3 `PermissionEntity` (`user/entities/permission.entity.ts`)
 
-Global system permission registry (not tenant-scoped — shared across all tenants):
+Global system permission registry (not store-scoped — shared across all stores):
 - `code` — Unique snake_case string (e.g. `inventory:adjust`, `pos:checkout`, `payroll:approve`)
 - `module` — Feature area grouping (e.g. `INVENTORY`, `POS`, `HRM`)
 - `description` — Human-readable action label
@@ -72,7 +72,7 @@ Maps a user to a role, with optional org scope limitations:
 - `userId` + `roleId` — The assignment pair
 - `scopeBranchId` (nullable) — Limits role to one specific branch
 - `scopeWarehouseId` (nullable) — Limits role to one specific warehouse
-- If both are null → the role applies tenant-wide
+- If both are null → the role applies store-wide
 
 ### 1.5 `UserPermissionOverrideEntity` (`user/entities/user-permission-override.entity.ts`)
 
@@ -126,7 +126,7 @@ HTTP Request
 JwtAuthGuard          → verify JWT token, load user from DB
      │
      ▼
-SubscriptionGuard     → verify @RequireFeature() decorator against tenant plan
+SubscriptionGuard     → verify @RequireFeature() decorator against store plan
      │
      ▼
 PermissionsGuard      → verify @RequirePermission() decorator against effective permissions

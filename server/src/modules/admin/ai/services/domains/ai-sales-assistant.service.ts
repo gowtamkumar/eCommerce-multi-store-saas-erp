@@ -11,7 +11,7 @@ export class AiSalesAssistantService {
   ) {}
 
   async generateOrderAssist(
-    tenantId: string,
+    storeId: string,
     dto: GenerateOrderAssistDto,
   ): Promise<OrderAssistResultDto> {
     if (dto.context === 'status') {
@@ -29,7 +29,7 @@ Return exactly this JSON shape:
 }`
 
       const result = await this.base.complete(
-        tenantId,
+        storeId,
         [
           {
             role: 'system',
@@ -73,7 +73,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -93,7 +93,7 @@ Return exactly this JSON shape:
   }
 
   async generateReturnAssist(
-    tenantId: string,
+    storeId: string,
     dto: GenerateReturnAssistDto,
   ): Promise<ReturnAssistResultDto> {
     const templateLabels: Record<string, string> = {
@@ -126,7 +126,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -146,7 +146,7 @@ Return exactly this JSON shape:
   }
 
   async generatePosCashierAssist(
-    tenantId: string,
+    storeId: string,
     dto: GeneratePosCashierAssistDto,
   ): Promise<PosCashierAssistResultDto> {
     if (dto.context === 'upsell') {
@@ -169,7 +169,7 @@ Return exactly this JSON shape:
 }`
 
       const result = await this.base.complete(
-        tenantId,
+        storeId,
         [
           {
             role: 'system',
@@ -202,7 +202,7 @@ Return exactly this JSON shape:
 }`
 
       const result = await this.base.complete(
-        tenantId,
+        storeId,
         [
           {
             role: 'system',
@@ -231,7 +231,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

@@ -1,31 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 import { SiteSettingsRepository } from './site-settings.repository'
 import { SettingsService } from './settings.service'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BASIC_DEFAULT_SETTINGS } from './settings.constants'
 import { SiteSettingsEntity } from './entities/site-settings.entity'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 
 describe('SettingsService', () => {
   let service: SettingsService
   let settingsRepo: jest.Mocked<any>
-  let tenantRepo: jest.Mocked<any>
+  let storeRepo: jest.Mocked<any>
   let cacheService: jest.Mocked<any>
 
   const mockCtx: RequestContextDto = {
-    tenantId: 'tenant-123',
+    storeId: 'store-123',
     userId: 'user-456',
   } as any
 
   beforeEach(async () => {
     settingsRepo = {
-      findByTenantId: jest.fn(),
+      findByStoreId: jest.fn(),
       createAndSave: jest.fn(),
       updateAndSave: jest.fn(),
     }
-    tenantRepo = {
+    storeRepo = {
       findByIdWithRelations: jest.fn(),
     }
     cacheService = {
@@ -37,7 +37,7 @@ describe('SettingsService', () => {
       providers: [
         SettingsService,
         { provide: SiteSettingsRepository, useValue: settingsRepo },
-        { provide: TenantRepository, useValue: tenantRepo },
+        { provide: StoreRepository, useValue: storeRepo },
         { provide: CacheService, useValue: cacheService },
       ],
     }).compile()
@@ -51,7 +51,7 @@ describe('SettingsService', () => {
 
   describe('createSetting', () => {
     it('should create site settings using BASIC_DEFAULT_SETTINGS as base and merging user overrides in correct order', async () => {
-      settingsRepo.findByTenantId.mockResolvedValue(null)
+      settingsRepo.findByStoreId.mockResolvedValue(null)
       settingsRepo.createAndSave.mockImplementation((dto) => Promise.resolve(dto))
 
       const userDto = {
@@ -75,12 +75,12 @@ describe('SettingsService', () => {
 
     it('should return existing settings and merge overrides if already exists (idempotent)', async () => {
       const existingSettings = {
-        tenantId: 'tenant-123',
+        storeId: 'store-123',
         brandName: 'Existing Brand',
         theme: { mode: 'dark' },
       } as unknown as SiteSettingsEntity
 
-      settingsRepo.findByTenantId.mockResolvedValue(existingSettings)
+      settingsRepo.findByStoreId.mockResolvedValue(existingSettings)
       settingsRepo.updateAndSave.mockImplementation((entity, dto) =>
         Promise.resolve({ ...entity, ...dto }),
       )
@@ -101,50 +101,50 @@ describe('SettingsService', () => {
     })
   })
 
-  describe('findByTenantSettings', () => {
-    it('should return settings from repository and append tenant status', async () => {
+  describe('findByStoreSettings', () => {
+    it('should return settings from repository and append store status', async () => {
       const mockSettings = {
-        tenantId: 'tenant-123',
+        storeId: 'store-123',
         brandName: 'Saved Brand',
         theme: { mode: 'dark' },
         currency: 'BDT',
       } as unknown as SiteSettingsEntity
 
-      settingsRepo.findByTenantId.mockResolvedValue(mockSettings)
-      tenantRepo.findByIdWithRelations.mockResolvedValue({
-        id: 'tenant-123',
-        status: TenantStatus.ACTIVE,
+      settingsRepo.findByStoreId.mockResolvedValue(mockSettings)
+      storeRepo.findByIdWithRelations.mockResolvedValue({
+        id: 'store-123',
+        status: StoreStatus.ACTIVE,
         isExpired: false,
       })
 
-      const result = await service.findByTenantSettings(mockCtx)
+      const result = await service.findByStoreSettings(mockCtx)
 
-      expect(result.status).toBe(TenantStatus.ACTIVE)
+      expect(result.status).toBe(StoreStatus.ACTIVE)
       expect(result.brandName).toBe('Saved Brand')
       expect(result.currency).toBe('BDT')
       expect(result.theme).toEqual({ mode: 'dark' })
     })
 
     it('should lazy-create defaults if no settings row is found in DB', async () => {
-      settingsRepo.findByTenantId.mockResolvedValueOnce(null) // first call (lookup)
-      tenantRepo.findByIdWithRelations.mockResolvedValue({
-        id: 'tenant-123',
-        status: TenantStatus.ACTIVE,
+      settingsRepo.findByStoreId.mockResolvedValueOnce(null) // first call (lookup)
+      storeRepo.findByIdWithRelations.mockResolvedValue({
+        id: 'store-123',
+        status: StoreStatus.ACTIVE,
       })
 
       // Stub createSetting response
       const createdSettings = {
-        tenantId: 'tenant-123',
+        storeId: 'store-123',
         brandName: BASIC_DEFAULT_SETTINGS.brandName,
       } as unknown as SiteSettingsEntity
       settingsRepo.createAndSave.mockResolvedValue(createdSettings)
 
-      const result = await service.findByTenantSettings(mockCtx)
+      const result = await service.findByStoreSettings(mockCtx)
 
       // Should have triggered createSetting with empty DTO
       expect(settingsRepo.createAndSave).toHaveBeenCalled()
       expect(result.brandName).toBe(BASIC_DEFAULT_SETTINGS.brandName)
-      expect(result.status).toBe(TenantStatus.ACTIVE)
+      expect(result.status).toBe(StoreStatus.ACTIVE)
     })
   })
 })

@@ -29,7 +29,7 @@ export class AiFinanceAssistantService {
   ) {}
 
   async generateArCollectionDraft(
-    tenantId: string,
+    storeId: string,
     dto: GenerateArCollectionDraftDto,
   ): Promise<ArCollectionDraftResultDto> {
     const prompt = `Draft an accounts receivable collection email for a B2B finance team as JSON only (no markdown fences).
@@ -51,7 +51,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -72,7 +72,7 @@ Return exactly this JSON shape:
   }
 
   async generateApPaymentReminder(
-    tenantId: string,
+    storeId: string,
     dto: GenerateApPaymentReminderDto,
   ): Promise<ApPaymentReminderResultDto> {
     const prompt = `Draft an internal accounts payable payment approval reminder for a finance team as JSON only (no markdown fences).
@@ -94,7 +94,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -115,7 +115,7 @@ Return exactly this JSON shape:
   }
 
   async generateExpenseCategorySuggest(
-    tenantId: string,
+    storeId: string,
     dto: GenerateExpenseCategoryDto,
   ): Promise<ExpenseCategorySuggestResultDto> {
     const categoryOptions = Object.values(ExpenseCategory).join(', ')
@@ -146,7 +146,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -186,7 +186,7 @@ Return exactly this JSON shape:
   }
 
   async generateReportExecutiveSummary(
-    tenantId: string,
+    storeId: string,
     dto: GenerateReportExecutiveSummaryDto,
   ): Promise<ReportExecutiveSummaryResultDto> {
     const prompt = `Write an executive summary narrative for a business report as JSON only (no markdown fences).
@@ -212,7 +212,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -234,7 +234,7 @@ Return exactly this JSON shape:
   }
 
   async generateTaxRuleExplanation(
-    tenantId: string,
+    storeId: string,
     dto: GenerateTaxRuleExplanationDto,
   ): Promise<TaxRuleExplanationResultDto> {
     const prompt = `Write internal documentation explaining a configured tax/VAT rule for finance admins as JSON only (no markdown fences).
@@ -249,7 +249,7 @@ CRITICAL RULES:
 Primary tax rule:
 ${dto.ruleSummary}
 
-${dto.relatedRulesSummary ? `Related tenant tax rules:\n${dto.relatedRulesSummary}` : 'No related rules context provided.'}
+${dto.relatedRulesSummary ? `Related store tax rules:\n${dto.relatedRulesSummary}` : 'No related rules context provided.'}
 
 ${dto.existingDraft ? `Existing explanation draft (refine or replace):\n${dto.existingDraft}` : 'No existing explanation draft.'}
 
@@ -268,7 +268,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

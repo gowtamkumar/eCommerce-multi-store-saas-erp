@@ -8,12 +8,12 @@ import { AiJobEntity } from '@/modules/admin/ai/entities/ai-job.entity'
 import { AiUsageLogEntity } from '@/modules/admin/ai/entities/ai-usage-log.entity'
 import { AiJobService } from '@/modules/admin/ai/services/ai-job.service'
 import { AiUsageLogService } from '@/modules/admin/ai/services/ai-usage-log.service'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 describe('AI infrastructure (e2e)', () => {
   let app: INestApplication
   let dataSource: DataSource
-  let tenant: TenantEntity
+  let store: StoreEntity
   let usageLogService: AiUsageLogService
   let aiJobService: AiJobService
 
@@ -29,19 +29,19 @@ describe('AI infrastructure (e2e)', () => {
     usageLogService = app.get(AiUsageLogService)
     aiJobService = app.get(AiJobService)
 
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'AI Infra E2E Store',
       subdomain: `ai-infra-e2e-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
   })
 
   afterAll(async () => {
-    if (tenant) {
-      await dataSource.getRepository(AiUsageLogEntity).delete({ tenantId: tenant.id })
-      await dataSource.getRepository(AiJobEntity).delete({ tenantId: tenant.id })
-      await dataSource.getRepository(TenantEntity).delete(tenant.id)
+    if (store) {
+      await dataSource.getRepository(AiUsageLogEntity).delete({ storeId: store.id })
+      await dataSource.getRepository(AiJobEntity).delete({ storeId: store.id })
+      await dataSource.getRepository(StoreEntity).delete(store.id)
     }
     if (app) {
       await app.close()
@@ -50,7 +50,7 @@ describe('AI infrastructure (e2e)', () => {
 
   it('persists AI usage logs and returns summary', async () => {
     await usageLogService.record({
-      tenantId: tenant.id,
+      storeId: store.id,
       endpoint: 'ai/status',
       operation: 'chat',
       model: 'gpt-4o-mini',
@@ -59,16 +59,16 @@ describe('AI infrastructure (e2e)', () => {
       totalTokens: 15,
     })
 
-    const summary = await usageLogService.getSummary(tenant.id, 30)
+    const summary = await usageLogService.getSummary(store.id, 30)
     expect(summary.totalTokens).toBeGreaterThanOrEqual(15)
     expect(summary.totalRequests).toBeGreaterThanOrEqual(1)
     expect(summary.byEndpoint.some((row) => row.endpoint === 'ai/status')).toBe(true)
   })
 
   it('creates queued embedding reindex job row', async () => {
-    const job = await aiJobService.createAndEnqueue(tenant.id, AiJobType.EMBEDDING_REINDEX, {})
+    const job = await aiJobService.createAndEnqueue(store.id, AiJobType.EMBEDDING_REINDEX, {})
 
-    expect(job.tenantId).toBe(tenant.id)
+    expect(job.storeId).toBe(store.id)
     expect(job.type).toBe(AiJobType.EMBEDDING_REINDEX)
     expect(job.status).toBe(AiJobStatus.QUEUED)
     expect(job.bullJobId).toBeTruthy()

@@ -1,7 +1,7 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { EntityManager } from 'typeorm'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
@@ -16,38 +16,38 @@ export class SettingsService {
 
   constructor(
     private settingsRepository: SiteSettingsRepository,
-    private tenantRepository: TenantRepository,
+    private storeRepository: StoreRepository,
     private cacheService: CacheService,
   ) {}
 
-  async findByTenantSettings(
+  async findByStoreSettings(
     ctx: RequestContextDto,
   ): Promise<SiteSettingsEntity & { status: string }> {
-    this.logger.log(`${this.findByTenantSettings.name} Service Called for tenant: ${ctx.tenantId}`)
-    const tenantId = ctx.tenantId
-    const cacheKey = `settings:${tenantId}:site`
+    this.logger.log(`${this.findByStoreSettings.name} Service Called for store: ${ctx.storeId}`)
+    const storeId = ctx.storeId
+    const cacheKey = `settings:${storeId}:site`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        let settings = await this.settingsRepository.findByTenantId(tenantId)
+        let settings = await this.settingsRepository.findByStoreId(storeId)
 
         // Lazy-create settings if the onboarding call somehow missed it.
         // Pass an empty DTO so only DEFAULT_SETTINGS are used as the base —
-        // the caller context (tenantId) is the only required field.
+        // the caller context (storeId) is the only required field.
         if (!settings) {
           this.logger.warn(
-            `[Settings] No settings row found for tenant ${tenantId} — creating defaults now.`,
+            `[Settings] No settings row found for store ${storeId} — creating defaults now.`,
           )
           settings = await this.createSetting(ctx, {})
         }
 
-        const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
-        let effectiveStatus = tenant?.status
+        const store = await this.storeRepository.findByIdWithRelations(storeId)
+        let effectiveStatus = store?.status
 
         // Check if subscription has logically expired
-        if (tenant?.isExpired) {
-          effectiveStatus = TenantStatus.EXPIRED
+        if (store?.isExpired) {
+          effectiveStatus = StoreStatus.EXPIRED
         }
 
         return {
@@ -56,7 +56,7 @@ export class SettingsService {
         }
       },
       86400, // 24 hours
-      tenantId,
+      storeId,
     )
   }
 
@@ -64,15 +64,15 @@ export class SettingsService {
     ctx: RequestContextDto,
     dto: UpdateSiteSettingsDto,
   ): Promise<SiteSettingsEntity> {
-    const tenantId = ctx.tenantId
-    const settings = await this.settingsRepository.findByTenantId(tenantId)
+    const storeId = ctx.storeId
+    const settings = await this.settingsRepository.findByStoreId(storeId)
     if (!settings) throw new NotFoundException('Settings not found')
 
     const normalizedDto = normalizeAndValidateSettingsUpdate(dto, settings)
 
     if (normalizedDto.removeBranding === true) {
-      const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
-      const features = tenant?.subscriptionPlan?.features || []
+      const store = await this.storeRepository.findByIdWithRelations(storeId)
+      const features = store?.subscriptionPlan?.features || []
       const hasRemoveBranding = features.includes('remove_branding')
       if (!hasRemoveBranding) {
         normalizedDto.removeBranding = false // Force off if plan doesn't support it
@@ -82,13 +82,13 @@ export class SettingsService {
     const updated = await this.settingsRepository.updateAndSave(settings, normalizedDto)
 
     // Invalidate cache
-    await this.cacheService.delCache(`settings:${tenantId}:site`, tenantId)
+    await this.cacheService.delCache(`settings:${storeId}:site`, storeId)
 
     return updated
   }
 
   /**
-   * Idempotent settings creation for new or existing tenants.
+   * Idempotent settings creation for new or existing stores.
    *
    * Bug fixes applied:
    *
@@ -98,10 +98,10 @@ export class SettingsService {
    *    overwrote every caller-supplied field, so every new store got "LuxeAudio".
    *
    * 2. Idempotent upsert on duplicate key: handles race conditions where the onboarding
-   *    transaction committed the tenant row but the parallel createSetting() is called
+   *    transaction committed the store row but the parallel createSetting() is called
    *    twice (e.g., retried webhook). Returns the existing row safely.
    *
-   * @param ctx - Must contain at minimum `tenantId`
+   * @param ctx - Must contain at minimum `storeId`
    * @param dto - Caller-supplied overrides. Empty object `{}` is valid (uses all defaults).
    */
   async createSetting(
@@ -109,14 +109,14 @@ export class SettingsService {
     dto: UpdateSiteSettingsDto,
     manager?: EntityManager,
   ): Promise<SiteSettingsEntity> {
-    this.logger.log(`${this.createSetting.name} Service Called for tenant: ${ctx.tenantId}`)
-    const tenantId = ctx.tenantId
+    this.logger.log(`${this.createSetting.name} Service Called for store: ${ctx.storeId}`)
+    const storeId = ctx.storeId
 
     // Check if settings already exist — idempotent upsert
-    const existing = await this.settingsRepository.findByTenantId(tenantId, manager)
+    const existing = await this.settingsRepository.findByStoreId(storeId, manager)
     if (existing) {
       this.logger.log(
-        `[Settings] Row already exists for tenant ${tenantId}, merging caller overrides.`,
+        `[Settings] Row already exists for store ${storeId}, merging caller overrides.`,
       )
       // Only update with the explicitly caller-supplied dto fields (not DEFAULT_SETTINGS again).
       // This avoids overwriting deliberate user customisations with defaults on re-creation.
@@ -131,7 +131,7 @@ export class SettingsService {
     }
 
     // ── BUG FIX: Spread order — BASIC_DEFAULT_SETTINGS first, dto second ─────────────
-    // Only basic settings are persisted to the database on tenant onboarding/creation.
+    // Only basic settings are persisted to the database on store onboarding/creation.
     // Complex structures (navbar, footer, theme, etc.) are kept as null in the DB
     // and merged dynamically from code-level DEFAULT_SETTINGS upon request.
     const mergedDto: UpdateSiteSettingsDto = {
@@ -146,7 +146,7 @@ export class SettingsService {
         manager,
       )
     } catch (err: any) {
-      // Handle duplicate-key race (two concurrent onboarding calls for the same tenant).
+      // Handle duplicate-key race (two concurrent onboarding calls for the same store).
       // Fetch and return the winner's row rather than propagating an obscure DB error.
       if (
         err.code === '23505' ||
@@ -154,9 +154,9 @@ export class SettingsService {
         err.message?.includes('duplicate')
       ) {
         this.logger.warn(
-          `[Settings] Duplicate key on create for tenant ${tenantId} — returning existing row.`,
+          `[Settings] Duplicate key on create for store ${storeId} — returning existing row.`,
         )
-        const latest = await this.settingsRepository.findByTenantId(tenantId, manager)
+        const latest = await this.settingsRepository.findByStoreId(storeId, manager)
         if (latest) {
           // If the caller also supplied overrides, apply them on top of the winning row.
           if (Object.keys(dto).length > 0) {

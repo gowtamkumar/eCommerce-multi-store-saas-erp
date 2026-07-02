@@ -13,14 +13,14 @@ server/src/
 ├── common/                        # Shared utilities (guards, decorators, DTOs, enums)
 └── modules/
     ├── system/                    # Platform-level system services
-    │   ├── tenant/                # Tenant onboarding & configuration
+    │   ├── store/                # Store onboarding & configuration
     │   ├── organization/          # Branches, warehouses, bins
     │   ├── audit-log/             # Append-only global audit trail
     │   ├── subscription-plan/     # SaaS billing plans
     │   ├── subscription-billing/  # Billing lifecycle management
     │   ├── platform/              # Super-admin platform controls
     │   └── super-admin/           # Super-admin specific routes
-    ├── admin/                     # Tenant backoffice (ERP core)
+    ├── admin/                     # Store backoffice (ERP core)
     │   ├── core/
     │   │   ├── auth/              # JWT authentication, OTP
     │   │   ├── rbac/              # Role & permission management
@@ -53,7 +53,7 @@ server/src/
     │   │   │   ├── fulfillment/   # Pick-pack-ship workflows
     │   │   │   └── courier/       # Courier API integrations
     │   │   └── infra/
-    │   │       ├── cache/         # Redis tenant-scoped caching
+    │   │       ├── cache/         # Redis store-scoped caching
     │   │       ├── chat/          # Live support chat (Socket.IO)
     │   │       ├── file/          # File & media upload (S3)
     │   │       ├── mail/          # Transactional email service
@@ -84,7 +84,7 @@ server/src/
 
 | # | Document | Domains Covered |
 | :-- | :--- | :--- |
-| 01 | [`01_system_infrastructure.md`](01_system_infrastructure.md) | Tenant, Subscription, Organization (Branch/Warehouse), Audit Log |
+| 01 | [`01_system_infrastructure.md`](01_system_infrastructure.md) | Store, Subscription, Organization (Branch/Warehouse), Audit Log |
 | 02 | [`02_catalog_and_marketing.md`](02_catalog_and_marketing.md) | Products, Variants, Categories, Brands, Price Books, Loyalty, Campaigns, Site Settings |
 | 03 | [`03_sales_and_pos.md`](03_sales_and_pos.md) | Orders, Returns, POS Registers, Cashier Shifts, Cash Drawer, Coupons, Promotions |
 | 04 | [`04_logistics_and_inventory.md`](04_logistics_and_inventory.md) | Inventory Ledger, Batch/Expiry Lots, Stock Reservations, Transfers, GRN, Fulfillment, Courier |
@@ -103,13 +103,13 @@ server/src/
 
 | Rule | Why it exists |
 | :--- | :--- |
-| **Every query must scope by `tenantId`** | Prevents cross-tenant data leaks |
+| **Every query must scope by `storeId`** | Prevents cross-store data leaks |
 | **No direct stock number updates** | Race conditions destroy audit accuracy — use the inventory ledger |
 | **Never UPDATE or DELETE journal entries** | GAAP compliance — use reversal journals |
-| **Read `tenantId` from `ctx` (JWT), never from request body** | Prevents injection attacks |
+| **Read `storeId` from `ctx` (JWT), never from request body** | Prevents injection attacks |
 | **All cross-domain writes go through the owning Service** | Prevents spaghetti coupling between modules |
 | **All async side effects go through BullMQ or EventEmitter** | Keeps HTTP threads fast and non-blocking |
-| **Cache keys always start with `t:{tenantId}:`** | Guarantees tenant isolation in Redis |
+| **Cache keys always start with `t:{storeId}:`** | Guarantees store isolation in Redis |
 | **Payroll / Inventory Adjustments require approval before GL posting** | Prevents accidental financial mutations |
 | **Offline POS sales use `clientSaleId` for idempotency** | Prevents duplicate transactions on reconnect |
 | **Subscription feature gates use `@RequireFeature()` decorator** | Centralises plan gating logic |
@@ -120,14 +120,14 @@ server/src/
 
 Follow these steps in order. Skipping any step creates technical debt.
 
-- [ ] **1. Entity** — Create the TypeORM entity with `tenantId`, composite indexes, and soft-delete
-- [ ] **2. Repository** — Create a scoped repository that always filters by `ctx.tenantId`
+- [ ] **1. Entity** — Create the TypeORM entity with `storeId`, composite indexes, and soft-delete
+- [ ] **2. Repository** — Create a scoped repository that always filters by `ctx.storeId`
 - [ ] **3. Service** — Implement business logic; wrap multi-table operations in `dataSource.transaction()`
 - [ ] **4. Controller** — Apply `@UseGuards(JwtAuthGuard, SubscriptionGuard, PermissionsGuard)` and relevant decorators
 - [ ] **5. Module** — Register entity, controller, service, and repository; export service if consumed elsewhere
 - [ ] **6. Migration** — Generate a TypeORM migration; never rely on `synchronize: true` in production
 - [ ] **7. Seed** — Add permission codes to the permissions seed script if the module needs RBAC
-- [ ] **8. Tests** — Write integration tests including cross-tenant isolation assertions
+- [ ] **8. Tests** — Write integration tests including cross-store isolation assertions
 - [ ] **9. Documentation** — Add an entry to this index and create a codebase understanding doc
 
 ---

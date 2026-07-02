@@ -1,5 +1,5 @@
 export interface RecordAiUsageParams {
-  tenantId: string
+  storeId: string
   endpoint: string
   operation: 'chat' | 'embedding'
   model: string

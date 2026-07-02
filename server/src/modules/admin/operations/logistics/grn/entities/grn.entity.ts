@@ -1,6 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { PurchaseOrderEntity } from '@/modules/admin/operations/finance/purchase/entities/purchase-order.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
@@ -10,7 +10,7 @@ import { GrnStatus } from '@/common/enums/grn-status.enum'
 import { GrnItemEntity } from './grn-item.entity'
 
 @Entity('goods_received_notes')
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'status'])
 export class GoodsReceivedNoteEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   grnNumber: string
@@ -70,10 +70,10 @@ export class GoodsReceivedNoteEntity extends BaseEntity {
   })
   items: GrnItemEntity[]
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { nullable: false, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { nullable: false, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

@@ -1,13 +1,13 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 /** Fast code lookups — used on every coupon validation */
-@Index(['tenantId', 'code'], { unique: true })
+@Index(['storeId', 'code'], { unique: true })
 /** Optimizes the active-coupons dashboard filter */
-@Index(['tenantId', 'isActive', 'expiryDate'])
+@Index(['storeId', 'isActive', 'expiryDate'])
 @Entity('coupons')
 export class CouponEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
@@ -40,12 +40,12 @@ export class CouponEntity extends BaseEntity {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive: boolean
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

@@ -24,13 +24,13 @@ export class LoyaltyController {
   ) {}
 
   /**
-   * Admin: Get loyalty configurations for the current tenant.
+   * Admin: Get loyalty configurations for the current store.
    */
   @Get('marketing/loyalty/config')
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async getConfig(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
-    const config = await this.loyaltyService.getOrCreateConfig(ctx.tenantId)
+    const config = await this.loyaltyService.getOrCreateConfig(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -40,7 +40,7 @@ export class LoyaltyController {
   }
 
   /**
-   * Admin: Update loyalty configurations for the current tenant.
+   * Admin: Update loyalty configurations for the current store.
    */
   @Put('marketing/loyalty/config')
   @UseGuards(SubscriptionGuard)
@@ -50,7 +50,7 @@ export class LoyaltyController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateLoyaltyConfigDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const config = await this.loyaltyService.getOrCreateConfig(ctx.tenantId)
+    const config = await this.loyaltyService.getOrCreateConfig(ctx.storeId)
     Object.assign(config, dto)
     const saved = await this.dataSource.manager.save(config)
     return {
@@ -71,7 +71,7 @@ export class LoyaltyController {
     @Param('customerId') customerId: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const history = await this.loyaltyService.getPointsHistory(customerId, ctx.tenantId)
+    const history = await this.loyaltyService.getPointsHistory(customerId, ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -160,7 +160,7 @@ export class LoyaltyController {
     }
 
     const user = await this.dataSource.manager.findOne(UserEntity, {
-      where: { id: customerId, tenantId: ctx.tenantId },
+      where: { id: customerId, storeId: ctx.storeId },
       select: {
         id: true,
         name: true,
@@ -170,8 +170,8 @@ export class LoyaltyController {
       },
     })
 
-    const history = await this.loyaltyService.getPointsHistory(customerId, ctx.tenantId)
-    const config = await this.loyaltyService.getOrCreateConfig(ctx.tenantId)
+    const history = await this.loyaltyService.getPointsHistory(customerId, ctx.storeId)
+    const config = await this.loyaltyService.getOrCreateConfig(ctx.storeId)
 
     // Calculate progression details (how much spent / needed to reach next tier)
     // E.g., Bronze: silverTierThreshold, Silver: goldTierThreshold, etc.
@@ -207,7 +207,7 @@ export class LoyaltyController {
   async getLoyaltyRules(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {
-    const data = await this.loyaltyService.findAllRules(ctx.tenantId)
+    const data = await this.loyaltyService.findAllRules(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -224,7 +224,7 @@ export class LoyaltyController {
     @Body() body: LoyaltyRuleDto,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.loyaltyService.createRule(body as any, ctx.tenantId)
+    const data = await this.loyaltyService.createRule(body as any, ctx.storeId)
     return {
       success: true,
       statusCode: 201,
@@ -242,7 +242,7 @@ export class LoyaltyController {
     @Body() body: LoyaltyRuleDto,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.loyaltyService.updateRule(id, body as any, ctx.tenantId)
+    const data = await this.loyaltyService.updateRule(id, body as any, ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -252,7 +252,7 @@ export class LoyaltyController {
   }
 
   /**
-   * Admin: outstanding loyalty liability for the current tenant.
+   * Admin: outstanding loyalty liability for the current store.
    *
    * Useful for finance dashboards — total unredeemed unexpired points and
    * the number of customers holding them. Pairs with the daily expiry sweep
@@ -264,7 +264,7 @@ export class LoyaltyController {
   async getLiability(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<{ outstandingPoints: number; customers: number }>> {
-    const data = await this.loyaltyService.getLiability(ctx.tenantId)
+    const data = await this.loyaltyService.getLiability(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -281,7 +281,7 @@ export class LoyaltyController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    await this.loyaltyService.deleteRule(id, ctx.tenantId)
+    await this.loyaltyService.deleteRule(id, ctx.storeId)
     return {
       success: true,
       statusCode: 200,

@@ -1,14 +1,14 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { StockTransferStatus } from '@/common/enums/stock-transfer-status.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { StockTransferItemEntity } from './stock-transfer-item.entity'
 
 @Entity('stock_transfers')
-@Index(['tenantId', 'createdAt'])
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'createdAt'])
+@Index(['storeId', 'status'])
 export class StockTransferEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 100, name: 'transfer_number' })
   @Index()
@@ -41,13 +41,13 @@ export class StockTransferEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   remarks: string | null
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
+  @Column({ type: 'uuid', name: 'store_id' })
   @Index()
-  tenantId: string
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

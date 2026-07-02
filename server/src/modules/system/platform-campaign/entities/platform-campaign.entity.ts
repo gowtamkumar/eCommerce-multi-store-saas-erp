@@ -42,8 +42,8 @@ export class PlatformCampaignEntity extends BaseEntity {
   @Column({ type: 'int', default: 0, name: 'failed_count' })
   failedCount: number
 
-  @Column({ type: 'boolean', name: 'target_tenants', default: false })
-  targetTenants: boolean
+  @Column({ type: 'boolean', name: 'target_stores', default: false })
+  targetStores: boolean
 
   @Column({ type: 'boolean', name: 'target_subscribers', default: false })
   targetSubscribers: boolean

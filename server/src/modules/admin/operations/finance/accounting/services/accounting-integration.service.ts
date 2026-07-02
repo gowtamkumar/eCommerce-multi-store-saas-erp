@@ -51,7 +51,7 @@ export class AccountingIntegrationService {
     } catch (error: any) {
       this.logger.error(
         `Failed to enqueue accounting outbox for ledger ${ledgerEntry.id} ` +
-          `(type=${type}, tenantId=${ledgerEntry.tenantId}): ${error.message}`,
+          `(type=${type}, storeId=${ledgerEntry.storeId}): ${error.message}`,
         error.stack,
       )
       throw error

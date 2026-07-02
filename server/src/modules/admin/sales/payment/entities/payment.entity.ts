@@ -2,12 +2,12 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('payments')
-@Index(['tenantId', 'createdAt'])
-@Index(['tenantId', 'status', 'createdAt'])
+@Index(['storeId', 'createdAt'])
+@Index(['storeId', 'status', 'createdAt'])
 export class PaymentEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
   orderId: string
@@ -40,10 +40,10 @@ export class PaymentEntity extends BaseEntity {
   @Column({ type: 'jsonb', name: 'gateway_response', nullable: true })
   gatewayResponse: any
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

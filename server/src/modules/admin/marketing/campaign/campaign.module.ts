@@ -18,7 +18,7 @@ import { CampaignRepository } from './repositories/campaign.repository'
 import { AudienceService } from './services/audience.service'
 import { CampaignService } from './services/campaign.service'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
@@ -35,7 +35,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     MailModule,
     SmsModule,
     PushModule,
-    TenantModule,
+    StoreModule,
     NotificationModule,
   ],
   providers: [

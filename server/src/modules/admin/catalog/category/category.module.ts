@@ -5,10 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { CategoryEntity } from './entities/category.entity'
 import { CategoryRepository } from './category.repository'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CategoryEntity]), TenantModule],
+  imports: [TypeOrmModule.forFeature([CategoryEntity]), StoreModule],
   controllers: [CategoryController],
   providers: [CategoryService, CategoryRepository],
   exports: [CategoryService, CategoryRepository],

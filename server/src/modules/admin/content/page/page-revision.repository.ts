@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -8,7 +8,7 @@ import { PageRevisionEntity } from './entities/page-revision.entity'
 const MAX_REVISIONS_PER_PAGE = 30
 
 @Injectable()
-export class PageRevisionRepository extends BaseTenantRepository<PageRevisionEntity> {
+export class PageRevisionRepository extends BaseStoreRepository<PageRevisionEntity> {
   constructor(
     @InjectRepository(PageRevisionEntity)
     repo: Repository<PageRevisionEntity>,
@@ -22,32 +22,32 @@ export class PageRevisionRepository extends BaseTenantRepository<PageRevisionEnt
   ): Promise<PageRevisionEntity> {
     const revision = this.repo.create({
       ...payload,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       createdById: ctx.userId ?? null,
     } as PageRevisionEntity)
     const saved = await this.repo.save(revision)
-    await this.pruneOlderThanLimit(payload.pageId!, ctx.tenantId)
+    await this.pruneOlderThanLimit(payload.pageId!, ctx.storeId)
     return saved
   }
 
   async list(pageId: string, ctx: RequestContextDto): Promise<PageRevisionEntity[]> {
     return this.repo.find({
-      where: { pageId, tenantId: ctx.tenantId },
+      where: { pageId, storeId: ctx.storeId },
       order: { createdAt: 'DESC' },
       take: MAX_REVISIONS_PER_PAGE,
     })
   }
 
   async findOne(id: string, ctx: RequestContextDto): Promise<PageRevisionEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    return this.repo.findOne({ where: { id, storeId: ctx.storeId } })
   }
 
   /** Keep only the most recent N snapshots for a given page. */
-  private async pruneOlderThanLimit(pageId: string, tenantId: string): Promise<void> {
+  private async pruneOlderThanLimit(pageId: string, storeId: string): Promise<void> {
     const ids = await this.repo
       .createQueryBuilder('r')
       .select('r.id')
-      .where('r.pageId = :pageId AND r.tenantId = :tenantId', { pageId, tenantId })
+      .where('r.pageId = :pageId AND r.storeId = :storeId', { pageId, storeId })
       .orderBy('r.createdAt', 'DESC')
       .skip(MAX_REVISIONS_PER_PAGE)
       .take(1000)

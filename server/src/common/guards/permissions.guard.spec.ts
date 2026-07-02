@@ -60,23 +60,23 @@ describe('PermissionsGuard', () => {
     expect(resolutionService.resolvePermissionsFromManifest).not.toHaveBeenCalled()
   })
 
-  it('allows tenant admin with required permission', async () => {
+  it('allows store admin with required permission', async () => {
     const { guard, resolutionService } = createGuard(['users:read'], null /* no denied perm */)
 
     await expect(
       guard.canActivate(
-        createContext({ id: 'user-1', role: UserRole.ADMIN, tenantId: 'tenant-1' }),
+        createContext({ id: 'user-1', role: UserRole.ADMIN, storeId: 'store-1' }),
       ),
     ).resolves.toBe(true)
 
     expect(resolutionService.resolvePermissionsFromManifest).toHaveBeenCalledWith(
       'user-1',
-      'tenant-1',
+      'store-1',
       ['users:read'],
     )
   })
 
-  it('denies tenant admin without required permission and logs the failure', async () => {
+  it('denies store admin without required permission and logs the failure', async () => {
     const { guard, resolutionService, auditLogService } = createGuard(
       ['users:read'],
       'users:read', // denied
@@ -84,13 +84,13 @@ describe('PermissionsGuard', () => {
 
     await expect(
       guard.canActivate(
-        createContext({ id: 'user-1', role: UserRole.ADMIN, tenantId: 'tenant-1' }),
+        createContext({ id: 'user-1', role: UserRole.ADMIN, storeId: 'store-1' }),
       ),
     ).rejects.toBeInstanceOf(ForbiddenException)
 
     expect(resolutionService.resolvePermissionsFromManifest).toHaveBeenCalledWith(
       'user-1',
-      'tenant-1',
+      'store-1',
       ['users:read'],
     )
     expect(auditLogService.logPermissionCheckFailed).toHaveBeenCalled()

@@ -91,7 +91,7 @@ export function PlatformAiSetting() {
           <div>
             <p className="font-bold text-slate-800 dark:text-slate-100">Enable platform AI features</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Powers Super Admin assists such as SaaS plan marketing copy. Separate from tenant BYOK
+              Powers Super Admin assists such as SaaS plan marketing copy. Separate from store BYOK
               AI settings — credentials are stored on the platform record only.
             </p>
           </div>

@@ -19,7 +19,7 @@ export class AddonCatalogService {
     return this.addonRepo.findAll()
   }
 
-  /** Get active addons (tenant-facing use) — cached 24h */
+  /** Get active addons (store-facing use) — cached 24h */
   async findActive(): Promise<AddonCatalogEntity[]> {
     return this.cacheService.rememberCache(
       ADDON_CATALOG_CACHE_KEY,

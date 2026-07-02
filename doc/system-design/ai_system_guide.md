@@ -1,9 +1,9 @@
 # AI System Guide — A to Z
 
 **Document version:** 1.0.0  
-**Audience:** Product owners, tenant admins, Super Admins, backend and frontend developers  
+**Audience:** Product owners, store admins, Super Admins, backend and frontend developers  
 **Last updated:** June 2026  
-**Scope:** The entire AI stack — tenant admin assists, storefront AI, platform AI, embeddings, and access control
+**Scope:** The entire AI stack — store admin assists, storefront AI, platform AI, embeddings, and access control
 
 **Companion docs:**
 
@@ -19,7 +19,7 @@
 3. [Architecture overview](#3-architecture-overview)
 4. [Configuration A to Z](#4-configuration-a-to-z)
 5. [Access control and gating](#5-access-control-and-gating)
-6. [Tenant admin AI (staff)](#6-tenant-admin-ai-staff)
+6. [Store admin AI (staff)](#6-store-admin-ai-staff)
 7. [Storefront AI (shoppers)](#7-storefront-ai-shoppers)
 8. [Platform AI (Super Admin)](#8-platform-ai-super-admin)
 9. [Embeddings and semantic search](#9-embeddings-and-semantic-search)
@@ -41,18 +41,18 @@ This platform treats AI as a **draft-and-approve productivity layer** on top of 
 
 | Principle | What it means |
 |-----------|----------------|
-| **BYOK (Bring Your Own Key)** | Each **tenant store** connects its own LLM provider. Usage and billing stay with the tenant. |
-| **Separate platform AI** | **Super Admin** SaaS operations (plan marketing copy, tenant health narratives) use **platform** credentials — not tenant keys. |
+| **BYOK (Bring Your Own Key)** | Each **store store** connects its own LLM provider. Usage and billing stay with the store. |
+| **Separate platform AI** | **Super Admin** SaaS operations (plan marketing copy, store health narratives) use **platform** credentials — not store keys. |
 | **Plan gate** | Subscription plans must include the `ai` feature (`@RequireFeature('ai')`). |
 | **Permission gate** | Staff need `ai:use` to generate; `ai:manage` + `settings:manage` to edit AI config. |
 | **Structured outputs** | Most admin endpoints ask the model for **JSON** with fixed shapes; services validate and map to DTOs. |
-| **No shared hosted LLM** | The platform does not run a central model for tenants. |
+| **No shared hosted LLM** | The platform does not run a central model for stores. |
 
 ### Who uses what
 
 ```mermaid
 flowchart LR
-  subgraph Tenant["Tenant store (BYOK)"]
+  subgraph Store["Store store (BYOK)"]
     ADMIN[Admin panel staff]
     SHOP[Storefront shoppers]
   end
@@ -61,11 +61,11 @@ flowchart LR
     SA[Super Admin]
   end
 
-  ADMIN --> TAI[Tenant AI APIs /ai/*]
+  ADMIN --> TAI[Store AI APIs /ai/*]
   SHOP --> SF[Storefront AI /products/*]
   SA --> PAI[Platform AI /super-admin/ai/*]
 
-  TAI --> TKEY[(tenants.ai_config)]
+  TAI --> TKEY[(stores.ai_config)]
   SF --> TKEY
   PAI --> PKEY[(platform_settings.ai_config + env fallback)]
 ```
@@ -78,17 +78,17 @@ The codebase implements **three independent AI surfaces**. They share provider t
 
 | Layer | Config stored in | Who configures | Primary routes | Typical use |
 |-------|------------------|----------------|----------------|-------------|
-| **Tenant admin AI** | `tenants.ai_config` JSONB | Tenant owner → Settings → AI | `GET/PATCH /tenants/ai-config`, `POST /ai/*` | Product copy, order emails, support drafts, dashboard copilot |
-| **Storefront AI** | Same JSONB + `storefront` toggles | Tenant owner → Settings → AI → Storefront | Public `GET/POST /products/storefront-ai/*`, hybrid `GET /products?q=` | Semantic search, product Q&A, shopping assistant |
-| **Platform AI** | `platform_settings.ai_config` JSONB (+ `PLATFORM_AI_*` env fallback) | Super Admin → Platform Settings → AI | `GET/PATCH /platform/settings/ai-config`, `POST /super-admin/ai/*` | Plan descriptions, tenant health narrative |
+| **Store admin AI** | `stores.ai_config` JSONB | Store owner → Settings → AI | `GET/PATCH /stores/ai-config`, `POST /ai/*` | Product copy, order emails, support drafts, dashboard copilot |
+| **Storefront AI** | Same JSONB + `storefront` toggles | Store owner → Settings → AI → Storefront | Public `GET/POST /products/storefront-ai/*`, hybrid `GET /products?q=` | Semantic search, product Q&A, shopping assistant |
+| **Platform AI** | `platform_settings.ai_config` JSONB (+ `PLATFORM_AI_*` env fallback) | Super Admin → Platform Settings → AI | `GET/PATCH /platform/settings/ai-config`, `POST /super-admin/ai/*` | Plan descriptions, store health narrative |
 
 ### Mental model
 
 Think of AI as **three pipes**:
 
 1. **Staff pipe** — authenticated JWT, subscription + permissions, ~40 specialized generate endpoints.  
-2. **Shopper pipe** — public catalog routes, tenant resolved by domain/`x-tenant-id`, feature toggles in `ai_config.storefront`.  
-3. **Platform pipe** — Super Admin role only, aggregate SaaS metrics, never tenant PII in bulk exports to the model beyond what the narrative endpoint explicitly sends.
+2. **Shopper pipe** — public catalog routes, store resolved by domain/`x-store-id`, feature toggles in `ai_config.storefront`.  
+3. **Platform pipe** — Super Admin role only, aggregate SaaS metrics, never store PII in bulk exports to the model beyond what the narrative endpoint explicitly sends.
 
 ---
 
@@ -101,14 +101,14 @@ flowchart TB
   subgraph AdminAI["Admin AI module"]
     AC[AiController /ai]
     AAS[AiAssistantService]
-    TAC[TenantAiClientService]
+    TAC[StoreAiClientService]
     BOOT[AiFeatureBootstrapService]
   end
 
-  subgraph TenantSys["Tenant system"]
-    TC[TenantController ai-config]
-    TS[TenantService]
-    UTIL[tenant-ai.util]
+  subgraph StoreSys["Store system"]
+    TC[StoreController ai-config]
+    TS[StoreService]
+    UTIL[store-ai.util]
   end
 
   subgraph ProductMod["Product module"]
@@ -147,9 +147,9 @@ flowchart TB
 
 | Table / column | Contents |
 |----------------|----------|
-| `tenants.ai_config` | Provider, API key, models, temperature, `storefront` toggles |
+| `stores.ai_config` | Provider, API key, models, temperature, `storefront` toggles |
 | `platform_settings.ai_config` | Platform provider credentials (Super Admin only) |
-| `product_embeddings` | Per-tenant vector rows: `product_id`, `embedding`, `embedding_model`, `content_hash` |
+| `product_embeddings` | Per-store vector rows: `product_id`, `embedding`, `embedding_model`, `content_hash` |
 
 API keys are **masked** in GET responses (`hasApiKey`, partial mask). PATCH can omit `apiKey` to keep the existing secret.
 
@@ -157,10 +157,10 @@ API keys are **masked** in GET responses (`hasApiKey`, partial mask). PATCH can 
 
 ## 4. Configuration A to Z
 
-### 4.1 Tenant admin — enable AI for a store
+### 4.1 Store admin — enable AI for a store
 
 **Path:** Admin → **Settings → AI**  
-**API:** `GET/PATCH /tenants/ai-config`, `POST /tenants/ai-config/test`  
+**API:** `GET/PATCH /stores/ai-config`, `POST /stores/ai-config/test`  
 **Guards:** JWT + subscription feature `settings` + permission `settings:manage`
 
 **Steps:**
@@ -171,7 +171,7 @@ API keys are **masked** in GET responses (`hasApiKey`, partial mask). PATCH can 
 4. Choose a **provider preset** (OpenAI, OpenRouter, Anthropic, Google, Azure OpenAI, or Custom).
 5. Paste **API key**, set **default chat model** (and **embedding model** if using semantic search).
 6. Optionally tune `maxTokens`, `temperature`, `baseUrl`, Azure `apiVersion`.
-7. Click **Test connection** — hits `POST /tenants/ai-config/test`.
+7. Click **Test connection** — hits `POST /stores/ai-config/test`.
 8. Under **Storefront AI**, toggle shopping assistant, product Q&A, and semantic search independently.
 9. If semantic search is on, run **Reindex embeddings** from catalog settings (admin) so vectors exist.
 
@@ -187,14 +187,14 @@ API keys are **masked** in GET responses (`hasApiKey`, partial mask). PATCH can 
 1. Database `platform_settings.ai_config` (preferred).  
 2. Environment fallback: `PLATFORM_AI_API_KEY`, `PLATFORM_AI_BASE_URL`, `PLATFORM_AI_MODEL`.
 
-Public `GET /platform/settings` **strips** `aiConfig` so credentials never leak to tenants.
+Public `GET /platform/settings` **strips** `aiConfig` so credentials never leak to stores.
 
-### 4.3 Config shape (tenant)
+### 4.3 Config shape (store)
 
-Defined in `server/src/common/types/tenant-ai-config.types.ts`:
+Defined in `server/src/common/types/store-ai-config.types.ts`:
 
 ```typescript
-interface TenantAiConfig {
+interface StoreAiConfig {
   enabled: boolean
   provider: 'openai' | 'openrouter' | 'anthropic' | 'azure_openai' | 'google' | 'custom'
   apiKey?: string
@@ -235,7 +235,7 @@ Storefront toggles default to **enabled** when omitted (`normalizeStorefrontAiCo
 |------|---------|
 | `ai:use` | Call `/ai/*` generate endpoints, embeddings reindex (with catalog perms) |
 | `ai:manage` | Reserved for future fine-grained AI admin; seeded alongside `ai:use` |
-| `settings:manage` | Required to read/update `/tenants/ai-config` |
+| `settings:manage` | Required to read/update `/stores/ai-config` |
 
 ### 5.3 Guard chain (typical admin AI request)
 
@@ -248,14 +248,14 @@ sequenceDiagram
   participant G3 as RequireFeature ai
   participant G4 as RequirePermissions
   participant SVC as AiAssistantService
-  participant LLM as Tenant provider
+  participant LLM as Store provider
 
   UI->>API: POST /ai/generate/product-content
-  API->>G1: Validate JWT + tenant context
+  API->>G1: Validate JWT + store context
   G1->>G2: Plan includes ai feature?
   G2->>G3: Feature decorator
   G3->>G4: ai:use (+ module perm e.g. catalog)
-  G4->>SVC: Build prompt, call TenantAiClientService
+  G4->>SVC: Build prompt, call StoreAiClientService
   SVC->>LLM: chatCompletion
   LLM-->>SVC: JSON / text
   SVC-->>UI: Validated DTO
@@ -267,12 +267,12 @@ sequenceDiagram
 |---------|------|--------------|
 | Admin `/ai/*` | JWT required | `ai` feature + `ai:use` |
 | Admin embeddings | JWT | `ai` + `ai:use` + catalog read/write |
-| Storefront AI | Public (tenant from host/header) | Tenant AI enabled + storefront toggle + provider ready |
+| Storefront AI | Public (store from host/header) | Store AI enabled + storefront toggle + provider ready |
 | Super Admin AI | JWT + `SUPER_ADMIN` role | Platform AI configured |
 
 ---
 
-## 6. Tenant admin AI (staff)
+## 6. Store admin AI (staff)
 
 ### 6.1 Entry points
 
@@ -286,7 +286,7 @@ sequenceDiagram
 
 1. **`AiController`** — HTTP layer, permissions per endpoint.  
 2. **`AiAssistantService`** — Builds prompts, parses JSON, applies domain-specific instructions. One method per generate use case (~40).  
-3. **`TenantAiClientService`** — Loads tenant config, switches on provider, executes HTTP to OpenAI-compatible / Anthropic / Google / Azure APIs. Supports optional vision via image URL on last user message.
+3. **`StoreAiClientService`** — Loads store config, switches on provider, executes HTTP to OpenAI-compatible / Anthropic / Google / Azure APIs. Supports optional vision via image URL on last user message.
 
 **Status check:**
 
@@ -353,7 +353,7 @@ flowchart LR
   B --> C[POST /ai/generate/...]
   C --> D[AiAssistantService]
   D --> E[Build prompt + JSON schema instruction]
-  E --> F[TenantAiClientService.chatCompletion]
+  E --> F[StoreAiClientService.chatCompletion]
   F --> G[Parse JSON + validate]
   G --> H[Return typed DTO]
   H --> I[User reviews and saves form]
@@ -370,7 +370,7 @@ Adding a new assist:
 
 ## 7. Storefront AI (shoppers)
 
-Customer-facing AI lives in the **Product module**, not `AiController`. It reuses **`TenantAiClientService`** for LLM and embedding calls but gates on **`storefront`** toggles via **`StorefrontAiConfigService`**.
+Customer-facing AI lives in the **Product module**, not `AiController`. It reuses **`StoreAiClientService`** for LLM and embedding calls but gates on **`storefront`** toggles via **`StorefrontAiConfigService`**.
 
 | Feature | Public API | Service |
 |---------|------------|---------|
@@ -385,7 +385,7 @@ Customer-facing AI lives in the **Product module**, not `AiController`. It reuse
 
 ## 8. Platform AI (Super Admin)
 
-Platform AI powers **SaaS operator** workflows only. It never reads `tenants.ai_config`.
+Platform AI powers **SaaS operator** workflows only. It never reads `stores.ai_config`.
 
 ### 8.1 Configuration
 
@@ -399,10 +399,10 @@ Platform AI powers **SaaS operator** workflows only. It never reads `tenants.ai_
 |---------|-----|-----|
 | Status | `GET /super-admin/ai/status` | Platform AI settings banner |
 | Plan marketing copy | `POST /super-admin/ai/generate/plan-description` | `PlanDescriptionAiAssist` in `PlanForm` |
-| Tenant health snapshot | `GET /super-admin/ai/tenant-health/snapshot?days=30` | `TenantHealthAiPanel` |
-| Churn narrative | `POST /super-admin/ai/generate/tenant-health-narrative` | Same panel — aggregate metrics only |
+| Store health snapshot | `GET /super-admin/ai/store-health/snapshot?days=30` | `StoreHealthAiPanel` |
+| Churn narrative | `POST /super-admin/ai/generate/store-health-narrative` | Same panel — aggregate metrics only |
 
-Tenant health narrative receives **aggregated** counts (active/suspended tenants, signups, churn signals) — not individual customer records.
+Store health narrative receives **aggregated** counts (active/suspended stores, signups, churn signals) — not individual customer records.
 
 ---
 
@@ -415,7 +415,7 @@ Convert product title + description + category into vectors stored in `product_e
 - **Keyword** — existing SQL `ILIKE` / full-text style listing.  
 - **Vector** — cosine similarity on query embedding vs product rows.
 
-Controlled by `storefront.semanticSearchEnabled` and requires `embeddingModel` on tenant config.
+Controlled by `storefront.semanticSearchEnabled` and requires `embeddingModel` on store config.
 
 ### 9.2 Admin operations
 
@@ -430,11 +430,11 @@ Reindex walks published products in batches, skips unchanged content via `conten
 
 ```mermaid
 flowchart TB
-  ADMIN[Tenant admin clicks Reindex]
+  ADMIN[Store admin clicks Reindex]
   ADMIN --> API[POST /products/embeddings/reindex]
   API --> PES[ProductEmbeddingService]
   PES --> PROD[(products)]
-  PES --> TAC[TenantAiClientService.embeddings]
+  PES --> TAC[StoreAiClientService.embeddings]
   TAC --> PROVIDER[Embedding API]
   PROVIDER --> PES
   PES --> VEC[(product_embeddings)]
@@ -454,7 +454,7 @@ flowchart TB
 
 | Hook | Purpose |
 |------|---------|
-| `useAiConfig` | Load/patch tenant AI + storefront toggles (Settings page) |
+| `useAiConfig` | Load/patch store AI + storefront toggles (Settings page) |
 | `useAiGenerate` | Central POST wrappers + `configured` state from `/ai/status` |
 | `useAiStudio` | AI Studio chat + labs |
 | `usePlatformAi` | Super Admin platform generate calls |
@@ -463,7 +463,7 @@ flowchart TB
 
 | Component | Role |
 |-----------|------|
-| `AiSetting.tsx` | Full tenant AI + storefront config form |
+| `AiSetting.tsx` | Full store AI + storefront config form |
 | `AiStudio.tsx` | Dedicated AI workspace |
 | `AiInlineBar` / `DescriptionAiButton` | Reusable “Generate with AI” affordance |
 | `*AiAssist*.tsx` | Domain-specific modals/panels (~50 files) |
@@ -478,7 +478,7 @@ Most assists call `useAiGenerate().checkStatus()` on mount. If `configured === f
 
 ## 11. Provider support
 
-`TenantAiClientService` routes by `config.provider`:
+`StoreAiClientService` routes by `config.provider`:
 
 | Provider | Chat | Embeddings | Notes |
 |----------|------|------------|-------|
@@ -491,7 +491,7 @@ Most assists call `useAiGenerate().checkStatus()` on mount. If `configured === f
 
 Platform AI currently uses **OpenAI-compatible** HTTP (`PlatformAiClientService`).
 
-Presets and default models live in `AI_PROVIDER_PRESETS` (`tenant-ai-config.types.ts`).
+Presets and default models live in `AI_PROVIDER_PRESETS` (`store-ai-config.types.ts`).
 
 ---
 
@@ -531,12 +531,12 @@ sequenceDiagram
   participant Hook as useAiGenerate
   participant API as POST /ai/generate/product-content
   participant AAS as AiAssistantService
-  participant TAC as TenantAiClientService
+  participant TAC as StoreAiClientService
   participant LLM as OpenAI / etc.
 
   User->>Form: Click "AI assist"
   Form->>Hook: generateProductContent(payload)
-  Hook->>API: JWT + tenant context
+  Hook->>API: JWT + store context
   API->>AAS: generateProductContent
   AAS->>TAC: chatCompletion(prompt)
   TAC->>LLM: HTTPS
@@ -559,7 +559,7 @@ sequenceDiagram
   participant DB as PostgreSQL
 
   Shopper->>Nav: Type query
-  Nav->>API: Public request + tenant id
+  Nav->>API: Public request + store id
   API->>PS: listWithSearch
   PS->>DB: Keyword matches
   PS->>PES: vectorSearch (if enabled)
@@ -596,16 +596,16 @@ sequenceDiagram
 | `server/src/modules/admin/ai/` | Admin AI module (controller, assistant, client, bootstrap) |
 | `server/src/modules/admin/ai/controllers/ai.controller.ts` | All `/ai/*` routes |
 | `server/src/modules/admin/ai/services/ai-assistant.service.ts` | Prompt + parse logic |
-| `server/src/modules/admin/ai/services/tenant-ai-client.service.ts` | Multi-provider HTTP client + usage logging |
+| `server/src/modules/admin/ai/services/store-ai-client.service.ts` | Multi-provider HTTP client + usage logging |
 | `server/src/modules/admin/ai/services/ai-usage-log.service.ts` | Persist and summarize token usage |
 | `server/src/modules/admin/ai/services/ai-job.service.ts` | Create and track async AI jobs |
 | `server/src/modules/admin/ai/queue/ai.processor.ts` | BullMQ `ai` queue worker |
 | `server/src/modules/admin/ai/entities/ai-job.entity.ts` | `ai_jobs` table |
 | `server/src/modules/admin/ai/entities/ai-usage-log.entity.ts` | `ai_usage_logs` table |
 | `server/src/modules/admin/ai/services/ai-feature-bootstrap.service.ts` | Plan + permission backfill |
-| `server/src/common/types/tenant-ai-config.types.ts` | Types + provider presets |
-| `server/src/modules/system/tenant/` | Tenant AI config CRUD |
-| `server/src/modules/system/tenant/utils/tenant-ai.util.ts` | Normalize, merge, mask keys |
+| `server/src/common/types/store-ai-config.types.ts` | Types + provider presets |
+| `server/src/modules/system/store/` | Store AI config CRUD |
+| `server/src/modules/system/store/utils/store-ai.util.ts` | Normalize, merge, mask keys |
 
 ### Server — storefront & embeddings
 
@@ -631,19 +631,19 @@ sequenceDiagram
 
 | Path | Role |
 |------|------|
-| `client/features/admin/setting/components/AiSetting.tsx` | Tenant AI settings |
+| `client/features/admin/setting/components/AiSetting.tsx` | Store AI settings |
 | `client/features/admin/ai/` | Studio, hooks, shared components |
 | `client/features/admin/ai/hooks/useAiGenerate.ts` | Generate API facade |
 | `client/features/system/components/PlatformAiSetting.tsx` | Platform AI settings |
 | `client/features/system/components/PlanDescriptionAiAssist.tsx` | Plan copy assist |
-| `client/features/system/components/dashboard/TenantHealthAiPanel.tsx` | Health narrative |
+| `client/features/system/components/dashboard/StoreHealthAiPanel.tsx` | Health narrative |
 | `client/features/product/shop/` | Storefront AI widgets |
 
 ### Migrations (representative)
 
 | Migration | Change |
 |-----------|--------|
-| `1781310000000-AddTenantAiConfig.ts` | `tenants.ai_config` column |
+| `1781310000000-AddStoreAiConfig.ts` | `stores.ai_config` column |
 | `1781320000000-EnableAiPlanFeature.ts` | `ai` feature + permissions |
 | `1781380000000-AddProductEmbeddings.ts` | `product_embeddings` table |
 | `1781390000000-AddPlatformAiConfig.ts` | `platform_settings.ai_config` |
@@ -663,7 +663,7 @@ sequenceDiagram
 | Reindex fails | Provider lacks embeddings | Use OpenAI/OpenRouter/Google preset embedding model |
 | Platform assist unavailable | No platform config | Platform Settings → AI or set `PLATFORM_AI_*` env |
 | Anthropic + semantic search | Anthropic has no embeddings API | Use OpenAI/OpenRouter for embedding model or provider |
-| Local dev storefront 404 | Missing tenant context | Set `x-tenant-id` / store tenant id cache (see storefront guide) |
+| Local dev storefront 404 | Missing store context | Set `x-store-id` / store store id cache (see storefront guide) |
 
 ---
 

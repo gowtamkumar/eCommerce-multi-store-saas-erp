@@ -32,14 +32,14 @@ export default function AuditLogsDashboard() {
         setEntityFilter,
         actorSearch,
         setActorSearch,
-        tenantIdFilter,
-        setTenantIdFilter,
+        storeIdFilter,
+        setStoreIdFilter,
         fromDate,
         setFromDate,
         toDate,
         setToDate,
         debouncedActorSearch,
-        debouncedTenantIdFilter,
+        debouncedStoreIdFilter,
         handlePageChange,
         handleResetFilters,
         handleRefresh,
@@ -173,7 +173,7 @@ export default function AuditLogsDashboard() {
         </span>
     ), [meta.page, meta.totalPages, meta.total]);
 
-    const isSearchLoading = actorSearch !== debouncedActorSearch || tenantIdFilter !== debouncedTenantIdFilter;
+    const isSearchLoading = actorSearch !== debouncedActorSearch || storeIdFilter !== debouncedStoreIdFilter;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -268,17 +268,17 @@ export default function AuditLogsDashboard() {
                         </div>
                     </div>
 
-                    {/* Tenant ID (Super-Admin) */}
+                    {/* Store ID (Super-Admin) */}
                     <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tenant ID</label>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Store ID</label>
                         <div className="relative group">
                             <input
                                 type="text"
-                                value={tenantIdFilter}
-                                onChange={(e) => setTenantIdFilter(e.target.value)}
-                                placeholder="All Tenants..."
+                                value={storeIdFilter}
+                                onChange={(e) => setStoreIdFilter(e.target.value)}
+                                placeholder="All Stores..."
                                 className="w-full px-4 py-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-xs font-semibold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all placeholder-slate-355 dark:placeholder-slate-700"
-                                title="Filter by specific tenant UUID (Global Administrator feature)"
+                                title="Filter by specific store UUID (Global Administrator feature)"
                             />
                         </div>
                     </div>
@@ -309,7 +309,7 @@ export default function AuditLogsDashboard() {
                         />
                     </div>
                 </div>
-                {(actionFilter || entityFilter || actorSearch || tenantIdFilter || fromDate || toDate) && (
+                {(actionFilter || entityFilter || actorSearch || storeIdFilter || fromDate || toDate) && (
                     <div className="flex justify-end pt-2">
                         <button
                             onClick={handleResetFilters}

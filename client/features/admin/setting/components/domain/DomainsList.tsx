@@ -2,11 +2,11 @@
 
 import { AnimatePresence } from "framer-motion";
 import { Globe } from "lucide-react";
-import type { TenantDomain } from "../../types/domain";
+import type { StoreDomain } from "../../types/domain";
 import { DomainCard } from "./DomainCard";
 
 interface DomainsListProps {
-  domains: TenantDomain[];
+  domains: StoreDomain[];
   verifyingId: string | null;
   removingId: string | null;
   primaryId: string | null;

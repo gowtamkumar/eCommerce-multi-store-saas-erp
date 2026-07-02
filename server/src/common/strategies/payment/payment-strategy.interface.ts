@@ -11,7 +11,7 @@ export interface PaymentInitiationResult {
 
 export interface PaymentStrategyOptions {
   callbackUrl: string
-  tenantId: string
+  storeId: string
   frontendUrl?: string
 }
 

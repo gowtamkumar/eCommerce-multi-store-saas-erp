@@ -2,12 +2,12 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { PageStatus } from '@/common/enums/page-status.enum'
 import { PageSectionType } from '@/common/enums/page/page-sections-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('pages')
-@Index(['slug', 'tenantId'], { unique: true })
-@Index(['tenantId', 'isHomePage']) // Hot path: storefront home page lookup
+@Index(['slug', 'storeId'], { unique: true })
+@Index(['storeId', 'isHomePage']) // Hot path: storefront home page lookup
 export class PageEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string
@@ -71,12 +71,12 @@ export class PageEntity extends BaseEntity {
   @Index()
   publishAt: Date | null
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

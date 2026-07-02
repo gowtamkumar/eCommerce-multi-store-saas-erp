@@ -101,7 +101,7 @@ The RFQ workflow connects several procurement entities. The core relationships a
 - `RFQ` optionally links to a `PurchaseRequisition` (`prId`),
 - `RFQ` owns many `Quotation` records,
 - each `Quotation` belongs to a `Supplier`,
-- `RFQ` is created by a `User` and belongs to a `Tenant`,
+- `RFQ` is created by a `User` and belongs to a `Store`,
 - awarding a `Quotation` triggers `PurchaseOrder` creation.
 
 ### Relationship diagram
@@ -113,7 +113,7 @@ flowchart LR
   QUO[Quotation]
   SUP[Supplier]
   USER[User]
-  TEN[Tenant]
+  TEN[Store]
   PO[PurchaseOrder]
 
   PR -- optional source --> RFQ
@@ -131,7 +131,7 @@ If Mermaid rendering is unavailable, the same relationship can be read as:
 PurchaseRequisition (optional) -> RFQ -> Quotation -> Supplier
                        |
                        +-> createdBy User
-                       +-> belongsTo Tenant
+                       +-> belongsTo Store
                        +-> awards PurchaseOrder
 ```
 
@@ -214,7 +214,7 @@ Location: `server/src/modules/admin/operations/finance/purchase/repositories/rfq
 
 - creates RFQ with generated sequential `rfqNumber`,
 - loads RFQs with related PR and supplier quote data,
-- filters by tenant, search, and status,
+- filters by store, search, and status,
 - supports `findByIdWithRelations()` to eager-load `purchaseRequisition`, `createdBy`, `quotations`, `quotations.supplier`.
 
 ### Quotation repository
@@ -357,13 +357,13 @@ If no PR is attached, the current code creates an empty PO item list.
 
 1. Check `client/services/procurement.ts:getRFQs()` response shape.
 2. Confirm the backend route is reachable at `/api/v1/rfqs`.
-3. Verify the RFQ repository query returns items by tenant.
+3. Verify the RFQ repository query returns items by store.
 
 ### If supplier bids are not saved
 
 1. Confirm `POST /rfqs/:id/quotations` receives `supplierId`, `totalAmount` and optional `leadTimeDays`.
 2. Ensure RFQ status is `OPEN` before submission.
-3. Check `QuotationEntity` for `tenantId` and supplier relation.
+3. Check `QuotationEntity` for `storeId` and supplier relation.
 
 ### If award does not create PO correctly
 

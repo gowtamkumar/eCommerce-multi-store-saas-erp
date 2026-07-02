@@ -40,23 +40,23 @@ export class OrderProcessor extends WorkerHost {
   }
 
   async handleSendOrderNotification(data: any) {
-    const { orderId, tenantId } = data
-    this.logger.log(`Sending order notification for order ${orderId} (tenant: ${tenantId})`)
+    const { orderId, storeId } = data
+    this.logger.log(`Sending order notification for order ${orderId} (store: ${storeId})`)
 
-    const orderWithRelations = await this.orderService.findOneOrder(orderId, { tenantId } as any)
+    const orderWithRelations = await this.orderService.findOneOrder(orderId, { storeId } as any)
 
     if (orderWithRelations) {
       // 1. Send Email Notification
-      await this.mailService.sendNewOrderNotification(orderWithRelations, tenantId)
+      await this.mailService.sendNewOrderNotification(orderWithRelations, storeId)
       this.logger.log(`Email notification sent successfully for order ${orderId}`)
 
       // 2. Send SMS Notification (if phone available)
       if (orderWithRelations.customerPhone) {
-        const brandName = orderWithRelations.tenant?.storeName || 'our store'
+        const brandName = orderWithRelations.store?.storeName || 'our store'
         const message = `Thank you for your order #${orderWithRelations.id} at ${brandName}. Total: ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}. We will process it shortly.`
 
         try {
-          await this.smsService.sendSms(orderWithRelations.customerPhone, message, tenantId)
+          await this.smsService.sendSms(orderWithRelations.customerPhone, message, storeId)
           this.logger.log(
             `SMS notification sent successfully to ${orderWithRelations.customerPhone}`,
           )
@@ -69,7 +69,7 @@ export class OrderProcessor extends WorkerHost {
       // 3. Send Web Push Notification (if linked to a user)
       if (orderWithRelations.userId) {
         try {
-          const brandName = orderWithRelations.tenant?.storeName || 'our store'
+          const brandName = orderWithRelations.store?.storeName || 'our store'
           await this.pushService.sendToUser(
             orderWithRelations.userId,
             {
@@ -77,7 +77,7 @@ export class OrderProcessor extends WorkerHost {
               body: `Thank you for shopping at ${brandName}. Your order total is ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}.`,
               url: `/account/orders/${orderWithRelations.id}`,
             },
-            tenantId,
+            storeId,
           )
           this.logger.log(`Push notification triggered successfully for order ${orderId}`)
         } catch (pushError: any) {
@@ -92,13 +92,13 @@ export class OrderProcessor extends WorkerHost {
       try {
         await this.notificationService.createNotification(
           {
-            userId: null as any, // Null means tenant-wide notification for all admins
+            userId: null as any, // Null means store-wide notification for all admins
             title: `New Order #${orderWithRelations.id}`,
             message: `A new order has been placed for ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}.`,
             type: 'ORDER',
             link: `/admin/orders/${orderWithRelations.id}`,
           },
-          tenantId,
+          storeId,
         )
         this.logger.log(`In-app system notification created for order ${orderId}`)
       } catch (sysNotifError: any) {

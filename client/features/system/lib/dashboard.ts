@@ -2,7 +2,7 @@ import type {
   ActionTone,
   DashboardStats,
   RawOverviewData,
-  TenantAnalytics,
+  StoreAnalytics,
 } from '../types/dashboard.types';
 
 /** Plan name (lowercased) → progress-bar / badge color. */
@@ -16,9 +16,9 @@ export const PLAN_COLOR_MAP: Record<string, string> = {
 export const planColor = (name?: string): string =>
   PLAN_COLOR_MAP[(name || 'basic').toLowerCase()] || 'bg-slate-400';
 
-/** Single source of truth for status-filtered tenant deep links. */
-export const tenantStatusHref = (status: string): string =>
-  `/system/tenants?status=${status}`;
+/** Single source of truth for status-filtered store deep links. */
+export const storeStatusHref = (status: string): string =>
+  `/system/stores?status=${status}`;
 
 /** Tailwind classes for each Action Center severity tone. */
 export const ACTION_TONES: Record<ActionTone, string> = {
@@ -28,16 +28,16 @@ export const ACTION_TONES: Record<ActionTone, string> = {
   emerald: 'border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400',
 };
 
-export function buildPlanCounts(tenants: TenantAnalytics[]): Record<string, number> {
-  return tenants.reduce<Record<string, number>>((acc, t) => {
+export function buildPlanCounts(stores: StoreAnalytics[]): Record<string, number> {
+  return stores.reduce<Record<string, number>>((acc, t) => {
     const plan = t.subscriptionPlan?.name?.toLowerCase() || 'basic';
     acc[plan] = (acc[plan] || 0) + 1;
     return acc;
   }, {});
 }
 
-export function buildStatusCounts(tenants: TenantAnalytics[]): Record<string, number> {
-  return tenants.reduce<Record<string, number>>((acc, t) => {
+export function buildStatusCounts(stores: StoreAnalytics[]): Record<string, number> {
+  return stores.reduce<Record<string, number>>((acc, t) => {
     const status = t.status?.toLowerCase() || 'active';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
@@ -45,22 +45,22 @@ export function buildStatusCounts(tenants: TenantAnalytics[]): Record<string, nu
 }
 
 /**
- * Reshapes the raw `/super-admin/overview` payload + tenant analytics into the
+ * Reshapes the raw `/super-admin/overview` payload + store analytics into the
  * `DashboardStats` view model. Shared by the server page (initial render) and
  * the client refresh hook so the two never drift out of sync.
  */
 export function buildDashboardStats(
   overview: RawOverviewData | undefined,
-  tenants: TenantAnalytics[],
+  stores: StoreAnalytics[],
 ): DashboardStats {
   return {
-    totalTenants: overview?.totalTenants || 0,
+    totalStores: overview?.totalStores || 0,
     totalUsers: overview?.totalUsers || 0,
     totalOrders: overview?.totalOrders || 0,
     totalReviews: overview?.totalReviews || 0,
     requestsLast24h: overview?.totalRequestsLast24h || 0,
-    plans: buildPlanCounts(tenants),
-    statuses: buildStatusCounts(tenants),
+    plans: buildPlanCounts(stores),
+    statuses: buildStatusCounts(stores),
     trends: overview?.trends,
   };
 }

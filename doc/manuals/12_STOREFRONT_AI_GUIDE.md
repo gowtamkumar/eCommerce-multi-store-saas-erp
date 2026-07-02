@@ -1,7 +1,7 @@
 # Storefront AI — User Manual & Developer Guide
 
 **Document version:** 1.0.0  
-**Audience:** Tenant owners, store managers, frontend/backend developers  
+**Audience:** Store owners, store managers, frontend/backend developers  
 **Last updated:** June 2026  
 **Scope:** Customer-facing AI on the public storefront (not admin AI Studio)
 
@@ -11,7 +11,7 @@
 
 1. [Overview](#1-overview)
 2. [Architecture at a glance](#2-architecture-at-a-glance)
-3. [Part A — User manual (tenant admin)](#part-a--user-manual-tenant-admin)
+3. [Part A — User manual (store admin)](#part-a--user-manual-store-admin)
 4. [Part B — Developer guide](#part-b--developer-guide)
 5. [API reference](#5-api-reference)
 6. [Troubleshooting](#6-troubleshooting)
@@ -31,7 +31,7 @@ Storefront AI adds three optional capabilities for **shoppers** on your public s
 
 ### Important principles
 
-- **BYOK (Bring Your Own Key):** Each tenant connects their own AI provider in **Admin → Settings → AI**. The platform does not host a shared LLM for stores.
+- **BYOK (Bring Your Own Key):** Each store connects their own AI provider in **Admin → Settings → AI**. The platform does not host a shared LLM for stores.
 - **Plan gate:** Subscription must include the `ai` feature.
 - **Draft & guardrails:** AI never changes prices, stock, cart, or checkout. It only reads catalog/FAQ context and returns text.
 - **Separate from live chat:** Human support chat (WebSocket, bottom-right) is a different system.
@@ -48,7 +48,7 @@ flowchart TB
     NAV[Navbar search]
     PDP[Product Q&A widget]
     ASST[Shopping assistant widget]
-    CTX[SettingsContext + tenantId cache]
+    CTX[SettingsContext + storeId cache]
   end
 
   subgraph API["NestJS API (public routes)"]
@@ -66,13 +66,13 @@ flowchart TB
     CFG[StorefrontAiConfigService]
   end
 
-  subgraph Data["Tenant-scoped data"]
+  subgraph Data["Store-scoped data"]
     CAT[(products, categories, FAQs)]
     VEC[(product_embeddings)]
-    AICFG[(tenants.ai_config JSONB)]
+    AICFG[(stores.ai_config JSONB)]
   end
 
-  subgraph Provider["Tenant AI provider (BYOK)"]
+  subgraph Provider["Store AI provider (BYOK)"]
     LLM[Chat completions API]
     EMBAPI[Embeddings API]
   end
@@ -122,11 +122,11 @@ flowchart TD
 
 ---
 
-## Part A — User manual (tenant admin)
+## Part A — User manual (store admin)
 
 ### A.1 Who should read this
 
-- **Tenant owner / store manager** setting up AI for customers  
+- **Store owner / store manager** setting up AI for customers  
 - **Support staff** explaining what shoppers can and cannot do with AI  
 
 ### A.2 Prerequisites checklist
@@ -202,8 +202,8 @@ Re-run reindex after large catalog imports or bulk description changes.
 | | Admin AI (Settings, products, campaigns) | Storefront AI |
 |---|------------------------------------------|---------------|
 | **Users** | Staff with permissions | Anonymous/guest shoppers |
-| **Auth** | JWT + RBAC | Public routes + tenant context |
-| **Config** | Same `tenants.ai_config` | Same config + `storefront` toggles |
+| **Auth** | JWT + RBAC | Public routes + store context |
+| **Config** | Same `stores.ai_config` | Same config + `storefront` toggles |
 | **Checkout** | N/A | **Never** |
 
 ### A.6 Operational tips
@@ -219,7 +219,7 @@ Re-run reindex after large catalog imports or bulk description changes.
 
 ### B.1 Design goals
 
-1. **Tenant isolation** — every query scoped by `tenantId` from host/header/cache.
+1. **Store isolation** — every query scoped by `storeId` from host/header/cache.
 2. **Hybrid search** — keyword search remains the baseline; vectors enhance recall.
 3. **RAG-only answers** — LLM prompts include DB context; system prompts forbid inventing policies/prices.
 4. **Graceful degradation** — missing config, toggles, or index → feature hidden or keyword-only search.
@@ -237,9 +237,9 @@ sequenceDiagram
   participant OAI as Embeddings API
 
   Shopper->>Next: Search "wireless earbuds"
-  Next->>API: q=wireless+earbuds (x-tenant-id)
+  Next->>API: q=wireless+earbuds (x-store-id)
   API->>PS: findAllProducts(filterDto)
-  PS->>EMB: canUseHybridSearch(tenantId)?
+  PS->>EMB: canUseHybridSearch(storeId)?
 
   alt Hybrid ready
     par Keyword path
@@ -269,10 +269,10 @@ sequenceDiagram
   participant API as POST .../slug/:slug/ask
   participant QA as ProductQaService
   participant PS as ProductService
-  participant LLM as Tenant AI chat
+  participant LLM as Store AI chat
 
   W->>API: question + optional history
-  API->>QA: askAboutProduct(tenantId, slug)
+  API->>QA: askAboutProduct(storeId, slug)
   QA->>QA: isProductQaAvailable?
   QA->>PS: findBySlugProduct (active product)
   QA->>QA: buildProductRagContext(product)
@@ -290,7 +290,7 @@ sequenceDiagram
   participant API as POST /products/storefront-ai/chat
   participant SA as StorefrontAssistantService
   participant RAG as buildStorefrontAssistantContext
-  participant LLM as Tenant AI chat
+  participant LLM as Store AI chat
 
   W->>API: message + brandName + history
   API->>SA: chat()
@@ -303,7 +303,7 @@ sequenceDiagram
 
 ### B.5 Configuration schema
 
-Stored on **`tenants.ai_config`** (JSONB):
+Stored on **`stores.ai_config`** (JSONB):
 
 ```typescript
 {
@@ -324,12 +324,12 @@ Stored on **`tenants.ai_config`** (JSONB):
 ```
 
 Normalization: `server/src/common/utils/storefront-ai-config.util.ts`  
-Admin API: `GET/PATCH /tenants/ai-config`
+Admin API: `GET/PATCH /stores/ai-config`
 
 **Availability helpers:** `StorefrontAiConfigService`
 
-- `isProviderReady(tenantId)` — plan `ai` + enabled + key + default model  
-- `getStorefrontFlags(tenantId)` — merged storefront toggles  
+- `isProviderReady(storeId)` — plan `ai` + enabled + key + default model  
+- `getStorefrontFlags(storeId)` — merged storefront toggles  
 
 ### B.6 Database — product embeddings
 
@@ -339,13 +339,13 @@ Admin API: `GET/PATCH /tenants/ai-config`
 
 | Column | Purpose |
 |--------|---------|
-| `tenant_id` | Isolation |
+| `store_id` | Isolation |
 | `product_id` | FK to product |
 | `embedding` | JSONB float vector |
 | `content_hash` | Skip re-embed if catalog text unchanged |
 | `model` | Embedding model used |
 
-**Indexing:** `ProductEmbeddingService.reindexTenantCatalog()` batches active products (20 per batch), calls `TenantAiClientService.createEmbeddings()`.
+**Indexing:** `ProductEmbeddingService.reindexStoreCatalog()` batches active products (20 per batch), calls `StoreAiClientService.createEmbeddings()`.
 
 **Search document text** built from: name, descriptions, SKU, category, brand, meta fields, attributes (`buildSearchDocument()`).
 
@@ -362,9 +362,9 @@ Admin API: `GET/PATCH /tenants/ai-config`
 | `server/src/modules/admin/catalog/product/utils/build-product-rag-context.ts` | PDP context string |
 | `server/src/modules/admin/catalog/product/utils/build-storefront-assistant-context.ts` | Assistant RAG context |
 | `server/src/modules/admin/catalog/product/utils/semantic-search.util.ts` | Cosine similarity + RRF |
-| `server/src/modules/admin/ai/services/tenant-ai-client.service.ts` | Provider HTTP (chat + embeddings) |
+| `server/src/modules/admin/ai/services/store-ai-client.service.ts` | Provider HTTP (chat + embeddings) |
 | `server/src/common/utils/storefront-ai-config.util.ts` | Toggle defaults |
-| `server/src/common/types/tenant-ai-config.types.ts` | TypeScript types |
+| `server/src/common/types/store-ai-config.types.ts` | TypeScript types |
 
 **Module wiring:** `product.module.ts` — imports `AiModule`, `FaqModule`, `CategoryModule`.
 
@@ -382,20 +382,20 @@ Admin API: `GET/PATCH /tenants/ai-config`
 | `client/features/admin/setting/hooks/useAiConfig.ts` | Load/save AI + embedding status |
 | `client/components/layout/Navbar.tsx` | Search autocomplete (`q=`) |
 | `client/features/product/shop/Products.tsx` | Maps URL `search` → API `q` |
-| `client/lib/store-tenant-id.ts` | Cache tenant ID for localhost API calls |
-| `client/hooks/SettingsContext.tsx` | Sets tenant ID from SSR settings |
-| `client/services/api.ts` | `x-tenant-id` header / cached fallback |
+| `client/lib/store-store-id.ts` | Cache store ID for localhost API calls |
+| `client/hooks/SettingsContext.tsx` | Sets store ID from SSR settings |
+| `client/services/api.ts` | `x-store-id` header / cached fallback |
 
-### B.9 Tenant resolution on the storefront
+### B.9 Store resolution on the storefront
 
-Public routes require **`RequestContext.tenantId`**.
+Public routes require **`RequestContext.storeId`**.
 
 | Environment | Resolution |
 |-------------|------------|
-| Production subdomain / custom domain | Host header → tenant middleware |
-| Localhost dev | `x-tenant-id` header from client cache populated by settings SSR |
+| Production subdomain / custom domain | Host header → store middleware |
+| Localhost dev | `x-store-id` header from client cache populated by settings SSR |
 
-Without tenant ID, `/products/storefront-ai/status` fails and widgets stay hidden.
+Without store ID, `/products/storefront-ai/status` fails and widgets stay hidden.
 
 ### B.10 Guardrails (enforced in code)
 
@@ -410,17 +410,17 @@ Without tenant ID, `/products/storefront-ai/status` fails and widgets stay hidde
 
 ### B.11 Local development checklist
 
-1. Tenant on a plan with **`ai`** feature.
+1. Store on a plan with **`ai`** feature.
 2. Configure **Admin → Settings → AI** (provider + models).
 3. Enable storefront toggles; save.
 4. Run migration `1781380000000-AddProductEmbeddings` if not applied.
 5. **Reindex** catalog from admin AI settings.
-6. Open storefront with tenant context (subdomain or localhost with settings loaded).
+6. Open storefront with store context (subdomain or localhost with settings loaded).
 7. Verify status:
 
 ```bash
 curl -s "http://localhost:3900/api/v1/products/storefront-ai/status" \
-  -H "x-tenant-id: YOUR_TENANT_UUID"
+  -H "x-store-id: YOUR_STORE_UUID"
 ```
 
 Expected shape:
@@ -450,13 +450,13 @@ Expected shape:
 | Add new RAG source (e.g. shipping policy page) | Extend `buildStorefrontAssistantContext()` |
 | Tune search ranking | Adjust RRF `k` or candidate limits in `product-embedding.service.ts` |
 | New widget | Copy pattern: status check → hook → public POST → service with RAG |
-| Rate limiting | Add throttle guard on public AI routes per tenant |
+| Rate limiting | Add throttle guard on public AI routes per store |
 
 ---
 
 ## 5. API reference
 
-Base path: `/api/v1` (see server `API_URL`). All storefront AI routes are **public** but require **tenant context**.
+Base path: `/api/v1` (see server `API_URL`). All storefront AI routes are **public** but require **store context**.
 
 ### 5.1 GET `/products/storefront-ai/status`
 
@@ -531,9 +531,9 @@ Common query params: `q`, `page`, `limit`, `status`, `categoryId`, `brandId`, fi
 
 | Method | Path | Auth |
 |--------|------|------|
-| GET | `/tenants/ai-config` | JWT + settings |
-| PATCH | `/tenants/ai-config` | JWT + settings (includes `storefront` object) |
-| POST | `/tenants/ai-config/test` | JWT + settings |
+| GET | `/stores/ai-config` | JWT + settings |
+| PATCH | `/stores/ai-config` | JWT + settings (includes `storefront` object) |
+| POST | `/stores/ai-config/test` | JWT + settings |
 
 ---
 
@@ -542,17 +542,17 @@ Common query params: `q`, `page`, `limit`, `status`, `categoryId`, `brandId`, fi
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Widgets never appear | `productQaAvailable` / `shoppingAssistantAvailable` false | Enable AI provider; check plan `ai`; enable storefront toggles |
-| Widgets missing on localhost only | No `x-tenant-id` | Ensure settings load and `setClientTenantId` runs |
+| Widgets missing on localhost only | No `x-store-id` | Ensure settings load and `setClientStoreId` runs |
 | Semantic search feels “keyword only” | `semanticSearchAvailable: false` | Set embedding model; run reindex |
 | Q&A says “not available” | Product not **active** or toggle off | Publish product; enable Product Q&A |
 | Assistant empty / error | Provider quota or bad model | Test connection in admin; check server logs |
 | Reindex fails | No embedding model or invalid API key | Fix AI config; verify embeddings API for provider |
-| Status API 503 tenant missing | Host not mapped to tenant | Use correct subdomain or pass tenant header |
+| Status API 503 store missing | Host not mapped to store | Use correct subdomain or pass store header |
 
 **Debug command:**
 
 ```bash
-curl -s "$API_URL/products/storefront-ai/status" -H "x-tenant-id: $TENANT_ID" | jq
+curl -s "$API_URL/products/storefront-ai/status" -H "x-store-id: $STORE_ID" | jq
 ```
 
 ---
@@ -567,7 +567,7 @@ curl -s "$API_URL/products/storefront-ai/status" -H "x-tenant-id: $TENANT_ID" | 
 | [10_customer_crm_and_storefront.md](../codebase-understanding/10_customer_crm_and_storefront.md) | Broader storefront architecture |
 | [live_chat_system_design.md](../system-design/live_chat_system_design.md) | Human live chat (separate widget) |
 | [subscription-and-features.md](../system-design/subscription-and-features.md) | Plan feature gating (`ai`, `catalog`) |
-| [02_TENANT_OWNER_MANUAL.md](./02_TENANT_OWNER_MANUAL.md) | General tenant admin operations |
+| [02_STORE_OWNER_MANUAL.md](./02_STORE_OWNER_MANUAL.md) | General store admin operations |
 
 ---
 

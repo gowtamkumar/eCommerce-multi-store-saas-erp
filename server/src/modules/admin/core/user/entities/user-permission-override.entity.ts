@@ -1,5 +1,5 @@
 import { OverrideEffect } from '@/common/enums/override-effect.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from './user.entity'
 import {
   Column,
@@ -27,7 +27,7 @@ import {
  * - Expired overrides are automatically ignored by the resolution engine (NOT deleted)
  */
 @Entity('user_permission_overrides')
-@Index(['userId', 'tenantId', 'permissionSlug'])
+@Index(['userId', 'storeId', 'permissionSlug'])
 export class UserPermissionOverrideEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
@@ -39,12 +39,12 @@ export class UserPermissionOverrideEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   /** The permission slug this override applies to. Example: 'payroll:approve' */
   @Column({ type: 'varchar', length: 150, name: 'permission_slug' })

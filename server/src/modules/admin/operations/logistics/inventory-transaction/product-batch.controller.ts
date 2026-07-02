@@ -103,7 +103,7 @@ export class ProductBatchController {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called sweepExpired product batches.`,
     )
-    const affected = await this.service.markExpiredBatches(ctx.tenantId)
+    const affected = await this.service.markExpiredBatches(ctx.storeId)
     return {
       success: true,
       statusCode: 200,

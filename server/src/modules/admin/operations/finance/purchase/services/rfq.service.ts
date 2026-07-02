@@ -24,7 +24,7 @@ export class RfqService {
 
   async createRfq(dto: CreateRfqDto, ctx: RequestContextDto): Promise<RfqEntity> {
     this.logger.log('Creating RFQ')
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const result = await this.rfqRepository.createAndSave(
       {
@@ -49,10 +49,10 @@ export class RfqService {
     limit: number
     totalPages: number
   }> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
-    const [items, total] = await this.rfqRepository.findAllByTenant(
-      tenantId,
+    const [items, total] = await this.rfqRepository.findAllByStore(
+      storeId,
       page,
       limit,
       search,
@@ -68,8 +68,8 @@ export class RfqService {
   }
 
   async findOneRfq(id: string, ctx: RequestContextDto): Promise<RfqEntity> {
-    const tenantId = ctx.tenantId
-    const rfq = await this.rfqRepository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const rfq = await this.rfqRepository.findByIdWithRelations(id, storeId)
     if (!rfq) {
       throw new NotFoundException('RFQ not found')
     }
@@ -81,12 +81,12 @@ export class RfqService {
     dto: UpdateRfqStatusDto,
     ctx: RequestContextDto,
   ): Promise<RfqEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const rfq = await this.findOneRfq(id, ctx)
 
     rfq.status = dto.status
     const saved = await this.rfqRepository.saveRfq(rfq)
-    await this.notifyRfqStatus(saved, tenantId)
+    await this.notifyRfqStatus(saved, storeId)
     return saved
   }
 
@@ -96,9 +96,9 @@ export class RfqService {
     ctx: RequestContextDto,
   ): Promise<QuotationEntity> {
     this.logger.log(`Submitting quotation for RFQ ${rfqId}`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const rfq = await this.rfqRepository.findById(rfqId, tenantId)
+    const rfq = await this.rfqRepository.findById(rfqId, storeId)
     if (!rfq) {
       throw new NotFoundException('RFQ not found')
     }
@@ -123,8 +123,8 @@ export class RfqService {
   }
 
   async findQuotation(id: string, ctx: RequestContextDto): Promise<QuotationEntity> {
-    const tenantId = ctx.tenantId
-    const quotation = await this.quotationRepository.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const quotation = await this.quotationRepository.findById(id, storeId)
     if (!quotation) {
       throw new NotFoundException('Quotation not found')
     }
@@ -133,21 +133,21 @@ export class RfqService {
 
   async awardQuotation(id: string, ctx: RequestContextDto) {
     this.logger.log(`Awarding Quotation: ${id}`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
-      const quotation = await this.quotationRepository.findById(id, tenantId, queryRunner.manager)
+      const quotation = await this.quotationRepository.findById(id, storeId, queryRunner.manager)
       if (!quotation) {
         throw new NotFoundException('Quotation not found')
       }
 
       const rfq = await this.rfqRepository.findByIdWithRelations(
         quotation.rfqId,
-        tenantId,
+        storeId,
         queryRunner.manager,
       )
       if (!rfq) {
@@ -192,7 +192,7 @@ export class RfqService {
 
       await queryRunner.commitTransaction()
 
-      await this.notifyQuotationAwarded(rfq, quotation, po?.id, tenantId)
+      await this.notifyQuotationAwarded(rfq, quotation, po?.id, storeId)
       return po
     } catch (error) {
       await queryRunner.rollbackTransaction()
@@ -202,7 +202,7 @@ export class RfqService {
     }
   }
 
-  private async notifyRfqStatus(rfq: RfqEntity, tenantId: string): Promise<void> {
+  private async notifyRfqStatus(rfq: RfqEntity, storeId: string): Promise<void> {
     try {
       await this.notificationService.createNotification(
         {
@@ -212,7 +212,7 @@ export class RfqService {
           link: `/admin/procurement/rfqs`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger RFQ status notification: ${e.message}`)
@@ -223,7 +223,7 @@ export class RfqService {
     rfq: RfqEntity,
     quotation: QuotationEntity,
     purchaseOrderId: string | undefined,
-    tenantId: string,
+    storeId: string,
   ): Promise<void> {
     try {
       await this.notificationService.createNotification(
@@ -236,7 +236,7 @@ export class RfqService {
             : `/admin/procurement/rfqs`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(

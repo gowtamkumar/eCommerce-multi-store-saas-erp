@@ -29,7 +29,7 @@ export class ProductBatchService {
     // Create the batch record
     const batch = this.repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       manufactureDate: dto.manufactureDate ? new Date(dto.manufactureDate) : null,
       expiryDate: new Date(dto.expiryDate),
       currentQuantity: dto.initialQuantity,
@@ -82,13 +82,13 @@ export class ProductBatchService {
       status,
       expiringSoon,
     } = pagination
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const qb = this.repo
       .createQueryBuilder('b')
       .leftJoinAndSelect('b.product', 'product')
       .leftJoinAndSelect('b.variant', 'variant')
-      .where('b.tenantId = :tenantId', { tenantId })
+      .where('b.storeId = :storeId', { storeId })
       .orderBy('b.expiryDate', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -137,7 +137,7 @@ export class ProductBatchService {
 
   async findOne(id: string, ctx: RequestContextDto): Promise<ProductBatchEntity> {
     const batch = await this.repo.findOne({
-      where: { id, tenantId: ctx.tenantId },
+      where: { id, storeId: ctx.storeId },
       relations: {
         product: true,
         variant: true,
@@ -172,19 +172,19 @@ export class ProductBatchService {
    * Decrements currentQuantity of active batches chronologically.
    *
    * Concurrency safety:
-   *   1. Acquires a transaction-scoped advisory lock on (tenant, product, variant)
+   *   1. Acquires a transaction-scoped advisory lock on (store, product, variant)
    *      so two concurrent shipments can't both read the same `currentQuantity`.
    *   2. Reads candidate batches with `pessimistic_write` to row-lock them.
    */
   async allocateFEFOStock(
-    tenantId: string,
+    storeId: string,
     productId: string,
     variantId: string | null,
     quantityRequested: number,
     manager: EntityManager,
   ): Promise<{ batchId: string; quantity: number }[]> {
     // Acquire FEFO lock (separate namespace from inventory_ledger).
-    const composite = `fefo:${tenantId}:${productId}:${variantId ?? 'null'}`
+    const composite = `fefo:${storeId}:${productId}:${variantId ?? 'null'}`
     const hash = createHash('sha256').update(composite).digest()
     const lockId = hash.readBigInt64BE(0).toString()
     await manager.query('SELECT pg_advisory_xact_lock($1::bigint)', [lockId])
@@ -197,7 +197,7 @@ export class ProductBatchService {
     const query = repo
       .createQueryBuilder('b')
       .setLock('pessimistic_write')
-      .where('b.tenantId = :tenantId', { tenantId })
+      .where('b.storeId = :storeId', { storeId })
       .andWhere('b.productId = :productId', { productId })
       .andWhere('b.status = :status', { status: BatchStatus.ACTIVE })
       .andWhere('b.expiryDate > :now', { now: new Date() })
@@ -245,14 +245,14 @@ export class ProductBatchService {
    * Called by a BullMQ repeatable job (see InventoryLedgerModule) and also
    * exposed manually via the controller.
    */
-  async markExpiredBatches(tenantId: string): Promise<number> {
+  async markExpiredBatches(storeId: string): Promise<number> {
     // Find expired-but-still-active batches, locking them so we don't double-process.
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(ProductBatchEntity)
       const expired = await repo
         .createQueryBuilder('b')
         .setLock('pessimistic_write')
-        .where('b.tenantId = :tenantId', { tenantId })
+        .where('b.storeId = :storeId', { storeId })
         .andWhere('b.expiryDate < :now', { now: new Date() })
         .andWhere('b.status = :activeStatus', { activeStatus: BatchStatus.ACTIVE })
         .getMany()
@@ -276,7 +276,7 @@ export class ProductBatchService {
                 batchId: batch.id,
                 remarks: `Auto write-off of expired batch ${batch.batchNumber} (${residual} units)`,
               },
-              { tenantId, userId: 'system', user: { id: 'system', role: 'SYSTEM' } as any },
+              { storeId, userId: 'system', user: { id: 'system', role: 'SYSTEM' } as any },
               manager,
             )
           } catch (err: any) {

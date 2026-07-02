@@ -5,9 +5,9 @@ import { ProductEntity } from './product.entity'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 
 @Entity('product_variants')
-@Index(['sku', 'tenantId'], { unique: true })
+@Index(['sku', 'storeId'], { unique: true })
 @Index(['productId'])
-@Index(['tenantId'])
+@Index(['storeId'])
 export class ProductVariantEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   sku: string
@@ -64,8 +64,8 @@ export class ProductVariantEntity extends BaseEntity {
   @JoinColumn({ name: 'product_id' })
   product: ProductEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

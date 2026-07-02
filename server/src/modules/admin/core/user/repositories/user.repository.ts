@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { Injectable } from '@nestjs/common'
@@ -8,7 +8,7 @@ import { FilterUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
 
 @Injectable()
-export class UserRepository extends BaseTenantRepository<UserEntity> {
+export class UserRepository extends BaseStoreRepository<UserEntity> {
   constructor(
     @InjectRepository(UserEntity)
     repo: Repository<UserEntity>,
@@ -18,12 +18,12 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
 
   async findAllWithFilters(
     filterUserDto: FilterUserDto,
-    tenantId: string,
+    storeId: string,
   ): Promise<[UserEntity[], number]> {
     const { name, username, status, page, limit, q } = filterUserDto
     const query = this.repo
       .createQueryBuilder('user')
-      .where('user.tenantId = :tenantId', { tenantId })
+      .where('user.storeId = :storeId', { storeId })
 
     if (name) {
       query.andWhere('user.name ILIKE :name', { name: `%${name}%` })
@@ -59,7 +59,7 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
         role: true,
         status: true,
         createdAt: true,
-        tenantId: true,
+        storeId: true,
         isEmailVerified: true,
         roleId: true,
         companyName: true,
@@ -77,9 +77,9 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
     })
   }
 
-  async findByIdAndTenant(id: string, tenantId: string): Promise<UserEntity | null> {
+  async findByIdAndStore(id: string, storeId: string): Promise<UserEntity | null> {
     return this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       select: {
         id: true,
         name: true,
@@ -91,7 +91,7 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
         role: true,
         status: true,
         createdAt: true,
-        tenantId: true,
+        storeId: true,
         isEmailVerified: true,
         roleId: true,
         companyName: true,
@@ -109,15 +109,15 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
     })
   }
 
-  async findByUsername(username: string, tenantId?: string): Promise<UserEntity | null> {
-    const where: { username: string; tenantId?: string } = { username }
-    if (tenantId) where.tenantId = tenantId
+  async findByUsername(username: string, storeId?: string): Promise<UserEntity | null> {
+    const where: { username: string; storeId?: string } = { username }
+    if (storeId) where.storeId = storeId
     return this.repo.findOne({ where })
   }
 
-  async findByEmail(email: string, tenantId?: string): Promise<UserEntity | null> {
-    const where: { email: string; tenantId?: string } = { email }
-    if (tenantId) where.tenantId = tenantId
+  async findByEmail(email: string, storeId?: string): Promise<UserEntity | null> {
+    const where: { email: string; storeId?: string } = { email }
+    if (storeId) where.storeId = storeId
     return this.repo.findOne({ where })
   }
 
@@ -132,7 +132,7 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
   async createAndSave(data: Partial<UserEntity>, ctx: RequestContextDto): Promise<UserEntity> {
     const user = this.repo.create({
       ...data,
-      tenantId: data.tenantId || ctx.tenantId,
+      storeId: data.storeId || ctx.storeId,
     } as UserEntity)
     return this.repo.save(user)
   }
@@ -146,8 +146,8 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
     return this.repo.softRemove(user)
   }
 
-  async countByTenant(tenantId: string): Promise<number> {
-    return this.repo.count({ where: { tenantId } })
+  async countByStore(storeId: string): Promise<number> {
+    return this.repo.count({ where: { storeId } })
   }
 
   async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
@@ -182,9 +182,9 @@ export class UserRepository extends BaseTenantRepository<UserEntity> {
     }
   }
 
-  async findTeamMembers(tenantId: string): Promise<UserEntity[]> {
+  async findTeamMembers(storeId: string): Promise<UserEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       order: { createdAt: 'DESC' },
       select: {
         id: true,

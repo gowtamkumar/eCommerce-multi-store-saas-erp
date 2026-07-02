@@ -1,11 +1,11 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { SupplierEntity } from './supplier.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { SupplierAPReferenceType } from '../enums/supplier-ap-Refernce-type.enum'
 
 @Entity('supplier_ap_ledger')
-@Index(['tenantId', 'supplierId'])
+@Index(['storeId', 'supplierId'])
 export class SupplierAPLedgerEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'supplier_id' })
   supplierId: string
@@ -37,10 +37,10 @@ export class SupplierAPLedgerEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   remarks: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

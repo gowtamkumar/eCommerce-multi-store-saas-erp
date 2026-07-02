@@ -29,7 +29,7 @@ export class AccountingController {
   async initialize(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<void>> {
-    await this.accountingService.initializeTenantCOA(ctx)
+    await this.accountingService.initializeStoreCOA(ctx)
     return {
       success: true,
       statusCode: 200,

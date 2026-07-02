@@ -4,10 +4,10 @@ import { PriceBookEntity } from './entities/price-book.entity'
 import { ProductPriceEntity } from './entities/product-price.entity'
 import { PricingService } from './pricing.service'
 import { PricingController } from './pricing.controller'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PriceBookEntity, ProductPriceEntity]), TenantModule],
+  imports: [TypeOrmModule.forFeature([PriceBookEntity, ProductPriceEntity]), StoreModule],
   controllers: [PricingController],
   providers: [PricingService],
   exports: [PricingService],

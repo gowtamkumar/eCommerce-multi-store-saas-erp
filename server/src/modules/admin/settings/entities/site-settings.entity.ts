@@ -22,7 +22,7 @@ import {
   SmsDto,
 } from '../dto/index'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 @Entity('site_settings')
 export class SiteSettingsEntity extends BaseEntity {
@@ -137,12 +137,12 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ name: 'document_expiry_alert_days', type: 'integer', default: 30 })
   documentExpiryAlertDays: number
 
-  @Column({ type: 'uuid', name: 'tenant_id', unique: true })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id', unique: true })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

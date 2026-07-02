@@ -29,7 +29,7 @@ export class PurchaseRequisitionService {
     ctx: RequestContextDto,
   ): Promise<PurchaseRequisitionEntity> {
     this.logger.log('Creating Purchase Requisition')
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     if (!dto.items || dto.items.length === 0) {
       throw new BadRequestException('Add at least one product')
@@ -45,14 +45,14 @@ export class PurchaseRequisitionService {
           productId: i.productId,
           quantity: i.quantity,
           notes: i.notes,
-          tenantId,
+          storeId,
         })),
         status: PRStatus.DRAFT,
       } as any,
       ctx,
     )
 
-    await this.cacheService.delCacheByPattern(`pr:list:*`, tenantId)
+    await this.cacheService.delCacheByPattern(`pr:list:*`, storeId)
     return result
   }
 
@@ -67,10 +67,10 @@ export class PurchaseRequisitionService {
     limit: number
     totalPages: number
   }> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
-    const [items, total] = await this.repository.findAllByTenant(
-      tenantId,
+    const [items, total] = await this.repository.findAllByStore(
+      storeId,
       page,
       limit,
       search,
@@ -87,8 +87,8 @@ export class PurchaseRequisitionService {
   }
 
   async findOnePR(id: string, ctx: RequestContextDto): Promise<PurchaseRequisitionEntity> {
-    const tenantId = ctx.tenantId
-    const pr = await this.repository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const pr = await this.repository.findByIdWithRelations(id, storeId)
     if (!pr) {
       throw new NotFoundException('Purchase Requisition not found')
     }
@@ -101,7 +101,7 @@ export class PurchaseRequisitionService {
     ctx: RequestContextDto,
   ): Promise<PurchaseRequisitionEntity> {
     this.logger.log(`Updating PR Status: ${id} -> ${dto.status}`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const pr = await this.findOnePR(id, ctx)
 
     if (pr.status === PRStatus.PO_CREATED) {
@@ -122,10 +122,10 @@ export class PurchaseRequisitionService {
 
     const saved = await this.repository.savePR(pr)
     if (dto.status === PRStatus.APPROVED || dto.status === PRStatus.REJECTED) {
-      await this.notifyPRStatus(saved, tenantId)
+      await this.notifyPRStatus(saved, storeId)
     }
-    await this.cacheService.delCacheByPattern(`pr:list:*`, tenantId)
-    await this.cacheService.delCache(`pr:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`pr:list:*`, storeId)
+    await this.cacheService.delCache(`pr:id:${id}`, storeId)
     return saved
   }
 
@@ -135,14 +135,14 @@ export class PurchaseRequisitionService {
     ctx: RequestContextDto,
   ) {
     this.logger.log(`Converting PR ${id} to Purchase Order`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
-      const pr = await this.repository.findByIdWithRelations(id, tenantId, queryRunner.manager)
+      const pr = await this.repository.findByIdWithRelations(id, storeId, queryRunner.manager)
       if (!pr) {
         throw new NotFoundException('Purchase Requisition not found')
       }
@@ -214,9 +214,9 @@ export class PurchaseRequisitionService {
 
       await queryRunner.commitTransaction()
 
-      await this.cacheService.delCacheByPattern(`pr:list:*`, tenantId)
-      await this.cacheService.delCache(`pr:id:${id}`, tenantId)
-      await this.notifyPRConverted(pr, po.id, tenantId)
+      await this.cacheService.delCacheByPattern(`pr:list:*`, storeId)
+      await this.cacheService.delCache(`pr:id:${id}`, storeId)
+      await this.notifyPRConverted(pr, po.id, storeId)
 
       return po
     } catch (error: any) {
@@ -228,7 +228,7 @@ export class PurchaseRequisitionService {
   }
 
   async deletePR(id: string, ctx: RequestContextDto): Promise<void> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const pr = await this.findOnePR(id, ctx)
 
     if (pr.status !== PRStatus.DRAFT && pr.status !== PRStatus.REJECTED) {
@@ -236,11 +236,11 @@ export class PurchaseRequisitionService {
     }
 
     await this.repository.savePR({ ...pr, isDeleted: true } as any)
-    await this.cacheService.delCacheByPattern(`pr:list:*`, tenantId)
-    await this.cacheService.delCache(`pr:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`pr:list:*`, storeId)
+    await this.cacheService.delCache(`pr:id:${id}`, storeId)
   }
 
-  private async notifyPRStatus(pr: PurchaseRequisitionEntity, tenantId: string): Promise<void> {
+  private async notifyPRStatus(pr: PurchaseRequisitionEntity, storeId: string): Promise<void> {
     const approved = pr.status === PRStatus.APPROVED
     try {
       await this.notificationService.createNotification(
@@ -251,7 +251,7 @@ export class PurchaseRequisitionService {
           link: `/admin/procurement/requisitions`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger purchase requisition notification: ${e.message}`)
@@ -261,7 +261,7 @@ export class PurchaseRequisitionService {
   private async notifyPRConverted(
     pr: PurchaseRequisitionEntity,
     purchaseOrderId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<void> {
     try {
       await this.notificationService.createNotification(
@@ -272,7 +272,7 @@ export class PurchaseRequisitionService {
           link: `/admin/procurement/purchases/${purchaseOrderId}`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger PR conversion notification: ${e.message}`)

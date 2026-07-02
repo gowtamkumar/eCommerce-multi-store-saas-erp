@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
           "Content-Type": "application/json",
         };
 
-        // 1. Try to get headers from next/headers (most reliable for tenant detection in Next.js 13+)
+        // 1. Try to get headers from next/headers (most reliable for store detection in Next.js 13+)
         try {
           const { headers: nextHeaders } = await import("next/headers");
           const h = await nextHeaders();
@@ -49,8 +49,8 @@ export const authOptions: NextAuthOptions = {
         if (headers["content-type"]) delete headers["content-type"];
         if (headers["content-length"]) delete headers["content-length"];
 
-        // Server-side Tenant ID Resolution
-        if (!headers["x-tenant-id"] && headers["host"]) {
+        // Server-side Store ID Resolution
+        if (!headers["x-store-id"] && headers["host"]) {
           const host = headers["host"];
           const parts = host.split(".");
           let queryParams = `?customDomain=${host}`;
@@ -69,13 +69,13 @@ export const authOptions: NextAuthOptions = {
 
               try {
                 // We use fetchAPI to call our own backend
-                const tenantRes = await fetchAPI(`/tenants${queryParams}`, {
+                const storeRes = await fetchAPI(`/stores${queryParams}`, {
                   method: "GET",
                   headers: {}, // Explicitly clear headers to ensure clean request
                 });
 
-                if (tenantRes.success && tenantRes.data?.id) {
-                  headers["x-tenant-id"] = tenantRes.data.id;
+                if (storeRes.success && storeRes.data?.id) {
+                  headers["x-store-id"] = storeRes.data.id;
                 }
               } catch (e: any) { }
             } else {
@@ -152,7 +152,7 @@ export const authOptions: NextAuthOptions = {
           phone: user.phone,
           address: user.address,
           image: user.image,
-          tenantId: user.tenantId,
+          storeId: user.storeId,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           accessTokenExpires: user.accessTokenExpires,
@@ -181,7 +181,7 @@ export const authOptions: NextAuthOptions = {
         session.user.phone = token.phone;
         session.user.address = token.address;
         session.user.image = token.image;
-        session.user.tenantId = token.tenantId;
+        session.user.storeId = token.storeId;
         session.user.accessToken = token.accessToken;
         session.user.error = token.error;
         session.user.features = token.features || [];

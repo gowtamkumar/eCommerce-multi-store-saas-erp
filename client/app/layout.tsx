@@ -14,8 +14,8 @@ import MaintenanceWrapper from "@/components/shared/MaintenanceWrapper";
 // const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 // const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
-// NOTE: This layout resolves the tenant via next/headers (getSiteSettings ->
-// getTenantId), which already opts the tree into dynamic rendering per request.
+// NOTE: This layout resolves the store via next/headers (getSiteSettings ->
+// getStoreId), which already opts the tree into dynamic rendering per request.
 // We therefore don't force 'force-dynamic' globally, letting leaf routes that
 // don't read request headers be statically optimized / ISR-cached.
 

@@ -10,7 +10,7 @@ const DAYS_OPTIONS = [
 ];
 
 interface DashboardHeaderProps {
-  totalTenants: number;
+  totalStores: number;
   lastRefreshed: Date;
   days: number;
   onDaysChange: (days: number) => void;
@@ -21,7 +21,7 @@ interface DashboardHeaderProps {
 }
 
 export default function DashboardHeader({
-  totalTenants,
+  totalStores,
   lastRefreshed,
   days,
   onDaysChange,
@@ -35,7 +35,7 @@ export default function DashboardHeader({
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Platform Control Center</h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">
-          Monitoring <span className="font-bold text-indigo-600 dark:text-indigo-400">{totalTenants}</span> stores.{' '}
+          Monitoring <span className="font-bold text-indigo-600 dark:text-indigo-400">{totalStores}</span> stores.{' '}
           <span className="text-xs text-slate-400">
             Last refreshed: {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
@@ -74,7 +74,7 @@ export default function DashboardHeader({
           {isExporting ? 'Exporting...' : 'Export CSV'}
         </button>
         <Link
-          href="/system/tenants"
+          href="/system/stores"
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 font-semibold hover:bg-indigo-700 transition-all text-sm"
         >
           Manage Stores

@@ -24,7 +24,7 @@ export class LoyaltySchedulerService implements OnModuleInit {
 
       // Points expiry sweep — 03:00 daily so it doesn't collide with the
       // tier job. Idempotent by virtue of the partial unique index on
-      // (tenant, ref_type='EXPIRY', ref_id=batchId).
+      // (store, ref_type='EXPIRY', ref_id=batchId).
       await this.loyaltyQueue.add(
         'expire-points',
         {},

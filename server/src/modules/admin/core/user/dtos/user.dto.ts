@@ -26,7 +26,7 @@ export class UserDto {
   @IsEnum(UserStatus)
   status: UserStatus
   @IsString()
-  tenantId: string
+  storeId: string
   @IsDate()
   createdAt: Date
   @IsDate()

@@ -99,7 +99,7 @@ Because B2B wholesale rates and VIP contract prices must be protected from leaka
     CREATE TABLE customer_segments_price_books (
         segment_id UUID REFERENCES customer_segments(id),
         price_book_id UUID REFERENCES price_books(id),
-        tenant_id UUID NOT NULL
+        store_id UUID NOT NULL
     );
     ```
   - When a customer is added to the "Platinum Loyalty Tier", the system resolves their group price book code (`VIP-PLATINUM`) dynamically based on their active segment membership.
@@ -123,7 +123,7 @@ Each price book can hold **multiple tier rows per product**, sorted by `minQuant
 
 ### A. Technical Implementation & Database Schema
 
-Under the hood, price tiers are stored in the `product_prices` table. The schema maps a price to a specific product (and optionally, a specific product variant), scoped to a single `priceBook` and a `tenantId`.
+Under the hood, price tiers are stored in the `product_prices` table. The schema maps a price to a specific product (and optionally, a specific product variant), scoped to a single `priceBook` and a `storeId`.
 
 #### `ProductPriceEntity` Schema Structure
 - `id`: UUID (Primary Key)
@@ -132,7 +132,7 @@ Under the hood, price tiers are stored in the `product_prices` table. The schema
 - `variantId`: UUID | null (Foreign Key to `product_variants`, optional for variant-specific tiers)
 - `minQuantity`: integer (Minimum quantity required to qualify for this price tier, defaults to `1`)
 - `price`: decimal (The unit price for this tier)
-- `tenantId`: UUID (Multi-tenant scoping)
+- `storeId`: UUID (Multi-store scoping)
 
 ---
 
@@ -149,7 +149,7 @@ async getApplicablePrice(
   variantId: string | null,
   quantity: number,
   priceBookCode: string | null | undefined,
-  tenantId: string,
+  storeId: string,
 ) {
   // ... Price book resolution omitted ...
   
@@ -158,7 +158,7 @@ async getApplicablePrice(
   // 1. Try to find variant-specific price first
   if (variantId) {
     const variantPrices = await this.productPriceRepo.find({
-      where: { priceBookId: pb.id, productId, variantId, tenantId },
+      where: { priceBookId: pb.id, productId, variantId, storeId },
       order: { minQuantity: 'DESC' },
     });
     applicablePrice = variantPrices.find((p) => quantity >= p.minQuantity);
@@ -167,7 +167,7 @@ async getApplicablePrice(
   // 2. Fall back to base product price if no variant price found
   if (!applicablePrice) {
     const basePrices = await this.productPriceRepo.find({
-      where: { priceBookId: pb.id, productId, variantId: IsNull(), tenantId },
+      where: { priceBookId: pb.id, productId, variantId: IsNull(), storeId },
       order: { minQuantity: 'DESC' },
     });
     applicablePrice = basePrices.find((p) => quantity >= p.minQuantity);

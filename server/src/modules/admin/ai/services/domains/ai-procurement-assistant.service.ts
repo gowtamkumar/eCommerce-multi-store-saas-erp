@@ -37,7 +37,7 @@ export class AiProcurementAssistantService {
   ) {}
 
   async generateRequisitionJustification(
-    tenantId: string,
+    storeId: string,
     dto: GenerateRequisitionJustificationDto,
   ): Promise<RequisitionJustificationResultDto> {
     const prompt = `Draft purchase requisition justification and line notes for a procurement team as JSON only (no markdown fences).
@@ -55,7 +55,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -75,7 +75,7 @@ Return exactly this JSON shape:
   }
 
   async generatePoCoverLetter(
-    tenantId: string,
+    storeId: string,
     dto: GeneratePoCoverLetterDto,
   ): Promise<PoCoverLetterResultDto> {
     const prompt = `Draft a purchase order cover letter for a supplier as JSON only (no markdown fences).
@@ -93,7 +93,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -113,7 +113,7 @@ Return exactly this JSON shape:
   }
 
   async generateGrnDiscrepancyNotes(
-    tenantId: string,
+    storeId: string,
     dto: GenerateGrnDiscrepancyNotesDto,
   ): Promise<GrnDiscrepancyNotesResultDto> {
     const prompt = `Draft goods receipt (GRN) discrepancy notes for a procurement and warehouse team as JSON only (no markdown fences).
@@ -135,7 +135,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -156,7 +156,7 @@ Return exactly this JSON shape:
   }
 
   async generateInvoiceOcr(
-    tenantId: string,
+    storeId: string,
     dto: GenerateInvoiceOcrDto,
   ): Promise<InvoiceOcrResultDto> {
     const isImage = dto.mimetype?.startsWith('image/') ?? false
@@ -199,7 +199,7 @@ Return exactly this JSON shape:
 Rules: Extract only what is visible or clearly stated. Use null for unknown fields. lineItems may be empty if unreadable. Do not invent SKUs or prices.`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -224,7 +224,7 @@ Rules: Extract only what is visible or clearly stated. Use null for unknown fiel
   }
 
   async generateDebitNoteDispute(
-    tenantId: string,
+    storeId: string,
     dto: GenerateDebitNoteDisputeDto,
   ): Promise<DebitNoteDisputeResultDto> {
     const prompt = `Draft a supplier debit note dispute letter for a procurement and accounts payable team as JSON only (no markdown fences).
@@ -242,7 +242,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -262,7 +262,7 @@ Return exactly this JSON shape:
   }
 
   async generateSupplierProfileSummary(
-    tenantId: string,
+    storeId: string,
     dto: GenerateSupplierProfileSummaryDto,
   ): Promise<SupplierProfileSummaryResultDto> {
     const prompt = `Summarize this supplier profile for a procurement and vendor management team as JSON only (no markdown fences).
@@ -280,7 +280,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -300,10 +300,10 @@ Return exactly this JSON shape:
   }
 
   async generateThreeWayMatchExplainer(
-    tenantId: string,
+    storeId: string,
     dto: GenerateThreeWayMatchDto,
   ): Promise<ThreeWayMatchExplanationResultDto> {
-    const invoice = await this.supplierInvoiceService.findOneInvoice(dto.invoiceId, { tenantId } as any)
+    const invoice = await this.supplierInvoiceService.findOneInvoice(dto.invoiceId, { storeId } as any)
     if (!invoice) {
       throw new Error('Supplier Invoice not found')
     }
@@ -336,7 +336,7 @@ Format your response strictly as JSON with the following keys:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

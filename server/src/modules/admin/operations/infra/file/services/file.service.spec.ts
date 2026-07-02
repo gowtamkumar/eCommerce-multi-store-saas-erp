@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { FilesService } from './file.service'
 import { FileRepository } from '../file.repository'
 import { MinioService } from './minio.service'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreService } from '@/modules/system/store/store.service'
 import { DataSource } from 'typeorm'
 import { BadRequestException } from '@nestjs/common'
 import { GetPresignedUrlDto } from '../dtos'
@@ -13,7 +13,7 @@ describe('FilesService - Storage Limits', () => {
   let service: FilesService
   let fileRepo: jest.Mocked<FileRepository>
   let minioService: jest.Mocked<MinioService>
-  let tenantService: jest.Mocked<TenantService>
+  let storeService: jest.Mocked<StoreService>
   let addonCatalogService: jest.Mocked<AddonCatalogService>
   let dataSource: any
 
@@ -28,8 +28,8 @@ describe('FilesService - Storage Limits', () => {
       getPublicUrl: jest.fn(),
     } as any
 
-    tenantService = {
-      findOneTenants: jest.fn(),
+    storeService = {
+      findOneStores: jest.fn(),
     } as any
 
     addonCatalogService = {
@@ -52,7 +52,7 @@ describe('FilesService - Storage Limits', () => {
         FilesService,
         { provide: FileRepository, useValue: fileRepo },
         { provide: MinioService, useValue: minioService },
-        { provide: TenantService, useValue: tenantService },
+        { provide: StoreService, useValue: storeService },
         { provide: DataSource, useValue: dataSource },
         { provide: AddonCatalogService, useValue: addonCatalogService },
       ],
@@ -62,9 +62,9 @@ describe('FilesService - Storage Limits', () => {
   })
 
   it('should block file upload if storage limit is exceeded', async () => {
-    // Mock tenant with 1GB limit (1024 MB)
-    tenantService.findOneTenants.mockResolvedValue({
-      id: 'tenant-1',
+    // Mock store with 1GB limit (1024 MB)
+    storeService.findOneStores.mockResolvedValue({
+      id: 'store-1',
       subscriptionPlan: {
         maxStorageMb: 1024,
       },
@@ -87,7 +87,7 @@ describe('FilesService - Storage Limits', () => {
     }
 
     const ctx: RequestContextDto = {
-      tenantId: 'tenant-1',
+      storeId: 'store-1',
       userId: 'user-1',
       user: {
         id: 'user-1',
@@ -101,9 +101,9 @@ describe('FilesService - Storage Limits', () => {
   })
 
   it('should allow file upload if storage limit is not exceeded', async () => {
-    // Mock tenant with 1GB limit (1024 MB)
-    tenantService.findOneTenants.mockResolvedValue({
-      id: 'tenant-1',
+    // Mock store with 1GB limit (1024 MB)
+    storeService.findOneStores.mockResolvedValue({
+      id: 'store-1',
       subscriptionPlan: {
         maxStorageMb: 1024,
       },
@@ -130,7 +130,7 @@ describe('FilesService - Storage Limits', () => {
     }
 
     const ctx: RequestContextDto = {
-      tenantId: 'tenant-1',
+      storeId: 'store-1',
       userId: 'user-1',
       user: {
         id: 'user-1',

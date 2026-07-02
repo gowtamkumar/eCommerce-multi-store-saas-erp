@@ -1,11 +1,11 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { PlatformSettingsEntity } from './entities/platform-settings.entity'
 
 @Injectable()
-export class PlatformSettingsRepository extends BaseTenantRepository<PlatformSettingsEntity> {
+export class PlatformSettingsRepository extends BaseStoreRepository<PlatformSettingsEntity> {
   constructor(
     @InjectRepository(PlatformSettingsEntity)
     repo: Repository<PlatformSettingsEntity>,
@@ -26,7 +26,7 @@ export class PlatformSettingsRepository extends BaseTenantRepository<PlatformSet
         badge: 'Next-Gen eCommerce Platform',
         title: 'Launch Your Store in Seconds, Not Days',
         description:
-          'The all-in-one multi-tenant platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
+          'The all-in-one multi-store platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
         primaryBtnText: 'Start Your Free Trial',
         primaryBtnLink: '/create-store',
         secondaryBtnText: 'Watch Demo',
@@ -37,7 +37,7 @@ export class PlatformSettingsRepository extends BaseTenantRepository<PlatformSet
       features: [
         {
           icon: 'Globe',
-          title: 'Multi-Tenant',
+          title: 'Multi-Store',
           description: 'Run separate stores for different brands or regions with isolated data.',
         },
         {
@@ -67,7 +67,7 @@ export class PlatformSettingsRepository extends BaseTenantRepository<PlatformSet
         },
       ],
       footer: {
-        description: 'The ultimate multi-tenant eCommerce platform.',
+        description: 'The ultimate multi-store eCommerce platform.',
         copyright: '© 2024 YourSaaS. All rights reserved.',
         socials: {
           facebook: '#',
@@ -80,7 +80,7 @@ export class PlatformSettingsRepository extends BaseTenantRepository<PlatformSet
       seo: {
         metaTitle: 'YourSaaS - Launch Your Store in Seconds',
         metaDescription:
-          'The all-in-one multi-tenant platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
+          'The all-in-one multi-store platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
         ogImage:
           'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop',
       },

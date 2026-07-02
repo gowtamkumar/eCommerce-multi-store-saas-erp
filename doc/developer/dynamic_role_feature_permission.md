@@ -1,7 +1,7 @@
-# Dynamic Role & Feature Permission Management in a Multi-Tenant SaaS ERP
+# Dynamic Role & Feature Permission Management in a Multi-Store SaaS ERP
 
 > **Author:** Senior Engineer perspective  
-> **Context:** Multi-tenant SaaS ERP with dynamic roles and feature-level permissions  
+> **Context:** Multi-store SaaS ERP with dynamic roles and feature-level permissions  
 > **Purpose:** Step-by-step guide — conceptual design, data modeling, and operational strategy
 
 ---
@@ -16,7 +16,7 @@
 6. [Step-by-Step: Role Management](#6-step-by-step-role-management)
 7. [Step-by-Step: Feature Permission Management](#7-step-by-step-feature-permission-management)
 8. [Permission Resolution Algorithm](#8-permission-resolution-algorithm)
-9. [Multi-Tenant Isolation Rules](#9-multi-tenant-isolation-rules)
+9. [Multi-Store Isolation Rules](#9-multi-store-isolation-rules)
 10. [UI-Level Permission Gating Strategy](#10-ui-level-permission-gating-strategy)
 11. [Audit Trail & Compliance](#11-audit-trail--compliance)
 12. [Common Pitfalls to Avoid](#12-common-pitfalls-to-avoid)
@@ -27,11 +27,11 @@
 
 ## 1. Why This Is Hard
 
-In a simple app, you can hard-code roles (`admin`, `user`). In a **multi-tenant SaaS ERP**, this breaks immediately because:
+In a simple app, you can hard-code roles (`admin`, `user`). In a **multi-store SaaS ERP**, this breaks immediately because:
 
 | Challenge | Example |
 |-----------|---------|
-| Every tenant has different org structures | Tenant A has "Branch Manager", Tenant B doesn't |
+| Every store has different org structures | Store A has "Branch Manager", Store B doesn't |
 | Feature sets differ per subscription tier | Pro plan unlocks Payroll, Starter plan doesn't |
 | The same feature may need different access levels | Sales Rep can *view* PO, Manager can *approve* PO |
 | Permissions must be auditable | Compliance requires knowing *who* gave *whom* access and *when* |
@@ -46,11 +46,11 @@ In a simple app, you can hard-code roles (`admin`, `user`). In a **multi-tenant 
 
 | Term | Definition |
 |------|-----------|
-| **Tenant** | An organization/company using your SaaS platform |
-| **Role** | A named collection of permissions assigned to users within a tenant |
+| **Store** | An organization/company using your SaaS platform |
+| **Role** | A named collection of permissions assigned to users within a store |
 | **Permission** | A single atomic capability (e.g., `invoice:create`, `po:approve`) |
 | **Feature** | A module or capability group (e.g., Payroll, POS, Procurement) |
-| **Feature Flag** | A switch that enables/disables a feature for a tenant (tied to subscription) |
+| **Feature Flag** | A switch that enables/disables a feature for a store (tied to subscription) |
 | **Feature Permission** | A user's access level *within* an enabled feature |
 | **Scope** | The boundary within which a permission applies (e.g., Branch, Warehouse) |
 | **Policy** | The resolved, combined result of all roles + feature flags for a user |
@@ -92,7 +92,7 @@ Permissions flow from **top (platform) to bottom (user)**, with each level able 
 └─────────────────────┬───────────────────────────────┘
                       │ constrains
 ┌─────────────────────▼───────────────────────────────┐
-│  TENANT LEVEL (Organization)                        │
+│  STORE LEVEL (Organization)                        │
 │  → Selects which features are active                │
 │  → Creates custom roles using available permissions │
 │  → Cannot invent permissions not on the platform    │
@@ -124,9 +124,9 @@ Permissions flow from **top (platform) to bottom (user)**, with each level able 
 Platform
   └── Permission               (e.g., "payroll:approve", associated with feature slug "payroll")
 
-Tenant
+Store
   ├── SubscriptionPlan         (which features are unlocked as JSON array of slugs)
-  ├── Role                     (custom roles defined by tenant)
+  ├── Role                     (custom roles defined by store)
   │     └── RolePermission     (which permissions this role grants)
   └── Branch / Department
 
@@ -141,18 +141,18 @@ User
 - `module` (e.g., `Finance`, `HRM`), `feature` (the feature slug, e.g., `payroll`)
 - `action` (e.g., `approve`), `risk_level` (low / medium / high / critical)
 
-#### `roles` (Tenant-owned)
-- `id`, `tenant_id`, `name`, `description`, `is_system_role` (bool)
+#### `roles` (Store-owned)
+- `id`, `store_id`, `name`, `description`, `is_system_role` (bool)
 - `is_system_role = true` means it's auto-created (e.g., "Super Admin") and cannot be deleted
 
-#### `role_permissions` (Tenant-owned)
+#### `role_permissions` (Store-owned)
 - `role_id`, `permission_id` (references `permissions.id`)
 
-#### `user_role_assignments` (Tenant-owned)
+#### `user_role_assignments` (Store-owned)
 - `user_id`, `role_id`, `scope_type` (global/branch/warehouse), `scope_id`
 - `assigned_at`, `assigned_by`, `expires_at` (optional time-bound access)
 
-#### `user_permission_overrides` (Optional, Tenant-owned)
+#### `user_permission_overrides` (Optional, Store-owned)
 - `user_id`, `permission_slug`, `effect` (`allow` / `deny`)
 - `reason`, `override_by`, `expires_at`
 - *Note: These are kept for management/future compatibility, but are excluded from the active permission resolution hot path.*
@@ -164,17 +164,17 @@ User
 
 ### Step 1 — Define the "Super Admin" System Role (Platform Bootstrap)
 
-When a new tenant is created, automatically provision a **system role** called `Super Admin` or `Owner`. This role:
+When a new store is created, automatically provision a **system role** called `Super Admin` or `Owner`. This role:
 - Gets ALL permissions for ALL enabled features
 - Cannot be modified or deleted
-- Is assigned to the tenant creator by default
+- Is assigned to the store creator by default
 
 > [!CAUTION]  
-> Never let the Super Admin role be configurable. If someone accidentally removes `user:manage` from it, the tenant gets locked out.
+> Never let the Super Admin role be configurable. If someone accidentally removes `user:manage` from it, the store gets locked out.
 
 ---
 
-### Step 2 — Seed Default Roles (Tenant Onboarding)
+### Step 2 — Seed Default Roles (Store Onboarding)
 
 Provide sensible defaults based on the industry (ERP context):
 
@@ -189,13 +189,13 @@ Provide sensible defaults based on the industry (ERP context):
 | `Inventory Manager` | Inventory: all; Transfers: approve |
 | `Viewer` | All features: view only |
 
-Tenants can **clone**, **modify**, or **delete** any non-system role.
+Stores can **clone**, **modify**, or **delete** any non-system role.
 
 ---
 
-### Step 3 — Let Tenants Create Custom Roles
+### Step 3 — Let Stores Create Custom Roles
 
-The tenant admin should be able to:
+The store admin should be able to:
 1. **Name** the role (e.g., "Regional Supervisor")
 2. **Pick permissions** from a categorized list (grouped by feature)
 3. **Set scope** — is this role global or branch-level?
@@ -230,16 +230,16 @@ The SaaS provider (you) defines all available features in the system.
 
 ### Step 2 — Subscription Controls Feature Availability
 
-When a tenant upgrades/downgrades:
-1. The tenant's `subscription_plan_id` is updated.
+When a store upgrades/downgrades:
+1. The store's `subscription_plan_id` is updated.
 2. Features not in the new plan are automatically unavailable (their slugs are no longer in the plan's feature list).
-3. Existing role-permissions tied to these features become **inert** (not deleted, just non-resolving). If the tenant upgrades again, they automatically work again.
+3. Existing role-permissions tied to these features become **inert** (not deleted, just non-resolving). If the store upgrades again, they automatically work again.
 
 ---
 
 ### Step 3 — Role Admin Controls Action-Level Access
 
-Within the enabled features of a plan, the tenant admin defines which **actions** each role can perform by mapping permissions:
+Within the enabled features of a plan, the store admin defines which **actions** each role can perform by mapping permissions:
 
 | Feature | Action | Sales Role | Manager Role | Accountant Role |
 |---------|--------|:-:|:-:|:-:|
@@ -262,14 +262,14 @@ Direct per-user overrides can be managed via the API but are excluded from the a
 The `PermissionResolutionService` implements this decision tree for every protected API call:
 
 ```
-STEP 1: Is the feature enabled for this tenant?
-   → Check explicit override in the `tenant_features` database table first.
+STEP 1: Is the feature enabled for this store?
+   → Check explicit override in the `store_features` database table first.
    → If override exists: use override value (true = enabled, false = disabled).
-   → If no override exists: fall back to checking if the feature slug is in the tenant's subscription plan features list.
+   → If no override exists: fall back to checking if the feature slug is in the store's subscription plan features list.
    → NO  → DENY (feature not in subscription)
    → YES → continue
 
-STEP 2: Collect all active, non-expired role assignments for the user in this tenant.
+STEP 2: Collect all active, non-expired role assignments for the user in this store.
    → Roles are flat (no inheritance chain).
    → Multiple assigned roles are unioned together.
 
@@ -280,25 +280,25 @@ STEP 3: Does the collected permission set include the required permission slug (
 
 ---
 
-## 9. Multi-Tenant Isolation Rules
+## 9. Multi-Store Isolation Rules
 
-This is critical. Every permission check MUST be tenant-scoped.
+This is critical. Every permission check MUST be store-scoped.
 
-### Rule 1 — All Permission Data is Tenant-Scoped
-- Every role, role-permission, and user-role assignment has a `tenant_id`
-- Queries ALWAYS filter by `tenant_id` — never cross-tenant queries
+### Rule 1 — All Permission Data is Store-Scoped
+- Every role, role-permission, and user-role assignment has a `store_id`
+- Queries ALWAYS filter by `store_id` — never cross-store queries
 
-### Rule 2 — The Super Admin of Tenant A Cannot Touch Tenant B
-- Platform Super Admins (your internal team) are a separate concept from Tenant Super Admins
+### Rule 2 — The Super Admin of Store A Cannot Touch Store B
+- Platform Super Admins (your internal team) are a separate concept from Store Super Admins
 - Use a separate `platform_admins` table for your internal team
 
-### Rule 3 — Scope Isolation Within a Tenant
+### Rule 3 — Scope Isolation Within a Store
 - A user with `Branch Manager` role for **Branch A** cannot approve transfers for **Branch B**
 - The `user_roles.scope_id` is checked against the current operation's target resource
 
-### Rule 4 — Feature Flags are Per-Tenant
-- Tenant A on Pro plan has Payroll enabled
-- Tenant B on Starter plan has Payroll disabled
+### Rule 4 — Feature Flags are Per-Store
+- Store A on Pro plan has Payroll enabled
+- Store B on Starter plan has Payroll disabled
 - Their role definitions may be identical, but the resolution differs at Step 1
 
 ---
@@ -348,7 +348,7 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
 | User role assigned | assigning user, target user, role, scope, expiry |
 | User role revoked | who revoked, reason |
 | Permission override added | target user, permission, effect, reason, expiry |
-| Feature enabled/disabled | tenant, feature, triggered by (system/admin), reason |
+| Feature enabled/disabled | store, feature, triggered by (system/admin), reason |
 | Failed permission check | user, resource, action, timestamp (security monitoring) |
 
 ### Audit Log Properties
@@ -368,7 +368,7 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
 | Hard-coding role checks (`if user.role === 'admin'`) | Breaks with dynamic roles; requires code deploys to update | Always check permission slugs, not role names |
 | Checking permissions only on the frontend | Trivially bypassable; security theater | Backend validates every API request |
 | Granting permissions by feature, not action | "Has Payroll access" is too coarse | Use `payroll:view`, `payroll:approve` etc. |
-| Deleting permissions on downgrade | Destroys tenant configuration | Disable the feature flag; keep permissions intact |
+| Deleting permissions on downgrade | Destroys store configuration | Disable the feature flag; keep permissions intact |
 | Allowing unlimited user-level overrides | Creates untraceable permission sprawl | Require justification + expiry for every override |
 | Not scoping permissions to branches | Branch Manager of A can act on B | Always join `scope_id` in permission checks |
 | Caching permissions indefinitely | User can't be de-provisioned in real-time | Short TTL cache (5 min) + invalidation on role change |
@@ -377,21 +377,21 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
 
 ## 13. Operational Playbook
 
-### When a new tenant is created:
-1. Create the tenant record
+### When a new store is created:
+1. Create the store record
 2. Assign subscription plan → auto-enable features
 3. Provision system roles (Super Admin, default roles)
 4. Assign Super Admin role to the creating user
 5. Send onboarding email with role configuration guide
 
-### When a tenant upgrades their plan:
-1. Update tenant's subscription plan (which changes the list of dynamic features)
-2. Notify the tenant admin of newly available features
+### When a store upgrades their plan:
+1. Update store's subscription plan (which changes the list of dynamic features)
+2. Notify the store admin of newly available features
 3. Do NOT auto-grant permissions — let the admin configure roles
 
-### When a tenant downgrades their plan:
-1. Update tenant's subscription plan
-2. Notify the tenant admin of affected roles and users
+### When a store downgrades their plan:
+1. Update store's subscription plan
+2. Notify the store admin of affected roles and users
 4. Log the event in the audit trail
 
 ### When an employee leaves:
@@ -420,9 +420,9 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
               │ subscription controls          │ available to
               ▼                                ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      TENANT LAYER                               │
+│                      STORE LAYER                               │
 │  ┌───────────────────┐    ┌──────────────────────────────────┐  │
-│  │  Tenant Features  │    │  Custom Roles + Role Permissions │  │
+│  │  Store Features  │    │  Custom Roles + Role Permissions │  │
 │  │  (enabled/dis.)   │    │  (bundles of permission slugs)   │  │
 │  └───────────────────┘    └──────────────────────────────────┘  │
 │                                      │                          │
@@ -462,20 +462,20 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
 - [ ] Build permission resolution engine (3-step algorithm)
 - [ ] Build audit logging for all permission events
 
-### For Tenant Onboarding
+### For Store Onboarding
 - [ ] Provision system roles (Super Admin is non-deletable)
 - [ ] Seed sensible default roles for the industry
-- [ ] Assign Super Admin to tenant owner
+- [ ] Assign Super Admin to store owner
 
 ### For Role Configuration
-- [ ] Tenant admin can CRUD custom roles
+- [ ] Store admin can CRUD custom roles
 - [ ] UI shows permissions grouped by feature
 - [ ] Risk badges on sensitive permissions
 - [ ] Role assignment supports scope + expiry
 
 ### For Security
 - [ ] Every API call validates permissions server-side
-- [ ] All permission data is tenant-scoped (no cross-tenant leakage)
+- [ ] All permission data is store-scoped (no cross-store leakage)
 - [ ] Audit log is append-only and immutable
 - [ ] User-level overrides require justification + expiry
 

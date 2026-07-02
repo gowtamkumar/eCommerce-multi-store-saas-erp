@@ -74,7 +74,7 @@ export class PromotionController {
   async findActivePromotions(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PromotionResponseDto[]>> {
-    this.logger.verbose(`[Active Promotions] called for tenant: ${ctx.tenantId}`)
+    this.logger.verbose(`[Active Promotions] called for store: ${ctx.storeId}`)
     const result = await this.promotionService.findActivePromotions(ctx)
     return {
       success: true,
@@ -90,7 +90,7 @@ export class PromotionController {
   async getOfferProducts(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`[Public] getOfferProducts called for tenant: ${ctx.tenantId}`)
+    this.logger.verbose(`[Public] getOfferProducts called for store: ${ctx.storeId}`)
     const result = await this.promotionService.getOfferProducts(ctx)
     return {
       success: true,
@@ -107,7 +107,7 @@ export class PromotionController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(
-      `[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${ctx.tenantId}`,
+      `[Public] getPromotionBySlug called for slug: ${slug}, store: ${ctx.storeId}`,
     )
     const result = await this.promotionService.getOfferProductsBySlug(slug, ctx)
     return {

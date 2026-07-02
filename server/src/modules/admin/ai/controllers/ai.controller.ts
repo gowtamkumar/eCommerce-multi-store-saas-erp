@@ -204,7 +204,7 @@ export class AiController {
       hasApiKey: boolean
     }>
   > {
-    const data = await this.coreAssistant.getStatus(ctx.tenantId)
+    const data = await this.coreAssistant.getStatus(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -220,7 +220,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: AiChatDto,
   ): Promise<BaseApiSuccessResponse<{ reply: string; model: string; totalTokens: number }>> {
-    const data = await this.coreAssistant.chat(ctx.tenantId, dto)
+    const data = await this.coreAssistant.chat(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -268,7 +268,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateProductContentDto,
   ): Promise<BaseApiSuccessResponse<ProductContentResultDto>> {
-    const data = await this.catalogAssistant.generateProductContent(ctx.tenantId, dto)
+    const data = await this.catalogAssistant.generateProductContent(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -284,7 +284,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateCatalogContentDto,
   ): Promise<BaseApiSuccessResponse<CatalogContentResultDto>> {
-    const data = await this.catalogAssistant.generateCatalogContent(ctx.tenantId, dto)
+    const data = await this.catalogAssistant.generateCatalogContent(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -300,7 +300,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateCampaignCopyDto,
   ): Promise<BaseApiSuccessResponse<CampaignCopyResultDto>> {
-    const data = await this.contentAssistant.generateCampaignCopy(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generateCampaignCopy(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -316,7 +316,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateFaqDto,
   ): Promise<BaseApiSuccessResponse<FaqContentResultDto>> {
-    const data = await this.contentAssistant.generateFaq(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generateFaq(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -332,7 +332,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePageSeoDto,
   ): Promise<BaseApiSuccessResponse<PageSeoResultDto>> {
-    const data = await this.contentAssistant.generatePageSeo(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generatePageSeo(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -348,7 +348,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateStoreSeoDto,
   ): Promise<BaseApiSuccessResponse<StoreSeoResultDto>> {
-    const data = await this.contentAssistant.generateStoreSeo(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generateStoreSeo(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -364,7 +364,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePageBlockContentDto,
   ): Promise<BaseApiSuccessResponse<PageBlockContentResultDto>> {
-    const data = await this.contentAssistant.generatePageBlockContent(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generatePageBlockContent(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -380,7 +380,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateMarketingDescriptionDto,
   ): Promise<BaseApiSuccessResponse<MarketingDescriptionResultDto>> {
-    const data = await this.contentAssistant.generateMarketingDescription(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generateMarketingDescription(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -396,7 +396,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateCouponCodeSuggestionsDto,
   ): Promise<BaseApiSuccessResponse<CouponCodeSuggestionsResultDto>> {
-    const data = await this.contentAssistant.generateCouponCodeSuggestions(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generateCouponCodeSuggestions(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -412,7 +412,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateLoyaltyCopyDto,
   ): Promise<BaseApiSuccessResponse<LoyaltyProgramCopyResultDto | LoyaltyRuleCopyResultDto>> {
-    const data = await this.contentAssistant.generateLoyaltyCopy(ctx.tenantId, dto)
+    const data = await this.contentAssistant.generateLoyaltyCopy(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -428,7 +428,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateLeadFollowUpDto,
   ): Promise<BaseApiSuccessResponse<LeadFollowUpResultDto>> {
-    const data = await this.crmAssistant.generateLeadFollowUp(ctx.tenantId, dto)
+    const data = await this.crmAssistant.generateLeadFollowUp(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -444,7 +444,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateOrderAssistDto,
   ): Promise<BaseApiSuccessResponse<OrderAssistResultDto>> {
-    const data = await this.salesAssistant.generateOrderAssist(ctx.tenantId, dto)
+    const data = await this.salesAssistant.generateOrderAssist(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -460,7 +460,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateReturnAssistDto,
   ): Promise<BaseApiSuccessResponse<ReturnAssistResultDto>> {
-    const data = await this.salesAssistant.generateReturnAssist(ctx.tenantId, dto)
+    const data = await this.salesAssistant.generateReturnAssist(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -476,7 +476,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePosCashierAssistDto,
   ): Promise<BaseApiSuccessResponse<PosCashierAssistResultDto>> {
-    const data = await this.salesAssistant.generatePosCashierAssist(ctx.tenantId, dto)
+    const data = await this.salesAssistant.generatePosCashierAssist(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -492,7 +492,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateSupportReplyDto,
   ): Promise<BaseApiSuccessResponse<SupportReplyResultDto>> {
-    const data = await this.supportAssistant.generateSupportReply(ctx.tenantId, dto)
+    const data = await this.supportAssistant.generateSupportReply(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -508,7 +508,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateSupportConversationSummaryDto,
   ): Promise<BaseApiSuccessResponse<SupportConversationSummaryResultDto>> {
-    const data = await this.supportAssistant.generateSupportConversationSummary(ctx.tenantId, dto)
+    const data = await this.supportAssistant.generateSupportConversationSummary(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -524,7 +524,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateSupportMessageIntentsDto,
   ): Promise<BaseApiSuccessResponse<SupportMessageIntentsResultDto>> {
-    const data = await this.supportAssistant.generateSupportMessageIntents(ctx.tenantId, dto)
+    const data = await this.supportAssistant.generateSupportMessageIntents(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -540,7 +540,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateCustomerProfileDto,
   ): Promise<BaseApiSuccessResponse<CustomerProfileResultDto>> {
-    const data = await this.crmAssistant.generateCustomerProfile(ctx.tenantId, dto)
+    const data = await this.crmAssistant.generateCustomerProfile(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -556,7 +556,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateReviewAssistDto,
   ): Promise<BaseApiSuccessResponse<ReviewAssistResultDto>> {
-    const data = await this.crmAssistant.generateReviewAssist(ctx.tenantId, dto)
+    const data = await this.crmAssistant.generateReviewAssist(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -572,7 +572,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateAbandonedCartMessageDto,
   ): Promise<BaseApiSuccessResponse<AbandonedCartMessageResultDto>> {
-    const data = await this.crmAssistant.generateAbandonedCartMessage(ctx.tenantId, dto)
+    const data = await this.crmAssistant.generateAbandonedCartMessage(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -588,7 +588,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePriceBookRationaleDto,
   ): Promise<BaseApiSuccessResponse<PriceBookRationaleResultDto>> {
-    const data = await this.catalogAssistant.generatePriceBookRationale(ctx.tenantId, dto)
+    const data = await this.catalogAssistant.generatePriceBookRationale(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -604,7 +604,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateMediaAssistDto,
   ): Promise<BaseApiSuccessResponse<MediaAssistResultDto>> {
-    const data = await this.catalogAssistant.generateMediaAssist(ctx.tenantId, dto)
+    const data = await this.catalogAssistant.generateMediaAssist(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -620,7 +620,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateInventoryAnomalyDto,
   ): Promise<BaseApiSuccessResponse<InventoryAnomalyResultDto>> {
-    const data = await this.inventoryAssistant.generateInventoryAnomaly(ctx.tenantId, dto)
+    const data = await this.inventoryAssistant.generateInventoryAnomaly(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -636,7 +636,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateStockTransferReasonDto,
   ): Promise<BaseApiSuccessResponse<StockTransferReasonResultDto>> {
-    const data = await this.inventoryAssistant.generateStockTransferReason(ctx.tenantId, dto)
+    const data = await this.inventoryAssistant.generateStockTransferReason(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -652,7 +652,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateCycleCountVarianceDto,
   ): Promise<BaseApiSuccessResponse<CycleCountVarianceResultDto>> {
-    const data = await this.inventoryAssistant.generateCycleCountVariance(ctx.tenantId, dto)
+    const data = await this.inventoryAssistant.generateCycleCountVariance(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -668,7 +668,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePackingSlipNotesDto,
   ): Promise<BaseApiSuccessResponse<PackingSlipNotesResultDto>> {
-    const data = await this.inventoryAssistant.generatePackingSlipNotes(ctx.tenantId, dto)
+    const data = await this.inventoryAssistant.generatePackingSlipNotes(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -684,7 +684,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateBatchWasteReductionDto,
   ): Promise<BaseApiSuccessResponse<BatchWasteReductionResultDto>> {
-    const data = await this.inventoryAssistant.generateBatchWasteReduction(ctx.tenantId, dto)
+    const data = await this.inventoryAssistant.generateBatchWasteReduction(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -700,7 +700,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateRequisitionJustificationDto,
   ): Promise<BaseApiSuccessResponse<RequisitionJustificationResultDto>> {
-    const data = await this.procurementAssistant.generateRequisitionJustification(ctx.tenantId, dto)
+    const data = await this.procurementAssistant.generateRequisitionJustification(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -716,7 +716,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePoCoverLetterDto,
   ): Promise<BaseApiSuccessResponse<PoCoverLetterResultDto>> {
-    const data = await this.procurementAssistant.generatePoCoverLetter(ctx.tenantId, dto)
+    const data = await this.procurementAssistant.generatePoCoverLetter(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -732,7 +732,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateGrnDiscrepancyNotesDto,
   ): Promise<BaseApiSuccessResponse<GrnDiscrepancyNotesResultDto>> {
-    const data = await this.procurementAssistant.generateGrnDiscrepancyNotes(ctx.tenantId, dto)
+    const data = await this.procurementAssistant.generateGrnDiscrepancyNotes(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -748,7 +748,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateThreeWayMatchDto,
   ): Promise<BaseApiSuccessResponse<ThreeWayMatchExplanationResultDto>> {
-    const data = await this.procurementAssistant.generateThreeWayMatchExplainer(ctx.tenantId, dto)
+    const data = await this.procurementAssistant.generateThreeWayMatchExplainer(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -764,7 +764,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateInvoiceOcrDto,
   ): Promise<BaseApiSuccessResponse<InvoiceOcrResultDto>> {
-    const data = await this.procurementAssistant.generateInvoiceOcr(ctx.tenantId, dto)
+    const data = await this.procurementAssistant.generateInvoiceOcr(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -780,7 +780,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateDebitNoteDisputeDto,
   ): Promise<BaseApiSuccessResponse<DebitNoteDisputeResultDto>> {
-    const data = await this.procurementAssistant.generateDebitNoteDispute(ctx.tenantId, dto)
+    const data = await this.procurementAssistant.generateDebitNoteDispute(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -796,7 +796,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateSupplierProfileSummaryDto,
   ): Promise<BaseApiSuccessResponse<SupplierProfileSummaryResultDto>> {
-    const data = await this.procurementAssistant.generateSupplierProfileSummary(ctx.tenantId, dto)
+    const data = await this.procurementAssistant.generateSupplierProfileSummary(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -812,7 +812,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateArCollectionDraftDto,
   ): Promise<BaseApiSuccessResponse<ArCollectionDraftResultDto>> {
-    const data = await this.financeAssistant.generateArCollectionDraft(ctx.tenantId, dto)
+    const data = await this.financeAssistant.generateArCollectionDraft(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -828,7 +828,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateApPaymentReminderDto,
   ): Promise<BaseApiSuccessResponse<ApPaymentReminderResultDto>> {
-    const data = await this.financeAssistant.generateApPaymentReminder(ctx.tenantId, dto)
+    const data = await this.financeAssistant.generateApPaymentReminder(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -844,7 +844,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateExpenseCategoryDto,
   ): Promise<BaseApiSuccessResponse<ExpenseCategorySuggestResultDto>> {
-    const data = await this.financeAssistant.generateExpenseCategorySuggest(ctx.tenantId, dto)
+    const data = await this.financeAssistant.generateExpenseCategorySuggest(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -860,7 +860,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateReportExecutiveSummaryDto,
   ): Promise<BaseApiSuccessResponse<ReportExecutiveSummaryResultDto>> {
-    const data = await this.financeAssistant.generateReportExecutiveSummary(ctx.tenantId, dto)
+    const data = await this.financeAssistant.generateReportExecutiveSummary(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -876,7 +876,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateTaxRuleExplanationDto,
   ): Promise<BaseApiSuccessResponse<TaxRuleExplanationResultDto>> {
-    const data = await this.financeAssistant.generateTaxRuleExplanation(ctx.tenantId, dto)
+    const data = await this.financeAssistant.generateTaxRuleExplanation(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -892,7 +892,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateRecruitmentJobCopyDto,
   ): Promise<BaseApiSuccessResponse<RecruitmentJobCopyResultDto>> {
-    const data = await this.hrmAssistant.generateRecruitmentJobCopy(ctx.tenantId, dto)
+    const data = await this.hrmAssistant.generateRecruitmentJobCopy(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -908,7 +908,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePerformanceReviewPhrasesDto,
   ): Promise<BaseApiSuccessResponse<PerformanceReviewPhrasesResultDto>> {
-    const data = await this.hrmAssistant.generatePerformanceReviewPhrases(ctx.tenantId, dto)
+    const data = await this.hrmAssistant.generatePerformanceReviewPhrases(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -924,7 +924,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GeneratePayslipExplanationDto,
   ): Promise<BaseApiSuccessResponse<PayslipExplanationResultDto>> {
-    const data = await this.hrmAssistant.generatePayslipExplanation(ctx.tenantId, dto)
+    const data = await this.hrmAssistant.generatePayslipExplanation(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -939,7 +939,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateLeaveFaqDto,
   ): Promise<BaseApiSuccessResponse<LeaveFaqResultDto>> {
-    const data = await this.hrmAssistant.generateLeaveFaq(ctx.tenantId, dto)
+    const data = await this.hrmAssistant.generateLeaveFaq(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -955,7 +955,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateApplicantScreeningDto,
   ): Promise<BaseApiSuccessResponse<ApplicantScreeningResultDto>> {
-    const data = await this.hrmAssistant.generateApplicantScreening(ctx.tenantId, dto)
+    const data = await this.hrmAssistant.generateApplicantScreening(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 200,
@@ -971,7 +971,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Query('days') days?: number,
   ): Promise<BaseApiSuccessResponse<AiUsageSummaryDto>> {
-    const data = await this.aiUsageLogService.getSummary(ctx.tenantId, days)
+    const data = await this.aiUsageLogService.getSummary(ctx.storeId, days)
     return {
       success: true,
       statusCode: 200,
@@ -986,7 +986,7 @@ export class AiController {
   async enqueueEmbeddingReindex(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
-    const job = await this.aiJobService.enqueueEmbeddingReindex(ctx.tenantId)
+    const job = await this.aiJobService.enqueueEmbeddingReindex(ctx.storeId)
     return {
       success: true,
       statusCode: 202,
@@ -1002,7 +1002,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GenerateInvoiceOcrDto,
   ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
-    const job = await this.aiJobService.enqueueInvoiceOcr(ctx.tenantId, dto)
+    const job = await this.aiJobService.enqueueInvoiceOcr(ctx.storeId, dto)
     return {
       success: true,
       statusCode: 202,
@@ -1017,7 +1017,7 @@ export class AiController {
   async enqueueDemandForecast(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
-    const job = await this.aiJobService.enqueueDemandForecast(ctx.tenantId)
+    const job = await this.aiJobService.enqueueDemandForecast(ctx.storeId)
     return {
       success: true,
       statusCode: 202,
@@ -1060,7 +1060,7 @@ export class AiController {
     }
 
     const job = await this.aiJobService.findLatestByPayload(
-      ctx.tenantId,
+      ctx.storeId,
       type,
       payloadKey,
       payloadValue,
@@ -1081,7 +1081,7 @@ export class AiController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<AiJobResponseDto>> {
-    const job = await this.aiJobService.findByIdForTenant(id, ctx.tenantId)
+    const job = await this.aiJobService.findByIdForStore(id, ctx.storeId)
     return {
       success: true,
       statusCode: 200,

@@ -59,7 +59,7 @@ describe('StockReservationService', () => {
     it('should sweep expired reservations and post RESERVATION_CANCEL ledger entries', async () => {
       const expiredRes = {
         id: 'expired-1',
-        tenantId: 'tenant-1',
+        storeId: 'store-1',
         productId: 'prod-1',
         variantId: 'var-1',
         orderId: 'order-1',

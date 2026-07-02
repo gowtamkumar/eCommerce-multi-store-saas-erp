@@ -24,14 +24,14 @@ export class CampaignService {
   ) {}
 
   async createCampaign(dto: CreateCampaignDto, ctx: RequestContextDto): Promise<CampaignEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
-    this.logger.log(`Creating campaign for tenant: ${tenantId}`)
+    this.logger.log(`Creating campaign for store: ${storeId}`)
 
     const campaign = this.campaignRepository.create({
       name: dto.name,
       type: dto.type,
-      tenantId,
+      storeId,
       status: CampaignStatus.DRAFT,
       scheduleTime: dto.scheduleTime ? new Date(dto.scheduleTime) : null,
       user: { id: userId } as any,
@@ -59,11 +59,11 @@ export class CampaignService {
   }
 
   async findAll(ctx: RequestContextDto): Promise<CampaignEntity[]> {
-    return this.campaignRepository.findAllByTenant(ctx.tenantId)
+    return this.campaignRepository.findAllByStore(ctx.storeId)
   }
 
   async findOne(id: string, ctx: RequestContextDto): Promise<CampaignEntity> {
-    const campaign = await this.campaignRepository.findById(id, ctx.tenantId)
+    const campaign = await this.campaignRepository.findById(id, ctx.storeId)
 
     if (!campaign) throw new NotFoundException('Campaign not found')
     return campaign
@@ -95,7 +95,7 @@ export class CampaignService {
     // Add delayed job to BullMQ
     await this.campaignQueue.add(
       'start-campaign',
-      { campaignId: campaign.id, tenantId: ctx.tenantId },
+      { campaignId: campaign.id, storeId: ctx.storeId },
       { delay, jobId: `start-${campaign.id}` }, // Unique ID to prevent double scheduling
     )
 
@@ -164,7 +164,7 @@ export class CampaignService {
       if (delay > 0) {
         await this.campaignQueue.add(
           'start-campaign',
-          { campaignId: campaign.id, tenantId: ctx.tenantId },
+          { campaignId: campaign.id, storeId: ctx.storeId },
           { delay, jobId: `start-${campaign.id}` },
         )
       }
@@ -195,7 +195,7 @@ export class CampaignService {
     limit: number,
     ctx: RequestContextDto,
   ): Promise<{ data: CampaignLogEntity[]; total: number; page: number; limit: number }> {
-    // Verify campaign belongs to tenant
+    // Verify campaign belongs to store
     await this.findOne(id, ctx)
 
     const skip = (page - 1) * limit

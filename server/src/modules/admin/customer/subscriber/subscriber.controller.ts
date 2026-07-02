@@ -155,7 +155,7 @@ export class SubscriberController {
     @Query('email') email: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<{ deleted: boolean }>> {
-    const result = await this.subscriberService.deleteByEmail(email, ctx.tenantId)
+    const result = await this.subscriberService.deleteByEmail(email, ctx.storeId)
     return {
       success: true,
       statusCode: 200,

@@ -30,7 +30,7 @@ export class PaymentResponseDto {
   // gatewayResponse intentionally excluded (may contain sensitive data)
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   createdAt: Date

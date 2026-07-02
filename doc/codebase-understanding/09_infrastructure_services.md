@@ -10,7 +10,7 @@ This document covers all shared infrastructure services that are consumed by all
 server/src/modules/admin/operations/infra/
 ├── cache/                            # Redis cache-aside wrapper
 │   ├── cache.module.ts
-│   ├── cache.service.ts              # Tenant-scoped get/set/del helpers
+│   ├── cache.service.ts              # Store-scoped get/set/del helpers
 │   └── cache.repository.ts           # Low-level Redis driver abstraction
 ├── chat/                             # Real-time live chat (Socket.IO)
 │   ├── entities/
@@ -46,7 +46,7 @@ server/src/modules/admin/operations/infra/
 
 ## 1. Redis Cache Service (`cache/cache.service.ts`)
 
-All cache operations are **tenant-scoped** using the key prefix convention `t:{tenantId}:...`.
+All cache operations are **store-scoped** using the key prefix convention `t:{storeId}:...`.
 
 ### Key Methods
 
@@ -60,7 +60,7 @@ All cache operations are **tenant-scoped** using the key prefix convention `t:{t
 ### Cache Key Convention
 
 ```
-t:{tenantId}:{module}:{resource}:{identifier}
+t:{storeId}:{module}:{resource}:{identifier}
 ```
 
 **Examples:**
@@ -89,9 +89,9 @@ The queue module registers all BullMQ queue names as injectable tokens. The queu
 | `reservation-expire` | Expired stock reservation cleanup | `inventory-transaction/stock-reservation-scheduler.service.ts` |
 
 ### Job Schema Rules
-- Every job payload **must** include `tenantId`
+- Every job payload **must** include `storeId`
 - Every job uses a deterministic `jobId` for idempotency (e.g. `stock:orderId:itemId`)
-- Workers validate `tenantId` presence before processing and reject orphan jobs
+- Workers validate `storeId` presence before processing and reject orphan jobs
 
 ---
 
@@ -101,7 +101,7 @@ Manages all binary media uploads across catalog images, employee documents, rece
 
 ### Upload Path Convention
 ```
-t/{tenantId}/{domain}/{hash}-{filename}
+t/{storeId}/{domain}/{hash}-{filename}
 ```
 
 **Examples:**
@@ -112,7 +112,7 @@ t/{tenantId}/{domain}/{hash}-{filename}
 ### Key Behaviours
 - Files are stored on an **S3-compatible** object storage backend (configurable via environment)
 - A **signed URL** (time-limited) is returned for every download — no public bucket access
-- Metadata (filename, mime type, size, uploader, tenantId) is recorded in the database
+- Metadata (filename, mime type, size, uploader, storeId) is recorded in the database
 
 ---
 
@@ -155,7 +155,7 @@ Implements a live support chat system between customers and store support agents
 Push real-time UI toasts and notification bell updates to admin panel users.
 
 ### `NotificationEntity`
-Fields: `userId`, `tenantId`, `type` (ORDER_PLACED, STOCK_LOW, LEAVE_APPROVED, etc.), `message`, `isRead`, `resourceType`, `resourceId`.
+Fields: `userId`, `storeId`, `type` (ORDER_PLACED, STOCK_LOW, LEAVE_APPROVED, etc.), `message`, `isRead`, `resourceType`, `resourceId`.
 
 ### `NotificationGateway` (Socket.IO)
 - Each admin user joins a personal Socket.IO room on login (`user:{userId}`)

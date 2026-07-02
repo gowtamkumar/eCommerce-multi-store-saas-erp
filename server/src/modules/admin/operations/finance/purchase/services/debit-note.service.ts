@@ -25,7 +25,7 @@ export class DebitNoteService {
 
   async createDebitNote(dto: CreateDebitNoteDto, ctx: RequestContextDto): Promise<DebitNoteEntity> {
     this.logger.log('Creating Debit Note')
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const result = await this.repository.createAndSave(
       {
@@ -38,7 +38,7 @@ export class DebitNoteService {
       ctx,
     )
 
-    await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
+    await this.cacheService.delCacheByPattern(`dn:list*`, storeId)
     return result
   }
 
@@ -53,15 +53,15 @@ export class DebitNoteService {
     limit: number
     totalPages: number
   }> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `dn:list:p${page}:l${limit}:q${search || ''}:s${status || ''}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.repository.findAllByTenant(
-          tenantId,
+        const [items, total] = await this.repository.findAllByStore(
+          storeId,
           page,
           limit,
           search,
@@ -76,13 +76,13 @@ export class DebitNoteService {
         }
       },
       300,
-      tenantId,
+      storeId,
     )
   }
 
   async findOneDebitNote(id: string, ctx: RequestContextDto): Promise<DebitNoteEntity> {
-    const tenantId = ctx.tenantId
-    const dn = await this.repository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const dn = await this.repository.findByIdWithRelations(id, storeId)
     if (!dn) {
       throw new NotFoundException('Debit Note not found')
     }
@@ -95,7 +95,7 @@ export class DebitNoteService {
     ctx: RequestContextDto,
   ): Promise<DebitNoteEntity> {
     this.logger.log(`Updating Debit Note Status: ${id} -> ${dto.status}`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const dn = await this.findOneDebitNote(id, ctx)
 
     if (dn.status === DebitNoteStatus.APPROVED || dn.status === DebitNoteStatus.CANCELLED) {
@@ -107,8 +107,8 @@ export class DebitNoteService {
     } else {
       dn.status = dto.status
       const saved = await this.repository.saveDebitNote(dn)
-      await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
-      await this.cacheService.delCache(`dn:id:${id}`, tenantId)
+      await this.cacheService.delCacheByPattern(`dn:list*`, storeId)
+      await this.cacheService.delCache(`dn:id:${id}`, storeId)
       return saved
     }
   }
@@ -117,7 +117,7 @@ export class DebitNoteService {
     dn: DebitNoteEntity,
     ctx: RequestContextDto,
   ): Promise<DebitNoteEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
@@ -131,7 +131,7 @@ export class DebitNoteService {
         .createQueryBuilder(SupplierAPLedgerEntity, 'ap')
         .setLock('pessimistic_write')
         .where('ap.supplierId = :supplierId', { supplierId: dn.supplierId })
-        .andWhere('ap.tenantId = :tenantId', { tenantId })
+        .andWhere('ap.storeId = :storeId', { storeId })
         .orderBy('ap.createdAt', 'DESC')
         .getOne()
 
@@ -139,7 +139,7 @@ export class DebitNoteService {
 
       const entry = queryRunner.manager.create(SupplierAPLedgerEntity, {
         supplierId: dn.supplierId,
-        tenantId,
+        storeId,
         referenceType: SupplierAPReferenceType.ADJUSTMENT,
         referenceId: dn.id,
         debit: dn.amount,
@@ -169,8 +169,8 @@ export class DebitNoteService {
           this.logger.error(`Failed to queue debit note journal entry: ${err.message}`)
         })
 
-      await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
-      await this.cacheService.delCache(`dn:id:${dn.id}`, tenantId)
+      await this.cacheService.delCacheByPattern(`dn:list*`, storeId)
+      await this.cacheService.delCache(`dn:id:${dn.id}`, storeId)
 
       return savedDn
     } catch (err) {

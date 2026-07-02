@@ -25,7 +25,7 @@ export class AdminCartController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List active shopping carts for tenant' })
+  @ApiOperation({ summary: 'List active shopping carts for store' })
   @ApiQuery({ name: 'abandonedOnly', required: false, type: Boolean })
   @RequirePermissions(SystemPermissions.ORDERS_READ)
   async findAllCarts(
@@ -46,7 +46,7 @@ export class AdminCartController {
     )
 
     const draftCartIds = await this.aiJobService.findCompletedCartIdsWithDrafts(
-      ctx.tenantId,
+      ctx.storeId,
       carts.map((cart) => cart.id),
     )
 

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { TrafficRepository } from './traffic.repository'
-import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
+import { StoreTrafficEntity } from './entities/store-traffic.entity'
 
 @Injectable()
 export class TrafficService {
@@ -8,21 +8,21 @@ export class TrafficService {
 
   constructor(private readonly trafficRepository: TrafficRepository) {}
 
-  async logRequestTraffic(tenantId: string): Promise<void> {
+  async logRequestTraffic(storeId: string): Promise<void> {
     this.logger.log(`${this.logRequestTraffic.name} Service Called`)
-    if (!tenantId) return
+    if (!storeId) return
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     try {
-      await this.trafficRepository.upsertTraffic(tenantId, today)
+      await this.trafficRepository.upsertTraffic(storeId, today)
     } catch (error) {
       console.error('Error logging traffic:', error)
     }
   }
 
-  async getTrafficStats(days: number = 7): Promise<TenantTrafficEntity[]> {
+  async getTrafficStats(days: number = 7): Promise<StoreTrafficEntity[]> {
     this.logger.log(`${this.getTrafficStats.name} Service Called`)
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)

@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { ABANDONED_CART_IDLE_HOURS } from '@/common/constants/abandoned-cart.constants'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,7 +7,7 @@ import { CartEntity } from './entities/cart.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class CartRepository extends BaseTenantRepository<CartEntity> {
+export class CartRepository extends BaseStoreRepository<CartEntity> {
   constructor(
     @InjectRepository(CartEntity)
     repo: Repository<CartEntity>,
@@ -15,9 +15,9 @@ export class CartRepository extends BaseTenantRepository<CartEntity> {
     super(CartEntity, repo)
 }
 
-  async findByUserId(userId: string, tenantId: string): Promise<CartEntity | null> {
+  async findByUserId(userId: string, storeId: string): Promise<CartEntity | null> {
     return await this.repo.findOne({
-      where: { userId, tenantId },
+      where: { userId, storeId },
       relations: {
         items: {
           product: true,
@@ -28,7 +28,7 @@ export class CartRepository extends BaseTenantRepository<CartEntity> {
   }
 
   async findAllAdminPaginated(
-    tenantId: string,
+    storeId: string,
     page: number,
     limit: number,
     search?: string,
@@ -39,7 +39,7 @@ export class CartRepository extends BaseTenantRepository<CartEntity> {
       .leftJoinAndSelect('cart.user', 'user')
       .innerJoinAndSelect('cart.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
-      .where('cart.tenantId = :tenantId', { tenantId })
+      .where('cart.storeId = :storeId', { storeId })
 
     if (abandonedOnly) {
       const idleBefore = new Date(Date.now() - ABANDONED_CART_IDLE_HOURS * 60 * 60 * 1000)
@@ -63,7 +63,7 @@ export class CartRepository extends BaseTenantRepository<CartEntity> {
   async createAndSave(ctx: RequestContextDto): Promise<CartEntity> {
     const cart = this.repo.create({
       userId: ctx.userId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       items: [],
     })
     return await this.repo.save(cart)

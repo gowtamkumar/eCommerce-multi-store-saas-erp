@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindOptionsWhere, Repository } from 'typeorm'
@@ -8,7 +8,7 @@ import type { PaginatedResult } from '../hrm.repository'
 const DEFAULT_LIMIT = 20
 
 @Injectable()
-export class HrmLeaveRepository extends BaseTenantRepository<LeaveRequestEntity> {
+export class HrmLeaveRepository extends BaseStoreRepository<LeaveRequestEntity> {
   constructor(
     @InjectRepository(LeaveRequestEntity)
     public readonly leaveRequestRepo: Repository<LeaveRequestEntity>,
@@ -26,12 +26,12 @@ export class HrmLeaveRepository extends BaseTenantRepository<LeaveRequestEntity>
     await this.leaveRequestRepo.update(id, data)
   }
 
-  async findLeaveRequestById(id: string, tenantId: string): Promise<LeaveRequestEntity | null> {
-    return this.leaveRequestRepo.findOne({ where: { id, tenantId } })
+  async findLeaveRequestById(id: string, storeId: string): Promise<LeaveRequestEntity | null> {
+    return this.leaveRequestRepo.findOne({ where: { id, storeId } })
   }
 
   async findAllLeaveRequests(
-    tenantId: string,
+    storeId: string,
     options?: {
       page?: number
       limit?: number
@@ -51,7 +51,7 @@ export class HrmLeaveRepository extends BaseTenantRepository<LeaveRequestEntity>
       .leftJoinAndSelect('employee.department', 'ed')
       .leftJoinAndSelect('lr.approvedBy', 'approvedBy')
       .leftJoinAndSelect('approvedBy.user', 'au')
-      .where('lr.tenantId = :tenantId', { tenantId })
+      .where('lr.storeId = :storeId', { storeId })
 
     if (options?.employeeId)
       qb.andWhere('lr.employeeId = :employeeId', { employeeId: options.employeeId })
@@ -71,13 +71,13 @@ export class HrmLeaveRepository extends BaseTenantRepository<LeaveRequestEntity>
     employeeId: string,
     startDate: Date,
     endDate: Date,
-    tenantId: string,
+    storeId: string,
     excludeId?: string,
   ): Promise<LeaveRequestEntity[]> {
     const qb = this.leaveRequestRepo
       .createQueryBuilder('lr')
       .where('lr.employeeId = :employeeId', { employeeId })
-      .andWhere('lr.tenantId = :tenantId', { tenantId })
+      .andWhere('lr.storeId = :storeId', { storeId })
       .andWhere('lr.status IN (:...statuses)', { statuses: ['PENDING', 'APPROVED'] })
       .andWhere('lr.startDate <= :endDate', { endDate })
       .andWhere('lr.endDate >= :startDate', { startDate })
@@ -88,9 +88,9 @@ export class HrmLeaveRepository extends BaseTenantRepository<LeaveRequestEntity>
   async findLeaveQuota(
     employeeId: string,
     year: number,
-    tenantId: string,
+    storeId: string,
   ): Promise<LeaveQuotaEntity[]> {
-    return this.leaveQuotaRepo.find({ where: { employeeId, year, tenantId } })
+    return this.leaveQuotaRepo.find({ where: { employeeId, year, storeId } })
   }
 
   async countLeaveRequests(where: FindOptionsWhere<LeaveRequestEntity>): Promise<number> {

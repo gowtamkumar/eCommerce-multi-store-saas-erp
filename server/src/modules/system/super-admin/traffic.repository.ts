@@ -1,29 +1,29 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Raw, Repository } from 'typeorm'
-import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
+import { StoreTrafficEntity } from './entities/store-traffic.entity'
 
 @Injectable()
-export class TrafficRepository extends BaseTenantRepository<TenantTrafficEntity> {
+export class TrafficRepository extends BaseStoreRepository<StoreTrafficEntity> {
   constructor(
-    @InjectRepository(TenantTrafficEntity)
-    repo: Repository<TenantTrafficEntity>,
+    @InjectRepository(StoreTrafficEntity)
+    repo: Repository<StoreTrafficEntity>,
   ) {
-    super(TenantTrafficEntity, repo)
+    super(StoreTrafficEntity, repo)
 }
 
-  async upsertTraffic(tenantId: string, date: Date): Promise<void> {
+  async upsertTraffic(storeId: string, date: Date): Promise<void> {
     await this.repo.query(
-      `INSERT INTO tenant_traffic ("tenant_id", "date", "request_count")
+      `INSERT INTO store_traffic ("store_id", "date", "request_count")
        VALUES ($1, $2, 1)
-       ON CONFLICT ("tenant_id", "date")
-       DO UPDATE SET request_count = tenant_traffic.request_count + 1, last_updated = CURRENT_TIMESTAMP`,
-      [tenantId, date],
+       ON CONFLICT ("store_id", "date")
+       DO UPDATE SET request_count = store_traffic.request_count + 1, last_updated = CURRENT_TIMESTAMP`,
+      [storeId, date],
     )
   }
 
-  async findAllSince(sinceDate: Date): Promise<TenantTrafficEntity[]> {
+  async findAllSince(sinceDate: Date): Promise<StoreTrafficEntity[]> {
     return await this.repo.find({
       where: {
         date: Raw((alias) => `${alias} >= :sinceDate`, { sinceDate }),

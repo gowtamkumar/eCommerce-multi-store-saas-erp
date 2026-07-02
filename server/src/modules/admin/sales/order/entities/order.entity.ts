@@ -4,14 +4,14 @@ import { OrderSource } from '@/common/enums/order-source.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { ShippingAddressEntity } from '@/modules/store/shipping-address/entities/shipping-address.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { OrderItemEntity } from './order-item.entity'
 import { OrderReturnEntity } from './order-return.entity'
 
 @Entity('orders')
-@Index(['tenantId', 'createdAt'])
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'createdAt'])
+@Index(['storeId', 'status'])
 export class OrderEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'customer_name', length: 255 })
   customerName: string
@@ -46,7 +46,7 @@ export class OrderEntity extends BaseEntity {
 
   /**
    * Resolved order currency.
-   * Resolution chain: createOrderDto.currency → tenant SiteSettings.currency → 'USD'
+   * Resolution chain: createOrderDto.currency → store SiteSettings.currency → 'USD'
    * Default 'USD' kept in sync with the service-level fallback to avoid schema conflicts.
    */
   @Column({ type: 'varchar', name: 'currency', length: 10, default: 'USD' })
@@ -87,12 +87,12 @@ export class OrderEntity extends BaseEntity {
   @Column({ type: 'text', name: 'order_notes', nullable: true })
   orderNotes: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'varchar', name: 'tracking_id', length: 255, nullable: true })
   trackingId: string

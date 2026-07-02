@@ -1,11 +1,11 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { EmployeeEntity } from './employee.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { PayrollBatchStatus } from '@/common/enums/hrm/hrm-enums'
 
 @Entity('payroll_batches')
-@Index(['tenantId', 'period'])
+@Index(['storeId', 'period'])
 export class PayrollBatchEntity extends BaseEntity {
   @Column()
   name: string // e.g. "May 2026 Payroll"
@@ -23,12 +23,12 @@ export class PayrollBatchEntity extends BaseEntity {
   })
   status: PayrollBatchStatus
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'journal_entry_id', nullable: true })
   journalEntryId: string
@@ -96,10 +96,10 @@ export class PayrollSlipEntity extends BaseEntity {
     inactiveDeductions?: number
   }
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

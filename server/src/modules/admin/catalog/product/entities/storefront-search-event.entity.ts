@@ -3,13 +3,13 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 
 export type StorefrontSearchMode = 'keyword' | 'hybrid'
 
 @Entity('storefront_search_events')
-@Index(['tenantId', 'createdAt'])
+@Index(['storeId', 'createdAt'])
 export class StorefrontSearchEventEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
-  tenantId: string
+  @Column({ name: 'store_id', type: 'uuid' })
+  storeId: string
 
   @Column({ type: 'varchar', length: 16 })
   mode: StorefrontSearchMode

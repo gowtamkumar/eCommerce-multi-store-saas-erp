@@ -44,8 +44,8 @@ While this platform is a **monolith** in deployment (running as a single NestJS 
                                        ▼
                           ┌──────────────────────────┐
                           │   PostgreSQL Database    │
-                          │ (Logical Tenant Isolation│
-                          │  via tenant_id columns)  │
+                          │ (Logical Store Isolation│
+                          │  via store_id columns)  │
                           └──────────────────────────┘
 ```
 
@@ -84,7 +84,7 @@ server/src/
 │   │       └── pos/                      # POS registers, cashier shifts
 │   └── system/
 │       ├── auth/                         # Staff and User authentication controllers
-│       └── tenant/                       # Tenant onboarding and subscription management
+│       └── store/                       # Store onboarding and subscription management
 └── main.ts                               # Application bootstrap entry point
 ```
 
@@ -92,31 +92,31 @@ server/src/
 
 ## 3. End-to-End Request Lifecycle & Context Propagation
 
-Every HTTP request sent to a tenant-scoped endpoint follows this step-by-step path:
+Every HTTP request sent to a store-scoped endpoint follows this step-by-step path:
 
 ```mermaid
 sequenceDiagram
     autonumber
     Client->>NestJS: HTTP Request (Headers: Host & Authorization)
-    critical 1. Resolve Tenant Context
-        NestJS->>TenantMiddleware: Inspect Host header (e.g., shop.client.com)
-        TenantMiddleware->>Redis: Look up Tenant mapping
-        Note over TenantMiddleware,Redis: Cached for 24 hours
-        Redis-->>TenantMiddleware: Returns Tenant UUID (tenantId)
-        TenantMiddleware->>Request: Bind request.tenantId = UUID
+    critical 1. Resolve Store Context
+        NestJS->>StoreMiddleware: Inspect Host header (e.g., shop.client.com)
+        StoreMiddleware->>Redis: Look up Store mapping
+        Note over StoreMiddleware,Redis: Cached for 24 hours
+        Redis-->>StoreMiddleware: Returns Store UUID (storeId)
+        StoreMiddleware->>Request: Bind request.storeId = UUID
     end
     critical 2. Authenticate User
         NestJS->>JwtAuthGuard: Read Authorization: Bearer token
         JwtAuthGuard->>JwtService: Verify signature & expiry
-        JwtAuthGuard->>Database: Query User record (with tenantId filter)
+        JwtAuthGuard->>Database: Query User record (with storeId filter)
         Database-->>JwtAuthGuard: Returns User entity (userId, role, scopes)
         JwtAuthGuard->>Request: Bind request.user & request.userId
     end
     critical 3. Plan Feature Gating
         NestJS->>SubscriptionGuard: Read controller @RequireFeature('pos_retail')
-        SubscriptionGuard->>Redis: Check Tenant's plan entitlements
+        SubscriptionGuard->>Redis: Check Store's plan entitlements
         Note over SubscriptionGuard,Redis: Cached for 1 hour
-        Redis-->>SubscriptionGuard: Returns features active for tenant
+        Redis-->>SubscriptionGuard: Returns features active for store
         alt Feature is not in active plan
             SubscriptionGuard-->>Client: HTTP 403 Forbidden (Plan upgrade required)
         end
@@ -137,7 +137,7 @@ sequenceDiagram
     NestJS->>Controller: Route to method with @GetContext() decorator
     Controller->>RequestContextDto: Instantiate Context Object
     Controller->>Service: Pass ctx & body data
-    Service->>Repository: Execute queries (scoped with ctx.tenantId)
+    Service->>Repository: Execute queries (scoped with ctx.storeId)
     Repository-->>Client: Return HTTP Response
 ```
 
@@ -219,7 +219,7 @@ sequenceDiagram
 | :--- | :--- | :--- |
 | Writing `update(ProductEntity, { stock: X })` | `InventoryService.postLedgerEntry()` | Simple numeric updates cause race conditions and destroy the audit log. |
 | Inverting relations with `{ eager: true }` | `.leftJoinAndSelect()` in Repository | Eager loading creates massive nested queries that kill performance. |
-| Reading `req.body.tenantId` in controllers | `@GetContext() ctx: RequestContextDto` | Prevents cross-tenant injection attacks. `tenantId` must come from JWT/Domain resolver. |
+| Reading `req.body.storeId` in controllers | `@GetContext() ctx: RequestContextDto` | Prevents cross-store injection attacks. `storeId` must come from JWT/Domain resolver. |
 | Hardcoding database transactions with raw SQL | `this.dataSource.transaction()` | Prevents SQL injection and handles pool release automatically. |
 | Mutating posted ledger rows | Emitting a reversal journal entry | Prevents compliance audits (GAAP/IAS) from failing. |
 | Running heavy reports inside HTTP request threads | BullMQ worker + Redis caching | Heavy queries will block the single Node.js event loop thread. |

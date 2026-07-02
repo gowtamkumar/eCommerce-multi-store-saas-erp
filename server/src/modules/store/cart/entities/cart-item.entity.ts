@@ -2,14 +2,14 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { CartEntity } from './cart.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 /** Optimizes the OneToMany join when loading cart items by cart */
 @Index(['cartId'])
-/** Optimizes tenant-scoped queries and background cleanup operations */
-@Index(['tenantId'])
+/** Optimizes store-scoped queries and background cleanup operations */
+@Index(['storeId'])
 @Entity('cart_items')
 export class CartItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'cart_id' })
@@ -36,12 +36,12 @@ export class CartItemEntity extends BaseEntity {
   @Column({ type: 'int', default: 1 })
   quantity: number
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

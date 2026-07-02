@@ -3,7 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
@@ -14,14 +14,14 @@ import { WarehouseEntity } from '@/modules/system/organization/entities/warehous
 import { WarehouseBinEntity } from '@/modules/system/organization/entities/warehouse-bin.entity'
 
 @Entity('inventory_ledger')
-@Index(['tenantId', 'createdAt'])
+@Index(['storeId', 'createdAt'])
 @Index(['productId', 'warehouseId', 'createdAt'])
 /**
  * Variant-aware composite index — speeds up `getLatestBalanceAfter` and
- * `getLiveStock` which filter on (tenantId, productId, variantId, warehouseId)
+ * `getLiveStock` which filter on (storeId, productId, variantId, warehouseId)
  * and order by createdAt DESC.
  */
-@Index(['tenantId', 'productId', 'variantId', 'warehouseId', 'createdAt'])
+@Index(['storeId', 'productId', 'variantId', 'warehouseId', 'createdAt'])
 export class InventoryLedgerEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'product_id' })
   @Index()
@@ -101,12 +101,12 @@ export class InventoryLedgerEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, name: 'reference_id', nullable: true })
   referenceId: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

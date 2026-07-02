@@ -34,18 +34,18 @@ export class UserPermissionOverrideService {
 
   async getActiveOverrides(
     userId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<UserPermissionOverrideEntity[]> {
     const now = new Date()
     const overrides = await this.overrideRepo.find({
-      where: { userId, tenantId },
+      where: { userId, storeId },
     })
     return overrides.filter((o) => !o.expiresAt || new Date(o.expiresAt) > now)
   }
 
   async addOverride(
     targetUserId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     dto: CreateOverrideDto,
@@ -57,12 +57,12 @@ export class UserPermissionOverrideService {
       throw new BadRequestException('Overrides must have an expiration date.')
     }
 
-    const user = await this.userRepo.findOne({ where: { id: targetUserId, tenantId } })
-    if (!user) throw new NotFoundException('User not found in this tenant')
+    const user = await this.userRepo.findOne({ where: { id: targetUserId, storeId } })
+    if (!user) throw new NotFoundException('User not found in this store')
 
     // Remove any existing active override for this exact permission to avoid conflicts
     const existing = await this.overrideRepo.findOne({
-      where: { userId: targetUserId, tenantId, permissionSlug: dto.permissionSlug },
+      where: { userId: targetUserId, storeId, permissionSlug: dto.permissionSlug },
     })
     if (existing) {
       await this.overrideRepo.remove(existing)
@@ -70,7 +70,7 @@ export class UserPermissionOverrideService {
 
     const override = this.overrideRepo.create({
       userId: targetUserId,
-      tenantId,
+      storeId,
       permissionSlug: dto.permissionSlug,
       effect: dto.effect,
       reason: dto.reason,
@@ -81,7 +81,7 @@ export class UserPermissionOverrideService {
     const saved = await this.overrideRepo.save(override)
 
     await this.auditLogService.logPermissionOverrideAdded(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       targetUserId,
@@ -91,25 +91,25 @@ export class UserPermissionOverrideService {
       dto.expiresAt,
     )
 
-    await this.permissionResolutionService.invalidateUserPermissionCache(targetUserId, tenantId)
+    await this.permissionResolutionService.invalidateUserPermissionCache(targetUserId, storeId)
 
     return saved
   }
 
   async removeOverride(
     overrideId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
   ): Promise<void> {
     const override = await this.overrideRepo.findOne({
-      where: { id: overrideId, tenantId },
+      where: { id: overrideId, storeId },
     })
 
     if (!override) throw new NotFoundException('Permission override not found')
 
     await this.auditLogService.logPermissionOverrideRemoved(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       overrideId,
@@ -118,6 +118,6 @@ export class UserPermissionOverrideService {
     )
 
     await this.overrideRepo.remove(override)
-    await this.permissionResolutionService.invalidateUserPermissionCache(override.userId, tenantId)
+    await this.permissionResolutionService.invalidateUserPermissionCache(override.userId, storeId)
   }
 }

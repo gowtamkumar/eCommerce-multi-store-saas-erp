@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm'
 
 @Entity('loyalty_configs')
@@ -88,10 +88,10 @@ export class LoyaltyConfigEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 500, name: 'referral_message', nullable: true })
   referralMessage: string | null
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @OneToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @OneToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

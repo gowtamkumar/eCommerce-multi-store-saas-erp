@@ -3,7 +3,7 @@ import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm'
 
@@ -21,9 +21,9 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm'
  *  - Available-to-Promise (ATP) can be computed cleanly
  */
 @Entity('stock_reservations')
-@Unique('UQ_stock_res_order_product_variant', ['tenantId', 'orderId', 'productId', 'variantId'])
-@Index('IDX_stock_res_tenant_status', ['tenantId', 'status'])
-@Index('IDX_stock_res_product_tenant_status', ['productId', 'variantId', 'tenantId', 'status'])
+@Unique('UQ_stock_res_order_product_variant', ['storeId', 'orderId', 'productId', 'variantId'])
+@Index('IDX_stock_res_store_status', ['storeId', 'status'])
+@Index('IDX_stock_res_product_store_status', ['productId', 'variantId', 'storeId', 'status'])
 @Index('IDX_stock_res_expires_at', ['expiresAt'])
 export class StockReservationEntity extends BaseEntity {
   // ── Product ────────────────────────────────────────────────────────────────
@@ -98,12 +98,12 @@ export class StockReservationEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   notes: string | null
 
-  // ── Tenant ─────────────────────────────────────────────────────────────────
-  @Column({ type: 'uuid', name: 'tenant_id' })
+  // ── Store ─────────────────────────────────────────────────────────────────
+  @Column({ type: 'uuid', name: 'store_id' })
   @Index()
-  tenantId: string
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

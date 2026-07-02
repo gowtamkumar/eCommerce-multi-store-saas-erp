@@ -32,8 +32,8 @@ export class HrmAttendanceService {
 
   // --- Shift Management ---
   async createShift(data: CreateShiftDto, ctx: RequestContextDto) {
-    this.logger.log(`Creating shift "${data.name}" for tenant ${ctx.tenantId}`)
-    const res = await this.hrmRepo.createShift({ ...data, tenantId: ctx.tenantId })
+    this.logger.log(`Creating shift "${data.name}" for store ${ctx.storeId}`)
+    const res = await this.hrmRepo.createShift({ ...data, storeId: ctx.storeId })
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
       entity: 'Shift',
@@ -44,15 +44,15 @@ export class HrmAttendanceService {
   }
 
   async findAllShifts(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllShifts(ctx.tenantId)
+    return this.hrmRepo.findAllShifts(ctx.storeId)
   }
 
   async updateShift(id: string, data: UpdateShiftDto, ctx: RequestContextDto) {
-    this.logger.log(`Updating shift ${id} for tenant ${ctx.tenantId}`)
-    const old = await this.hrmRepo.findShiftById(id, ctx.tenantId)
+    this.logger.log(`Updating shift ${id} for store ${ctx.storeId}`)
+    const old = await this.hrmRepo.findShiftById(id, ctx.storeId)
     if (!old) throw new NotFoundException('Shift not found')
     await this.hrmRepo.updateShift(id, data)
-    const updated = await this.hrmRepo.findShiftById(id, ctx.tenantId)
+    const updated = await this.hrmRepo.findShiftById(id, ctx.storeId)
     await this.auditLogService.log(ctx, {
       action: 'UPDATE',
       entity: 'Shift',
@@ -64,8 +64,8 @@ export class HrmAttendanceService {
   }
 
   async deleteShift(id: string, ctx: RequestContextDto) {
-    this.logger.log(`Deleting shift ${id} for tenant ${ctx.tenantId}`)
-    const shift = await this.hrmRepo.findShiftById(id, ctx.tenantId)
+    this.logger.log(`Deleting shift ${id} for store ${ctx.storeId}`)
+    const shift = await this.hrmRepo.findShiftById(id, ctx.storeId)
     if (!shift) throw new NotFoundException('Shift not found')
     await this.hrmRepo.deleteShift(id)
     await this.auditLogService.log(ctx, {
@@ -79,14 +79,14 @@ export class HrmAttendanceService {
 
   async assignShift(employeeId: string, data: AssignShiftDto, ctx: RequestContextDto) {
     this.logger.log(`Assigning shift ${data.shiftId} to employee ${employeeId}`)
-    await this.employeeService.validateEmployeeInTenant(employeeId, ctx.tenantId)
-    const shift = await this.hrmRepo.findShiftById(data.shiftId, ctx.tenantId)
+    await this.employeeService.validateEmployeeInStore(employeeId, ctx.storeId)
+    const shift = await this.hrmRepo.findShiftById(data.shiftId, ctx.storeId)
     if (!shift) throw new NotFoundException('Shift not found')
 
     const res = await this.hrmRepo.assignShift({
       ...data,
       employeeId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       effectiveFrom: new Date(data.effectiveFrom),
       effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
     })
@@ -100,7 +100,7 @@ export class HrmAttendanceService {
   }
 
   async findEmployeeShiftAssignments(employeeId: string, ctx: RequestContextDto) {
-    return this.hrmRepo.findEmployeeShiftAssignments(employeeId, ctx.tenantId)
+    return this.hrmRepo.findEmployeeShiftAssignments(employeeId, ctx.storeId)
   }
 
   // --- Attendance Logic ---
@@ -132,7 +132,7 @@ export class HrmAttendanceService {
     }
 
     const siteSettings = await this.hrmRepo.employeeRepo.manager.findOne(SiteSettingsEntity, {
-      where: { tenantId: ctx.tenantId },
+      where: { storeId: ctx.storeId },
     })
     const geofencingEnabled = siteSettings?.financeConfig?.hrmGeofencingEnabled ?? false
     if (geofencingEnabled) {
@@ -166,18 +166,18 @@ export class HrmAttendanceService {
       }
     }
 
-    const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.tenantId)
+    const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.storeId)
     if (latest && !latest.checkOut) {
       throw new ConflictException('Employee is already checked in')
     }
 
     const now = new Date()
-    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, now, ctx.tenantId)
+    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, now, ctx.storeId)
     const lateMinutes = computeLateMinutes(now, assignment, options?.timezoneOffset)
 
     await this.hrmRepo.logAttendanceEvent({
       employeeId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       eventType: 'CHECK_IN',
       ipAddress,
       source: options?.source ?? AttendanceSource.WEB,
@@ -190,7 +190,7 @@ export class HrmAttendanceService {
 
     return this.hrmRepo.saveAttendanceSession({
       employeeId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       branchId: employee.branchId,
       checkIn: now,
       lateMinutes,
@@ -202,7 +202,7 @@ export class HrmAttendanceService {
     ctx: RequestContextDto,
     options?: { source?: AttendanceSource; deviceId?: string },
   ) {
-    const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.tenantId)
+    const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.storeId)
     if (!latest || latest.checkOut) {
       throw new BadRequestException('No active check-in session found')
     }
@@ -211,7 +211,7 @@ export class HrmAttendanceService {
     const assignment = await this.hrmRepo.findEmployeeShift(
       employeeId,
       latest.checkIn,
-      ctx.tenantId,
+      ctx.storeId,
     )
     const diffMs = checkOut.getTime() - new Date(latest.checkIn).getTime()
     const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
@@ -219,7 +219,7 @@ export class HrmAttendanceService {
 
     await this.hrmRepo.logAttendanceEvent({
       employeeId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       eventType: 'CHECK_OUT',
       source: options?.source ?? AttendanceSource.WEB,
       deviceId: options?.deviceId,
@@ -246,7 +246,7 @@ export class HrmAttendanceService {
       to?: string
     },
   ) {
-    return this.hrmRepo.findAllAttendanceSessions(ctx.tenantId, ctx.branchId, {
+    return this.hrmRepo.findAllAttendanceSessions(ctx.storeId, ctx.branchId, {
       ...options,
       from: options?.from ? new Date(options.from) : undefined,
       to: options?.to ? new Date(options.to) : undefined,

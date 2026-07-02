@@ -1,7 +1,7 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { ExpenseCategory } from '@/common/enums/expense-category.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
@@ -22,11 +22,11 @@ export enum ExpenseRecurrence {
   YEARLY = 'YEARLY',
 }
 
-/** Composite index for fast tenant-scoped date-ordered list queries */
-@Index(['tenantId', 'expenseDate'])
-/** Composite index for fast category-filtered queries per tenant */
-@Index(['tenantId', 'category'])
-@Index(['tenantId', 'status'])
+/** Composite index for fast store-scoped date-ordered list queries */
+@Index(['storeId', 'expenseDate'])
+/** Composite index for fast category-filtered queries per store */
+@Index(['storeId', 'category'])
+@Index(['storeId', 'status'])
 @Index(['branchId'])
 @Entity('expenses')
 export class ExpenseEntity extends BaseEntity {
@@ -98,12 +98,12 @@ export class ExpenseEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'parent_recurring_expense_id', nullable: true })
   parentRecurringExpenseId: string | null
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

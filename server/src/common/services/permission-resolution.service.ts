@@ -8,8 +8,8 @@ import {
   isCoreFeature,
   getPlanFeature,
 } from '@/common/constants/feature-mapping'
-import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreFeatureEntity } from '@/modules/system/store/entities/store-feature.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { In, Repository } from 'typeorm'
@@ -22,8 +22,8 @@ export interface PermissionManifest {
 /**
  * The core policy engine — simplified 3-step permission resolution.
  *
- * Step 1: Is the feature enabled for this tenant?
- *         → Check tenant_features (admin override) first.
+ * Step 1: Is the feature enabled for this store?
+ *         → Check store_features (admin override) first.
  *         → Fall back to subscription_plans.features[].
  *
  * Step 2: Collect all permissions the user holds via their active, non-expired role assignments.
@@ -52,11 +52,11 @@ export class PermissionResolutionService {
     @InjectRepository(RoleEntity)
     private readonly roleRepo: Repository<RoleEntity>,
 
-    @InjectRepository(TenantEntity)
-    private readonly tenantRepo: Repository<TenantEntity>,
+    @InjectRepository(StoreEntity)
+    private readonly storeRepo: Repository<StoreEntity>,
 
-    @InjectRepository(TenantFeatureEntity)
-    private readonly tenantFeatureRepo: Repository<TenantFeatureEntity>,
+    @InjectRepository(StoreFeatureEntity)
+    private readonly storeFeatureRepo: Repository<StoreFeatureEntity>,
 
     @InjectRepository(UserPermissionOverrideEntity)
     private readonly overrideRepo: Repository<UserPermissionOverrideEntity>,
@@ -69,19 +69,19 @@ export class PermissionResolutionService {
   // ─────────────────────────────────────────────────────────────────
 
   /**
-   * Determine whether a feature is active for a given tenant.
+   * Determine whether a feature is active for a given store.
    * Checks overrides first, then plan fallback.
    *
    * NOTE: This method performs DB queries. It is NOT called from the
    * hot-path permission guard. The guard uses resolvePermissionsFromManifest()
    * which operates purely from the Redis-cached manifest.
    */
-  async isFeatureEnabledForTenant(tenantId: string, featureSlug: string): Promise<boolean> {
+  async isFeatureEnabledForStore(storeId: string, featureSlug: string): Promise<boolean> {
     const planFeature = getPlanFeature(featureSlug)
 
     // Check specific sub-feature override first (e.g. "accounting")
-    const overrideSpec = await this.tenantFeatureRepo.findOne({
-      where: { tenantId, featureSlug },
+    const overrideSpec = await this.storeFeatureRepo.findOne({
+      where: { storeId, featureSlug },
     })
     if (overrideSpec !== null) {
       return overrideSpec.isEnabled
@@ -89,8 +89,8 @@ export class PermissionResolutionService {
 
     // Check parent plan feature override next (e.g. "finance")
     if (planFeature !== featureSlug) {
-      const overridePlan = await this.tenantFeatureRepo.findOne({
-        where: { tenantId, featureSlug: planFeature },
+      const overridePlan = await this.storeFeatureRepo.findOne({
+        where: { storeId, featureSlug: planFeature },
       })
       if (overridePlan !== null) {
         return overridePlan.isEnabled
@@ -102,8 +102,8 @@ export class PermissionResolutionService {
       return true
     }
 
-    const tenant = await this.tenantRepo.findOne({
-      where: { id: tenantId },
+    const store = await this.storeRepo.findOne({
+      where: { id: storeId },
       relations: {
         activeSubscription: {
           subscriptionPlan: true,
@@ -111,9 +111,9 @@ export class PermissionResolutionService {
       },
     })
 
-    if (!tenant) return false
+    if (!store) return false
 
-    const planFeatures = tenant.subscriptionPlan?.features ?? []
+    const planFeatures = store.subscriptionPlan?.features ?? []
     return planFeatures.includes(planFeature) || planFeatures.includes(featureSlug)
   }
 
@@ -132,18 +132,18 @@ export class PermissionResolutionService {
    * CACHE_TTL_SECONDS (5 minutes), so subsequent requests are served from cache.
    *
    * @param userId              - The authenticated user
-   * @param tenantId            - The tenant scope
+   * @param storeId            - The store scope
    * @param requiredPermissions - The array of permission slugs to check
    * @returns                   - The first denied permission slug, or null if all are allowed
    */
   async resolvePermissionsFromManifest(
     userId: string,
-    tenantId: string,
+    storeId: string,
     requiredPermissions: string[],
   ): Promise<{ denied: string | null; manifest: PermissionManifest }> {
     // Load the cached manifest (or build it if not cached). This is at most 1 Redis
     // operation for the entire request regardless of how many permissions are required.
-    const manifest = await this.resolvePermissionsManifest(userId, tenantId)
+    const manifest = await this.resolvePermissionsManifest(userId, storeId)
     const permissionSet = new Set(manifest.permissions)
     const featuresSet = new Set(manifest.featuresEnabled)
 
@@ -151,22 +151,22 @@ export class PermissionResolutionService {
       const featureSlug = permSlug.split(':')[0]
       const planFeature = getPlanFeature(featureSlug)
 
-      // Step 1: Check if the feature is enabled for this tenant (from manifest)
+      // Step 1: Check if the feature is enabled for this store (from manifest)
       const featureEnabled = featuresSet.has(featureSlug) || featuresSet.has(planFeature)
       if (!featureEnabled) {
-        this.logger.debug(`[DENY] Feature "${featureSlug}" not enabled for tenant ${tenantId}`)
+        this.logger.debug(`[DENY] Feature "${featureSlug}" not enabled for store ${storeId}`)
         return { denied: permSlug, manifest }
       }
 
       // Step 2+3: Check if the permission exists in the manifest permission set
       if (!permissionSet.has(permSlug)) {
         this.logger.debug(
-          `[DENY] user=${userId} perm=${permSlug} tenant=${tenantId} (manifest miss)`,
+          `[DENY] user=${userId} perm=${permSlug} store=${storeId} (manifest miss)`,
         )
         return { denied: permSlug, manifest }
       }
 
-      this.logger.debug(`[ALLOW] user=${userId} perm=${permSlug} tenant=${tenantId} (manifest hit)`)
+      this.logger.debug(`[ALLOW] user=${userId} perm=${permSlug} store=${storeId} (manifest hit)`)
     }
 
     return { denied: null, manifest }
@@ -177,19 +177,19 @@ export class PermissionResolutionService {
   // ─────────────────────────────────────────────────────────────────
 
   /**
-   * Resolve whether a user can perform a given permission in a tenant context.
+   * Resolve whether a user can perform a given permission in a store context.
    *
    * PERFORMANCE NOTE: This method now uses the Redis-cached manifest under the hood.
    * On a cache hit it runs 0 DB queries. On a cache miss it builds the manifest
    * (1 multi-query DB pass) and caches it for future requests.
    *
    * @param userId    - The user being checked
-   * @param tenantId  - The tenant scope
+   * @param storeId  - The store scope
    * @param permSlug  - Permission slug in "feature:action" format (e.g. "payroll:approve")
    * @returns         - true if ALLOWED, false if DENIED
    */
-  async resolvePermission(userId: string, tenantId: string, permSlug: string): Promise<boolean> {
-    const { denied } = await this.resolvePermissionsFromManifest(userId, tenantId, [permSlug])
+  async resolvePermission(userId: string, storeId: string, permSlug: string): Promise<boolean> {
+    const { denied } = await this.resolvePermissionsFromManifest(userId, storeId, [permSlug])
     return denied === null
   }
 
@@ -205,31 +205,31 @@ export class PermissionResolutionService {
    * Frontend uses this for UI gating. Backend guard uses this for per-request
    * authorization (0 DB queries on cache hit).
    */
-  async resolvePermissionsManifest(userId: string, tenantId: string): Promise<PermissionManifest> {
-    const cacheKey = `rbac:manifest:${tenantId}:${userId}`
+  async resolvePermissionsManifest(userId: string, storeId: string): Promise<PermissionManifest> {
+    const cacheKey = `rbac:manifest:${storeId}:${userId}`
     const cached = await this.cacheService.getCache<PermissionManifest>(cacheKey)
     if (cached) {
-      this.logger.debug(`[Cache HIT] RBAC manifest for user=${userId} tenant=${tenantId}`)
+      this.logger.debug(`[Cache HIT] RBAC manifest for user=${userId} store=${storeId}`)
       return cached
     }
 
     this.logger.debug(
-      `[Cache MISS] Building RBAC manifest from DB for user=${userId} tenant=${tenantId}`,
+      `[Cache MISS] Building RBAC manifest from DB for user=${userId} store=${storeId}`,
     )
 
     // ── Build enabled features list ───────────────────────────────────
-    const tenant = await this.tenantRepo.findOne({
-      where: { id: tenantId },
+    const store = await this.storeRepo.findOne({
+      where: { id: storeId },
       relations: {
         activeSubscription: {
           subscriptionPlan: true,
         },
       },
     })
-    const planFeatures: string[] = tenant?.subscriptionPlan?.features ?? []
+    const planFeatures: string[] = store?.subscriptionPlan?.features ?? []
 
-    // Merge with tenant-specific overrides
-    const overrides = await this.tenantFeatureRepo.find({ where: { tenantId } })
+    // Merge with store-specific overrides
+    const overrides = await this.storeFeatureRepo.find({ where: { storeId } })
     const overridesMap = new Map(overrides.map((o) => [o.featureSlug, o.isEnabled]))
 
     const featuresEnabledSet = new Set<string>()
@@ -257,12 +257,12 @@ export class PermissionResolutionService {
     const featuresEnabled = Array.from(featuresEnabledSet)
 
     // ── Build permissions list ────────────────────────────────────────
-    const effectivePermissions = await this.getEffectivePermissions(userId, tenantId)
+    const effectivePermissions = await this.getEffectivePermissions(userId, storeId)
 
     // Fetch active user-specific permission overrides
     const now = new Date()
     const userOverrides = await this.overrideRepo.find({
-      where: { userId, tenantId },
+      where: { userId, storeId },
     })
     const activeUserOverrides = userOverrides.filter(
       (o) => !o.expiresAt || new Date(o.expiresAt) > now,
@@ -279,7 +279,7 @@ export class PermissionResolutionService {
       }
     }
 
-    // Only include permissions whose feature is enabled for this tenant
+    // Only include permissions whose feature is enabled for this store
     const permissions = Array.from(permSet).filter((p) => {
       const feat = p.split(':')[0]
       const planFeat = getPlanFeature(feat)
@@ -297,15 +297,15 @@ export class PermissionResolutionService {
 
   /**
    * Invalidate the cached manifest for a user.
-   * Call this whenever a role is assigned/revoked or tenant features change.
+   * Call this whenever a role is assigned/revoked or store features change.
    */
-  async invalidateUserPermissionCache(userId: string, tenantId: string): Promise<void> {
-    const cacheKey = `rbac:manifest:${tenantId}:${userId}`
+  async invalidateUserPermissionCache(userId: string, storeId: string): Promise<void> {
+    const cacheKey = `rbac:manifest:${storeId}:${userId}`
     await this.cacheService.delCache(cacheKey)
     this.logger.debug(`[Cache] Invalidated permission manifest for user=${userId}`)
   }
 
-  async invalidateTenantPermissionCaches(): Promise<void> {
+  async invalidateStorePermissionCaches(): Promise<void> {
     await this.cacheService.delCacheByPattern('rbac:manifest:*')
     this.logger.log('[Cache] Invalidated all RBAC permission manifests')
   }
@@ -321,12 +321,12 @@ export class PermissionResolutionService {
    * - Roles are loaded flat (no parent chain walking).
    * - A user can hold multiple roles simultaneously; all are unioned together.
    */
-  private async getEffectivePermissions(userId: string, tenantId: string): Promise<Set<string>> {
+  private async getEffectivePermissions(userId: string, storeId: string): Promise<Set<string>> {
     const now = new Date()
 
-    // Load all role assignments for this user in this tenant
+    // Load all role assignments for this user in this store
     const assignments = await this.assignmentRepo.find({
-      where: { userId, tenantId },
+      where: { userId, storeId },
       relations: {
         role: {
           permissions: true,

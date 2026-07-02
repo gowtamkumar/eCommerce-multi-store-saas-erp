@@ -1,6 +1,6 @@
 # ERP System Design
 
-> Senior engineering system design for the `eCommerce-multi-tenant-saas` platform as a multi-tenant ERP, POS, CRM, procurement, inventory, finance, and HRM platform.
+> Senior engineering system design for the `eCommerce-multi-store-saas` platform as a multi-store ERP, POS, CRM, procurement, inventory, finance, and HRM platform.
 > AI is intentionally excluded. AI/API features will sit on top of this ERP core later as a separate extension layer.
 > Date: 2026-05-20
 
@@ -14,7 +14,7 @@
 
 ### 0.1 What this system is
 
-A **modular-monolith, multi-tenant SaaS ERP** that runs the full back-office of a retail business: online store, POS, inventory, procurement, finance, CRM, and HRM — for thousands of tenants on a shared codebase with strict per-tenant data isolation.
+A **modular-monolith, multi-store SaaS ERP** that runs the full back-office of a retail business: online store, POS, inventory, procurement, finance, CRM, and HRM — for thousands of stores on a shared codebase with strict per-store data isolation.
 
 ### 0.2 Architecture in one diagram
 
@@ -32,7 +32,7 @@ flowchart LR
     end
 
     subgraph CORE["Modular-Monolith Core (NestJS)"]
-        SYS[System<br/>Tenant · Subscription · Org · Audit]
+        SYS[System<br/>Store · Subscription · Org · Audit]
         IDM[Identity<br/>Auth · RBAC · Permissions]
         CAT[Catalog<br/>Product · Variant · Pricing]
         SALE[Sales<br/>Order · POS · Coupon · Promo · Cart]
@@ -80,12 +80,12 @@ flowchart LR
 | # | Principle | Practical meaning |
 | --- | --- | --- |
 | 1 | **Ledger first** | Stock + money are always derived from append-only ledgers, never mutable counters. |
-| 2 | **Tenant isolation everywhere** | Every row, cache key, queue job, file path carries `tenantId`. |
+| 2 | **Store isolation everywhere** | Every row, cache key, queue job, file path carries `storeId`. |
 | 3 | **Strong consistency for money & stock** | DB transactions wrap the source-of-truth writes; side effects go async via outbox. |
 | 4 | **Idempotent external operations** | Webhooks, POS sync, queue jobs are safe to retry. |
 | 5 | **Human approval for high-risk writes** | Stock adjustments, payments, payroll, reversals require permission + audit + reason. |
 | 6 | **Feature-gated by subscription** | Plan entitlement is checked separately from RBAC permission. |
-| 7 | **Boundary-respecting** | Tenant → Branch → Warehouse hierarchy is enforced in services, queries, and UI. |
+| 7 | **Boundary-respecting** | Store → Branch → Warehouse hierarchy is enforced in services, queries, and UI. |
 | 8 | **Reversibility** | Every business mutation has a reversal path; no silent deletes of business records. |
 | 9 | **Snapshots over joins** | Order items, invoices, payslips store snapshots of price/tax/component at the time of event. |
 | 10 | **Boring before clever** | Make the deterministic ERP correct first; AI/analytics sit on top later. |
@@ -94,7 +94,7 @@ flowchart LR
 
 | # | Context | Source location | Owns |
 | --- | --- | --- | --- |
-| 1 | **System** | `modules/system/*` | Tenants, subscriptions, organization (company/branch/warehouse), audit log, super-admin |
+| 1 | **System** | `modules/system/*` | Stores, subscriptions, organization (company/branch/warehouse), audit log, super-admin |
 | 2 | **Identity & Access** | `modules/admin/core/{auth,user,rbac}` | Users, sessions, roles, permissions, scope assignments, overrides |
 | 3 | **Catalog** | `modules/admin/catalog/*` | Products, variants, attributes, categories, brands, pricing books, reviews |
 | 4 | **Sales** | `modules/admin/sales/*` | Orders, order items, returns, carts, coupons, promotions, payments |
@@ -112,24 +112,24 @@ Cross-cutting **Infra Services** (`modules/admin/operations/infra/*`): cache, qu
 ### 0.5 Request lifecycle in 5 steps
 
 ```
-HTTP → TenantMiddleware → JwtAuthGuard → SubscriptionGuard → PermissionsGuard → BranchScope/WarehouseScopeGuard → Controller → Service (with RequestContextDto) → Repository (tenant-filtered) → DB
+HTTP → StoreMiddleware → JwtAuthGuard → SubscriptionGuard → PermissionsGuard → BranchScope/WarehouseScopeGuard → Controller → Service (with RequestContextDto) → Repository (store-filtered) → DB
                                                                                                                                                    ↓
                                                                                                                                             EventEmitter / Outbox → BullMQ → Side effects
 ```
 
-Every service method receives a `RequestContextDto { tenantId, userId, userRole, branchId?, warehouseId?, branchScope, warehouseScope }`. **Services cannot get `tenantId` from request body — only from this context.**
+Every service method receives a `RequestContextDto { storeId, userId, userRole, branchId?, warehouseId?, branchScope, warehouseScope }`. **Services cannot get `storeId` from request body — only from this context.**
 
 ### 0.6 Where the money & stock truth lives
 
 | Truth | Source table | Aggregation |
 | --- | --- | --- |
-| **Stock on hand** | `inventory_ledger` (append-only) | SUM by `(tenantId, variantId, warehouseId)` |
+| **Stock on hand** | `inventory_ledger` (append-only) | SUM by `(storeId, variantId, warehouseId)` |
 | **Available stock** | `inventory_ledger` − active `stock_reservations` | Computed in `StockReservationService` |
-| **Customer AR balance** | `ar_ledger` (append-only) | SUM by `(tenantId, customerId)` |
-| **Supplier AP balance** | `supplier_ap_ledger` (append-only) | SUM by `(tenantId, supplierId)` |
-| **GL account balance** | `ledger_entries` (append-only) | SUM by `(tenantId, accountId, fiscal period)` |
-| **Wallet balance** | `wallet_ledger` (append-only) | SUM by `(tenantId, userId)` |
-| **Loyalty points** | `loyalty_ledger` (append-only) | SUM by `(tenantId, userId)` |
+| **Customer AR balance** | `ar_ledger` (append-only) | SUM by `(storeId, customerId)` |
+| **Supplier AP balance** | `supplier_ap_ledger` (append-only) | SUM by `(storeId, supplierId)` |
+| **GL account balance** | `ledger_entries` (append-only) | SUM by `(storeId, accountId, fiscal period)` |
+| **Wallet balance** | `wallet_ledger` (append-only) | SUM by `(storeId, userId)` |
+| **Loyalty points** | `loyalty_ledger` (append-only) | SUM by `(storeId, userId)` |
 
 No code path may UPDATE these aggregates directly. New rows only.
 
@@ -148,7 +148,7 @@ No code path may UPDATE these aggregates directly. New rows only.
 
 - **AI/ML features** — covered in a separate extension document. AI sits on top of these APIs, never replaces them.
 - **Active-active multi-region database** — out of scope for v1.
-- **Cross-tenant analytics / shared customer master** — explicitly forbidden by tenant isolation principle.
+- **Cross-store analytics / shared customer master** — explicitly forbidden by store isolation principle.
 - **Heavy data warehouse** — analytics use Postgres read replicas + materialized views.
 
 ### 0.9 How to read the rest of this document
@@ -174,9 +174,9 @@ The detailed LLD per module lives in [`erp_low_level_system_design.md`](erp_low_
 3. [Design Principles](#3-design-principles)
 4. [Glossary](#4-glossary)
 
-**Part II — Boundaries (Tenant / Branch / Warehouse)**
+**Part II — Boundaries (Store / Branch / Warehouse)**
 5. [Hierarchy Overview](#5-hierarchy-overview)
-6. [Tenant Boundary](#6-tenant-boundary)
+6. [Store Boundary](#6-store-boundary)
 7. [Branch Boundary](#7-branch-boundary)
 8. [Warehouse Boundary](#8-warehouse-boundary)
 9. [User & Customer Scope Inside Boundaries](#9-user--customer-scope-inside-boundaries)
@@ -230,11 +230,11 @@ The detailed LLD per module lives in [`erp_low_level_system_design.md`](erp_low_
 
 ## 1. Purpose & Scope
 
-This document defines the target architecture and rules to evolve the current multi-tenant eCommerce SaaS into a production-grade ERP platform.
+This document defines the target architecture and rules to evolve the current multi-store eCommerce SaaS into a production-grade ERP platform.
 
 The system supports:
 
-- Multi-tenant store and ERP management.
+- Multi-store store and ERP management.
 - Multi-branch and multi-warehouse operations.
 - Retail POS and online sales.
 - Inventory ledger and warehouse workflows.
@@ -244,7 +244,7 @@ The system supports:
 - HRM, attendance, leave, payroll, recruitment.
 - Strong RBAC, audit logs, subscription gating, and feature permissions.
 
-The system is designed for deterministic ERP behavior first: stock accuracy, financial correctness, tenant isolation, and auditable business workflows.
+The system is designed for deterministic ERP behavior first: stock accuracy, financial correctness, store isolation, and auditable business workflows.
 
 ---
 
@@ -252,17 +252,17 @@ The system is designed for deterministic ERP behavior first: stock accuracy, fin
 
 ### 2.1 Goals
 
-- Run thousands of tenants on a shared codebase with safe isolation.
+- Run thousands of stores on a shared codebase with safe isolation.
 - Cover order-to-cash, procure-to-pay, inventory-to-finance, HR-to-payroll lifecycles.
 - Make every business event auditable and reversible.
 - Make every cross-module event idempotent.
 - Keep storefront eCommerce fast while ERP back-office grows.
-- Allow each tenant to opt into modules by subscription tier.
+- Allow each store to opt into modules by subscription tier.
 
 ### 2.2 Non-Goals (v1)
 
 - AI/ML features (covered in a separate document).
-- Cross-tenant analytics or shared customer master.
+- Cross-store analytics or shared customer master.
 - Heavy data warehouse — analytics rely on Postgres + read replicas + materialized views.
 - Multi-region active-active database.
 
@@ -271,13 +271,13 @@ The system is designed for deterministic ERP behavior first: stock accuracy, fin
 ## 3. Design Principles
 
 1. **Ledger first.** Inventory and accounting are ledger-driven. Cached counters exist only as derived values.
-2. **Tenant isolation everywhere.** Every row, cache key, queue job, file path, and report carries `tenantId`.
+2. **Store isolation everywhere.** Every row, cache key, queue job, file path, and report carries `storeId`.
 3. **Strong consistency for money and stock.** Orders, reservations, movements, payments, and journals run inside DB transactions.
 4. **Event-driven but not event-dependent for correctness.** Source-of-truth records are written transactionally; side effects flow via outbox and queues.
 5. **Idempotent external operations.** Payment webhooks, POS sync, courier callbacks, queue jobs are safe to retry.
 6. **Human approval for high-risk workflows.** Stock adjustments, supplier payments, payroll, journal reversals, and credit overrides require permission + audit + approval.
 7. **Feature-gated by subscription.** Feature flags and RBAC permissions are separate concerns.
-8. **Boundary-respecting design.** Tenant > Branch > Warehouse hierarchy is enforced consistently in services, repositories, and APIs.
+8. **Boundary-respecting design.** Store > Branch > Warehouse hierarchy is enforced consistently in services, repositories, and APIs.
 9. **Reversibility.** Every business mutation must be reversible through audit/reversal paths.
 10. **Boring before clever.** Make the deterministic system work; add intelligence later.
 
@@ -287,9 +287,9 @@ The system is designed for deterministic ERP behavior first: stock accuracy, fin
 
 | Term | Meaning |
 | :--- | :--- |
-| **Tenant** | A business that uses the SaaS. Top-level isolation boundary. |
-| **Branch** | A physical or logical business location belonging to a tenant (store, office). |
-| **Warehouse** | A physical storage location owning stock. May belong to a branch or be tenant-level. |
+| **Store** | A business that uses the SaaS. Top-level isolation boundary. |
+| **Branch** | A physical or logical business location belonging to a store (store, office). |
+| **Warehouse** | A physical storage location owning stock. May belong to a branch or be store-level. |
 | **Bin** | A subdivision inside a warehouse (rack, shelf, zone). |
 | **Cashier shift** | An open POS session at a register, owned by one user inside a branch. |
 | **Stock reservation** | A commitment of stock for an order, not yet physically deducted. |
@@ -297,15 +297,15 @@ The system is designed for deterministic ERP behavior first: stock accuracy, fin
 | **Journal entry** | A balanced double-entry accounting record. |
 | **Outbox event** | A row written in the same DB transaction as a business mutation, later published as an event. |
 | **Idempotency key** | A client-provided value that prevents duplicate processing of the same logical request. |
-| **Feature gate** | A subscription-level check that the tenant is allowed to use a feature. |
+| **Feature gate** | A subscription-level check that the store is allowed to use a feature. |
 | **Permission** | An RBAC entitlement granting a user the right to perform an action. |
 | **Scope** | The branch/warehouse limit applied to a user's permissions. |
 
 ---
 
-# Part II — Boundaries (Tenant / Branch / Warehouse)
+# Part II — Boundaries (Store / Branch / Warehouse)
 
-> Boundaries are the most important rules in this ERP. They determine **who owns what**, **who can see what**, and **how data is allowed to flow between locations**. Almost every production incident in a multi-tenant ERP — wrong totals, leaked data, broken P&L, payroll miscredits — comes from a fuzzy boundary. This part defines them precisely.
+> Boundaries are the most important rules in this ERP. They determine **who owns what**, **who can see what**, and **how data is allowed to flow between locations**. Almost every production incident in a multi-store ERP — wrong totals, leaked data, broken P&L, payroll miscredits — comes from a fuzzy boundary. This part defines them precisely.
 
 **How to read Part II.** Sections §5–§8 define the *hierarchy* and *what belongs at each level*. Section §9 defines *user/customer/supplier scope within those levels*. Section §10 defines *operations that legally cross a boundary*. Section §11 defines *how the boundaries are enforced* in code, DB, cache, queue, and tests. Section §12 is the *authoritative ownership matrix* you can cite in PR reviews.
 
@@ -315,14 +315,14 @@ The system is designed for deterministic ERP behavior first: stock accuracy, fin
 
 ```mermaid
 flowchart TB
-  PL[Platform / Super Admin]:::platform --> T[Tenant]:::tenant
+  PL[Platform / Super Admin]:::platform --> T[Store]:::store
   T --> B1[Branch · Retail]:::branch
   T --> B2[Branch · HQ/Office]:::branch
-  T --> CAT[Catalog Master · tenant]:::master
-  T --> SUP[Suppliers Master · tenant]:::master
-  T --> CUST[Customers Master · tenant]:::master
-  T --> EMP[Employees Master · tenant]:::master
-  T --> COA[Chart of Accounts · tenant]:::master
+  T --> CAT[Catalog Master · store]:::master
+  T --> SUP[Suppliers Master · store]:::master
+  T --> CUST[Customers Master · store]:::master
+  T --> EMP[Employees Master · store]:::master
+  T --> COA[Chart of Accounts · store]:::master
   T --> WC[Central Warehouse · no branch]:::wh
   B1 --> WB1[Warehouse · branch back-room]:::wh
   B1 --> WB2[Warehouse · branch overflow]:::wh
@@ -332,7 +332,7 @@ flowchart TB
   T --> WV[Virtual Warehouse · in-transit]:::vwh
   T --> WD[Virtual Warehouse · dropship]:::vwh
   classDef platform fill:#1f2937,color:#fff,stroke:#111827
-  classDef tenant fill:#2563eb,color:#fff,stroke:#1d4ed8
+  classDef store fill:#2563eb,color:#fff,stroke:#1d4ed8
   classDef branch fill:#16a34a,color:#fff,stroke:#15803d
   classDef wh fill:#f59e0b,color:#111,stroke:#b45309
   classDef vwh fill:#fde68a,color:#111,stroke:#b45309,stroke-dasharray: 3 3
@@ -340,22 +340,22 @@ flowchart TB
   classDef master fill:#a78bfa,color:#fff,stroke:#7c3aed
 ```
 
-The chain is always `Platform → Tenant → Branch → Warehouse → Bin`, with two important *variations*:
+The chain is always `Platform → Store → Branch → Warehouse → Bin`, with two important *variations*:
 
 | Variation | Description | Used for |
 | :--- | :--- | :--- |
-| **Tenant-level warehouse** | A warehouse whose `branchId` is NULL — owned directly by the tenant. | Central fulfillment, online-only operation, in-transit/dropship virtual warehouses. |
-| **Branchless operation** | A tenant that has 0 branches (pure-online seller) operates entirely at tenant + warehouse level. | SMB e-commerce tier. |
+| **Store-level warehouse** | A warehouse whose `branchId` is NULL — owned directly by the store. | Central fulfillment, online-only operation, in-transit/dropship virtual warehouses. |
+| **Branchless operation** | A store that has 0 branches (pure-online seller) operates entirely at store + warehouse level. | SMB e-commerce tier. |
 | **Warehouseless branch** | A branch with no attached warehouse (consulting / service-only office). | Service businesses, holding-company branches. |
 
 ### 5.2 Boundary Cardinality Rules
 
 | From | To | Cardinality | Notes |
 | :--- | :--- | :--- | :--- |
-| Platform | Tenant | 1 → N | One platform owns many tenants. |
-| Tenant | Branch | 1 → N | A tenant may have 0…N branches. |
-| Tenant | Warehouse | 1 → N | Every warehouse belongs to exactly one tenant. |
-| Branch | Warehouse | 0…1 → 0…N | A warehouse may belong to a branch or be tenant-level. A branch may have 0…N warehouses. |
+| Platform | Store | 1 → N | One platform owns many stores. |
+| Store | Branch | 1 → N | A store may have 0…N branches. |
+| Store | Warehouse | 1 → N | Every warehouse belongs to exactly one store. |
+| Branch | Warehouse | 0…1 → 0…N | A warehouse may belong to a branch or be store-level. A branch may have 0…N warehouses. |
 | Warehouse | Bin | 1 → 0…N | Bins are optional refinement of a warehouse. |
 | Branch | Branch | — | Branches do not nest. (No "sub-branch" hierarchy.) |
 | Warehouse | Warehouse | — | Warehouses do not nest. (Use bins for sub-locations.) |
@@ -367,11 +367,11 @@ Common confusions worth eliminating up-front:
 | Wrong mental model | Correct model |
 | :--- | :--- |
 | "Branches own stock" | **Warehouses** own stock. Branches are reporting/operational dimensions. A branch's stock figure is a *rollup* of its attached warehouses. |
-| "Each branch has its own product master" | Catalog is **tenant-wide**. Branch-specific availability is modeled via warehouse stock + branch-specific price books, not duplicated SKUs. |
-| "Each branch has its own customers" | Customers are **tenant-wide**. `preferredBranchId` is just a marketing tag. |
-| "Each branch has its own Chart of Accounts" | CoA is **tenant-wide**. Branch P&L is a reporting *dimension* on journal lines, not a separate ledger. |
-| "Warehouses have their own P&L" | Warehouses have **stock-value summaries**, not P&L. P&L lives at tenant level with branch dimension. |
-| "Multi-company under one tenant" | A *legal multi-company group* is modeled as multiple **tenants**, federated only at the platform level. One tenant = one set of books. |
+| "Each branch has its own product master" | Catalog is **store-wide**. Branch-specific availability is modeled via warehouse stock + branch-specific price books, not duplicated SKUs. |
+| "Each branch has its own customers" | Customers are **store-wide**. `preferredBranchId` is just a marketing tag. |
+| "Each branch has its own Chart of Accounts" | CoA is **store-wide**. Branch P&L is a reporting *dimension* on journal lines, not a separate ledger. |
+| "Warehouses have their own P&L" | Warehouses have **stock-value summaries**, not P&L. P&L lives at store level with branch dimension. |
+| "Multi-company under one store" | A *legal multi-company group* is modeled as multiple **stores**, federated only at the platform level. One store = one set of books. |
 
 ### 5.4 Lifecycle States Per Level
 
@@ -379,7 +379,7 @@ Every boundary level has a finite state machine. Lifecycle transitions are gated
 
 | Level | States | Transitions |
 | :--- | :--- | :--- |
-| **Tenant** | `PROVISIONING` → `TRIAL` → `ACTIVE` → `SUSPENDED` → `DELETED (soft)` | `SUSPENDED` blocks all admin writes except billing; `DELETED` triggers anonymization. |
+| **Store** | `PROVISIONING` → `TRIAL` → `ACTIVE` → `SUSPENDED` → `DELETED (soft)` | `SUSPENDED` blocks all admin writes except billing; `DELETED` triggers anonymization. |
 | **Branch** | `DRAFT` → `ACTIVE` → `SUSPENDED` → `CLOSED` | `SUSPENDED` rejects new POS shifts/orders; `CLOSED` is final, retains history, blocks all writes. |
 | **Warehouse** | `DRAFT` → `ACTIVE` → `FROZEN` → `CLOSED` | `FROZEN` rejects movements (used during stocktake); `CLOSED` requires zero on-hand and zero open transfers. |
 | **Bin** | `ACTIVE` → `INACTIVE` | Inactive bins reject put-away. |
@@ -393,11 +393,11 @@ Closure invariants:
 
 ---
 
-## 6. Tenant Boundary
+## 6. Store Boundary
 
-> **Tenant is the strict isolation boundary.** No row, cache key, file, queue job, search-index document, log line, or report may cross it. Crossing this boundary is a security incident, not a feature.
+> **Store is the strict isolation boundary.** No row, cache key, file, queue job, search-index document, log line, or report may cross it. Crossing this boundary is a security incident, not a feature.
 
-### 6.1 What Lives at Tenant Level
+### 6.1 What Lives at Store Level
 
 | Category | Items |
 | :--- | :--- |
@@ -409,56 +409,56 @@ Closure invariants:
 | **Audit & compliance** | Audit logs, retention policies, data-export requests. |
 | **Content & marketing** | Storefront settings, themes, page-builder pages, FAQs, loyalty program config, campaigns. |
 | **Routing & domains** | Subdomain, custom-domain mapping, DNS verification status. |
-| **Per-tenant configuration** | Email/SMS/push provider keys (encrypted), payment-gateway credentials, courier credentials. |
+| **Per-store configuration** | Email/SMS/push provider keys (encrypted), payment-gateway credentials, courier credentials. |
 
-### 6.2 Tenant-Level Rules
+### 6.2 Store-Level Rules
 
-1. **Every tenant-owned table includes `tenant_id uuid NOT NULL`** and at least one index leading with `tenant_id`.
-2. **Tenant context derivation order:** (a) authenticated JWT claim, (b) request hostname (subdomain/custom domain), (c) explicit super-admin override header on platform routes only. **Never** from request body, query string, or user-supplied header on tenant routes.
-3. **No tenant ID in tenant-facing URLs.** Routes are `/admin/...` and `/store/...`, never `/admin/{tenantId}/...`. Tenant is resolved server-side.
-4. **Cache, queue, file, search namespaces** all start with `t:{tenantId}:` / `t/{tenantId}/` / `t-{tenantId}-` — see §11.4.
-5. **Cross-tenant joins are forbidden in app code.** Only platform-admin SQL or background jobs (with explicit super-admin auth) may aggregate across tenants.
-6. **Tenant deletion is logical** — `tenant.status = DELETED`, `tenant.deleted_at = now()`. A retention worker anonymizes PII after grace period and preserves financial records per GAAP/region rules.
-7. **Tenant suspension** does not delete data; it only blocks application writes (read may remain for the billing-reactivation flow).
+1. **Every store-owned table includes `store_id uuid NOT NULL`** and at least one index leading with `store_id`.
+2. **Store context derivation order:** (a) authenticated JWT claim, (b) request hostname (subdomain/custom domain), (c) explicit super-admin override header on platform routes only. **Never** from request body, query string, or user-supplied header on store routes.
+3. **No store ID in store-facing URLs.** Routes are `/admin/...` and `/store/...`, never `/admin/{storeId}/...`. Store is resolved server-side.
+4. **Cache, queue, file, search namespaces** all start with `t:{storeId}:` / `t/{storeId}/` / `t-{storeId}-` — see §11.4.
+5. **Cross-store joins are forbidden in app code.** Only platform-admin SQL or background jobs (with explicit super-admin auth) may aggregate across stores.
+6. **Store deletion is logical** — `store.status = DELETED`, `store.deleted_at = now()`. A retention worker anonymizes PII after grace period and preserves financial records per GAAP/region rules.
+7. **Store suspension** does not delete data; it only blocks application writes (read may remain for the billing-reactivation flow).
 
-### 6.3 Master Data Inside a Tenant
+### 6.3 Master Data Inside a Store
 
-A single tenant has **one master record per business entity**, not one per branch.
+A single store has **one master record per business entity**, not one per branch.
 
-| Entity | One per tenant | Branch link | Notes |
+| Entity | One per store | Branch link | Notes |
 | :--- | :--- | :--- | :--- |
-| Customer | ✅ | `preferredBranchId` (informational) | A customer can shop at any branch. Loyalty/wallet/AR are tenant-wide. |
-| Supplier | ✅ | None | A supplier serves any branch/warehouse in the tenant. AP ledger is tenant-wide. |
+| Customer | ✅ | `preferredBranchId` (informational) | A customer can shop at any branch. Loyalty/wallet/AR are store-wide. |
+| Supplier | ✅ | None | A supplier serves any branch/warehouse in the store. AP ledger is store-wide. |
 | Employee | ✅ | `defaultBranchId` (assignment) | An employee may rotate across branches; HR profile is single. |
-| Product / Variant | ✅ | None | One SKU per tenant. Branch-specific pricing → price books. Branch-specific availability → per-warehouse stock. |
+| Product / Variant | ✅ | None | One SKU per store. Branch-specific pricing → price books. Branch-specific availability → per-warehouse stock. |
 | Chart of Accounts | ✅ | None | Branch shows up as a **dimension** on journal lines, never as a parallel CoA. |
 | Tax codes | ✅ | None | Branch may *select* applicable tax codes via region, not own them. |
 
-### 6.4 Tenant Uniqueness Invariants
+### 6.4 Store Uniqueness Invariants
 
-Composite uniqueness rules that prevent cross-tenant collisions and enable safe per-tenant business keys:
+Composite uniqueness rules that prevent cross-store collisions and enable safe per-store business keys:
 
 ```sql
--- Business keys are unique INSIDE a tenant, not globally
-CREATE UNIQUE INDEX uq_product_sku_tenant
-  ON products (tenant_id, sku) WHERE deleted_at IS NULL AND sku IS NOT NULL;
+-- Business keys are unique INSIDE a store, not globally
+CREATE UNIQUE INDEX uq_product_sku_store
+  ON products (store_id, sku) WHERE deleted_at IS NULL AND sku IS NOT NULL;
 
-CREATE UNIQUE INDEX uq_customer_code_tenant
-  ON customers (tenant_id, code) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_customer_code_store
+  ON customers (store_id, code) WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX uq_supplier_code_tenant
-  ON suppliers (tenant_id, code) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_supplier_code_store
+  ON suppliers (store_id, code) WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX uq_branch_code_tenant
-  ON branches (tenant_id, code) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_branch_code_store
+  ON branches (store_id, code) WHERE deleted_at IS NULL;
 
-CREATE UNIQUE INDEX uq_warehouse_code_tenant
-  ON warehouses (tenant_id, code) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_warehouse_code_store
+  ON warehouses (store_id, code) WHERE deleted_at IS NULL;
 ```
 
-Counter-example (a real bug we must prevent): a globally unique `products.sku` index would let one tenant block another from ever using SKU `IPHONE-15`.
+Counter-example (a real bug we must prevent): a globally unique `products.sku` index would let one store block another from ever using SKU `IPHONE-15`.
 
-### 6.5 Tenant Subscription ↔ Boundary Interaction
+### 6.5 Store Subscription ↔ Boundary Interaction
 
 Boundaries are *gated by subscription tier*. The same boundary code runs everywhere; only access is shaped by the plan.
 
@@ -470,15 +470,15 @@ Boundaries are *gated by subscription tier*. The same boundary code runs everywh
 
 Creating the `(N+1)th` branch returns `FEATURE_LIMIT_EXCEEDED` from the `SubscriptionGuard`/usage-counter, not from the branch service.
 
-### 6.6 Forbidden Patterns at Tenant Level
+### 6.6 Forbidden Patterns at Store Level
 
 | ❌ Do not | ✅ Do instead |
 | :--- | :--- |
-| Put `branchId` on the products table to make "branch-specific products" | Use one tenant-wide SKU + per-warehouse stock + per-branch price book. |
-| Read `tenantId` from the request body | Read it from `RequestContextDto` (derived from JWT/host). |
-| Re-use a UUID across two tenants in any column | Even soft-collisions in cache keys count — always prefix with `t:{tenantId}:`. |
-| Hard-delete a tenant | Soft delete; let the retention worker anonymize. |
-| Create a "super tenant" who can see everyone | Use platform/super-admin routes; never grant cross-tenant scope to any tenant user. |
+| Put `branchId` on the products table to make "branch-specific products" | Use one store-wide SKU + per-warehouse stock + per-branch price book. |
+| Read `storeId` from the request body | Read it from `RequestContextDto` (derived from JWT/host). |
+| Re-use a UUID across two stores in any column | Even soft-collisions in cache keys count — always prefix with `t:{storeId}:`. |
+| Hard-delete a store | Soft delete; let the retention worker anonymize. |
+| Create a "super store" who can see everyone | Use platform/super-admin routes; never grant cross-store scope to any store user. |
 
 ---
 
@@ -492,7 +492,7 @@ Creating the `(N+1)th` branch returns `FEATURE_LIMIT_EXCEEDED` from the `Subscri
 | :--- | :--- |
 | The physical/logical location where a sale happens. | A separate set of books. |
 | The reporting dimension that answers "How did branch X perform?" | An owner of catalog, customers, or suppliers. |
-| The scope a user is restricted to. | A wall around warehouses (a warehouse may be tenant-level or shared via routing). |
+| The scope a user is restricted to. | A wall around warehouses (a warehouse may be store-level or shared via routing). |
 | Where POS registers and shifts live. | A nested hierarchy (no sub-branches). |
 
 ### 7.2 What Lives at Branch Level
@@ -508,8 +508,8 @@ Creating the `(N+1)th` branch returns `FEATURE_LIMIT_EXCEEDED` from the `Subscri
 
 ### 7.3 Branch-Level Rules
 
-1. A branch belongs to **exactly one tenant**.
-2. A branch is **not** an isolation boundary; it is a **scope and dimension** boundary inside a tenant.
+1. A branch belongs to **exactly one store**.
+2. A branch is **not** an isolation boundary; it is a **scope and dimension** boundary inside a store.
 3. A branch user without explicit cross-branch permission cannot read or write other branches' transactions.
 4. A branch cannot own master data (products, customers, suppliers, accounts).
 5. A branch cannot own stock — stock is owned by warehouses; branch stock = sum of attached warehouses.
@@ -522,27 +522,27 @@ Most "branch ownership" in the system is actually **dimensional attribution**, n
 
 ```mermaid
 flowchart LR
-  J[journal_entries · tenant-scoped]:::tenant --> JL[ledger_entries · tenant-scoped]:::tenant
+  J[journal_entries · store-scoped]:::store --> JL[ledger_entries · store-scoped]:::store
   JL -.->|branch_id dim| BRA[Branch A P&L]:::dim
   JL -.->|branch_id dim| BRB[Branch B P&L]:::dim
-  classDef tenant fill:#2563eb,color:#fff
+  classDef store fill:#2563eb,color:#fff
   classDef dim fill:#fde68a,color:#111,stroke-dasharray: 3 3
 ```
 
-- The **table** is tenant-scoped (ownership).
+- The **table** is store-scoped (ownership).
 - The **column** `branch_id` is a *dimension* used by reports (`GROUP BY branch_id`).
-- Reports never have to read from a per-branch ledger; they slice the single tenant ledger.
+- Reports never have to read from a per-branch ledger; they slice the single store ledger.
 
 This pattern applies to: `ledger_entries.branchId`, `journal_entries.branchId` (optional), `expenses.branchId`, `payroll_payslips.branchId`, `attendance_logs.branchId`.
 
 ### 7.5 Branch and Customer
 
-- Customer profile is **tenant-wide**; a customer can shop at any branch.
+- Customer profile is **store-wide**; a customer can shop at any branch.
 - `customer.preferredBranchId` is *informational metadata* used by:
   - Branch-targeted marketing campaigns.
   - Default fulfillment branch for online orders (overridable).
-  - Branch-tier loyalty rules (only if a tenant enables branch-specific loyalty).
-- Customer credit (AR), wallet, loyalty points are **tenant-wide** — they do not split per branch.
+  - Branch-tier loyalty rules (only if a store enables branch-specific loyalty).
+- Customer credit (AR), wallet, loyalty points are **store-wide** — they do not split per branch.
 
 ### 7.6 Branch and Orders
 
@@ -583,7 +583,7 @@ If pre-conditions fail, return `BRANCH_CLOSE_BLOCKED` with the blocking record I
 | Create branch-specific SKUs (`IPHONE-15-BRANCH-A`) | One SKU + warehouse-specific stock + price book if pricing differs. |
 | Duplicate the Chart of Accounts per branch | Single CoA + `branch_id` dimension on ledger lines. |
 | Store stock totals on the branch row | Stock totals are computed from warehouses owned by the branch. |
-| Make customers "belong" to a branch | Tenant-wide customer + `preferredBranchId` tag. |
+| Make customers "belong" to a branch | Store-wide customer + `preferredBranchId` tag. |
 | Hard-delete a closed branch with historical orders | Set `branch.status = CLOSED`; keep `branch_id` on history rows. |
 
 ---
@@ -603,36 +603,36 @@ If pre-conditions fail, return `BRANCH_CLOSE_BLOCKED` with the blocking record I
 | **Movements** | Stock transfer source/destination, adjustments, cycle counts. |
 | **Sub-structure** | Bins / racks / zones / aisles. |
 | **Batch / lot tracking** | Per-warehouse batch records for FEFO/FIFO depletion. |
-| **Costing** | Weighted average cost (WAC) per `(tenant, variant, warehouse)`. |
+| **Costing** | Weighted average cost (WAC) per `(store, variant, warehouse)`. |
 
 ### 8.2 Warehouse-Level Rules
 
-1. A warehouse belongs to **exactly one tenant**.
-2. A warehouse may belong to **one branch or to the tenant directly** (`warehouse.branchId` nullable).
-3. Every physical stock movement row has `tenantId` + `variantId` + `warehouseId`.
-4. Every reservation row has `tenantId` + `variantId` + `warehouseId`.
+1. A warehouse belongs to **exactly one store**.
+2. A warehouse may belong to **one branch or to the store directly** (`warehouse.branchId` nullable).
+3. Every physical stock movement row has `storeId` + `variantId` + `warehouseId`.
+4. Every reservation row has `storeId` + `variantId` + `warehouseId`.
 5. The `products` / `product_variants` table **must not store live stock totals**; if a cached counter exists (e.g. `variant.stock` for storefront speed), it is a *derived value*, never the source of truth.
 6. **Negative stock is rejected by default.** It only succeeds if (a) the variant has `allowNegativeStock = true` (consignment/backorder use cases) **and** (b) an explicit approved override exists.
-7. A warehouse cannot belong to two branches. To "share" a warehouse across branches, leave `branchId = NULL` (tenant-level).
+7. A warehouse cannot belong to two branches. To "share" a warehouse across branches, leave `branchId = NULL` (store-level).
 8. Inter-warehouse moves are *documents* (`stock_transfer` + lines), never silent UPDATEs.
 
 ### 8.3 Warehouse and Reporting
 
-Reporting rolls **up** from warehouse to branch to tenant:
+Reporting rolls **up** from warehouse to branch to store:
 
 ```mermaid
 flowchart LR
   W1[Warehouse W1]:::wh --> B1[Branch B1 stock view]:::rollup
   W2[Warehouse W2]:::wh --> B1
-  W3[Warehouse W3 · tenant-level]:::wh --> TROLL[Tenant stock view]:::rollup
+  W3[Warehouse W3 · store-level]:::wh --> TROLL[Store stock view]:::rollup
   B1 --> TROLL
   classDef wh fill:#f59e0b,color:#111
   classDef rollup fill:#fde68a,color:#111,stroke-dasharray: 3 3
 ```
 
 - "Stock at Branch B1" = SUM of on-hand across warehouses with `branchId = B1`.
-- "Stock at Tenant T" = SUM of on-hand across all warehouses with `tenantId = T`.
-- Stock value (`qty × WAC`) is a tenant-level financial number, decomposable to warehouse.
+- "Stock at Store T" = SUM of on-hand across all warehouses with `storeId = T`.
+- Stock value (`qty × WAC`) is a store-level financial number, decomposable to warehouse.
 
 ### 8.4 Warehouse Types
 
@@ -650,8 +650,8 @@ Virtual warehouses keep the rule "all stock lives in a warehouse" true even when
 ### 8.5 Bins
 
 - Bins are an **optional refinement** of warehouse stock for high-density picking.
-- Bin-level stock is still warehouse-scoped: `(tenant, variant, warehouse, bin)`.
-- A tenant can enable bin tracking per warehouse incrementally.
+- Bin-level stock is still warehouse-scoped: `(store, variant, warehouse, bin)`.
+- A store can enable bin tracking per warehouse incrementally.
 - Pick lists may target bins; receiving may put away to bins.
 - A bin does **not** create a new ownership boundary — adjustments, transfers, and reservations are still warehouse-level.
 
@@ -685,14 +685,14 @@ If pre-conditions fail, return `WAREHOUSE_CLOSE_BLOCKED` with the blocking IDs a
 | Update `variant.stock` directly | Insert a row in `inventory_ledger`; let the projection recompute. |
 | Move stock between warehouses with an `UPDATE` | Create a `stock_transfer` document; emit `TRANSFER_OUT` + `TRANSFER_IN` rows. |
 | Allow a single `inventory_ledger` row to belong to two warehouses | Each row is exactly one warehouse; transfers are *two* rows. |
-| Share a `bin` across warehouses | Bins are warehouse-scoped (`UNIQUE (tenant_id, warehouse_id, code)`). |
+| Share a `bin` across warehouses | Bins are warehouse-scoped (`UNIQUE (store_id, warehouse_id, code)`). |
 | Let a virtual warehouse have a default cashier | Virtual warehouses have no people, just movements. |
 
 ---
 
 ## 9. User & Customer Scope Inside Boundaries
 
-> **Scope** is the per-user, per-customer, or per-supplier *slice of the tenant* that a request operates inside. It is separate from **role** (what the user can *do*) and from **subscription** (whether the feature is enabled at all).
+> **Scope** is the per-user, per-customer, or per-supplier *slice of the store* that a request operates inside. It is separate from **role** (what the user can *do*) and from **subscription** (whether the feature is enabled at all).
 
 ### 9.1 The Three Independent Access Layers
 
@@ -717,7 +717,7 @@ flowchart LR
 
 | Layer | Question | Answered by |
 | :--- | :--- | :--- |
-| Subscription | Is the tenant allowed this feature at all? | `SubscriptionGuard` + subscription plan features |
+| Subscription | Is the store allowed this feature at all? | `SubscriptionGuard` + subscription plan features |
 | Permission | Is the user allowed this action? | `PermissionsGuard` + `user_role_assignments` + `permissions` |
 | Scope | Can the user touch this branch/warehouse? | `BranchScopeGuard` + `WarehouseScopeGuard` + `user.branchId` / role assignment scope |
 
@@ -729,9 +729,9 @@ Each staff user resolves to a `RequestContextDto`:
 type ScopeMode = 'ALL' | 'EXPLICIT' | 'NONE'
 
 interface RequestContextDto {
-  tenantId: string
+  storeId: string
   userId: string
-  userRole: 'SUPER_ADMIN' | 'TENANT_OWNER' | 'TENANT_ADMIN' | 'STAFF'
+  userRole: 'SUPER_ADMIN' | 'STORE_OWNER' | 'STORE_ADMIN' | 'STAFF'
   branchScope: { mode: ScopeMode; allowedBranchIds: string[] }
   warehouseScope: { mode: ScopeMode; allowedWarehouseIds: string[] }
   activeBranchId?: string     // from X-Branch-Id header, validated against scope
@@ -744,16 +744,16 @@ interface RequestContextDto {
 
 | Mode | Meaning | Typical role |
 | :--- | :--- | :--- |
-| `ALL` | The user may operate on every branch/warehouse in the tenant. The "Branch Switcher" UI is enabled. | Tenant Owner, Tenant Admin, Accountant (often). |
+| `ALL` | The user may operate on every branch/warehouse in the store. The "Branch Switcher" UI is enabled. | Store Owner, Store Admin, Accountant (often). |
 | `EXPLICIT` | The user is restricted to a non-empty list of IDs. Requests outside the list return `SCOPE_DENIED`. | Branch Manager, Warehouse Clerk, Regional Manager (multiple branches). |
-| `NONE` | The user has no operational scope (read-only at tenant-master level, e.g. a Compliance Auditor). | Auditor, Accountant with read-only finance, viewer roles. |
+| `NONE` | The user has no operational scope (read-only at store-master level, e.g. a Compliance Auditor). | Auditor, Accountant with read-only finance, viewer roles. |
 
 ### 9.3 Scope Inheritance Rules
 
 When `warehouseScope.mode = NONE` (i.e. unset), the system **derives warehouse scope from branch scope**:
 
 - `branchScope.mode = ALL` ⇒ `warehouseScope = ALL` (effective).
-- `branchScope.mode = EXPLICIT` with `[B1]` ⇒ effective `warehouseScope = warehouses where branchId IN (B1) OR branchId IS NULL` *(tenant-level warehouses are shared)*.
+- `branchScope.mode = EXPLICIT` with `[B1]` ⇒ effective `warehouseScope = warehouses where branchId IN (B1) OR branchId IS NULL` *(store-level warehouses are shared)*.
 - `branchScope.mode = NONE` and `warehouseScope.mode = NONE` ⇒ no operational scope; only master-data reads if permission allows.
 
 Explicit warehouse scope **always wins over derivation**. A Warehouse Clerk with `branchScope = NONE` and `warehouseScope = EXPLICIT [W1]` can act on W1 even though they have no branch scope at all.
@@ -762,10 +762,10 @@ Explicit warehouse scope **always wins over derivation**. A Warehouse Clerk with
 
 | Persona | `branchScope` | `warehouseScope` | Notes |
 | :--- | :--- | :--- | :--- |
-| **Tenant Owner** | `ALL` | `ALL` | Cannot self-revoke; permission set is widest. |
-| **Tenant Admin** | `ALL` | `ALL` | Like Owner but optional restrictions on finance/HR. |
-| **Accountant** | `ALL` | `NONE` | Tenant-wide finance read/write; no warehouse ops. |
-| **Branch Manager (single)** | `EXPLICIT [B1]` | derived (B1's warehouses + tenant warehouses) | Branch P&L, staff, POS oversight. |
+| **Store Owner** | `ALL` | `ALL` | Cannot self-revoke; permission set is widest. |
+| **Store Admin** | `ALL` | `ALL` | Like Owner but optional restrictions on finance/HR. |
+| **Accountant** | `ALL` | `NONE` | Store-wide finance read/write; no warehouse ops. |
+| **Branch Manager (single)** | `EXPLICIT [B1]` | derived (B1's warehouses + store warehouses) | Branch P&L, staff, POS oversight. |
 | **Regional Manager** | `EXPLICIT [B1, B2, B3]` | derived | Same but multi-branch. |
 | **Cashier** | `EXPLICIT [B1]` | derived (read-only) | POS write permissions only. |
 | **Warehouse Clerk** | `NONE` | `EXPLICIT [W1]` | Receive/transfer/adjust at W1 only. |
@@ -781,25 +781,25 @@ A user with `branchScope = EXPLICIT [B1, B2, B3]` can be *currently acting on* o
 | :--- | :--- | :--- | :--- |
 | Multi-branch manager picks one | `[B1, B2]` | `B1` | `activeBranchId = B1` |
 | Tries to switch outside scope | `[B1, B2]` | `B3` | `403 SCOPE_DENIED` |
-| Tenant Owner (`ALL`) reads everywhere | `ALL` | none | All-branches view |
+| Store Owner (`ALL`) reads everywhere | `ALL` | none | All-branches view |
 | Cashier without header | `[B1]` | none | `activeBranchId = B1` auto-bound |
 
 POS sales, attendance punches, and any branch-bound write **must have `activeBranchId` set**; the guard rejects ambiguous requests with `BRANCH_CONTEXT_REQUIRED`.
 
 ### 9.6 Customer Scope
 
-- A customer is **tenant-wide** and may shop at any branch.
+- A customer is **store-wide** and may shop at any branch.
 - `customer.preferredBranchId` is *metadata only*; it never blocks cross-branch purchase.
-- Customer credit limit (AR), wallet balance, and loyalty points are **tenant-wide**.
-- Branch-specific loyalty rules (if a tenant enables them) are *campaign-level* — the campaign rule filters by branch, the ledger itself is single.
+- Customer credit limit (AR), wallet balance, and loyalty points are **store-wide**.
+- Branch-specific loyalty rules (if a store enables them) are *campaign-level* — the campaign rule filters by branch, the ledger itself is single.
 - A customer cannot be "transferred" between branches; only `preferredBranchId` is editable.
 
 ### 9.7 Supplier Scope
 
-- A supplier is **tenant-wide**.
-- A purchase order can be raised from any branch/warehouse with permission; PO header is tenant-level, while GRN(s) and warehouse on PO lines define *where* delivery lands.
-- Supplier AP ledger is **tenant-wide** (one balance per supplier).
-- Branch-specific supplier price overrides (if tenant enables them) live on the supplier-product-price table, not on a new supplier row.
+- A supplier is **store-wide**.
+- A purchase order can be raised from any branch/warehouse with permission; PO header is store-level, while GRN(s) and warehouse on PO lines define *where* delivery lands.
+- Supplier AP ledger is **store-wide** (one balance per supplier).
+- Branch-specific supplier price overrides (if store enables them) live on the supplier-product-price table, not on a new supplier row.
 
 ---
 
@@ -807,18 +807,18 @@ POS sales, attendance punches, and any branch-bound write **must have `activeBra
 
 > Operations crossing a natural boundary are **first-class business documents**, not silent multi-row updates. Each requires (a) an explicit service method, (b) an explicit permission, (c) an audit trail, and (d) idempotent execution.
 
-### 10.1 Cross-Tenant — Strictly Forbidden in Application Code
+### 10.1 Cross-Store — Strictly Forbidden in Application Code
 
-No application code path is allowed to read or write across tenants. This includes:
+No application code path is allowed to read or write across stores. This includes:
 
-- No JOIN across `tenant_id` boundaries.
-- No queue worker that reads jobs of mixed tenants without per-tenant scoping inside the handler.
-- No cache key that combines tenants.
-- No report that aggregates across tenants for a tenant user.
+- No JOIN across `store_id` boundaries.
+- No queue worker that reads jobs of mixed stores without per-store scoping inside the handler.
+- No cache key that combines stores.
+- No report that aggregates across stores for a store user.
 
-Cross-tenant operations exist **only** at the platform level via super-admin routes / cron jobs (e.g. billing rollups, regional tax-template seeding) and are subject to separate audit logs.
+Cross-store operations exist **only** at the platform level via super-admin routes / cron jobs (e.g. billing rollups, regional tax-template seeding) and are subject to separate audit logs.
 
-### 10.2 Cross-Branch Operations (Within One Tenant)
+### 10.2 Cross-Branch Operations (Within One Store)
 
 | Operation | Boundary crossed | Required permission | Audit |
 | :--- | :--- | :--- | :--- |
@@ -828,16 +828,16 @@ Cross-tenant operations exist **only** at the platform level via super-admin rou
 | Multi-branch payroll batch | HR ↔ many branches | `hrm.payroll.process` | Each payslip carries its own `branchId` for cost attribution. |
 | Cross-branch promotion / coupon | Marketing ↔ many branches | `marketing.campaign.publish` | Campaign rule states applicable branches; audit on creation. |
 
-### 10.3 Cross-Warehouse Operations (Within One Tenant)
+### 10.3 Cross-Warehouse Operations (Within One Store)
 
 | Operation | Boundary crossed | Required permission | Document type |
 | :--- | :--- | :--- | :--- |
 | **Stock Transfer** | Warehouse ↔ Warehouse | `inventory.transfer.create` + `inventory.transfer.approve` | `stock_transfer` header with `status DRAFT → APPROVED → IN_TRANSIT → RECEIVED` |
 | **Cross-warehouse picking for one order** | Warehouse ↔ Warehouse | `fulfillment.split_shipment.create` | Multi-source fulfillment task; one shipment per source warehouse. |
-| **Goods-In to tenant warehouse, transferred out to branch warehouse** | Warehouse ↔ Warehouse | Standard `inventory.transfer.*` | Two-step: GRN at central + transfer to branch. |
+| **Goods-In to store warehouse, transferred out to branch warehouse** | Warehouse ↔ Warehouse | Standard `inventory.transfer.*` | Two-step: GRN at central + transfer to branch. |
 | **Cycle-count discrepancy adjustment** | Warehouse-internal only | `inventory.adjust.approve` | `inventory_adjustment` document; never an UPDATE. |
 
-**Reservation invariant during transfers.** When a stock transfer enters `IN_TRANSIT`, the source warehouse's ledger receives a `TRANSFER_OUT` row; the destination warehouse does not yet have it. To avoid the "stock in space" problem, the transfer **may** post to a virtual `TRANSIT` warehouse (§8.4) so the tenant's total stock never appears to drop. Tenants choose this via a per-tenant setting.
+**Reservation invariant during transfers.** When a stock transfer enters `IN_TRANSIT`, the source warehouse's ledger receives a `TRANSFER_OUT` row; the destination warehouse does not yet have it. To avoid the "stock in space" problem, the transfer **may** post to a virtual `TRANSIT` warehouse (§8.4) so the store's total stock never appears to drop. Stores choose this via a per-store setting.
 
 ### 10.4 Worked Examples (Concrete Rows)
 
@@ -845,32 +845,32 @@ Cross-tenant operations exist **only** at the platform level via super-admin rou
 
 ```
 Order row:
-  tenant_id   = T1
+  store_id   = T1
   branch_id   = B1
   source      = POS
   shift_id    = SH-2025-01-01-001
   client_sale_id = c0ffee... (idempotency)
 
 Inventory ledger (stock leaves W1):
-  tenant_id    = T1
+  store_id    = T1
   variant_id   = V1
   warehouse_id = W1
   qty_delta    = -2
   ref_type     = ORDER
   ref_id       = O1
 
-Journal entries (tenant-scoped, branch dim):
+Journal entries (store-scoped, branch dim):
   DR Cash (1010)        amount=200  branch_id=B1
   CR Revenue (4000)     amount=200  branch_id=B1
   DR COGS (5000)        amount=120  branch_id=B1
   CR Inventory (1100)   amount=120  branch_id=B1
 ```
 
-**Example B — Online order, customer with `preferredBranchId = B1`, routed to ship from Warehouse W3 (tenant-level)**
+**Example B — Online order, customer with `preferredBranchId = B1`, routed to ship from Warehouse W3 (store-level)**
 
 ```
 Order row:
-  tenant_id   = T1
+  store_id   = T1
   branch_id   = NULL (set later by routing decision)
   source      = WEBSITE
   customer_id = C1   (preferredBranchId metadata is read, not enforced)
@@ -880,7 +880,7 @@ Routing decision:
   → fulfillment_task.warehouse_id = W3
 
 Inventory ledger:
-  warehouse_id = W3  (tenant-level)
+  warehouse_id = W3  (store-level)
 
 Journal entries:
   Revenue branch_id = B2 (the assigned fulfillment branch)
@@ -891,7 +891,7 @@ Journal entries:
 
 ```
 Transfer header:
-  tenant_id = T1
+  store_id = T1
   source_warehouse_id = W1
   destination_warehouse_id = W2
   status = IN_TRANSIT
@@ -903,7 +903,7 @@ Ledger entries (three rows, atomic):
   WT: -10 (TRANSFER_OUT,   ref=TRF-001)
   W2: +10 (TRANSFER_IN,    ref=TRF-001)
 
-Tenant total stock = unchanged throughout.
+Store total stock = unchanged throughout.
 ```
 
 **Example D — POS Return at Branch B2 of a sale originally made at Branch B1**
@@ -936,7 +936,7 @@ This dual-branch posting is allowed because journal lines, not headers, carry th
 | :--- | :--- |
 | `UPDATE products SET branch_id = X` to "move products to a branch" | Products don't have a branch boundary. |
 | `INSERT INTO inventory_ledger (warehouse_id = NULL, branch_id = B1)` | Physical movements require a warehouse; branch is dimension. |
-| Reading another tenant's row for a "platform analytics" feature in tenant scope | Platform analytics live on super-admin routes only. |
+| Reading another store's row for a "platform analytics" feature in store scope | Platform analytics live on super-admin routes only. |
 | Silent cross-branch fulfillment without `cross_branch.route` permission | Skips audit and accountability. |
 | Posting a refund directly against the original-branch drawer when the return happened at another branch | Misstates cash position; use dual-branch journal lines (Example D). |
 
@@ -944,7 +944,7 @@ This dual-branch posting is allowed because journal lines, not headers, carry th
 
 Every cross-boundary operation writes at least one `audit_log` entry with:
 
-- `tenantId`, `userId`, `actionCode` (e.g. `stock_transfer.approve`).
+- `storeId`, `userId`, `actionCode` (e.g. `stock_transfer.approve`).
 - `sourceContext` (`branchId` / `warehouseId` the user was acting from).
 - `targetContext` (the other side of the boundary).
 - `reason` (required for high-risk actions).
@@ -961,7 +961,7 @@ Every cross-boundary operation writes at least one `audit_log` entry with:
 ```mermaid
 flowchart TB
   L1[1 · HTTP guard chain]:::g --> L2[2 · Service · RequestContextDto]:::g
-  L2 --> L3[3 · Repository · tenant filter]:::g
+  L2 --> L3[3 · Repository · store filter]:::g
   L3 --> L4[4 · Database · composite FK / unique]:::g
   L4 --> L5[5 · Cache / Queue / File / Search prefixes]:::g
   classDef g fill:#2563eb,color:#fff
@@ -969,61 +969,61 @@ flowchart TB
 
 | Layer | Mechanism | What it stops |
 | :--- | :--- | :--- |
-| 1 | `Tenant middleware` + `JwtAuthGuard` + `SubscriptionGuard` + `PermissionsGuard` + `BranchScopeGuard` + `WarehouseScopeGuard` | Most unauthorized requests, plan-locked features, scope violations. |
-| 2 | Services read `tenantId` / `branchId` / `warehouseId` only from `RequestContextDto` | Spoofed body params, replayed payloads. |
-| 3 | Every repo method `.andWhere('e.tenantId = :tenantId', ctx)` | Forgotten filters by developers. |
+| 1 | `Store middleware` + `JwtAuthGuard` + `SubscriptionGuard` + `PermissionsGuard` + `BranchScopeGuard` + `WarehouseScopeGuard` | Most unauthorized requests, plan-locked features, scope violations. |
+| 2 | Services read `storeId` / `branchId` / `warehouseId` only from `RequestContextDto` | Spoofed body params, replayed payloads. |
+| 3 | Every repo method `.andWhere('e.storeId = :storeId', ctx)` | Forgotten filters by developers. |
 | 4 | Composite FK + composite UK + (optionally) RLS | Bugs that survive layers 1–3. |
-| 5 | `t:{tenantId}:`, `t/{tenantId}/`, `t-{tenantId}-`, queue payload schema with `tenantId` required | Out-of-band cross-tenant leakage. |
+| 5 | `t:{storeId}:`, `t/{storeId}/`, `t-{storeId}-`, queue payload schema with `storeId` required | Out-of-band cross-store leakage. |
 
-### 11.2 Foreign-Key Tenant Consistency
+### 11.2 Foreign-Key Store Consistency
 
-When linking a warehouse to a branch, a PO to a supplier, an order item to a variant, etc., the referenced row **must** belong to the same tenant. PostgreSQL `CHECK` constraints cannot reference other tables, so the correct approach is the **composite-FK pattern** (preferred) or a **trigger** (fallback).
+When linking a warehouse to a branch, a PO to a supplier, an order item to a variant, etc., the referenced row **must** belong to the same store. PostgreSQL `CHECK` constraints cannot reference other tables, so the correct approach is the **composite-FK pattern** (preferred) or a **trigger** (fallback).
 
 **Pattern A — Composite Foreign Key (preferred, no triggers):**
 
 ```sql
 -- 1. Add composite unique key on the parent so a composite FK can target it.
 ALTER TABLE branches
-  ADD CONSTRAINT branches_tenant_id_id_uk UNIQUE (tenant_id, id);
+  ADD CONSTRAINT branches_store_id_id_uk UNIQUE (store_id, id);
 
 -- 2. Replace the single-column FK on the child with a composite FK that
---    forces the child's tenant_id to match the parent's tenant_id.
+--    forces the child's store_id to match the parent's store_id.
 ALTER TABLE warehouses
   DROP CONSTRAINT IF EXISTS warehouses_branch_id_fk;
 
 ALTER TABLE warehouses
-  ADD CONSTRAINT warehouses_branch_same_tenant_fk
-  FOREIGN KEY (tenant_id, branch_id)
-  REFERENCES branches (tenant_id, id);
+  ADD CONSTRAINT warehouses_branch_same_store_fk
+  FOREIGN KEY (store_id, branch_id)
+  REFERENCES branches (store_id, id);
 ```
 
-This guarantees by the database itself that `warehouse.tenant_id == branch.tenant_id` for every row.
+This guarantees by the database itself that `warehouse.store_id == branch.store_id` for every row.
 
 **Pattern B — Trigger (fallback for tables where adding composite UK to the parent is too disruptive):**
 
 ```sql
-CREATE OR REPLACE FUNCTION enforce_same_tenant_branch_on_warehouse()
+CREATE OR REPLACE FUNCTION enforce_same_store_branch_on_warehouse()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.branch_id IS NOT NULL THEN
     PERFORM 1 FROM branches
-    WHERE id = NEW.branch_id AND tenant_id = NEW.tenant_id;
+    WHERE id = NEW.branch_id AND store_id = NEW.store_id;
     IF NOT FOUND THEN
-      RAISE EXCEPTION 'warehouse.branch_id % does not belong to tenant %', NEW.branch_id, NEW.tenant_id;
+      RAISE EXCEPTION 'warehouse.branch_id % does not belong to store %', NEW.branch_id, NEW.store_id;
     END IF;
   END IF;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_warehouse_same_tenant_branch
+CREATE TRIGGER trg_warehouse_same_store_branch
 BEFORE INSERT OR UPDATE ON warehouses
-FOR EACH ROW EXECUTE FUNCTION enforce_same_tenant_branch_on_warehouse();
+FOR EACH ROW EXECUTE FUNCTION enforce_same_store_branch_on_warehouse();
 ```
 
-Apply Pattern A or B to every cross-table link where both sides carry `tenant_id`: `orders → customers`, `order_items → variants`, `purchase_orders → suppliers`, `pos_registers → branches`, `pos_shifts → registers`, `inventory_ledger → variants`, `inventory_ledger → warehouses`, `payslips → employees`, etc.
+Apply Pattern A or B to every cross-table link where both sides carry `store_id`: `orders → customers`, `order_items → variants`, `purchase_orders → suppliers`, `pos_registers → branches`, `pos_shifts → registers`, `inventory_ledger → variants`, `inventory_ledger → warehouses`, `payslips → employees`, etc.
 
-> **Migration strategy:** Roll out composite-FK constraints behind a feature flag per table; backfill any violating rows in a tenant-by-tenant repair job before enabling the constraint as `NOT VALID` then `VALIDATE CONSTRAINT`.
+> **Migration strategy:** Roll out composite-FK constraints behind a feature flag per table; backfill any violating rows in a store-by-store repair job before enabling the constraint as `NOT VALID` then `VALIDATE CONSTRAINT`.
 
 ### 11.3 (Optional) Row-Level Security as a Safety Net
 
@@ -1032,11 +1032,11 @@ For sensitive subdomains (finance, payroll), consider PostgreSQL Row-Level Secur
 ```sql
 ALTER TABLE journal_entries ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY journal_entries_tenant_isolation ON journal_entries
-USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+CREATE POLICY journal_entries_store_isolation ON journal_entries
+USING (store_id = current_setting('app.current_store_id', true)::uuid);
 
 -- application sets the GUC per transaction:
-SET LOCAL app.current_tenant_id = '...uuid...';
+SET LOCAL app.current_store_id = '...uuid...';
 ```
 
 RLS is **belt-and-braces**, not a substitute for layers 1–4. It costs query-plan complexity and requires connection-pool discipline (set the GUC on every checkout). Apply selectively where the blast radius of a missed filter is unacceptable.
@@ -1045,14 +1045,14 @@ RLS is **belt-and-braces**, not a substitute for layers 1–4. It costs query-pl
 
 | Resource | Required prefix | Validation |
 | :--- | :--- | :--- |
-| Redis cache key | `t:{tenantId}:{module}:{resource}:{paramsHash}` | Cache wrapper rejects keys without prefix. |
-| Redis ratelimiter | `t:{tenantId}:rl:{route}` | Same wrapper. |
-| Queue job payload | JSON `{ tenantId, … }`; schema-validated at enqueue and dequeue | Worker drops job and alerts if `tenantId` missing. |
-| Pub/sub channel | `t:{tenantId}:events:{type}` | Subscriber whitelist enforces prefix. |
-| File storage path | `t/{tenantId}/{module}/{filename}` | Upload service rejects paths that don't start with `t/{ctx.tenantId}/`. |
-| Signed URL | Verified by inspecting the path before signing | Service refuses to sign cross-tenant paths. |
-| Search index | One index per tenant `t-{tenantId}-{resource}` *or* a shared index with mandatory `tenant_id` filter on every query | Search client wrapper injects the filter. |
-| Log line | `tenantId` field present in every structured log | Loki/ELK query templates require it. |
+| Redis cache key | `t:{storeId}:{module}:{resource}:{paramsHash}` | Cache wrapper rejects keys without prefix. |
+| Redis ratelimiter | `t:{storeId}:rl:{route}` | Same wrapper. |
+| Queue job payload | JSON `{ storeId, … }`; schema-validated at enqueue and dequeue | Worker drops job and alerts if `storeId` missing. |
+| Pub/sub channel | `t:{storeId}:events:{type}` | Subscriber whitelist enforces prefix. |
+| File storage path | `t/{storeId}/{module}/{filename}` | Upload service rejects paths that don't start with `t/{ctx.storeId}/`. |
+| Signed URL | Verified by inspecting the path before signing | Service refuses to sign cross-store paths. |
+| Search index | One index per store `t-{storeId}-{resource}` *or* a shared index with mandatory `store_id` filter on every query | Search client wrapper injects the filter. |
+| Log line | `storeId` field present in every structured log | Loki/ELK query templates require it. |
 
 ### 11.5 Frontend Enforcement
 
@@ -1063,37 +1063,37 @@ RLS is **belt-and-braces**, not a substitute for layers 1–4. It costs query-pl
 
 ### 11.6 Test Enforcement
 
-Cross-tenant / cross-scope tests are **required** for every module's CI. The standard fixture:
+Cross-store / cross-scope tests are **required** for every module's CI. The standard fixture:
 
 ```ts
-const tenantA = await seedTenant('Acme')
-const tenantB = await seedTenant('Globex')
+const storeA = await seedStore('Acme')
+const storeB = await seedStore('Globex')
 
-// 1. Cross-tenant read denial
-await expect(asUser(tenantA.owner).get(`/admin/orders/${tenantB.order.id}`))
+// 1. Cross-store read denial
+await expect(asUser(storeA.owner).get(`/admin/orders/${storeB.order.id}`))
   .toReturn(404)   // must NOT leak that the row exists
 
-// 2. Cross-branch denial within tenant
-const mgrB1 = await seedUser(tenantA, { branchScope: ['B1'] })
+// 2. Cross-branch denial within store
+const mgrB1 = await seedUser(storeA, { branchScope: ['B1'] })
 await expect(asUser(mgrB1).get(`/admin/pos/shifts?branchId=B2`))
   .toReturn(403)
 
 // 3. Cross-warehouse adjustment denial
-const clerkW1 = await seedUser(tenantA, { warehouseScope: ['W1'] })
+const clerkW1 = await seedUser(storeA, { warehouseScope: ['W1'] })
 await expect(asUser(clerkW1).post(`/admin/inventory/adjust`, { warehouseId: 'W2' }))
   .toReturn(403)
 
-// 4. Cache / queue tenant prefix sanity
+// 4. Cache / queue store prefix sanity
 await expect(redisKeys('*')).toAllMatch(/^t:[a-f0-9-]+:/)
 ```
 
-The CI gate fails the PR if any new entity is added without an accompanying cross-tenant denial test.
+The CI gate fails the PR if any new entity is added without an accompanying cross-store denial test.
 
 ### 11.7 Operational Safety Nets
 
-- **Periodic invariant scan:** a nightly cron checks for orphan rows where `tenant_id` mismatches with any FK target. Findings open a ticket in the ops queue.
-- **Read-only super-admin:** super-admin tooling for cross-tenant inspection runs through a separate connection pool with a different DB user (audited).
-- **Backup-restore drills:** restore a single tenant from backup without touching others — verifies that physical isolation tooling works.
+- **Periodic invariant scan:** a nightly cron checks for orphan rows where `store_id` mismatches with any FK target. Findings open a ticket in the ops queue.
+- **Read-only super-admin:** super-admin tooling for cross-store inspection runs through a separate connection pool with a different DB user (audited).
+- **Backup-restore drills:** restore a single store from backup without touching others — verifies that physical isolation tooling works.
 
 ---
 
@@ -1113,44 +1113,44 @@ The CI gate fails the PR if any new entity is added without an accompanying cros
 
 ### 12.2 Master Data
 
-| Resource | Tenant | Branch | Warehouse | Bin | Notes |
+| Resource | Store | Branch | Warehouse | Bin | Notes |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| Tenants | (platform) | | | | Platform owns; tenant has self-config. |
-| Branches | ✅ | | | | Tenant owns; branch is a row inside tenant. |
-| Warehouses | ✅ | opt | | | Tenant owns; warehouse may attach to one branch. |
+| Stores | (platform) | | | | Platform owns; store has self-config. |
+| Branches | ✅ | | | | Store owns; branch is a row inside store. |
+| Warehouses | ✅ | opt | | | Store owns; warehouse may attach to one branch. |
 | Bins | ✅ | | ✅ | | Bin is scoped inside one warehouse. |
-| Products / Variants | ✅ | | | | One SKU per tenant. |
-| Categories / Brands | ✅ | | | | Tenant-wide. |
+| Products / Variants | ✅ | | | | One SKU per store. |
+| Categories / Brands | ✅ | | | | Store-wide. |
 | Price Books | ✅ | opt | | | Optional branch tag for branch-specific pricing. |
 | Customers | ✅ | | | | `preferredBranchId` is informational metadata. |
-| Suppliers | ✅ | | | | Tenant-wide; supplier-product price overrides may be per-warehouse. |
+| Suppliers | ✅ | | | | Store-wide; supplier-product price overrides may be per-warehouse. |
 | Employees | ✅ | opt | opt | | `defaultBranchId` / `defaultWarehouseId` on profile. |
-| Chart of Accounts | ✅ | | | | Tenant-wide. |
-| Fiscal Periods | ✅ | | | | Tenant-wide. |
-| Tax Codes / Jurisdictions | ✅ | | | | Tenant-wide. |
-| Currency / Exchange Rates | ✅ | | | | Tenant-wide. |
-| Subscriptions / Billing | ✅ | | | | Tenant-wide. |
-| Roles / Permissions | ✅ | | | | Tenant defines roles; permissions are platform-defined. |
+| Chart of Accounts | ✅ | | | | Store-wide. |
+| Fiscal Periods | ✅ | | | | Store-wide. |
+| Tax Codes / Jurisdictions | ✅ | | | | Store-wide. |
+| Currency / Exchange Rates | ✅ | | | | Store-wide. |
+| Subscriptions / Billing | ✅ | | | | Store-wide. |
+| Roles / Permissions | ✅ | | | | Store defines roles; permissions are platform-defined. |
 
 ### 12.3 Financial & Subledgers
 
-| Resource | Tenant | Branch | Warehouse | Notes |
+| Resource | Store | Branch | Warehouse | Notes |
 | :--- | :---: | :---: | :---: | :--- |
 | Journal Entries (header) | ✅ | dim | | `branch_id` on header is optional summary tag. |
 | Ledger Entries (lines) | ✅ | dim | dim | Line-level `branch_id` / `warehouse_id` for fine-grained reports. |
-| AR Ledger (customer) | ✅ | | | Per customer; tenant-wide balance. |
-| AP Ledger (supplier) | ✅ | | | Per supplier; tenant-wide balance. |
-| Wallet Ledger | ✅ | | | Per customer; tenant-wide. References original branch via order linkage. |
-| Loyalty Ledger | ✅ | | | Per customer; tenant-wide. |
+| AR Ledger (customer) | ✅ | | | Per customer; store-wide balance. |
+| AP Ledger (supplier) | ✅ | | | Per supplier; store-wide balance. |
+| Wallet Ledger | ✅ | | | Per customer; store-wide. References original branch via order linkage. |
+| Loyalty Ledger | ✅ | | | Per customer; store-wide. |
 | Expenses | ✅ | dim | opt | Branch dim for cost allocation. |
-| Supplier Invoices | ✅ | | | Tenant-wide; warehouse on lines indicates receipt location. |
-| Supplier Payments | ✅ | | | Tenant-wide. |
+| Supplier Invoices | ✅ | | | Store-wide; warehouse on lines indicates receipt location. |
+| Supplier Payments | ✅ | | | Store-wide. |
 | Customer Invoices | ✅ | dim | | Branch dim for revenue attribution. |
 | Customer Payments | ✅ | dim | | Branch dim where drawer received cash. |
 
 ### 12.4 Operations (Sales, POS, Inventory)
 
-| Resource | Tenant | Branch | Warehouse | Notes |
+| Resource | Store | Branch | Warehouse | Notes |
 | :--- | :---: | :---: | :---: | :--- |
 | Orders (online) | ✅ | opt 🔒 | | Branch set when routed for fulfillment. |
 | Orders (POS) | ✅ | ✅ | | Branch derived from shift→register. |
@@ -1174,41 +1174,41 @@ The CI gate fails the PR if any new entity is added without an accompanying cros
 
 ### 12.5 People & Time
 
-| Resource | Tenant | Branch | Warehouse | Notes |
+| Resource | Store | Branch | Warehouse | Notes |
 | :--- | :---: | :---: | :---: | :--- |
 | Attendance Logs | ✅ | dim | dim | Branch dim for shift reports. |
 | Leave Requests | ✅ | dim | | Branch dim only. |
-| Payroll Batches | ✅ | | | Tenant-wide batch; per-employee payslips. |
+| Payroll Batches | ✅ | | | Store-wide batch; per-employee payslips. |
 | Payslips | ✅ | dim | | Branch dim for cost allocation. |
 | Recruitment / Hiring | ✅ | dim | | Branch where the role is open. |
 | Performance Reviews | ✅ | dim | | Branch dim. |
 
 ### 12.6 Cross-Cutting
 
-| Resource | Tenant | Branch | Warehouse | Notes |
+| Resource | Store | Branch | Warehouse | Notes |
 | :--- | :---: | :---: | :---: | :--- |
-| Audit Logs | ✅ | dim | dim | Always tenant-scoped; source/target context captured. |
+| Audit Logs | ✅ | dim | dim | Always store-scoped; source/target context captured. |
 | Notifications | ✅ | dim | dim | Recipient is a user; branch/warehouse dim for routing. |
-| File Uploads (media) | ✅ | | | Path always `t/{tenantId}/...`. |
+| File Uploads (media) | ✅ | | | Path always `t/{storeId}/...`. |
 | Search Index Docs | ✅ | dim | dim | Filter clauses include branch/warehouse where applicable. |
-| Outbox Events | ✅ | dim | dim | Tenant-scoped; consumer reads context from payload. |
-| Idempotency Keys | ✅ | | | Scoped `(tenant_id, key)`. |
+| Outbox Events | ✅ | dim | dim | Store-scoped; consumer reads context from payload. |
+| Idempotency Keys | ✅ | | | Scoped `(store_id, key)`. |
 | Cache Entries | ✅ | dim | dim | Key prefix includes any narrower scope when relevant. |
 | Settings (storefront / payment / courier) | ✅ | opt | | Optional branch override. |
 
 ### 12.7 Reporting Roll-Up Paths
 
 ```
-Warehouse → Branch (where warehouse.branchId is set) → Tenant
-Warehouse (tenant-level) ─────────────────────────────→ Tenant
-Branch ────────────────────────────────────────────────→ Tenant
-Employee → Branch (defaultBranchId) ───────────────────→ Tenant
-Order (POS) → Branch (via shift→register) ─────────────→ Tenant
-Order (Online, routed) → Branch (assigned) ────────────→ Tenant
-Order (Online, unrouted) ──────────────────────────────→ Tenant
+Warehouse → Branch (where warehouse.branchId is set) → Store
+Warehouse (store-level) ─────────────────────────────→ Store
+Branch ────────────────────────────────────────────────→ Store
+Employee → Branch (defaultBranchId) ───────────────────→ Store
+Order (POS) → Branch (via shift→register) ─────────────→ Store
+Order (Online, routed) → Branch (assigned) ────────────→ Store
+Order (Online, unrouted) ──────────────────────────────→ Store
 ```
 
-All reports start from these paths. A "Branch P&L" is `journal_lines WHERE branch_id = B AND fiscal_period = P`. A "Warehouse Stock Value" is `SUM(qty × wac) FROM inventory_ledger projection WHERE warehouse_id = W`. There is no parallel ledger or stock table per branch; reports always slice tenant-wide tables.
+All reports start from these paths. A "Branch P&L" is `journal_lines WHERE branch_id = B AND fiscal_period = P`. A "Warehouse Stock Value" is `SUM(qty × wac) FROM inventory_ledger projection WHERE warehouse_id = W`. There is no parallel ledger or stock table per branch; reports always slice store-wide tables.
 
 ---
 
@@ -1216,11 +1216,11 @@ All reports start from these paths. A "Branch P&L" is `journal_lines WHERE branc
 
 When you find yourself adding a new column to model a boundary, run this checklist:
 
-1. **Is the entity owned by tenant only?** → No `branch_id` / `warehouse_id` columns. Reports slice via JOIN.
-2. **Is the entity owned by a branch (POS/shift/register)?** → `tenant_id NOT NULL`, `branch_id NOT NULL`. Add composite-FK to enforce same tenant.
-3. **Is the entity a physical stock fact?** → `tenant_id NOT NULL`, `warehouse_id NOT NULL`, optional `bin_id`. Branch is *derived* via warehouse, not stored.
+1. **Is the entity owned by store only?** → No `branch_id` / `warehouse_id` columns. Reports slice via JOIN.
+2. **Is the entity owned by a branch (POS/shift/register)?** → `store_id NOT NULL`, `branch_id NOT NULL`. Add composite-FK to enforce same store.
+3. **Is the entity a physical stock fact?** → `store_id NOT NULL`, `warehouse_id NOT NULL`, optional `bin_id`. Branch is *derived* via warehouse, not stored.
 4. **Does the entity need branch *attribution* but isn't branch-owned?** → `branch_id NULLABLE` as a dimension; do not add unique constraints on `(branch_id, …)`.
-5. **Could two tenants accidentally share a row via this column?** → Add `tenant_id` to every business-key unique index.
+5. **Could two stores accidentally share a row via this column?** → Add `store_id` to every business-key unique index.
 6. **Is the operation crossing boundaries?** → Create a *document* (with status), an explicit permission, and an audit log entry.
 
 If a proposed change cannot satisfy this checklist, the model is wrong — fix the model before writing migrations.
@@ -1246,7 +1246,7 @@ flowchart TB
 
   subgraph Core["ERP Core Modules"]
     AUTH[Auth + RBAC]
-    TEN[Tenant + Subscription]
+    TEN[Store + Subscription]
     ORG[Organization: Branch + Warehouse + Bin]
     CAT[Catalog]
     SALE[Sales / Orders]
@@ -1309,7 +1309,7 @@ flowchart TB
 
 ## 15. Bounded Contexts (Modules)
 
-### 15.1 Tenant / Subscription
+### 15.1 Store / Subscription
 - Onboarding, plans, billing, feature entitlement, suspension.
 
 ### 15.2 Organization
@@ -1343,7 +1343,7 @@ flowchart TB
 - Pick/pack/ship, multi-warehouse routing, split shipments, courier integration.
 
 ### 15.12 Reports
-- Tenant + branch + warehouse rollups; export center.
+- Store + branch + warehouse rollups; export center.
 
 ### 15.13 Audit & Notifications
 - Append-only audit log; in-app, email, SMS, push notifications.
@@ -1500,15 +1500,15 @@ sequenceDiagram
 
 These rules must hold even under retries, queue replays, late webhooks, and offline POS reconnects.
 
-### 18.1 Tenant Invariants
+### 18.1 Store Invariants
 
 | Invariant | Enforcement |
 | :--- | :--- |
-| A tenant cannot read/write another tenant's data. | `tenantId` filter in every query. |
-| Cache cannot leak between tenants. | Cache key starts with `t:{tenantId}:`. |
-| Queue jobs cannot run without tenant context. | Job schema requires `tenantId`. |
-| Files are tenant-scoped. | Path `t/{tenantId}/...`, signed URL. |
-| Reports default to tenant scope. | Service accepts `ctx` and optional branch/warehouse filters after validation. |
+| A store cannot read/write another store's data. | `storeId` filter in every query. |
+| Cache cannot leak between stores. | Cache key starts with `t:{storeId}:`. |
+| Queue jobs cannot run without store context. | Job schema requires `storeId`. |
+| Files are store-scoped. | Path `t/{storeId}/...`, signed URL. |
+| Reports default to store scope. | Service accepts `ctx` and optional branch/warehouse filters after validation. |
 
 ### 18.2 Inventory Invariants
 
@@ -1536,7 +1536,7 @@ These rules must hold even under retries, queue replays, late webhooks, and offl
 
 | Invariant | Enforcement |
 | :--- | :--- |
-| A POS sale syncs once. | Unique `(tenantId, clientSaleId)`. |
+| A POS sale syncs once. | Unique `(storeId, clientSaleId)`. |
 | One open shift per cashier. | Partial unique index on open shift. |
 | Closed shift rejects new sales. | Sync checks shift status. |
 | Cash variance is auditable. | Shift close stores expected, counted, variance, reason. |
@@ -1566,7 +1566,7 @@ These rules must hold even under retries, queue replays, late webhooks, and offl
 
 ### 19.1 Shared Rules
 
-- Every tenant-owned table includes `tenantId`.
+- Every store-owned table includes `storeId`.
 - Every business document has a status enum and audit timestamps.
 - Every ledger table is append-only.
 - Every money table stores currency + exchange-rate snapshot.
@@ -1668,15 +1668,15 @@ These rules must hold even under retries, queue replays, late webhooks, and offl
 Advisory lock key examples:
 
 ```text
-tenant:{tenantId}:stock:{warehouseId}:{productId}:{variantId}
-tenant:{tenantId}:ar:{customerId}
-tenant:{tenantId}:ap:{supplierId}
-tenant:{tenantId}:shift:{shiftId}
+store:{storeId}:stock:{warehouseId}:{productId}:{variantId}
+store:{storeId}:ar:{customerId}
+store:{storeId}:ap:{supplierId}
+store:{storeId}:shift:{shiftId}
 ```
 
 Lock acquisition order (to avoid deadlocks):
 
-1. Tenant / account.
+1. Store / account.
 2. Customer / supplier.
 3. Product / variant.
 4. Warehouse / bin.
@@ -1695,7 +1695,7 @@ Events decouple core workflows from side effects (notifications, search index, d
 ```sql
 outbox (
   id uuid primary key,
-  tenant_id uuid not null,
+  store_id uuid not null,
   aggregate_type text not null,
   aggregate_id uuid not null,
   event_type text not null,
@@ -1798,7 +1798,7 @@ Success:
   "statusCode": 200,
   "message": "Human readable message",
   "data": {},
-  "meta": { "requestId": "uuid", "tenantId": "uuid" }
+  "meta": { "requestId": "uuid", "storeId": "uuid" }
 }
 ```
 
@@ -1818,7 +1818,7 @@ Error:
 
 | Code | Meaning |
 | :--- | :--- |
-| `TENANT_NOT_FOUND` | Invalid tenant context. |
+| `STORE_NOT_FOUND` | Invalid store context. |
 | `FEATURE_NOT_ENABLED` | Subscription does not allow feature. |
 | `PERMISSION_DENIED` | User lacks permission. |
 | `SCOPE_DENIED` | User cannot access branch/warehouse. |
@@ -1849,7 +1849,7 @@ Meta:
 Idempotency-Key: uuid-or-client-generated-key
 ```
 
-Backend stores `(tenantId, idempotencyKey, actionType, requestHash, responseBody, status, expiresAt)`. Different payload with same key returns `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
+Backend stores `(storeId, idempotencyKey, actionType, requestHash, responseBody, status, expiresAt)`. Different payload with same key returns `409 IDEMPOTENCY_PAYLOAD_MISMATCH`.
 
 ### 25.5 Naming Convention
 
@@ -1884,7 +1884,7 @@ Keep existing routes as aliases; new routes follow the standard above.
 
 | Layer | Question | Example |
 | :--- | :--- | :--- |
-| Subscription feature gate | Is the tenant allowed this feature? | `/admin/inventory/transfers` |
+| Subscription feature gate | Is the store allowed this feature? | `/admin/inventory/transfers` |
 | RBAC permission | Is the user allowed this action? | `inventory.transfer.approve` |
 | Branch scope | Can the user operate on this branch? | Branch manager A vs B. |
 | Warehouse scope | Can the user operate on this warehouse? | Clerk A vs W1. |
@@ -1936,12 +1936,12 @@ Require an additional explicit reason captured in the audit log:
 - Signed URLs for private files.
 - Strict CORS.
 
-### 27.2 Tenant Security
+### 27.2 Store Security
 
-- Always filter by `tenantId`.
-- Never trust `tenantId` from request body.
-- Tenant comes from authenticated token or domain.
-- Cache keys and queue payloads must include `tenantId`.
+- Always filter by `storeId`.
+- Never trust `storeId` from request body.
+- Store comes from authenticated token or domain.
+- Cache keys and queue payloads must include `storeId`.
 
 ### 27.3 Finance Security
 
@@ -1962,47 +1962,47 @@ Require an additional explicit reason captured in the audit log:
 ```sql
 -- POS idempotency
 CREATE UNIQUE INDEX uq_pos_sale_client_id
-ON pos_sales (tenant_id, client_sale_id);
+ON pos_sales (store_id, client_sale_id);
 
 -- One open shift per cashier
 CREATE UNIQUE INDEX uq_open_shift_per_user
-ON pos_shifts (tenant_id, user_id)
+ON pos_shifts (store_id, user_id)
 WHERE status = 'OPEN';
 
--- Unique SKU per tenant
-CREATE UNIQUE INDEX uq_product_sku_tenant
-ON products (tenant_id, sku)
+-- Unique SKU per store
+CREATE UNIQUE INDEX uq_product_sku_store
+ON products (store_id, sku)
 WHERE sku IS NOT NULL;
 
 -- Unique supplier invoice number per supplier
 CREATE UNIQUE INDEX uq_supplier_invoice_number
-ON supplier_invoices (tenant_id, supplier_id, invoice_number);
+ON supplier_invoices (store_id, supplier_id, invoice_number);
 
 -- One journal per source event
 CREATE UNIQUE INDEX uq_journal_source
-ON journal_entries (tenant_id, reference_type, reference_id, type);
+ON journal_entries (store_id, reference_type, reference_id, type);
 ```
 
 ### 28.2 Recommended Indexes
 
 | Table | Index |
 | :--- | :--- |
-| `orders` | `(tenant_id, status, created_at)` |
-| `orders` | `(tenant_id, user_id, created_at)` |
-| `inventory_ledger` | `(tenant_id, product_id, variant_id, warehouse_id, created_at)` |
-| `stock_reservations` | `(tenant_id, status, expires_at)` |
-| `purchase_orders` | `(tenant_id, supplier_id, status, created_at)` |
-| `supplier_invoices` | `(tenant_id, supplier_id, status, due_date)` |
-| `journal_entries` | `(tenant_id, date, type)` |
-| `ledger_entries` | `(tenant_id, account_id, created_at)` |
-| `ar_ledger` | `(tenant_id, customer_id, created_at)` |
-| `ap_ledger` | `(tenant_id, supplier_id, created_at)` |
-| `audit_logs` | `(tenant_id, entity, entity_id, created_at)` |
+| `orders` | `(store_id, status, created_at)` |
+| `orders` | `(store_id, user_id, created_at)` |
+| `inventory_ledger` | `(store_id, product_id, variant_id, warehouse_id, created_at)` |
+| `stock_reservations` | `(store_id, status, expires_at)` |
+| `purchase_orders` | `(store_id, supplier_id, status, created_at)` |
+| `supplier_invoices` | `(store_id, supplier_id, status, due_date)` |
+| `journal_entries` | `(store_id, date, type)` |
+| `ledger_entries` | `(store_id, account_id, created_at)` |
+| `ar_ledger` | `(store_id, customer_id, created_at)` |
+| `ap_ledger` | `(store_id, supplier_id, created_at)` |
+| `audit_logs` | `(store_id, entity, entity_id, created_at)` |
 
 ### 28.3 Partitioning Candidates
 
 - `audit_logs` by month.
-- `inventory_ledger` by tenant or month.
+- `inventory_ledger` by store or month.
 - `ledger_entries` by fiscal year.
 - `notifications` by month.
 - `outbox` periodically archived.
@@ -2014,7 +2014,7 @@ ON journal_entries (tenant_id, reference_type, reference_id, type);
 ### 29.1 Key Convention
 
 ```text
-t:{tenantId}:{domain}:{resource}:{paramsHash}
+t:{storeId}:{domain}:{resource}:{paramsHash}
 ```
 
 Examples:
@@ -2075,7 +2075,7 @@ t:abc:finance:pnl:2026-01:2026-05
 
 ### 31.1 Logs
 
-Every log includes `tenantId`, `userId`, `requestId`, `module`, `action`, `entityId`.
+Every log includes `storeId`, `userId`, `requestId`, `module`, `action`, `entityId`.
 
 ### 31.2 Metrics
 
@@ -2134,7 +2134,7 @@ Every log includes `tenantId`, `userId`, `requestId`, `module`, `action`, `entit
 - Supplier payment → AP reduction + journal.
 - Return approval → restock/refund/reversal.
 - Payroll approval → salary payable journal.
-- **Boundary tests:** cross-tenant read denied, cross-branch read denied, cross-warehouse adjust denied.
+- **Boundary tests:** cross-store read denied, cross-branch read denied, cross-warehouse adjust denied.
 
 ### 33.3 E2E Tests
 - Storefront checkout.
@@ -2198,8 +2198,8 @@ Partial systems that need work:
 
 ## 35. Production Readiness Checklist
 
-### 35.1 Before First Real Tenant
-- [ ] All tenant-owned tables have `tenantId`.
+### 35.1 Before First Real Store
+- [ ] All store-owned tables have `storeId`.
 - [ ] Every admin route has feature gate + permission guard.
 - [ ] POS sync idempotency exists.
 - [ ] Payment webhook idempotency exists.
@@ -2210,7 +2210,7 @@ Partial systems that need work:
 - [ ] Seed/demo endpoints removed from production path.
 - [ ] Error codes standardized.
 
-### 35.2 Before Multi-Branch Tenant
+### 35.2 Before Multi-Branch Store
 - [ ] Branch scope guard tested.
 - [ ] Warehouse scope guard tested.
 - [ ] Warehouse stock availability tested.
@@ -2220,7 +2220,7 @@ Partial systems that need work:
 - [ ] Reports filter by branch.
 - [ ] Staff role assignments support branch/warehouse scope.
 
-### 35.3 Before Finance-Heavy Tenant
+### 35.3 Before Finance-Heavy Store
 - [ ] Fiscal periods.
 - [ ] Journal reversal.
 - [ ] AP aging.
@@ -2230,7 +2230,7 @@ Partial systems that need work:
 - [ ] Customer payment journal.
 - [ ] Account reconciliation report.
 
-### 35.4 Before Retail Chain Tenant
+### 35.4 Before Retail Chain Store
 - [ ] Offline POS IndexedDB queue.
 - [ ] Stock transfer workflow.
 - [ ] Cycle counts.
@@ -2307,7 +2307,7 @@ AI uses ERP APIs/services, never bypasses them. AI produces drafts/recommendatio
 
 The ERP system is production-ready when:
 
-- Tenant isolation is enforced in every repository/query.
+- Store isolation is enforced in every repository/query.
 - Branch and warehouse scope is enforced in every restricted query.
 - POS sync is idempotent.
 - Stock reservation and physical stock movement are separated.
@@ -2332,7 +2332,7 @@ Do not start with AI, dashboards, or automation until these are solid:
 
 - stock truth,
 - money truth,
-- tenant / branch / warehouse boundaries,
+- store / branch / warehouse boundaries,
 - idempotency,
 - audit,
 - permission boundaries,

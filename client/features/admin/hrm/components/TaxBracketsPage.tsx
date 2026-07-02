@@ -35,7 +35,7 @@ export default function TaxBracketsPage() {
             Tax <span className="text-indigo-600">Brackets</span>
           </h1>
           <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-2">
-            Configure tenant-specific payroll income tax rates per fiscal year
+            Configure store-specific payroll income tax rates per fiscal year
           </p>
         </div>
         <button

@@ -25,7 +25,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common'
-import { SuperAdminCrossTenantRepository } from '../repositories/super-admin-cross-tenant.repository'
+import { SuperAdminCrossStoreRepository } from '../repositories/super-admin-cross-store.repository'
 
 function sanitizeLog(input: string | undefined | null): string {
   if (!input) return ''
@@ -40,7 +40,7 @@ export class SuperAdminUsersController {
 
   constructor(
     private readonly userService: UserService,
-    private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
+    private readonly crossStoreRepository: SuperAdminCrossStoreRepository,
     private readonly mailService: MailService,
   ) { }
 
@@ -49,13 +49,13 @@ export class SuperAdminUsersController {
     @Query() filterDto: FilterUserDto,
     @Query('role') role?: string,
     @Query('status') statusFilter?: string,
-    @Query('tenantId') tenantId?: string,
+    @Query('storeId') storeId?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const [users, total] = await this.crossTenantRepository.findAllUsersCrossTenant({
+    const [users, total] = await this.crossStoreRepository.findAllUsersCrossStore({
       ...filterDto,
       ...(role && { role }),
       ...(statusFilter && { status: statusFilter }),
-      ...(tenantId && { tenantId }),
+      ...(storeId && { storeId }),
     } as any)
     const page = Number(filterDto.page) || 1
     const limit = Number(filterDto.limit) || 10
@@ -145,7 +145,7 @@ export class SuperAdminUsersController {
         await this.userService.updateUser(id, { emailVerificationToken: token } as any)
       }
 
-      await this.mailService.sendVerificationEmail(user.email, token, user.tenantId)
+      await this.mailService.sendVerificationEmail(user.email, token, user.storeId)
     } catch (e: any) {
       this.logger.error(`Send verification for ${id} failed: ${e.message}`, e.stack)
       throw new InternalServerErrorException(e.message || 'Failed to send verification email')

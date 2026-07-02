@@ -2,13 +2,13 @@ import { Column, Entity, PrimaryGeneratedColumn, Index } from 'typeorm'
 
 @Entity('accounting_outbox')
 @Index(['status', 'createdAt'])
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'status'])
 export class AccountingOutboxEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
   @Column({ type: 'varchar', length: 100 })
   event: string

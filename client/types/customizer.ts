@@ -347,7 +347,7 @@ export interface PageData {
   };
 }
 
-/** Tenant-wide design tokens used by storefront and editor. */
+/** Store-wide design tokens used by storefront and editor. */
 export interface ThemeTokens {
   colors?: {
     brand?: string;

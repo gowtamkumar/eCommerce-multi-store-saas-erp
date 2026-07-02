@@ -33,11 +33,11 @@ export class ExpenseService {
 
   private async getHighExpenseThreshold(ctx: RequestContextDto): Promise<number> {
     try {
-      const settings = await this.settingsService.findByTenantSettings(ctx)
+      const settings = await this.settingsService.findByStoreSettings(ctx)
       const configured = settings?.financeConfig?.highExpenseNotifyThreshold
       if (configured && configured > 0) return Number(configured)
     } catch (err: any) {
-      this.logger.warn(`Could not resolve tenant finance config: ${err.message}`)
+      this.logger.warn(`Could not resolve store finance config: ${err.message}`)
     }
     return DEFAULT_HIGH_EXPENSE_THRESHOLD
   }
@@ -47,10 +47,10 @@ export class ExpenseService {
     ctx: RequestContextDto,
   ): Promise<ExpenseEntity> {
     this.logger.log(`${this.createExpense.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const result = await this.expenseRepository.createAndSave(createExpenseDto, ctx)
 
-    // Trigger High Expense Warning (threshold is tenant-configurable).
+    // Trigger High Expense Warning (threshold is store-configurable).
     try {
       const threshold = await this.getHighExpenseThreshold(ctx)
       if (Number(createExpenseDto.amount) > threshold) {
@@ -60,9 +60,9 @@ export class ExpenseService {
             message: `A new expense "${createExpenseDto.title}" for ${createExpenseDto.amount} (threshold ${threshold}) requires review.`,
             type: 'WARNING',
             link: '/admin/finance/expenses',
-            userId: null as any, // Tenant-wide admin notification
+            userId: null as any, // Store-wide admin notification
           },
-          tenantId,
+          storeId,
         )
       }
     } catch (e: any) {
@@ -71,12 +71,12 @@ export class ExpenseService {
 
     // Invalidate list cache on creation
     await Promise.all([
-      this.cacheService.delCacheByPattern('expenses:list*', tenantId),
-      this.cacheService.delCacheByPattern('expenses:raw*', tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', tenantId),
-      this.cacheService.delCacheByPattern('pnl*', tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+      this.cacheService.delCacheByPattern('expenses:list*', storeId),
+      this.cacheService.delCacheByPattern('expenses:raw*', storeId),
+      this.cacheService.delCacheByPattern('dashboard*', storeId),
+      this.cacheService.delCacheByPattern('pnl*', storeId),
+      this.cacheService.delCacheByPattern('cashflow*', storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', storeId),
     ])
     return result
   }
@@ -96,7 +96,7 @@ export class ExpenseService {
     totalPages: number
   }> {
     this.logger.log(`${this.findAllExpenses.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, category, q, startDate, endDate } = options
     const branchId = ctx.branchId
     const cacheKey = `expenses:list:p${page}:l${limit}:cat${category || 'all'}:q${q || ''}:s${startDate?.getTime()}:e${endDate?.getTime()}:b${branchId || 'global'}`
@@ -104,7 +104,7 @@ export class ExpenseService {
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.expenseRepository.findAllPaginated(tenantId, {
+        const [items, total] = await this.expenseRepository.findAllPaginated(storeId, {
           ...options,
           branchId,
         })
@@ -117,7 +117,7 @@ export class ExpenseService {
         }
       },
       300, // 5 min TTL
-      tenantId,
+      storeId,
     )
   }
 
@@ -131,26 +131,26 @@ export class ExpenseService {
     endDate?: Date,
   ): Promise<ExpenseEntity[]> {
     this.logger.log(`${this.findAllExpensesRaw.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const branchId = ctx.branchId
     const cacheKey = `expenses:raw:${startDate?.getTime()}:${endDate?.getTime()}:b${branchId || 'global'}`
     return this.cacheService.rememberCache(
       cacheKey,
-      () => this.expenseRepository.findAllRaw(tenantId, startDate, endDate, branchId),
+      () => this.expenseRepository.findAllRaw(storeId, startDate, endDate, branchId),
       300,
-      tenantId,
+      storeId,
     )
   }
 
   async findOneExpense(id: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
     this.logger.log(`${this.findOneExpense.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `expenses:id:${id}`
     const expense = await this.cacheService.rememberCache(
       cacheKey,
-      () => this.expenseRepository.findByIdAndTenant(id, tenantId),
+      () => this.expenseRepository.findByIdAndStore(id, storeId),
       600, // 10 min TTL
-      tenantId,
+      storeId,
     )
 
     if (!expense) {
@@ -165,26 +165,26 @@ export class ExpenseService {
     ctx: RequestContextDto,
   ): Promise<ExpenseEntity> {
     this.logger.log(`${this.updateExpense.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const expense = await this.expenseRepository.findByIdAndTenant(id, tenantId)
+    const storeId = ctx.storeId
+    const expense = await this.expenseRepository.findByIdAndStore(id, storeId)
     if (!expense) throw new NotFoundException('Expense not found')
 
     const result = await this.expenseRepository.updateAndSave(expense, updateExpenseDto)
     // Invalidate both list and individual caches
     await Promise.all([
-      this.cacheService.delCacheByPattern('expenses:list*', tenantId),
-      this.cacheService.delCacheByPattern('expenses:raw*', tenantId),
-      this.cacheService.delCache(`expenses:id:${id}`, tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', tenantId),
-      this.cacheService.delCacheByPattern('pnl*', tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+      this.cacheService.delCacheByPattern('expenses:list*', storeId),
+      this.cacheService.delCacheByPattern('expenses:raw*', storeId),
+      this.cacheService.delCache(`expenses:id:${id}`, storeId),
+      this.cacheService.delCacheByPattern('dashboard*', storeId),
+      this.cacheService.delCacheByPattern('pnl*', storeId),
+      this.cacheService.delCacheByPattern('cashflow*', storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', storeId),
     ])
     return result
   }
 
   async approveExpense(id: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
-    const expense = await this.expenseRepository.findByIdAndTenant(id, ctx.tenantId)
+    const expense = await this.expenseRepository.findByIdAndStore(id, ctx.storeId)
     if (!expense) throw new NotFoundException('Expense not found')
 
     const result = await this.expenseRepository.updateAndSave(expense, {
@@ -194,14 +194,14 @@ export class ExpenseService {
       rejectionReason: null,
     } as any)
 
-    await this.cacheService.delCacheByPattern('expenses:list*', ctx.tenantId)
-    await this.cacheService.delCache(`expenses:id:${id}`, ctx.tenantId)
-    await this.notifyExpenseStatus(result, ctx.tenantId, 'Expense Approved', 'SUCCESS')
+    await this.cacheService.delCacheByPattern('expenses:list*', ctx.storeId)
+    await this.cacheService.delCache(`expenses:id:${id}`, ctx.storeId)
+    await this.notifyExpenseStatus(result, ctx.storeId, 'Expense Approved', 'SUCCESS')
     return result
   }
 
   async rejectExpense(id: string, reason: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
-    const expense = await this.expenseRepository.findByIdAndTenant(id, ctx.tenantId)
+    const expense = await this.expenseRepository.findByIdAndStore(id, ctx.storeId)
     if (!expense) throw new NotFoundException('Expense not found')
 
     const result = await this.expenseRepository.updateAndSave(expense, {
@@ -211,35 +211,35 @@ export class ExpenseService {
       rejectionReason: reason,
     } as any)
 
-    await this.cacheService.delCacheByPattern('expenses:list*', ctx.tenantId)
-    await this.cacheService.delCache(`expenses:id:${id}`, ctx.tenantId)
-    await this.notifyExpenseStatus(result, ctx.tenantId, 'Expense Rejected', 'DANGER')
+    await this.cacheService.delCacheByPattern('expenses:list*', ctx.storeId)
+    await this.cacheService.delCache(`expenses:id:${id}`, ctx.storeId)
+    await this.notifyExpenseStatus(result, ctx.storeId, 'Expense Rejected', 'DANGER')
     return result
   }
 
   async removeExpense(id: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
     this.logger.log(`${this.removeExpense.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const expense = await this.expenseRepository.findByIdAndTenant(id, tenantId)
+    const storeId = ctx.storeId
+    const expense = await this.expenseRepository.findByIdAndStore(id, storeId)
     if (!expense) throw new NotFoundException('Expense not found')
 
     const result = await this.expenseRepository.removeExpense(expense)
     // Surgical cache invalidation
     await Promise.all([
-      this.cacheService.delCacheByPattern('expenses:list*', tenantId),
-      this.cacheService.delCacheByPattern('expenses:raw*', tenantId),
-      this.cacheService.delCache(`expenses:id:${id}`, tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', tenantId),
-      this.cacheService.delCacheByPattern('pnl*', tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+      this.cacheService.delCacheByPattern('expenses:list*', storeId),
+      this.cacheService.delCacheByPattern('expenses:raw*', storeId),
+      this.cacheService.delCache(`expenses:id:${id}`, storeId),
+      this.cacheService.delCacheByPattern('dashboard*', storeId),
+      this.cacheService.delCacheByPattern('pnl*', storeId),
+      this.cacheService.delCacheByPattern('cashflow*', storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', storeId),
     ])
     return result
   }
 
   private async notifyExpenseStatus(
     expense: ExpenseEntity,
-    tenantId: string,
+    storeId: string,
     title: string,
     type: string,
   ): Promise<void> {
@@ -252,7 +252,7 @@ export class ExpenseService {
           link: '/admin/finance/expenses',
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger expense status notification: ${e.message}`)

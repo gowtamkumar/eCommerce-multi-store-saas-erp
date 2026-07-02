@@ -8,10 +8,10 @@ import { PromotionService } from './services/promotion.service'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PromotionEntity, ProductEntity]), CacheModule, TenantModule],
+  imports: [TypeOrmModule.forFeature([PromotionEntity, ProductEntity]), CacheModule, StoreModule],
   controllers: [PromotionController],
   providers: [PromotionService, PromotionRepository, ProductRepository],
   exports: [PromotionService, PromotionRepository],

@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entit
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class SubscriptionInvoiceRepository extends BaseTenantRepository<SubscriptionInvoiceEntity> {
+export class SubscriptionInvoiceRepository extends BaseStoreRepository<SubscriptionInvoiceEntity> {
   constructor(
     @InjectRepository(SubscriptionInvoiceEntity)
     repo: Repository<SubscriptionInvoiceEntity>,
@@ -15,13 +15,13 @@ export class SubscriptionInvoiceRepository extends BaseTenantRepository<Subscrip
 }
 
   async createAndSave(data: any, ctx: RequestContextDto): Promise<SubscriptionInvoiceEntity> {
-    const invoice = this.repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId }) as any
+    const invoice = this.repo.create({ ...data, storeId: ctx.storeId, userId: ctx.userId }) as any
     return await this.repo.save(invoice)
   }
 
-  async findAllByTenant(tenantId: string): Promise<SubscriptionInvoiceEntity[]> {
+  async findAllByStore(storeId: string): Promise<SubscriptionInvoiceEntity[]> {
     return await this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         subscriptionPlan: true,
       },

@@ -12,16 +12,16 @@ import {
   DEFAULT_STOREFRONT_AI_CONFIG,
   EmbeddingIndexStatus,
   StorefrontAiStatus,
-  TenantAiConfigForm,
-  TenantAiConfigResponse,
+  StoreAiConfigForm,
+  StoreAiConfigResponse,
 } from "../types/ai-config";
 
-function mapResponseToForm(data: TenantAiConfigResponse): TenantAiConfigForm {
+function mapResponseToForm(data: StoreAiConfigResponse): StoreAiConfigForm {
   const preset = AI_PROVIDER_OPTIONS.find((p) => p.id === data.provider);
 
   return {
     enabled: data.enabled ?? false,
-    provider: (data.provider as TenantAiConfigForm["provider"]) || "openai",
+    provider: (data.provider as StoreAiConfigForm["provider"]) || "openai",
     apiKey: data.hasApiKey ? AI_API_KEY_UNCHANGED : "",
     baseUrl: data.baseUrl || preset?.baseUrl || DEFAULT_AI_CONFIG_FORM.baseUrl,
     defaultModel: data.defaultModel || preset?.defaultModel || "",
@@ -55,13 +55,13 @@ export function useAiConfig() {
   const [reindexJobStatus, setReindexJobStatus] = useState<string | null>(null);
   const [embeddingStatus, setEmbeddingStatus] = useState<EmbeddingIndexStatus | null>(null);
   const [storefrontAiStatus, setStorefrontAiStatus] = useState<StorefrontAiStatus | null>(null);
-  const [form, setForm] = useState<TenantAiConfigForm>(DEFAULT_AI_CONFIG_FORM);
+  const [form, setForm] = useState<StoreAiConfigForm>(DEFAULT_AI_CONFIG_FORM);
   const [apiKeyPreview, setApiKeyPreview] = useState<string | null>(null);
 
   const loadConfig = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetchAPI("/tenants/ai-config");
+      const res = await fetchAPI("/stores/ai-config");
       if (res.data) {
         setForm(mapResponseToForm(res.data));
         setApiKeyPreview(res.data.apiKeyPreview || null);
@@ -131,7 +131,7 @@ export function useAiConfig() {
         payload.apiKey = AI_API_KEY_UNCHANGED;
       }
 
-      const res = await fetchAPI("/tenants/ai-config", {
+      const res = await fetchAPI("/stores/ai-config", {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
@@ -154,7 +154,7 @@ export function useAiConfig() {
     setTesting(true);
     try {
       if (form.apiKey && form.apiKey !== AI_API_KEY_UNCHANGED) {
-        await fetchAPI("/tenants/ai-config", {
+        await fetchAPI("/stores/ai-config", {
           method: "PATCH",
           body: JSON.stringify({
             enabled: true,
@@ -173,7 +173,7 @@ export function useAiConfig() {
         });
       }
 
-      const res = await fetchAPI("/tenants/ai-config/test", {
+      const res = await fetchAPI("/stores/ai-config/test", {
         method: "POST",
         body: JSON.stringify({ prompt: "Reply with exactly: OK" }),
       });
@@ -187,7 +187,7 @@ export function useAiConfig() {
     }
   };
 
-  const applyProviderPreset = (providerId: TenantAiConfigForm["provider"]) => {
+  const applyProviderPreset = (providerId: StoreAiConfigForm["provider"]) => {
     const preset = AI_PROVIDER_OPTIONS.find((p) => p.id === providerId);
     if (!preset) return;
 
@@ -272,7 +272,7 @@ export function useAiConfig() {
   };
 
   const setStorefrontFlag = (
-    key: keyof TenantAiConfigForm["storefront"],
+    key: keyof StoreAiConfigForm["storefront"],
     value: boolean,
   ) => {
     setForm((prev) => ({
@@ -282,7 +282,7 @@ export function useAiConfig() {
   };
 
   const setAutomationFlag = (
-    key: keyof TenantAiConfigForm["automation"],
+    key: keyof StoreAiConfigForm["automation"],
     value: boolean,
   ) => {
     setForm((prev) => ({
@@ -292,7 +292,7 @@ export function useAiConfig() {
   };
 
   const setSensitiveFlag = (
-    key: keyof TenantAiConfigForm["sensitive"],
+    key: keyof StoreAiConfigForm["sensitive"],
     value: boolean,
   ) => {
     setForm((prev) => ({

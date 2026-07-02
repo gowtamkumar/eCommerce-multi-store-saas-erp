@@ -1,12 +1,12 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { UserDto } from '@/modules/admin/core/user/dtos/user.dto'
 import { StaffInvitationService } from '@/modules/admin/core/user/services/staff-invitation.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreService } from '@/modules/system/store/store.service'
 import {
   ConflictException,
   Injectable,
@@ -36,7 +36,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-    private readonly tenantService: TenantService,
+    private readonly storeService: StoreService,
     private readonly configService: ConfigService,
     private readonly staffInvitationService: StaffInvitationService,
     private readonly permissionResolutionService: PermissionResolutionService,
@@ -49,28 +49,28 @@ export class AuthService {
 
   async register(
     registerCredentialDto: RegisterCredentialDto,
-    tenantId: string,
+    storeId: string,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: UserEntity }> {
     this.logger.log(`${this.register.name} Service Called`)
 
     const { username, email } = registerCredentialDto
-    const findByUsername = await this.userService.findUserByUsername(username, tenantId)
+    const findByUsername = await this.userService.findUserByUsername(username, storeId)
     if (findByUsername) {
-      throw new ConflictException('Username already exists for this tenant')
+      throw new ConflictException('Username already exists for this store')
     }
 
-    const findByEmail = await this.userService.findUserByEmail(email, tenantId)
+    const findByEmail = await this.userService.findUserByEmail(email, storeId)
     if (findByEmail) {
-      throw new ConflictException('Email already exists for this tenant')
+      throw new ConflictException('Email already exists for this store')
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex')
 
     const user = await this.userService.createUser(
       { ...registerCredentialDto, emailVerificationToken: verificationToken, role: UserRole.USER },
-      { tenantId } as RequestContextDto,
+      { storeId } as RequestContextDto,
     )
 
     if (!user) {
@@ -79,7 +79,7 @@ export class AuthService {
 
     // Generate unique referral code for the user
     try {
-      const refCode = await this.referralService.generateUniqueReferralCode(user.name, tenantId)
+      const refCode = await this.referralService.generateUniqueReferralCode(user.name, storeId)
       await this.userService.updateUser(user.id, { referralCode: refCode } as any)
       user.referralCode = refCode
     } catch (e: any) {
@@ -92,7 +92,7 @@ export class AuthService {
         await this.referralService.linkReferral(
           user.id,
           registerCredentialDto.referralCode,
-          tenantId,
+          storeId,
           undefined,
           'signup',
         )
@@ -101,7 +101,7 @@ export class AuthService {
       }
     }
 
-    // await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId)
+    // await this.mailService.sendVerificationEmail(user.email, verificationToken, storeId)
 
     const tokens = await this.getTokens(user, [], ipAddress, userAgent)
 
@@ -110,13 +110,13 @@ export class AuthService {
 
   async login(
     loginCredentialsDto: LoginCredentialDto,
-    tenantId: string,
+    storeId: string,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<{ user: UserEntity; accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.login.name} Service Called`)
     const { username, password } = loginCredentialsDto
-    const user = await this.userService.findUserByUsername(username, tenantId)
+    const user = await this.userService.findUserByUsername(username, storeId)
 
     if (!user) {
       throw new UnauthorizedException('Invalid Login Credentials')
@@ -126,11 +126,11 @@ export class AuthService {
       throw new UnauthorizedException('User is blocked. Please contact support.')
     }
 
-    // Check if tenant is suspended (skip for super admin)
-    if (user.role !== UserRole.SUPER_ADMIN && tenantId) {
-      const tenant = await this.tenantService.findOneTenants(tenantId)
-      if (tenant) {
-        if (tenant.status === TenantStatus.SUSPENDED) {
+    // Check if store is suspended (skip for super admin)
+    if (user.role !== UserRole.SUPER_ADMIN && storeId) {
+      const store = await this.storeService.findOneStores(storeId)
+      if (store) {
+        if (store.status === StoreStatus.SUSPENDED) {
           throw new UnauthorizedException('Store is suspended. Please contact support.')
         }
       }
@@ -145,24 +145,24 @@ export class AuthService {
     let features: string[] = []
     if (user.role === UserRole.SUPER_ADMIN) {
       features = ['*'] // Super admin has access to everything
-    } else if (tenantId) {
-      const tenant = await this.tenantService.findOneTenants(tenantId)
-      features = tenant?.subscriptionPlan?.features || []
+    } else if (storeId) {
+      const store = await this.storeService.findOneStores(storeId)
+      features = store?.subscriptionPlan?.features || []
     }
 
     const tokens = await this.getTokens(user, features, ipAddress, userAgent)
 
     let permissionManifest = null
-    if (tenantId) {
+    if (storeId) {
       permissionManifest = await this.permissionResolutionService.resolvePermissionsManifest(
         user.id,
-        tenantId,
+        storeId,
       )
     }
 
     // Trigger New Device Login Alert (Simulation)
     try {
-      if (tenantId) {
+      if (storeId) {
         await this.notificationService.createNotification(
           {
             title: 'Security Warning: New Login',
@@ -171,7 +171,7 @@ export class AuthService {
             link: `/admin/profile`,
             userId: user.id, // specifically alert the user
           },
-          tenantId,
+          storeId,
         )
       }
     } catch (e: any) {
@@ -190,9 +190,9 @@ export class AuthService {
     return user
   }
 
-  async forgotPassword(email: string, tenantId: string): Promise<void> {
+  async forgotPassword(email: string, storeId: string): Promise<void> {
     this.logger.log(`${this.forgotPassword.name} Service Called`)
-    const user = await this.userService.findUserByEmail(email, tenantId)
+    const user = await this.userService.findUserByEmail(email, storeId)
     if (!user) {
       // For security, don't reveal if user exists or not
       return
@@ -202,7 +202,7 @@ export class AuthService {
     const resetExpires = new Date(Date.now() + 3600000) // 1 hour
 
     await this.userService.updateResetToken(user.id, resetToken, resetExpires)
-    await this.mailService.sendResetPasswordEmail(user.email, resetToken, tenantId)
+    await this.mailService.sendResetPasswordEmail(user.email, resetToken, storeId)
   }
 
   async resetPassword(token: string, newPassword: string): Promise<UserEntity> {
@@ -235,7 +235,7 @@ export class AuthService {
     await this.sessionRepository.save({
       id: sessionId,
       userId: user.id,
-      tenantId: user.tenantId,
+      storeId: user.storeId,
       ipAddress,
       userAgent,
       expiresAt,
@@ -244,7 +244,7 @@ export class AuthService {
 
     const payload = {
       username: user.username,
-      tenantId: user.tenantId,
+      storeId: user.storeId,
       role: user.role,
       sub: user.id,
       features,
@@ -295,9 +295,9 @@ export class AuthService {
     let features: string[] = []
     if (user.role === UserRole.SUPER_ADMIN) {
       features = ['*']
-    } else if (user.tenantId) {
-      const tenant = await this.tenantService.findOneTenants(user.tenantId)
-      features = tenant?.subscriptionPlan?.features || []
+    } else if (user.storeId) {
+      const store = await this.storeService.findOneStores(user.storeId)
+      features = store?.subscriptionPlan?.features || []
     }
 
     // Invalidate old session from rotated token (DB + Redis cache)

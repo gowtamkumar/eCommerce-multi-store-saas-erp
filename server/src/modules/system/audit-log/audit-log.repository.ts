@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Between, FindOptionsWhere, Repository, ILike } from 'typeorm'
@@ -6,7 +6,7 @@ import { AuditLogEntity } from './entities/audit-log.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class AuditLogRepository extends BaseTenantRepository<AuditLogEntity> {
+export class AuditLogRepository extends BaseStoreRepository<AuditLogEntity> {
   constructor(
     @InjectRepository(AuditLogEntity)
     repo: Repository<AuditLogEntity>,
@@ -17,7 +17,7 @@ export class AuditLogRepository extends BaseTenantRepository<AuditLogEntity> {
   async createAndSave(ctx: RequestContextDto, data: any): Promise<void> {
     const entry = this.repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       actorId: data.actorId ?? data.userId ?? ctx.userId ?? null,
       branchId: ctx.branchId || data.branchId || null,
       warehouseId: ctx.warehouseId || data.warehouseId || null,
@@ -26,7 +26,7 @@ export class AuditLogRepository extends BaseTenantRepository<AuditLogEntity> {
   }
 
   async findAllWithFilters(
-    tenantId: string | null,
+    storeId: string | null,
     filters: {
       page: number
       limit: number
@@ -44,8 +44,8 @@ export class AuditLogRepository extends BaseTenantRepository<AuditLogEntity> {
       filters
     const where: FindOptionsWhere<AuditLogEntity> = {}
 
-    if (tenantId) {
-      where.tenantId = tenantId
+    if (storeId) {
+      where.storeId = storeId
     }
 
     if (userId) {
@@ -75,20 +75,20 @@ export class AuditLogRepository extends BaseTenantRepository<AuditLogEntity> {
     })
   }
 
-  async findById(id: string, tenantId: string | null): Promise<AuditLogEntity | null> {
+  async findById(id: string, storeId: string | null): Promise<AuditLogEntity | null> {
     const where: FindOptionsWhere<AuditLogEntity> = { id }
-    if (tenantId) {
-      where.tenantId = tenantId
+    if (storeId) {
+      where.storeId = storeId
     }
     return await this.repo.findOne({ where })
   }
 
-  async deleteOlderThan(tenantId: string, cutoff: Date): Promise<void> {
+  async deleteOlderThan(storeId: string, cutoff: Date): Promise<void> {
     await this.repo
       .createQueryBuilder()
       .delete()
       .from(AuditLogEntity)
-      .where('tenant_id = :tenantId', { tenantId })
+      .where('store_id = :storeId', { storeId })
       .andWhere('created_at < :cutoff', { cutoff })
       .execute()
   }

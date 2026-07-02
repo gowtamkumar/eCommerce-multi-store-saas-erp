@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -7,7 +7,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { generateSupplierCode } from './utils/supplier-code.util'
 
 @Injectable()
-export class SupplierRepository extends BaseTenantRepository<SupplierEntity> {
+export class SupplierRepository extends BaseStoreRepository<SupplierEntity> {
   constructor(
     @InjectRepository(SupplierEntity)
     repo: Repository<SupplierEntity>,
@@ -23,18 +23,18 @@ export class SupplierRepository extends BaseTenantRepository<SupplierEntity> {
     const supplier = this.repo.create({
       ...rest,
       categoryId: category || categoryId || null,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as SupplierEntity)
     return await this.repo.save(supplier)
   }
 
   /**
-   * Fetches paginated suppliers for a tenant.
+   * Fetches paginated suppliers for a store.
    * Supports server-side searching on name and contact name.
    */
-  async findAllByTenant(
-    tenantId: string,
+  async findAllByStore(
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -42,7 +42,7 @@ export class SupplierRepository extends BaseTenantRepository<SupplierEntity> {
     const qb = this.repo
       .createQueryBuilder('supplier')
       .leftJoinAndSelect('supplier.category', 'category')
-      .where('supplier.tenantId = :tenantId', { tenantId })
+      .where('supplier.storeId = :storeId', { storeId })
       .orderBy('supplier.name', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -57,18 +57,18 @@ export class SupplierRepository extends BaseTenantRepository<SupplierEntity> {
     return await qb.getManyAndCount()
   }
 
-  async findByIdAndTenant(id: string, tenantId: string): Promise<SupplierEntity | null> {
+  async findByIdAndStore(id: string, storeId: string): Promise<SupplierEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         category: true,
       },
     })
   }
 
-  async findByUserIdAndTenant(userId: string, tenantId: string): Promise<SupplierEntity | null> {
+  async findByUserIdAndStore(userId: string, storeId: string): Promise<SupplierEntity | null> {
     return await this.repo.findOne({
-      where: { userId, tenantId },
+      where: { userId, storeId },
       relations: {
         category: true,
       },

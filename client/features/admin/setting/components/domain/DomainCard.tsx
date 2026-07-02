@@ -9,10 +9,10 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import type { TenantDomain } from "../../types/domain";
+import type { StoreDomain } from "../../types/domain";
 
 interface DomainCardProps {
-  domain: TenantDomain;
+  domain: StoreDomain;
   verifyingId: string | null;
   removingId: string | null;
   primaryId: string | null;

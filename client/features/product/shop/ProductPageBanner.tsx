@@ -2,7 +2,7 @@
  * ProductPageBanner
  * Isolated, zero-dependency banner component for the /products page.
  * Extracted from the monolithic Products.tsx to allow independent testing
- * and future per-tenant customization without touching page-level logic.
+ * and future per-store customization without touching page-level logic.
  */
 interface ProductPageBannerProps {
   settings: {

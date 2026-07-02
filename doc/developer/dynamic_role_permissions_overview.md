@@ -1,8 +1,8 @@
 # Dynamic Role-Based Access Control (RBAC) Architecture
 
 **Author:** Senior Engineering Team  
-**Context:** Multi-tenant, multi-branch ERP SaaS.  
-**Objective:** Replace static, hardcoded role enums with a dynamic database-driven permission matrix. This allows each tenant to define custom roles (e.g., "Night Shift Cashier", "Assistant Store Manager") and fine-tune their access privileges.
+**Context:** Multi-store, multi-branch ERP SaaS.  
+**Objective:** Replace static, hardcoded role enums with a dynamic database-driven permission matrix. This allows each store to define custom roles (e.g., "Night Shift Cashier", "Assistant Store Manager") and fine-tune their access privileges.
 
 ---
 
@@ -12,7 +12,7 @@ To support fully dynamic permissions, we introduce a Many-to-Many mapping betwee
 
 ```mermaid
 erDiagram
-    TENANTS ||--o{ ROLES : owns
+    STORES ||--o{ ROLES : owns
     ROLES ||--o{ USERS : assigned-to
     ROLES }|--|{ ROLE_PERMISSIONS : contains
     PERMISSIONS ||--o{ ROLE_PERMISSIONS : mapped-by
@@ -20,7 +20,7 @@ erDiagram
     USERS {
         uuid id PK
         string username
-        uuid tenant_id FK
+        uuid store_id FK
         uuid role_id FK "References Custom Role"
     }
 
@@ -29,7 +29,7 @@ erDiagram
         string name "e.g. Dhaka Branch Operator"
         string description
         boolean is_system_default "e.g. System Admin role"
-        uuid tenant_id FK
+        uuid store_id FK
     }
 
     PERMISSIONS {

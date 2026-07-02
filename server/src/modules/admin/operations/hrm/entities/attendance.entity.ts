@@ -1,12 +1,12 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { EmployeeEntity } from './employee.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { AttendanceStatus } from '@/common/enums/hrm/hrm-enums'
 
 @Entity('attendance_sessions')
-@Index(['tenantId'])
+@Index(['storeId'])
 @Index(['employeeId'])
 @Index(['branchId'])
 export class AttendanceSessionEntity extends BaseEntity {
@@ -17,12 +17,12 @@ export class AttendanceSessionEntity extends BaseEntity {
   @JoinColumn({ name: 'employee_id' })
   employee: EmployeeEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
   branchId: string

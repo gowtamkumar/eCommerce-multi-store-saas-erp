@@ -40,7 +40,7 @@ export class SubscriptionBillingController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<CurrentSubscriptionResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCurrentSubscription.`)
-    const data = await this.billingService.getCurrentSubscription(ctx.tenantId)
+    const data = await this.billingService.getCurrentSubscription(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -70,7 +70,7 @@ export class SubscriptionBillingController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getBillingHistory.`)
-    const data = await this.billingService.getBillingHistory(ctx.tenantId)
+    const data = await this.billingService.getBillingHistory(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -244,7 +244,7 @@ export class SubscriptionBillingController {
     this.logger.verbose(
       `User "${sanitizeLogInput(ctx.user?.username || 'System')}" purchasing addon "${sanitizeLogInput(addonSlug)}".`,
     )
-    await this.billingService.purchaseAddon(ctx.tenantId, addonSlug)
+    await this.billingService.purchaseAddon(ctx.storeId, addonSlug)
     return {
       success: true,
       statusCode: 200,

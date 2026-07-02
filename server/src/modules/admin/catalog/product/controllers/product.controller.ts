@@ -8,7 +8,7 @@ import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Audit } from '@/common/decorators/audit.decorator'
 import { Public } from '@/common/decorators/public.decorator'
-import { assertTenantContext } from '@/common/utils/assert-tenant-context.util'
+import { assertStoreContext } from '@/common/utils/assert-store-context.util'
 import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
 import { SkipNonStorefrontAiThrottles } from '@/common/throttler/throttler-skip.decorator'
 import {
@@ -119,8 +119,8 @@ export class ProductController {
   async getStorefrontAiStatus(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<StorefrontAiStatusDto>> {
-    const tenantId = assertTenantContext(ctx.tenantId)
-    const data = await this.storefrontAssistantService.getStatus(tenantId)
+    const storeId = assertStoreContext(ctx.storeId)
+    const data = await this.storefrontAssistantService.getStatus(storeId)
     return {
       success: true,
       statusCode: 200,
@@ -139,8 +139,8 @@ export class ProductController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: StorefrontAssistantChatDto,
   ): Promise<BaseApiSuccessResponse<StorefrontAssistantChatResultDto>> {
-    const tenantId = assertTenantContext(ctx.tenantId)
-    const data = await this.storefrontAssistantService.chat(tenantId, dto, ctx)
+    const storeId = assertStoreContext(ctx.storeId)
+    const data = await this.storefrontAssistantService.chat(storeId, dto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -156,7 +156,7 @@ export class ProductController {
   async getEmbeddingIndexStatus(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.productService.getEmbeddingIndexStatus(ctx.tenantId)
+    const data = await this.productService.getEmbeddingIndexStatus(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -173,7 +173,7 @@ export class ProductController {
   async reindexProductEmbeddings(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.productService.reindexProductEmbeddings(ctx.tenantId)
+    const data = await this.productService.reindexProductEmbeddings(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -191,7 +191,7 @@ export class ProductController {
   async reindexProductEmbeddingsAsync(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const job = await this.productService.enqueueProductEmbeddingsReindex(ctx.tenantId)
+    const job = await this.productService.enqueueProductEmbeddingsReindex(ctx.storeId)
     return {
       success: true,
       statusCode: 202,
@@ -244,8 +244,8 @@ export class ProductController {
     @Param('slug') slug: string,
     @Body() dto: AskProductQuestionDto,
   ): Promise<BaseApiSuccessResponse<ProductQaResultDto>> {
-    const tenantId = assertTenantContext(ctx.tenantId)
-    const data = await this.productQaService.askAboutProduct(tenantId, slug, dto, ctx)
+    const storeId = assertStoreContext(ctx.storeId)
+    const data = await this.productQaService.askAboutProduct(storeId, slug, dto, ctx)
     return {
       success: true,
       statusCode: 200,

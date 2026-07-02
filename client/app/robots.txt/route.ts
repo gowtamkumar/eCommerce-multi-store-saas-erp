@@ -2,8 +2,8 @@ import { headers } from 'next/headers'
 import { getSiteSettings } from '@/services/getSettings'
 
 /**
- * Per-tenant robots.txt. We render the tenant's saved `robotsTxt` string
- * verbatim when it's set (lets the tenant disallow/allow specific paths and
+ * Per-store robots.txt. We render the store's saved `robotsTxt` string
+ * verbatim when it's set (lets the store disallow/allow specific paths and
  * inject their own crawler directives) and otherwise fall back to a sane
  * default that hides admin/api surfaces.
  *
@@ -30,7 +30,7 @@ function defaultRobotsTxt(baseUrl: string): string {
 }
 
 export async function GET() {
-  // Resolve base URL from the host header so multi-tenant deployments emit
+  // Resolve base URL from the host header so multi-store deployments emit
   // the right Sitemap directive without relying on a global env var that
   // would point to the SaaS landing page.
   const headerList = await headers()
@@ -43,13 +43,13 @@ export async function GET() {
   let body = defaultRobotsTxt(baseUrl)
   try {
     const settings = await getSiteSettings()
-    const tenantRobots =
+    const storeRobots =
       typeof (settings as any)?.robotsTxt === 'string' &&
       (settings as any).robotsTxt.trim().length > 0
         ? (settings as any).robotsTxt
         : null
-    if (tenantRobots) {
-      body = tenantRobots.endsWith('\n') ? tenantRobots : `${tenantRobots}\n`
+    if (storeRobots) {
+      body = storeRobots.endsWith('\n') ? storeRobots : `${storeRobots}\n`
     }
   } catch {
     // Defensive: if the settings call fails we'd rather ship the safe default

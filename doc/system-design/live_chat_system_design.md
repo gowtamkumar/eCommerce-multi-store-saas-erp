@@ -1,6 +1,6 @@
 # Live Chat Support System Architecture & Implementation
 
-This document details the design, data flows, database schemas, and client-side setup for the real-time Multi-Tenant Live Chat Support System.
+This document details the design, data flows, database schemas, and client-side setup for the real-time Multi-Store Live Chat Support System.
 
 ---
 
@@ -39,12 +39,12 @@ sequenceDiagram
 ## 2. Database Schema
 
 ### Conversation Entity (`ConversationEntity`)
-Represents a chat thread between a customer/visitor and the tenant's support team.
+Represents a chat thread between a customer/visitor and the store's support team.
 
 | Field Name | Type | Description |
 | :--- | :--- | :--- |
 | `id` | `uuid` (Primary Key) | Unique identifier. |
-| `tenantId` | `string` (Nullable) | Associated store tenant ID. |
+| `storeId` | `string` (Nullable) | Associated store store ID. |
 | `visitorId` | `uuid` | Persistent anonymous visitor tracking ID stored in client storage. |
 | `customerId` | `uuid` (Nullable) | References the logged-in storefront customer. |
 | `status` | `enum` (`ACTIVE`, `RESOLVED`) | Current lifecycle state of the conversation. |

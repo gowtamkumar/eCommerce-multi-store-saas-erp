@@ -1,6 +1,6 @@
 # Return, Refund, & Exchange System Guide
 
-This document outlines the end-to-end low-level system design, data relationships, step-by-step processing lifecycles, and accounting reconciliation logic for the Return, Refund, and Exchange modules in the multi-tenant eCommerce SaaS platform.
+This document outlines the end-to-end low-level system design, data relationships, step-by-step processing lifecycles, and accounting reconciliation logic for the Return, Refund, and Exchange modules in the multi-store eCommerce SaaS platform.
 
 ---
 

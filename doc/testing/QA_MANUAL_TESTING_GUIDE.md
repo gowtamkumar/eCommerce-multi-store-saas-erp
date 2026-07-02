@@ -1,18 +1,18 @@
-# Multi-Tenant SaaS ERP — Manual & QA Testing Master Playbook
+# Multi-Store SaaS ERP — Manual & QA Testing Master Playbook
 
-This playbook provides a step-by-step, module-by-module manual testing and Quality Assurance (QA) guideline for the Multi-Tenant SaaS ERP system. It covers environment preparation, module-specific test steps, API verifications, database validation queries, and edge-case boundary testing.
+This playbook provides a step-by-step, module-by-module manual testing and Quality Assurance (QA) guideline for the Multi-Store SaaS ERP system. It covers environment preparation, module-specific test steps, API verifications, database validation queries, and edge-case boundary testing.
 
 ---
 
 ## 🛠️ Section 1: Testing Environment Preparation & Setup
 
-To perform thorough manual and QA testing, your local environment must mimic a production multi-tenant architecture. 
+To perform thorough manual and QA testing, your local environment must mimic a production multi-store architecture. 
 
 ### 1.1 Local Services Port Mapping
 Verify that the services from `docker-compose.dev.yml` are running correctly:
 *   **Next.js Frontend Client**: `http://localhost:3000` (runs Next.js App Router server)
 *   **NestJS Backend API Server**: `http://localhost:3900`
-*   **PostgreSQL Database (pgvector)**: `localhost:5434` (User: `postgres` / Pass: `postgres` / DB: `multi_tenant_ecommerce`)
+*   **PostgreSQL Database (pgvector)**: `localhost:5434` (User: `postgres` / Pass: `postgres` / DB: `multi_store_ecommerce`)
 *   **pgAdmin Web Console**: `http://localhost:5051` (Login: `gowtampaul0@gmail.com` / Pass: `gowtampaul1995@`)
 *   **Redis Cache Server**: `localhost:6380` (Standard Redis instance)
 *   **Redis Commander**: `http://localhost:8088` (Redis GUI console)
@@ -20,7 +20,7 @@ Verify that the services from `docker-compose.dev.yml` are running correctly:
 *   **Mail Sandbox (MailHog)**: `http://localhost:8025` (Intercepts all emails triggered by SMTP)
 
 ### 1.2 Local DNS & Subdomain Routing
-The application determines tenant routing based on the hostname subdomain. Map your local hosts file to simulate this:
+The application determines store routing based on the hostname subdomain. Map your local hosts file to simulate this:
 *   **Linux/macOS**: Edit `/etc/hosts` (requires `sudo`):
     ```hosts
     127.0.0.1  localhost
@@ -54,7 +54,7 @@ Testing is structured into **5 Sequential Phases** to ensure foundational config
 
 ```mermaid
 graph TD
-    P1[Phase 1: Platform & Tenant Governance] --> P2[Phase 2: Core Store & Catalog Setup]
+    P1[Phase 1: Platform & Store Governance] --> P2[Phase 2: Core Store & Catalog Setup]
     P2 --> P3[Phase 3: Procurement & Inventory Operations]
     P3 --> P4[Phase 4: Sales, Shift Control & POS]
     P4 --> P5[Phase 5: Advanced ERP Operations]
@@ -66,19 +66,19 @@ graph TD
 
 ---
 
-### 🏛️ Phase 1: Platform & Tenant Governance
+### 🏛️ Phase 1: Platform & Store Governance
 
-#### Module 1: Super-Admin & Tenant Onboarding
-Verify the registration of a new tenant and seed resource instantiation.
+#### Module 1: Super-Admin & Store Onboarding
+Verify the registration of a new store and seed resource instantiation.
 1.  **UI Step-by-Step**:
     *   Navigate to the Super-Admin panel: `http://system.localhost:3000/system` (or `/system`).
-    *   Click **Onboard Tenant** and fill out the form:
+    *   Click **Onboard Store** and fill out the form:
         *   *Store Name*: `Lazz Pharma`, *Subdomain*: `lazzpharma`
         *   *Owner Email*: `owner@lazzpharma.com`, *Password*: `SecurePassword123!`
         *   *Subscription Plan*: Select a plan with active feature flags (e.g., HRM, POS, AI enabled).
     *   Submit the form.
 2.  **API Verification**:
-    *   **Endpoint**: `POST /api/v1/system/tenants/onboard`
+    *   **Endpoint**: `POST /api/v1/system/stores/onboard`
     *   **Request Payload**:
         ```json
         {
@@ -100,14 +100,14 @@ Verify the registration of a new tenant and seed resource instantiation.
         }
         ```
 3.  **Database Verification**:
-    *   Query the tenant status:
+    *   Query the store status:
         ```sql
-        SELECT id, store_name, subdomain, status FROM tenants WHERE subdomain = 'lazzpharma';
+        SELECT id, store_name, subdomain, status FROM stores WHERE subdomain = 'lazzpharma';
         -- Success criteria: 1 row returned, status is 'ACTIVE'.
         ```
-    *   Verify role and Chart of Accounts (COA) seeding for the new tenant's UUID:
+    *   Verify role and Chart of Accounts (COA) seeding for the new store's UUID:
         ```sql
-        SELECT code, name FROM accounts WHERE tenant_id = 'YOUR_TENANT_UUID' ORDER BY code;
+        SELECT code, name FROM accounts WHERE store_id = 'YOUR_STORE_UUID' ORDER BY code;
         -- Success criteria: Standard accounting codes (e.g., Cash 1010, Inventory 1200, Revenue 4010, COGS 5010) exist.
         ```
 
@@ -640,7 +640,7 @@ Verify support client WebSocket connections and messages.
 #### Module 18: Public Storefront Website (Customer Experience)
 Verify product visibility, shopping cart pipelines, and guest checkouts.
 1.  **UI Step-by-Step**:
-    *   Open `http://lazzpharma.localhost:3000` (Tenant Public storefront website).
+    *   Open `http://lazzpharma.localhost:3000` (Store Public storefront website).
     *   Navigate the homepage, search for "Napa Extra", and verify correct currency and pricing.
     *   Click **Add to Cart**. Go to the Checkout page.
     *   Enter shipping details, select payment method (Cash on Delivery), and click **Place Order**.
@@ -672,7 +672,7 @@ Verify Redis caching eviction, push notifications, and MinIO storage assets.
 2.  **Infrastructure Checks**:
     *   Verify Redis cache evicts on price update:
         *   Open Redis Commander at `http://localhost:8088`.
-        *   Inspect keys starting with the tenant slug prefix. Ensure old product price cache keys are cleared.
+        *   Inspect keys starting with the store slug prefix. Ensure old product price cache keys are cleared.
     *   Verify document uploads (e.g. employee resumes, product photos) write directly to MinIO:
         *   Navigate to the MinIO Console: `http://localhost:9001` (User: `minioadmin` / Pass: `minioadmin`).
         *   Inspect the configured bucket. Ensure the uploaded file exists and has public/private scoping matching the entity settings.
@@ -683,11 +683,11 @@ Verify Redis caching eviction, push notifications, and MinIO storage assets.
 
 To ensure the ERP remains stable, secure, and resilient, QA testers should execute these edge-case testing cycles:
 
-### 5.1 Multi-Tenant Data Segregation Testing
-Ensure that a user in Tenant A cannot view or modify Tenant B's data under any circumstances.
-*   **Test Action**: Log in as User A (`tenantA.localhost`). Copy a valid Order UUID. Log in as User B (`tenantB.localhost`) in a separate incognito window. Attempt to execute an API request:
-    *   `GET /api/v1/admin/orders/TENANT_A_ORDER_UUID`
-*   **Expected Behavior**: API must return `404 Not Found` or `403 Forbidden`, even if the UUID is correct, because the resource belongs to another tenant.
+### 5.1 Multi-Store Data Segregation Testing
+Ensure that a user in Store A cannot view or modify Store B's data under any circumstances.
+*   **Test Action**: Log in as User A (`storeA.localhost`). Copy a valid Order UUID. Log in as User B (`storeB.localhost`) in a separate incognito window. Attempt to execute an API request:
+    *   `GET /api/v1/admin/orders/STORE_A_ORDER_UUID`
+*   **Expected Behavior**: API must return `404 Not Found` or `403 Forbidden`, even if the UUID is correct, because the resource belongs to another store.
 
 ### 5.2 Inventory Race Conditions & Concurrency
 Ensure that double-selling does not occur when stock is limited.
@@ -718,7 +718,7 @@ When performing manual verification, copy the following template to your QA rele
 
 | Module | Feature Tested | Verified By | Date | Status (Pass/Fail) | Notes / Issues Filed |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **M1** | Tenant Onboarding | | | | |
+| **M1** | Store Onboarding | | | | |
 | **M2** | Auth & Branch Scope | | | | |
 | **M3** | Branches & COA | | | | |
 | **M4** | Product & Lot Registry| | | | |

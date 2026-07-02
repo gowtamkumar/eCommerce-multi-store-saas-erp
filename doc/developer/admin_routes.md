@@ -1,6 +1,6 @@
 # 🗺️ Admin Panel Routes Overview
 
-A complete reference guide for all the administrative routes available in the Multi-Tenant eCommerce SaaS platform, organized by module.
+A complete reference guide for all the administrative routes available in the Multi-Store eCommerce SaaS platform, organized by module.
 
 ---
 

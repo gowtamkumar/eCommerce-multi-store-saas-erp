@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { DebitNoteEntity, DebitNoteStatus } from '../entities/debit-note.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class DebitNoteRepository extends BaseTenantRepository<DebitNoteEntity> {
+export class DebitNoteRepository extends BaseStoreRepository<DebitNoteEntity> {
   constructor(
     @InjectRepository(DebitNoteEntity)
     repo: Repository<DebitNoteEntity>,
@@ -18,9 +18,9 @@ export class DebitNoteRepository extends BaseTenantRepository<DebitNoteEntity> {
     return this.txRepo(manager)
   }
 
-  async generateDebitNoteNumber(tenantId: string, manager?: EntityManager): Promise<string> {
+  async generateDebitNoteNumber(storeId: string, manager?: EntityManager): Promise<string> {
     const repo = this.getRepo(manager)
-    const count = await repo.count({ where: { tenantId } })
+    const count = await repo.count({ where: { storeId } })
     return `DN-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
   }
 
@@ -30,18 +30,18 @@ export class DebitNoteRepository extends BaseTenantRepository<DebitNoteEntity> {
     manager?: EntityManager,
   ): Promise<DebitNoteEntity> {
     const repo = this.getRepo(manager)
-    const debitNoteNumber = await this.generateDebitNoteNumber(ctx.tenantId, manager)
+    const debitNoteNumber = await this.generateDebitNoteNumber(ctx.storeId, manager)
     const debitNote = repo.create({
       ...data,
       debitNoteNumber,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       createdById: ctx.userId,
     } as DebitNoteEntity)
     return repo.save(debitNote)
   }
 
-  async findAllByTenant(
-    tenantId: string,
+  async findAllByStore(
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -52,7 +52,7 @@ export class DebitNoteRepository extends BaseTenantRepository<DebitNoteEntity> {
       .leftJoinAndSelect('dn.supplier', 'supplier')
       .leftJoinAndSelect('dn.purchaseOrder', 'purchaseOrder')
       .leftJoinAndSelect('dn.createdBy', 'createdBy')
-      .where('dn.tenantId = :tenantId', { tenantId })
+      .where('dn.storeId = :storeId', { storeId })
       .orderBy('dn.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -72,12 +72,12 @@ export class DebitNoteRepository extends BaseTenantRepository<DebitNoteEntity> {
 
   async findByIdWithRelations(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<DebitNoteEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         supplier: true,
         purchaseOrder: true,
@@ -88,12 +88,12 @@ export class DebitNoteRepository extends BaseTenantRepository<DebitNoteEntity> {
 
   async findById(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<DebitNoteEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 

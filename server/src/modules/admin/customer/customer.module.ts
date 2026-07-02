@@ -4,10 +4,10 @@ import { UserModule } from '../core/user/user.module'
 import { LeadModule } from './lead/lead.module'
 import { SubscriberModule } from './subscriber/subscriber.module'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
-  imports: [LeadModule, SubscriberModule, UserModule, TenantModule],
+  imports: [LeadModule, SubscriberModule, UserModule, StoreModule],
   controllers: [CustomerController],
   exports: [LeadModule, SubscriberModule],
 })

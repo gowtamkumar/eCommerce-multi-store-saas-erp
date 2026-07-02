@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { WarehouseEntity } from '../entities/warehouse.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class WarehouseRepository extends BaseTenantRepository<WarehouseEntity> {
+export class WarehouseRepository extends BaseStoreRepository<WarehouseEntity> {
   constructor(
     @InjectRepository(WarehouseEntity)
     repo: Repository<WarehouseEntity>,
@@ -14,18 +14,18 @@ export class WarehouseRepository extends BaseTenantRepository<WarehouseEntity> {
     super(WarehouseEntity, repo)
 }
 
-  async findAll(tenantId: string): Promise<WarehouseEntity[]> {
+  async findAll(storeId: string): Promise<WarehouseEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         branch: true,
       },
     })
   }
 
-  async findOne(id: string, tenantId: string): Promise<WarehouseEntity | null> {
+  async findOne(id: string, storeId: string): Promise<WarehouseEntity | null> {
     return this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         branch: true,
         bins: true,
@@ -36,7 +36,7 @@ export class WarehouseRepository extends BaseTenantRepository<WarehouseEntity> {
   async create(data: any, ctx: RequestContextDto): Promise<WarehouseEntity> {
     const warehouse = this.repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     })
     return this.repo.save(warehouse) as unknown as Promise<WarehouseEntity>
@@ -51,7 +51,7 @@ export class WarehouseRepository extends BaseTenantRepository<WarehouseEntity> {
     await this.repo.softRemove(warehouse)
   }
 
-  async findByCode(code: string, tenantId: string): Promise<WarehouseEntity | null> {
-    return this.repo.findOne({ where: { code, tenantId } })
+  async findByCode(code: string, storeId: string): Promise<WarehouseEntity | null> {
+    return this.repo.findOne({ where: { code, storeId } })
   }
 }

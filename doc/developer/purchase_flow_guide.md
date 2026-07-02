@@ -1,6 +1,6 @@
 # Purchase Cycle Guide: Create to Receipt (A-to-Z Guide)
 
-This guide documents the procurement intake lifecycle in the Multi-Tenant ERP eCommerce SaaS platform. It tracks the journey of acquiring inventory—starting from a Purchase Order (PO), transitioning through physical intake via a Goods Received Note (GRN), updating stock quantities/valuation (Weighted Average Cost), and ending with Accounts Payable (AP) and General Ledger (GL) financial postings.
+This guide documents the procurement intake lifecycle in the Multi-Store ERP eCommerce SaaS platform. It tracks the journey of acquiring inventory—starting from a Purchase Order (PO), transitioning through physical intake via a Goods Received Note (GRN), updating stock quantities/valuation (Weighted Average Cost), and ending with Accounts Payable (AP) and General Ledger (GL) financial postings.
 
 ---
 
@@ -52,7 +52,7 @@ flowchart TD
 
 ### Stage B: Purchase Order (PO) Execution
 
-- **Creation:** Created in `DRAFT` status. Represents the legal intention to buy. Contains tenant validation, specific branch constraints, supplier details, warehouse destination, and ordered quantities.
+- **Creation:** Created in `DRAFT` status. Represents the legal intention to buy. Contains store validation, specific branch constraints, supplier details, warehouse destination, and ordered quantities.
 - **Approval & Delivery:** Once approved, PO transitions to `APPROVED` or `SENT` and is emailed to the supplier.
 
 ### Stage C: Physical Delivery & Goods Received Note (GRN)
@@ -67,11 +67,11 @@ flowchart TD
 
 ## 2. Database Schema & Table Relationships
 
-The database utilizes TypeORM. All tables are securely partitioned by `tenant_id` to maintain multi-tenant isolation.
+The database utilizes TypeORM. All tables are securely partitioned by `store_id` to maintain multi-store isolation.
 
 ```mermaid
 erDiagram
-    tenants ||--o{ purchase_orders : owns
+    stores ||--o{ purchase_orders : owns
     suppliers ||--o{ purchase_orders : services
     purchase_orders ||--|{ purchase_order_items : contains
     purchase_orders ||--o{ goods_received_notes : references
@@ -86,7 +86,7 @@ erDiagram
     purchase_orders {
         uuid id PK
         varchar referenceNumber
-        uuid tenantId FK
+        uuid storeId FK
         uuid supplierId FK
         varchar status "DRAFT | APPROVED | SENT | RECEIVED | CANCELLED"
         decimal totalAmount
@@ -107,7 +107,7 @@ erDiagram
         uuid id PK
         varchar grnNumber
         uuid poId FK
-        uuid tenantId FK
+        uuid storeId FK
         uuid supplierId FK
         uuid warehouseId FK
         uuid branchId FK
@@ -129,7 +129,7 @@ erDiagram
 
     inventory_ledgers {
         uuid id PK
-        uuid tenantId FK
+        uuid storeId FK
         uuid productId FK
         uuid variantId FK
         uuid warehouseId FK
@@ -144,7 +144,7 @@ erDiagram
     supplier_ap_ledgers {
         uuid id PK
         uuid supplierId FK
-        uuid tenantId FK
+        uuid storeId FK
         varchar referenceType "GRN | PAYMENT | DEBIT_NOTE"
         uuid referenceId
         decimal debit
@@ -163,7 +163,7 @@ erDiagram
 3. **`inventory_ledgers`**
    - The ledger representing chronological stock movements. `balanceAfter` represents the running balance of stock for the given product/variant in a specific warehouse.
 4. **`supplier_ap_ledgers`**
-   - Stores accounts payable transactions per vendor. A `credit` increases the balance (the tenant owes money), whereas a `debit` reduces the balance (the tenant paid the supplier).
+   - Stores accounts payable transactions per vendor. A `credit` increases the balance (the store owes money), whereas a `debit` reduces the balance (the store paid the supplier).
 
 ---
 
@@ -184,12 +184,12 @@ $$\text{New Average Cost} = \frac{(S_{current} \times C_{current}) + (Q_{incomin
 
 ### Code Implementation Map
 
-- **Recalculation logic trigger:** [InventoryLedgerService.createLedgerEntry](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service.ts#L97-L126)
-- **Underlying Repositories:** [ProductVariantRepository](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/catalog/product/repositories/variant.repository.ts) and [ProductRepository](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/catalog/product/repositories/product.repository.ts) execute raw atomic updates to avoid race conditions:
+- **Recalculation logic trigger:** [InventoryLedgerService.createLedgerEntry](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service.ts#L97-L126)
+- **Underlying Repositories:** [ProductVariantRepository](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/catalog/product/repositories/variant.repository.ts) and [ProductRepository](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/catalog/product/repositories/product.repository.ts) execute raw atomic updates to avoid race conditions:
   ```typescript
   await this.variantRepository.updateAverageCost(
     variantId,
-    tenantId,
+    storeId,
     newAvgCost,
     entityManager,
   );
@@ -225,14 +225,14 @@ To prevent slow response times when receiving large purchase orders, the databas
                      └───────────────────────┘
 ```
 
-- **Job Dispatcher:** [GrnService.verifyGrn](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/operations/logistics/grn/grn.service.ts#L69-L80) enqueues `update-stock` jobs.
-- **Worker Process:** [ProductProcessor.handleUpdateStock](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/catalog/product/queue/product.processor.ts#L52-L87) executes in a separate thread/process to handle the stock update, Average Cost recalculation, and system warnings (e.g., low stock alerts).
+- **Job Dispatcher:** [GrnService.verifyGrn](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/operations/logistics/grn/grn.service.ts#L69-L80) enqueues `update-stock` jobs.
+- **Worker Process:** [ProductProcessor.handleUpdateStock](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/catalog/product/queue/product.processor.ts#L52-L87) executes in a separate thread/process to handle the stock update, Average Cost recalculation, and system warnings (e.g., low stock alerts).
 
 ---
 
 ## 5. Double-Entry Accounting Specifications
 
-Procurement intake directly impacts the Balance Sheet. When a GRN transitions to `RECEIVED`, the platform records a balanced transaction in the ledger via [AccountingIntegrationService.postInventoryMovement](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/operations/finance/accounting/services/accounting-integration.service.ts#L61-L83).
+Procurement intake directly impacts the Balance Sheet. When a GRN transitions to `RECEIVED`, the platform records a balanced transaction in the ledger via [AccountingIntegrationService.postInventoryMovement](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/operations/finance/accounting/services/accounting-integration.service.ts#L61-L83).
 
 ### Accounting Entry Rules
 
@@ -276,7 +276,7 @@ The final guardrail in the procurement flow is the **Three-Way Matching Engine**
        [ Supplier Invoice] ── (Compares Billing Inputs) ───────┘
 ```
 
-- **Execution Trigger:** [SupplierInvoiceService.createInvoice](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/operations/finance/purchase/services/supplier-invoice.service.ts#L33-L140)
+- **Execution Trigger:** [SupplierInvoiceService.createInvoice](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/operations/finance/purchase/services/supplier-invoice.service.ts#L33-L140)
 - **Discrepancy Validation Checks:**
   1. **Item Validity:** Is the invoiced Product ID actually present on the original Purchase Order?
   2. **Price Mismatch:** Does the Invoiced Unit Price match the agreed Purchase Order Unit Price?

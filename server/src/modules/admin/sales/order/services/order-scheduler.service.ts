@@ -75,7 +75,7 @@ export class OrderSchedulerService {
                   referenceType: InventoryTransactionReferenceType.ORDER,
                   referenceId: order.id,
                 },
-                { tenantId: order.tenantId } as any,
+                { storeId: order.storeId } as any,
                 manager,
               )
 
@@ -85,27 +85,27 @@ export class OrderSchedulerService {
                   orderId: order.id,
                   productId: item.productId,
                   variantId: item.variantId ?? null,
-                  tenantId: order.tenantId,
+                  storeId: order.storeId,
                 },
               })
               if (reservation) {
                 await this.reservationService.release(
                   reservation.id,
                   null,
-                  { tenantId: order.tenantId } as any,
+                  { storeId: order.storeId } as any,
                   manager,
                 )
               }
             }
           })
 
-          // Invalidate cache per tenant
+          // Invalidate cache per store
           await Promise.all([
-            this.cacheService.delCache('orders:overview', order.tenantId),
-            this.cacheService.delCacheByPattern('analytics*', order.tenantId),
+            this.cacheService.delCache('orders:overview', order.storeId),
+            this.cacheService.delCacheByPattern('analytics*', order.storeId),
           ])
 
-          this.logger.log(`Auto-cancelled stale order ${order.id} for tenant ${order.tenantId}`)
+          this.logger.log(`Auto-cancelled stale order ${order.id} for store ${order.storeId}`)
         } catch (err: any) {
           this.logger.error(`Failed to auto-cancel order ${order.id}: ${err.message}`)
         }

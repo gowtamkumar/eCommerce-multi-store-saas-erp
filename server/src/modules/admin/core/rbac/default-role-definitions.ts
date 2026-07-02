@@ -7,7 +7,7 @@ export interface DefaultRoleDefinition {
 export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
   {
     name: 'Branch Manager',
-    description: 'Full operational control across the tenant.',
+    description: 'Full operational control across the store.',
     permCodes: [
       'pos:create-sale',
       'pos:manage-shifts',

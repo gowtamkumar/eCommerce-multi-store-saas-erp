@@ -32,7 +32,7 @@ export class HrmRecruitmentService {
 
   // --- Recruitment (ATS) ---
   async findAllJobPostings(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllJobPostings(ctx.tenantId)
+    return this.hrmRepo.findAllJobPostings(ctx.storeId)
   }
 
   async createJobPosting(data: any, ctx: RequestContextDto) {
@@ -46,7 +46,7 @@ export class HrmRecruitmentService {
 
     const job = await this.hrmRepo.createJobPosting({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       status,
     })
     await this.auditLogService.log(ctx, {
@@ -59,14 +59,14 @@ export class HrmRecruitmentService {
   }
 
   async findAllApplicants(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllApplicants(ctx.tenantId)
+    return this.hrmRepo.findAllApplicants(ctx.storeId)
   }
 
   async applyForJob(data: any, ctx: RequestContextDto) {
     const applicant = await this.hrmRepo.createApplicant({
       ...data,
       name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'New Applicant',
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       status: 'APPLIED',
     })
     await this.auditLogService.log(ctx, {
@@ -91,7 +91,7 @@ export class HrmRecruitmentService {
       throw new BadRequestException('Interviewer ID is required for scheduling an interview')
     }
 
-    const applicant = await this.hrmRepo.findApplicantById(applicantId, ctx.tenantId)
+    const applicant = await this.hrmRepo.findApplicantById(applicantId, ctx.storeId)
     if (!applicant) {
       throw new NotFoundException('Applicant not found')
     }
@@ -109,7 +109,7 @@ export class HrmRecruitmentService {
       scheduledAt,
       feedback: notes,
       status: data.status || 'SCHEDULED',
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     await this.auditLogService.log(ctx, {
       action: 'SCHEDULE',
@@ -121,7 +121,7 @@ export class HrmRecruitmentService {
   }
 
   async findInterviewsByApplicant(applicantId: string, ctx: RequestContextDto) {
-    return this.hrmRepo.findInterviewsByApplicant(applicantId, ctx.tenantId)
+    return this.hrmRepo.findInterviewsByApplicant(applicantId, ctx.storeId)
   }
 
   async updateApplicantStatus(id: string, status: ApplicantStatus, ctx: RequestContextDto) {
@@ -136,10 +136,10 @@ export class HrmRecruitmentService {
   }
 
   async onboardApplicant(id: string, ctx: RequestContextDto) {
-    const applicant = await this.hrmRepo.findApplicantById(id, ctx.tenantId)
+    const applicant = await this.hrmRepo.findApplicantById(id, ctx.storeId)
     if (!applicant) throw new NotFoundException('Applicant not found')
 
-    let user = await this.userService.findUserByEmail(applicant.email, ctx.tenantId)
+    let user = await this.userService.findUserByEmail(applicant.email, ctx.storeId)
     if (!user) {
       const secureRandomPassword = crypto.randomBytes(16).toString('hex') + 'A1!'
       this.logger.log(`Creating new user account for applicant: ${applicant.email}`)
@@ -150,18 +150,18 @@ export class HrmRecruitmentService {
           name: `${applicant.firstName} ${applicant.lastName}`.trim(),
           role: UserRole.EMPLOYEE,
           password: secureRandomPassword,
-          tenantId: ctx.tenantId,
+          storeId: ctx.storeId,
         } as any,
         ctx,
       )
     }
 
     const employee = await this.hrmRepo.employeeRepo.manager.transaction(async (em) => {
-      const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.tenantId)
+      const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.storeId)
       const basicSalary = applicant.jobPosting?.salaryRangeMin ? Number(applicant.jobPosting.salaryRangeMin) : 0
 
       const employeeEntity = em.create(EmployeeEntity, {
-        tenantId: ctx.tenantId,
+        storeId: ctx.storeId,
         userId: user.id,
         departmentId: applicant.jobPosting?.departmentId,
         status: EmployeeStatus.PROBATION,
@@ -179,7 +179,7 @@ export class HrmRecruitmentService {
       const personalDetails = em.create(EmployeePersonalDetailsEntity, {
         userId: user.id,
         employeeId: savedEmployee.id,
-        tenantId: ctx.tenantId,
+        storeId: ctx.storeId,
       })
       await em.save(EmployeePersonalDetailsEntity, personalDetails)
 
@@ -198,7 +198,7 @@ export class HrmRecruitmentService {
         await leaveQuotaRepo.save(
           leaveQuotaRepo.create({
             employeeId: savedEmployee.id,
-            tenantId: ctx.tenantId,
+            storeId: ctx.storeId,
             leaveType: d.leaveType,
             totalDays: d.totalDays,
             usedDays: 0,
@@ -224,7 +224,7 @@ export class HrmRecruitmentService {
           link: '/admin/hrm/employees',
           userId: null as any, // Send to all admins
         },
-        ctx.tenantId,
+        ctx.storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger applicant onboarding notification: ${e.message}`)

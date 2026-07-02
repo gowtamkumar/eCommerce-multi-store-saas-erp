@@ -17,12 +17,12 @@ export class ChatService {
    * Get or create a conversation for a visitor
    */
   async getOrCreateConversation(
-    tenantId: string | null,
+    storeId: string | null,
     visitorId: string,
     customerId?: string | null,
   ): Promise<ConversationEntity> {
     let conversation = await this.conversationRepo.findOne({
-      where: { tenantId, visitorId },
+      where: { storeId, visitorId },
       relations: {
         customer: true,
       },
@@ -30,7 +30,7 @@ export class ChatService {
 
     if (!conversation) {
       conversation = this.conversationRepo.create({
-        tenantId,
+        storeId,
         visitorId,
         customerId: customerId || null,
         status: 'ACTIVE',
@@ -96,18 +96,18 @@ export class ChatService {
   }
 
   /**
-   * Verifies a conversation exists and (when a tenant is supplied) belongs to
-   * that tenant. Returns the conversation. Throws otherwise. Pass `undefined`
-   * to skip the tenant check (e.g. public visitor flows already scoped by
-   * tenant + visitorId).
+   * Verifies a conversation exists and (when a store is supplied) belongs to
+   * that store. Returns the conversation. Throws otherwise. Pass `undefined`
+   * to skip the store check (e.g. public visitor flows already scoped by
+   * store + visitorId).
    */
   async assertConversation(
     conversationId: string,
-    tenantId?: string | null,
+    storeId?: string | null,
   ): Promise<ConversationEntity> {
     const where: any = { id: conversationId }
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId
+    if (storeId !== undefined) {
+      where.storeId = storeId
     }
     const conversation = await this.conversationRepo.findOne({ where })
     if (!conversation) {
@@ -117,16 +117,16 @@ export class ChatService {
   }
 
   /**
-   * Get messages for a specific conversation. When `tenantId` is provided the
-   * conversation must belong to that tenant, preventing cross-tenant reads.
+   * Get messages for a specific conversation. When `storeId` is provided the
+   * conversation must belong to that store, preventing cross-store reads.
    */
   async getMessages(
     conversationId: string,
     limit: number = 50,
     offset: number = 0,
-    tenantId?: string | null,
+    storeId?: string | null,
   ): Promise<[ChatMessageEntity[], number]> {
-    await this.assertConversation(conversationId, tenantId)
+    await this.assertConversation(conversationId, storeId)
     return await this.messageRepo.findAndCount({
       where: { conversationId },
       order: { createdAt: 'ASC' },
@@ -136,15 +136,15 @@ export class ChatService {
   }
 
   /**
-   * Get all active conversations for a tenant (dashboard agents)
+   * Get all active conversations for a store (dashboard agents)
    */
   async getConversations(
-    tenantId: string | null,
+    storeId: string | null,
     status?: string,
     limit: number = 20,
     offset: number = 0,
   ): Promise<[ConversationEntity[], number]> {
-    const where: any = { tenantId }
+    const where: any = { storeId }
     if (status) {
       where.status = status
     }
@@ -166,11 +166,11 @@ export class ChatService {
   async markAsRead(
     conversationId: string,
     readerType: 'VISITOR' | 'AGENT',
-    tenantId?: string | null,
+    storeId?: string | null,
   ): Promise<void> {
     const where: any = { id: conversationId }
-    if (tenantId !== undefined) {
-      where.tenantId = tenantId
+    if (storeId !== undefined) {
+      where.storeId = storeId
     }
     const conversation = await this.conversationRepo.findOne({ where })
 

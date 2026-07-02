@@ -2,7 +2,7 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('subscription_invoices')
@@ -10,12 +10,12 @@ export class SubscriptionInvoiceEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'invoice_number', unique: true, length: 100 })
   invoiceNumber: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'subscription_plan_id' })
   subscriptionPlanId: string

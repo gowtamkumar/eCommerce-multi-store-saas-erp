@@ -48,8 +48,8 @@ export class OrderLifecycleService {
     ctx: RequestContextDto,
   ): Promise<OrderEntity> {
     this.logger.log(`${this.updateOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const order = await this.orderRepository.findOrderById(id, tenantId)
+    const storeId = ctx.storeId
+    const order = await this.orderRepository.findOrderById(id, storeId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -78,7 +78,7 @@ export class OrderLifecycleService {
           updateOrderDto.transactionId || order.transactionId || `MANUAL_COD_${Date.now()}`
 
         const existingPayment = await queryRunner.manager.findOne(PaymentEntity, {
-          where: { transactionId, tenantId },
+          where: { transactionId, storeId },
         })
 
         if (!existingPayment) {
@@ -142,7 +142,7 @@ export class OrderLifecycleService {
                 orderId: order.id,
                 productId: item.productId,
                 variantId: item.variantId ?? null,
-                tenantId,
+                storeId,
               },
             })
             if (existingReservation) {
@@ -311,7 +311,7 @@ export class OrderLifecycleService {
               link: `/admin/orders/${savedOrder.id}`,
               userId: null as any,
             },
-            tenantId,
+            storeId,
           )
         }
 
@@ -325,7 +325,7 @@ export class OrderLifecycleService {
               link: `/admin/orders/${savedOrder.id}`,
               userId: null as any,
             },
-            tenantId,
+            storeId,
           )
         } else if (
           updateOrderDto.status === OrderStatus.COMPLETED &&
@@ -339,7 +339,7 @@ export class OrderLifecycleService {
               link: `/admin/orders/${savedOrder.id}`,
               userId: null as any,
             },
-            tenantId,
+            storeId,
           )
         }
       } catch (e: any) {
@@ -347,13 +347,13 @@ export class OrderLifecycleService {
       }
 
       await Promise.all([
-        this.cacheService.delCache('orders:overview', tenantId),
-        this.cacheService.delCacheByPattern('analytics*', tenantId),
-        this.cacheService.delCacheByPattern('dashboard*', tenantId),
-        this.cacheService.delCacheByPattern('pnl*', tenantId),
-        this.cacheService.delCacheByPattern('cashflow*', tenantId),
-        this.cacheService.delCacheByPattern('finance:summary*', tenantId),
-        this.cacheService.delCacheByPattern('ledger:customer*', tenantId),
+        this.cacheService.delCache('orders:overview', storeId),
+        this.cacheService.delCacheByPattern('analytics*', storeId),
+        this.cacheService.delCacheByPattern('dashboard*', storeId),
+        this.cacheService.delCacheByPattern('pnl*', storeId),
+        this.cacheService.delCacheByPattern('cashflow*', storeId),
+        this.cacheService.delCacheByPattern('finance:summary*', storeId),
+        this.cacheService.delCacheByPattern('ledger:customer*', storeId),
       ])
       return savedOrder
     } catch (err: any) {

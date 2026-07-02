@@ -97,12 +97,12 @@ export class NotificationController {
   @Post('broadcast')
   @Roles(UserRole.SUPER_ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiOperation({ summary: 'Broadcast a global, bulk, or tenant-specific notification' })
+  @ApiOperation({ summary: 'Broadcast a global, bulk, or store-specific notification' })
   async broadcastNotification(
-    @Body() dto: { title: string; message: string; type?: string; link?: string; tenantId?: string },
+    @Body() dto: { title: string; message: string; type?: string; link?: string; storeId?: string },
   ): Promise<BaseApiSuccessResponse<any>> {
-    if (dto.tenantId === 'all') {
-      const notifications = await this.notificationService.broadcastToAllTenants({
+    if (dto.storeId === 'all') {
+      const notifications = await this.notificationService.broadcastToAllStores({
         title: dto.title,
         message: dto.message,
         type: dto.type,
@@ -111,11 +111,11 @@ export class NotificationController {
       return {
         success: true,
         statusCode: 201,
-        message: `Notification broadcasted to ${notifications.length} tenants`,
+        message: `Notification broadcasted to ${notifications.length} stores`,
         data: null,
       }
     } else {
-      const targetTenantId = dto.tenantId && dto.tenantId !== 'global' ? dto.tenantId : null
+      const targetStoreId = dto.storeId && dto.storeId !== 'global' ? dto.storeId : null
       const notification = await this.notificationService.createNotification(
         {
           title: dto.title,
@@ -123,7 +123,7 @@ export class NotificationController {
           type: dto.type,
           link: dto.link,
         },
-        targetTenantId,
+        targetStoreId,
       )
       return {
         success: true,

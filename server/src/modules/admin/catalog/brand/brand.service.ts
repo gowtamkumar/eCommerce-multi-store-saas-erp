@@ -17,52 +17,52 @@ export class BrandService {
 
   async createBrand(createBrandDto: CreateBrandDto, ctx: RequestContextDto): Promise<BrandEntity> {
     this.logger.log(`${this.createBrand.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const existing = await this.brandRepo.findBySlug(createBrandDto.slug, tenantId)
+    const existing = await this.brandRepo.findBySlug(createBrandDto.slug, storeId)
 
     if (existing) {
       throw new ConflictException('Brand with this slug already exists')
     }
 
     const result = await this.brandRepo.createAndSave(createBrandDto, ctx)
-    await this.cache.delCache(`brands:list`, tenantId)
-    await this.cache.delCache(`brands:stats`, tenantId)
+    await this.cache.delCache(`brands:list`, storeId)
+    await this.cache.delCache(`brands:stats`, storeId)
     return result
   }
 
   async findAllBrands(ctx: RequestContextDto): Promise<BrandEntity[]> {
     this.logger.log(`${this.findAllBrands.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `brands:list`
 
     const fetchFn = async () => {
-      if (tenantId) {
-        return this.brandRepo.findAllByTenant(tenantId)
+      if (storeId) {
+        return this.brandRepo.findAllByStore(storeId)
       }
-      // No tenant – return all brands across tenants.
+      // No store – return all brands across stores.
       return this.brandRepo.findAll()
     }
 
-    return this.cache.rememberCache(cacheKey, fetchFn, 600, tenantId)
+    return this.cache.rememberCache(cacheKey, fetchFn, 600, storeId)
   }
 
   async findAllBrandsWithStats(ctx: RequestContextDto) {
     this.logger.log(`${this.findAllBrandsWithStats.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `brands:stats`
 
     return this.cache.rememberCache(
       cacheKey,
       async () => {
-        if (tenantId) {
-          const results = await this.brandRepo.findAllWithProductCounts(tenantId)
+        if (storeId) {
+          const results = await this.brandRepo.findAllWithProductCounts(storeId)
           return results.map((r) => ({
             ...r,
             productCount: Number(r.productCount || 0),
           }))
         }
-        // No tenant – compute stats for all brands.
+        // No store – compute stats for all brands.
         const qb = this.brandRepo.getAllBrandsQueryBuilder()
         const results = await qb
           .select([
@@ -85,14 +85,14 @@ export class BrandService {
         }))
       },
       600, // 10 minutes
-      tenantId,
+      storeId,
     )
   }
 
   async findOneBrand(id: string, ctx: RequestContextDto): Promise<BrandEntity> {
     this.logger.log(`${this.findOneBrand.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const brand = await this.brandRepo.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const brand = await this.brandRepo.findById(id, storeId)
 
     if (!brand) {
       throw new NotFoundException('Brand not found')
@@ -107,11 +107,11 @@ export class BrandService {
     ctx: RequestContextDto,
   ): Promise<BrandEntity> {
     this.logger.log(`${this.updateBrand.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const brand = await this.findOneBrand(id, ctx)
 
     if (updateBrandDto.slug && updateBrandDto.slug !== brand.slug) {
-      const existing = await this.brandRepo.findBySlug(updateBrandDto.slug, tenantId)
+      const existing = await this.brandRepo.findBySlug(updateBrandDto.slug, storeId)
 
       if (existing) {
         throw new ConflictException('Brand with this slug already exists')
@@ -119,8 +119,8 @@ export class BrandService {
     }
 
     const result = await this.brandRepo.updateAndSave(brand, updateBrandDto)
-    await this.cache.delCache(`brands:list`, tenantId)
-    await this.cache.delCache(`brands:stats`, tenantId)
+    await this.cache.delCache(`brands:list`, storeId)
+    await this.cache.delCache(`brands:stats`, storeId)
     return result
   }
 
@@ -129,11 +129,11 @@ export class BrandService {
     ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeBrand.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const brand = await this.findOneBrand(id, ctx)
     await this.brandRepo.removeBrand(brand)
-    await this.cache.delCache(`brands:list`, tenantId)
-    await this.cache.delCache(`brands:stats`, tenantId)
+    await this.cache.delCache(`brands:list`, storeId)
+    await this.cache.delCache(`brands:stats`, storeId)
     return { success: true, message: 'Brand deleted successfully' }
   }
 }

@@ -1,7 +1,7 @@
 # Subscription Plan & Feature Access Control — System Design
 
 > **Audience**: Backend and full-stack developers joining or reviewing this project.  
-> **Goal**: Give a complete, end-to-end understanding of how subscription plans, feature gating, and fine-grained permission control work together in this multi-tenant SaaS platform.
+> **Goal**: Give a complete, end-to-end understanding of how subscription plans, feature gating, and fine-grained permission control work together in this multi-store SaaS platform.
 
 ---
 
@@ -27,11 +27,11 @@
 
 ## Overview
 
-This platform serves multiple independent **tenants** (stores), each on a **subscription plan**. Access to features and fine-grained operations is controlled by a tiered resolution model:
+This platform serves multiple independent **stores** (stores), each on a **subscription plan**. Access to features and fine-grained operations is controlled by a tiered resolution model:
 
 ```
-Layer 1a: Subscription Plan   →  Does this tenant's plan include the feature?
-Layer 1b: Tenant Overrides    →  Is there an explicit override in the database (custom add-on or block)?
+Layer 1a: Subscription Plan   →  Does this store's plan include the feature?
+Layer 1b: Store Overrides    →  Is there an explicit override in the database (custom add-on or block)?
 Layer 2:  RBAC (Roles)        →  Does this user's role grant the specific action within the enabled feature?
 ```
 
@@ -44,12 +44,12 @@ Every API request passes through this stack in order. A **DENY at any layer is f
 
 | Term | Definition |
 |---|---|
-| **Tenant** | An independent store with its own data, users, and configuration. Identified by `tenantId` (UUID). |
+| **Store** | An independent store with its own data, users, and configuration. Identified by `storeId` (UUID). |
 | **Subscription Plan** | A tiered product offering (e.g. Starter, Pro, Enterprise) that defines which **features** are included. |
 | **Feature** | A functional area of the application (e.g. `payroll`, `pos`, `inventory`). Identified by a **slug** string. |
 | **Feature Slug** | A lowercase string like `payroll`, `pos`, `hrm`. Canonical ID for a feature across all layers. |
 | **Permission** | An atomic capability within a feature. Format: `feature:action` (e.g. `payroll:approve`, `pos:refund`). |
-| **Role** | A named collection of permissions. Assigned to users within a tenant scope. |
+| **Role** | A named collection of permissions. Assigned to users within a store scope. |
 | **Permission Manifest** | A cached JSON blob returned at login listing all `featuresEnabled` and `permissions` for a user. |
 | **Super Admin** | A platform-level user (`UserRole.SUPER_ADMIN`) who bypasses ALL feature and permission checks. |
 
@@ -94,12 +94,12 @@ CREATE TABLE subscription_plans (
 
 ---
 
-### `tenants`
+### `stores`
 
-Each tenant (store) subscribes to exactly one plan.
+Each store (store) subscribes to exactly one plan.
 
 ```sql
-CREATE TABLE tenants (
+CREATE TABLE stores (
   id                       UUID PRIMARY KEY,
   store_name               VARCHAR NOT NULL,
   subdomain                VARCHAR UNIQUE NOT NULL,
@@ -122,21 +122,21 @@ CREATE TABLE tenants (
 
 ---
 
-### `tenant_features`
+### `store_features`
 
-Stores explicit per-tenant feature overrides (add-ons or disabling a plan feature) configured by the platform super-admin.
+Stores explicit per-store feature overrides (add-ons or disabling a plan feature) configured by the platform super-admin.
 
 ```sql
-CREATE TABLE tenant_features (
+CREATE TABLE store_features (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id    UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  store_id    UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
   feature_slug VARCHAR(100) NOT NULL,
   is_enabled   BOOLEAN DEFAULT true,
   enabled_by   UUID,
   enabled_at   TIMESTAMPTZ,
   created_at   TIMESTAMPTZ DEFAULT now(),
   updated_at   TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (tenant_id, feature_slug)
+  UNIQUE (store_id, feature_slug)
 );
 ```
 
@@ -164,17 +164,17 @@ CREATE TABLE permissions (
 
 ### `roles`
 
-Named collections of permissions scoped to a tenant.
+Named collections of permissions scoped to a store.
 
 ```sql
 CREATE TABLE roles (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name              VARCHAR(255) NOT NULL,
   description       TEXT,
-  tenant_id         UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  store_id         UUID REFERENCES stores(id) ON DELETE CASCADE,
   is_system_role    BOOLEAN DEFAULT false,    -- Immutable platform-provisioned roles
   is_system_default BOOLEAN DEFAULT false,    -- @deprecated use is_system_role
-  UNIQUE (name, tenant_id)
+  UNIQUE (name, store_id)
 );
 
 -- Junction table for role ↔ permission many-to-many
@@ -198,7 +198,7 @@ CREATE TABLE user_role_assignments (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   role_id     UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-  tenant_id   UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  store_id   UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
   scope_type  ENUM('global','branch','warehouse') DEFAULT 'global',
   scope_id    UUID,             -- Branch or warehouse UUID (NULL when scope_type = 'global')
   assigned_by UUID,
@@ -209,7 +209,7 @@ CREATE TABLE user_role_assignments (
 );
 ```
 
-> **Note on Scope**: The `scope_type` and `scope_id` columns are kept for future branch/warehouse scoping capabilities. The current permission resolution engine treats all assignments as GLOBAL (tenant-wide).
+> **Note on Scope**: The `scope_type` and `scope_id` columns are kept for future branch/warehouse scoping capabilities. The current permission resolution engine treats all assignments as GLOBAL (store-wide).
 
 ---
 
@@ -221,7 +221,7 @@ Per-user explicit ALLOW or DENY for a specific permission.
 CREATE TABLE user_permission_overrides (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  store_id       UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
   permission_slug VARCHAR(150) NOT NULL,    -- "payroll:approve"
   effect          ENUM('allow','deny') DEFAULT 'allow',
   reason          TEXT,                     -- Required for audit trail
@@ -251,7 +251,7 @@ erDiagram
         varchar stripe_price_id_monthly
     }
 
-    tenants {
+    stores {
         uuid id PK
         varchar store_name
         varchar subdomain
@@ -260,9 +260,9 @@ erDiagram
         timestamptz subscription_ends_at
     }
 
-    tenant_features {
+    store_features {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         varchar feature_slug
         boolean is_enabled
     }
@@ -270,7 +270,7 @@ erDiagram
     roles {
         uuid id PK
         varchar name
-        uuid tenant_id FK
+        uuid store_id FK
         boolean is_system_role
     }
 
@@ -289,7 +289,7 @@ erDiagram
 
     users {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         varchar email
         enum role "super_admin|admin|staff"
     }
@@ -298,7 +298,7 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid role_id FK
-        uuid tenant_id FK
+        uuid store_id FK
         enum scope_type "global|branch|warehouse"
         uuid scope_id "nullable"
         timestamptz expires_at "nullable"
@@ -307,21 +307,21 @@ erDiagram
     user_permission_overrides {
         uuid id PK
         uuid user_id FK
-        uuid tenant_id FK
+        uuid store_id FK
         varchar permission_slug
         enum effect "allow|deny"
         timestamptz expires_at "nullable"
     }
 
-    subscription_plans ||--o{ tenants : "subscribed by"
-    tenants ||--o{ roles : "owns"
-    tenants ||--o{ tenant_features : "has overrides"
+    subscription_plans ||--o{ stores : "subscribed by"
+    stores ||--o{ roles : "owns"
+    stores ||--o{ store_features : "has overrides"
     roles ||--o{ role_permissions : "has"
     permissions ||--o{ role_permissions : "assigned to"
     users ||--o{ user_role_assignments : "has"
     roles ||--o{ user_role_assignments : "assigned via"
     users ||--o{ user_permission_overrides : "has"
-    tenants ||--o{ users : "contains"
+    stores ||--o{ users : "contains"
 ```
 
 ---
@@ -332,18 +332,18 @@ The `PermissionResolutionService` implements this decision tree for every protec
 
 ```mermaid
 flowchart TD
-    A([API Request: user=U, tenant=T, permission=F:A]) --> B{Is Super Admin?}
+    A([API Request: user=U, store=T, permission=F:A]) --> B{Is Super Admin?}
     B -- Yes --> ALLOW([✅ ALLOW])
     B -- No --> C[Extract feature slug from permission\ne.g. 'payroll' from 'payroll:approve']
 
-    C --> D{Step 1: Check override in tenant_features}
+    C --> D{Step 1: Check override in store_features}
     D -- Found Override: enabled --> E
     D -- Found Override: disabled --> DENY1([❌ DENY — Disabled by Admin])
     D -- No Override --> D2{Fallback: Is slug in subscription plan?}
     D2 -- No --> DENY2([❌ DENY — Upgrade plan])
     D2 -- Yes --> E
 
-    E[Step 2: Collect all active\nnon-expired role assignments\nfor user U in tenant T]
+    E[Step 2: Collect all active\nnon-expired role assignments\nfor user U in store T]
     E --> F[Gather permissions\nfrom flat roles]
     F --> G{Step 3: Does permission\nset include F:A?}
     G -- Yes --> ALLOW2([✅ ALLOW])
@@ -355,8 +355,8 @@ flowchart TD
 | Step | Logic | Source |
 |---|---|---|
 | **0** | **Super Admin bypass**: `UserRole.SUPER_ADMIN` skips all checks | `permissions.guard.ts` |
-| **1** | **Feature enabled for tenant?**: Checks `tenant_features` database overrides. If no override exists, falls back to checking `subscription_plans.features[]`. | `permission-resolution.service.ts → isFeatureEnabledForTenant()` |
-| **2** | **Role collection (Flat)**: Collect all active, non-expired role assignments for the user in this tenant (no inheritance chain) and union their permissions | `getEffectivePermissions()` |
+| **1** | **Feature enabled for store?**: Checks `store_features` database overrides. If no override exists, falls back to checking `subscription_plans.features[]`. | `permission-resolution.service.ts → isFeatureEnabledForStore()` |
+| **2** | **Role collection (Flat)**: Collect all active, non-expired role assignments for the user in this store (no inheritance chain) and union their permissions | `getEffectivePermissions()` |
 | **3** | **Check permission**: Verify if the target permission slug exists in the collected set | `resolvePermission()` |
 
 ### Resolution Priority (Highest to Lowest)
@@ -364,9 +364,9 @@ flowchart TD
 ```
 Super Admin bypass
     ↓
-Feature explicitly disabled via Tenant Override → DENY
+Feature explicitly disabled via Store Override → DENY
     ↓
-Feature explicitly enabled via Tenant Override (Add-on) → check RBAC roles
+Feature explicitly enabled via Store Override (Add-on) → check RBAC roles
     ↓
 Feature not in subscription plan (and no override) → DENY
     ↓
@@ -389,7 +389,7 @@ sequenceDiagram
     participant Client
     participant MaintenanceGuard
     participant JwtAuthGuard
-    participant TenantStatusGuard
+    participant StoreStatusGuard
     participant SubscriptionGuard
     participant PermissionsGuard
     participant Controller
@@ -402,10 +402,10 @@ sequenceDiagram
     JwtAuthGuard-->>JwtAuthGuard: Validate JWT, attach request.user
     Note over JwtAuthGuard: Returns 401 if invalid/missing token
 
-    JwtAuthGuard->>TenantStatusGuard: request.user attached
-    TenantStatusGuard-->>TenantStatusGuard: Is tenant active? Not suspended/expired?
+    JwtAuthGuard->>StoreStatusGuard: request.user attached
+    StoreStatusGuard-->>StoreStatusGuard: Is store active? Not suspended/expired?
 
-    TenantStatusGuard->>SubscriptionGuard: Tenant is active
+    StoreStatusGuard->>SubscriptionGuard: Store is active
     SubscriptionGuard-->>SubscriptionGuard: @RequireFeature('payroll') present?
     Note over SubscriptionGuard: Checks plan features directly
 
@@ -423,7 +423,7 @@ sequenceDiagram
 |---|---|---|
 | `MaintenanceGuard` | `guards/maintenance.guard.ts` | Blocks all traffic when `platform_settings.is_maintenance_mode = true` |
 | `JwtAuthGuard` | `guards/jwt-auth.guard.ts` | Validates Bearer JWT, rejects if invalid or missing |
-| `TenantStatusGuard` | `guards/tenant-status.guard.ts` | Ensures tenant is `active` and subscription is not `expired` |
+| `StoreStatusGuard` | `guards/store-status.guard.ts` | Ensures store is `active` and subscription is not `expired` |
 | `SubscriptionGuard` | `guards/subscription.guard.ts` | Route-level feature check via `@RequireFeature('slug')` decorator |
 | `PermissionsGuard` | `guards/permissions.guard.ts` | Per-permission check via `@Permissions(['feature:action'])` — runs the 3-step engine |
 
@@ -452,7 +452,7 @@ The platform supports the following core and add-on feature slugs, which are ass
 
 ## Subscription Plans (`subscription_plans`)
 
-Plans define the feature set AND resource limits for a tenant:
+Plans define the feature set AND resource limits for a store:
 
 ### Example Plan Configurations
 
@@ -521,16 +521,16 @@ Roles do not support inheritance (the `parent_role_id` column has been removed).
 
 | Scope | Description | `scope_id` |
 |---|---|---|
-| `GLOBAL` | User acts across the entire tenant | `null` |
+| `GLOBAL` | User acts across the entire store | `null` |
 | `BRANCH` | User is restricted to a specific branch | `branchId` (UUID) |
 | `WAREHOUSE` | User is restricted to a specific warehouse | `warehouseId` (UUID) |
 
-> **Scope Evaluation**: The `scope_type` and `scope_id` columns are preserved on `user_role_assignments` for future multi-branch and multi-warehouse scoping features. Currently, the resolution engine treats all active assignments as GLOBAL (tenant-wide). A user can hold **multiple role assignments simultaneously**, and the resolution engine takes the union of all active roles.
+> **Scope Evaluation**: The `scope_type` and `scope_id` columns are preserved on `user_role_assignments` for future multi-branch and multi-warehouse scoping features. Currently, the resolution engine treats all active assignments as GLOBAL (store-wide). A user can hold **multiple role assignments simultaneously**, and the resolution engine takes the union of all active roles.
 
 ### System Roles
 
-System roles (`is_system_role = true`) are auto-provisioned when a tenant is created. They **cannot be modified or deleted** by the tenant admin. Examples:
-- `Super Admin` (tenant-level super user)
+System roles (`is_system_role = true`) are auto-provisioned when a store is created. They **cannot be modified or deleted** by the store admin. Examples:
+- `Super Admin` (store-level super user)
 - `Store Owner`
 
 ---
@@ -542,7 +542,7 @@ Direct per-user permission overrides can be defined and managed via the `/rbac/u
 ```json
 {
   "userId": "user-123",
-  "tenantId": "tenant-456",
+  "storeId": "store-456",
   "permissionSlug": "payroll:approve",
   "effect": "deny",
   "reason": "Temporary restriction pending compliance check",
@@ -591,12 +591,12 @@ flowchart LR
 ### Cache Key
 
 ```
-rbac:manifest:{tenantId}:{userId}
+rbac:manifest:{storeId}:{userId}
 ```
 
 **Cache is invalidated whenever**:
 - A role is assigned or revoked
-- A tenant's plan or feature overrides change
+- A store's plan or feature overrides change
 
 > ⚠️ **Security Warning**: The manifest is for UI convenience **only**. The backend always re-validates permissions on every request via `PermissionsGuard`. Never trust the manifest alone for access control decisions.
 
@@ -632,21 +632,21 @@ if (!featuresEnabled.includes('pos')) {
 
 ## Key Invariants & Rules
 
-1. **Feature first**: If a feature is not in the tenant's subscription plan, NO permission within that feature can be granted — regardless of role.
+1. **Feature first**: If a feature is not in the store's subscription plan, NO permission within that feature can be granted — regardless of role.
 2. **Expired items are ignored, not deleted**: `user_role_assignments.expires_at` is checked at runtime. Cleanup is optional.
 3. **Super Admin bypasses everything**: `UserRole.SUPER_ADMIN` skips the entire guard chain.
 4. **Backend always re-validates**: The permission manifest is a hint for the UI. The backend runs the full resolution on every request.
-5. **Permissions are platform-owned**: Tenants cannot invent new permissions. Only platform seeds them.
+5. **Permissions are platform-owned**: Stores cannot invent new permissions. Only platform seeds them.
 6. **Core features are indestructible**: Features with `is_core = true` are always enabled.
 
 ---
 
 ## Common Scenarios — Decision Tree
 
-### Scenario A: User tries to access Payroll module but tenant is on Starter plan
+### Scenario A: User tries to access Payroll module but store is on Starter plan
 
 ```
-Step 1: isFeatureEnabledForTenant('payroll')
+Step 1: isFeatureEnabledForStore('payroll')
   → Check plan.features = ['pos', 'inventory', 'ecommerce']
   → 'payroll' NOT in plan features
   → DENY ❌ (403: Upgrade your plan)
@@ -668,8 +668,8 @@ Step 3: Check permissions → Store Manager grants 'payroll:approve'
 | File | Role |
 |---|---|
 | [`subscription-plan.entity.ts`](../server/src/modules/system/subscription-plan/entities/subscription-plan.entity.ts) | Plan schema: `features` JSONB, pricing, limits |
-| [`tenant.entity.ts`](../server/src/modules/system/tenant/entities/tenant.entity.ts) | Tenant schema: `subscriptionPlanId` FK, subscription status |
-| [`tenant-feature.entity.ts`](../server/src/modules/system/tenant/entities/tenant-feature.entity.ts) | Tenant feature overrides schema: `tenantId`, `featureSlug`, `isEnabled` |
+| [`store.entity.ts`](../server/src/modules/system/store/entities/store.entity.ts) | Store schema: `subscriptionPlanId` FK, subscription status |
+| [`store-feature.entity.ts`](../server/src/modules/system/store/entities/store-feature.entity.ts) | Store feature overrides schema: `storeId`, `featureSlug`, `isEnabled` |
 | [`permission.entity.ts`](../server/src/modules/admin/core/user/entities/permission.entity.ts) | Atomic permission: `code = 'feature:action'` |
 | [`role.entity.ts`](../server/src/modules/admin/core/user/entities/role.entity.ts) | Role schema (flat, no inheritance) |
 | [`user-role-assignment.entity.ts`](../server/src/modules/admin/core/user/entities/user-role-assignment.entity.ts) | User ↔ Role assignment with scope (kept for future use) and expiry |
@@ -678,7 +678,7 @@ Step 3: Check permissions → Store Manager grants 'payroll:approve'
 | [`permissions.guard.ts`](../server/src/common/guards/permissions.guard.ts) | Guard that calls resolution service per request |
 | [`subscription.guard.ts`](../server/src/common/guards/subscription.guard.ts) | Route-level feature check via `@RequireFeature` |
 | [`maintenance.guard.ts`](../server/src/common/guards/maintenance.guard.ts) | Platform-wide maintenance mode gate |
-| [`tenant-status.guard.ts`](../server/src/common/guards/tenant-status.guard.ts) | Checks tenant is active and not suspended/expired |
+| [`store-status.guard.ts`](../server/src/common/guards/store-status.guard.ts) | Checks store is active and not suspended/expired |
 | [`require-feature.decorator.ts`](../server/src/common/decorators/require-feature.decorator.ts) | `@RequireFeature('slug')` route decorator |
 | [`permissions.decorator.ts`](../server/src/common/decorators/permissions.decorator.ts) | `@Permissions(['feature:action'])` route decorator |
 | [`feature-tier.enum.ts`](../server/src/common/enums/feature-tier.enum.ts) | `FeatureTier: CORE \| STARTER \| PRO \| ENTERPRISE` |
@@ -688,4 +688,4 @@ Step 3: Check permissions → Store Manager grants 'payroll:approve'
 
 ---
 
-*Last updated: 2026-05-28 — Updated to restore Tenant Feature Overrides.*
+*Last updated: 2026-05-28 — Updated to restore Store Feature Overrides.*

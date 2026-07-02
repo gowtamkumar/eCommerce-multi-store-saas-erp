@@ -11,13 +11,13 @@ export async function POST(request: NextRequest) {
     // Use internal Docker service name for server-side
     const backendUrl = process.env.API_URL_INTERNAL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
 
-    const tenantId = data.value_b;
+    const storeId = data.value_b;
 
     await fetch(`${backendUrl}/payment/cancel?tran_id=${tran_id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-tenant-id": tenantId,
+        "x-store-id": storeId,
       },
       body: JSON.stringify(data),
     });

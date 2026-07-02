@@ -11,7 +11,7 @@ import { QuotationEntity } from './entities/quotation.entity'
 import { DebitNoteEntity } from './entities/debit-note.entity'
 import { SupplierInvoiceEntity } from './entities/supplier-invoice.entity'
 import { SupplierInvoiceItemEntity } from './entities/supplier-invoice-item.entity'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { GrnModule } from '@/modules/admin/operations/logistics/grn/grn.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
@@ -54,7 +54,7 @@ import { SupplierInvoiceRepository } from './repositories/supplier-invoice.repos
     ]),
     BullModule.registerQueue({ name: 'product' }),
     BullModule.registerQueue({ name: 'accounting' }),
-    TenantModule,
+    StoreModule,
     GrnModule,
     NotificationModule,
   ],

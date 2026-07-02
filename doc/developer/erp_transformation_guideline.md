@@ -9,7 +9,7 @@ This document provides a technical roadmap for converting the current eCommerce 
 
 1.  **Create New Module: `server/src/modules/system/organization`**
     *   Implement `BranchEntity` and `WarehouseEntity`.
-    *   Link `TenantEntity` to `BranchEntity` and `WarehouseEntity` (1:N).
+    *   Link `StoreEntity` to `BranchEntity` and `WarehouseEntity` (1:N).
 2.  **Modify User Module: `server/src/modules/admin/core/user`**
     *   Update `UserEntity` to include `branchId` or `warehouseId` for scoped access.
     *   Update RBAC to check permissions based on the active Branch/Warehouse.

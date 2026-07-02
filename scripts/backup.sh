@@ -1,5 +1,5 @@
 #!/bin/sh
-DB_NAME="multi_tenant_ecommerce"
+DB_NAME="multi_store_ecommerce"
 PG_USER="postgres"
 
 echo "📦 Waiting for PostgreSQL to be ready..."

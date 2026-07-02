@@ -13,8 +13,8 @@ export interface CreateNotificationDto {
   link?: string
 }
 
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 
 
 @Injectable()
@@ -24,8 +24,8 @@ export class NotificationService {
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
-    @InjectRepository(TenantEntity)
-    private readonly tenantRepository: Repository<TenantEntity>,
+    @InjectRepository(StoreEntity)
+    private readonly storeRepository: Repository<StoreEntity>,
     private readonly notificationGateway: NotificationGateway,
   ) {}
 
@@ -34,10 +34,10 @@ export class NotificationService {
    */
   async createNotification(
     dto: CreateNotificationDto,
-    tenantId: string | null,
+    storeId: string | null,
   ): Promise<NotificationEntity> {
     const notification = this.notificationRepository.create({
-      tenantId,
+      storeId,
       userId: dto.userId || null,
       title: dto.title,
       message: dto.message,
@@ -52,9 +52,9 @@ export class NotificationService {
       if (dto.userId) {
         // Send to specific user
         this.notificationGateway.sendToUser(dto.userId, 'notification', savedNotification)
-      } else if (tenantId) {
-        // Broadcast to whole tenant
-        this.notificationGateway.sendToTenant(tenantId, 'notification', savedNotification)
+      } else if (storeId) {
+        // Broadcast to whole store
+        this.notificationGateway.sendToStore(storeId, 'notification', savedNotification)
       } else {
         // Global system notification (Super Admins)
         this.notificationGateway.sendToRole('SUPER_ADMIN', 'notification', savedNotification)
@@ -67,7 +67,7 @@ export class NotificationService {
   }
 
   /**
-   * Fetch all notifications for a specific user and tenant-wide
+   * Fetch all notifications for a specific user and store-wide
    */
   async getUserNotifications(
     ctx: RequestContextDto,
@@ -78,11 +78,11 @@ export class NotificationService {
   ): Promise<[NotificationEntity[], number]> {
     const query = this.notificationRepository.createQueryBuilder('notification')
 
-    // Filter by tenant and user
-    if (ctx.tenantId) {
-      query.andWhere('notification.tenantId = :tenantId', { tenantId: ctx.tenantId })
+    // Filter by store and user
+    if (ctx.storeId) {
+      query.andWhere('notification.storeId = :storeId', { storeId: ctx.storeId })
     } else {
-      query.andWhere('notification.tenantId IS NULL')
+      query.andWhere('notification.storeId IS NULL')
     }
 
     if (ctx.userId) {
@@ -114,13 +114,13 @@ export class NotificationService {
    * Mark a specific notification as read
    */
   async markAsRead(id: string, ctx: RequestContextDto): Promise<void> {
-    const tenantId = ctx.tenantId || IsNull()
+    const storeId = ctx.storeId || IsNull()
     const userId = ctx.userId || IsNull()
 
     const notification = await this.notificationRepository.findOne({
       where: [
-        { id, tenantId, userId },
-        { id, tenantId, userId: IsNull() },
+        { id, storeId, userId },
+        { id, storeId, userId: IsNull() },
       ],
     })
 
@@ -139,10 +139,10 @@ export class NotificationService {
       .set({ isRead: true })
       .where('is_read = :isRead', { isRead: false })
 
-    if (ctx.tenantId) {
-      qb.andWhere('tenant_id = :tenantId', { tenantId: ctx.tenantId })
+    if (ctx.storeId) {
+      qb.andWhere('store_id = :storeId', { storeId: ctx.storeId })
     } else {
-      qb.andWhere('tenant_id IS NULL')
+      qb.andWhere('store_id IS NULL')
     }
 
     if (ctx.userId) {
@@ -158,33 +158,33 @@ export class NotificationService {
    * Get unread count
    */
   async getUnreadCount(ctx: RequestContextDto): Promise<number> {
-    const tenantId = ctx.tenantId || IsNull()
+    const storeId = ctx.storeId || IsNull()
     const userId = ctx.userId || IsNull()
 
     return await this.notificationRepository.count({
       where: [
-        { tenantId, userId, isRead: false },
-        { tenantId, userId: IsNull(), isRead: false },
+        { storeId, userId, isRead: false },
+        { storeId, userId: IsNull(), isRead: false },
       ],
     })
   }
 
   /**
-   * Broadcast a notification to all active tenants (bulk)
+   * Broadcast a notification to all active stores (bulk)
    */
-  async broadcastToAllTenants(dto: CreateNotificationDto): Promise<NotificationEntity[]> {
-    const tenants = await this.tenantRepository.find({
+  async broadcastToAllStores(dto: CreateNotificationDto): Promise<NotificationEntity[]> {
+    const stores = await this.storeRepository.find({
       select: { id: true },
-      where: { status: TenantStatus.ACTIVE },
+      where: { status: StoreStatus.ACTIVE },
     })
     const notifications: NotificationEntity[] = []
 
-    for (const tenant of tenants) {
+    for (const store of stores) {
       try {
-        const notif = await this.createNotification(dto, tenant.id)
+        const notif = await this.createNotification(dto, store.id)
         notifications.push(notif)
       } catch (err: any) {
-        this.logger.error(`Failed to send bulk notification to tenant ${tenant.id}: ${err.message}`)
+        this.logger.error(`Failed to send bulk notification to store ${store.id}: ${err.message}`)
       }
     }
 

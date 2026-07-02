@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -14,8 +14,8 @@ export class ReportSchedulerService {
   private readonly logger = new Logger(ReportSchedulerService.name)
 
   constructor(
-    @InjectRepository(TenantEntity)
-    private readonly tenantRepository: Repository<TenantEntity>,
+    @InjectRepository(StoreEntity)
+    private readonly storeRepository: Repository<StoreEntity>,
     private readonly reportService: ReportService,
     private readonly mailService: MailService,
     private readonly settingsService: SettingsService,
@@ -27,8 +27,8 @@ export class ReportSchedulerService {
   @Cron('0 0 * * 0')
   async sendWeeklyReportEmails(): Promise<void> {
     this.logger.log('Starting weekly BI report email scheduler job...')
-    const tenants = await this.tenantRepository.find({
-      where: { status: TenantStatus.ACTIVE },
+    const stores = await this.storeRepository.find({
+      where: { status: StoreStatus.ACTIVE },
       select: { id: true, storeName: true },
     })
 
@@ -39,21 +39,21 @@ export class ReportSchedulerService {
     const startDateStr = oneWeekAgo.toISOString().split('T')[0]
     const endDateStr = now.toISOString().split('T')[0]
 
-    // Process active tenants concurrently in batches of 5 to ensure scalability
+    // Process active stores concurrently in batches of 5 to ensure scalability
     const batchSize = 5
-    for (let i = 0; i < tenants.length; i += batchSize) {
-      const batch = tenants.slice(i, i + batchSize)
+    for (let i = 0; i < stores.length; i += batchSize) {
+      const batch = stores.slice(i, i + batchSize)
       await Promise.all(
-        batch.map(async (tenant) => {
+        batch.map(async (store) => {
           try {
             const ctx: RequestContextDto = {
-              tenantId: tenant.id,
+              storeId: store.id,
               user: { id: 'scheduler', username: 'Scheduler', role: 'SUPER_ADMIN' },
             } as any
 
-            const settings = await this.settingsService.findByTenantSettings(ctx)
+            const settings = await this.settingsService.findByStoreSettings(ctx)
             if (!settings || !settings.contactEmail) {
-              this.logger.warn(`Tenant ${tenant.storeName} (${tenant.id}) has no contact email. Skipping.`)
+              this.logger.warn(`Store ${store.storeName} (${store.id}) has no contact email. Skipping.`)
               return
             }
 
@@ -69,7 +69,7 @@ export class ReportSchedulerService {
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a202c; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px;">
                 <h2 style="color: #2b6cb0; border-bottom: 2px solid #edf2f7; padding-bottom: 12px; margin-top: 0;">Weekly Business intelligence Summary</h2>
                 <p>Hello Admin,</p>
-                <p>Here is your weekly performance report for <strong>${tenant.storeName}</strong> from <strong>${startDateStr}</strong> to <strong>${endDateStr}</strong>.</p>
+                <p>Here is your weekly performance report for <strong>${store.storeName}</strong> from <strong>${startDateStr}</strong> to <strong>${endDateStr}</strong>.</p>
                 
                 <div style="background-color: #f7fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
                   <h3 style="margin-top: 0; color: #4a5568;">Financial Snapshot</h3>
@@ -119,9 +119,9 @@ export class ReportSchedulerService {
             // Send a single combined email containing both the HTML summary and attachments (DRY / SoC)
             await this.mailService.sendGenericEmail({
               to: settings.contactEmail,
-              subject: `Weekly Performance Report: ${tenant.storeName}`,
+              subject: `Weekly Performance Report: ${store.storeName}`,
               html: htmlContent,
-              tenantId: tenant.id,
+              storeId: store.id,
               attachments: [
                 {
                   filename: salesExport.filename,
@@ -134,9 +134,9 @@ export class ReportSchedulerService {
               ],
             })
 
-            this.logger.log(`Weekly BI report email sent successfully to ${settings.contactEmail} for tenant ${tenant.id}`)
+            this.logger.log(`Weekly BI report email sent successfully to ${settings.contactEmail} for store ${store.id}`)
           } catch (error: any) {
-            this.logger.error(`Failed to send weekly report email for tenant ${tenant.id}: ${error.message}`, error.stack)
+            this.logger.error(`Failed to send weekly report email for store ${store.id}: ${error.message}`, error.stack)
           }
         }),
       )

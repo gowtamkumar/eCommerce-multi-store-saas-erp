@@ -4,8 +4,8 @@ import { Column, Entity } from 'typeorm'
 
 @Entity('shipping_addresses')
 export class ShippingAddressEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   label: string // e.g. "Home", "Office"

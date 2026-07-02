@@ -148,7 +148,7 @@ const UserDetailsModal = ({
                       </div>
                       <div>
                         <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-2">Store Membership</p>
-                        <p className="text-base font-bold text-slate-900 dark:text-white">{user.tenantId?.storeName || 'Global Platform'}</p>
+                        <p className="text-base font-bold text-slate-900 dark:text-white">{user.storeId?.storeName || 'Global Platform'}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">

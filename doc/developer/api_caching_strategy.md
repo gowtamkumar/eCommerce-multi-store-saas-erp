@@ -1,6 +1,6 @@
 # API Caching Strategy
 
-This document outlines the strategy for implementing caching in the eCommerce Multi-Tenant SaaS application. The goal is to improve performance and reduce database load for high-traffic, read-heavy endpoints.
+This document outlines the strategy for implementing caching in the eCommerce Multi-Store SaaS application. The goal is to improve performance and reduce database load for high-traffic, read-heavy endpoints.
 
 ## Recommended Caching Strategy
 
@@ -14,7 +14,7 @@ These endpoints are critical for the initial page load and browsing experience. 
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **P0** | **Home** | `getHomeData` | `GET /home` | **5-10 mins** | Aggregates heavy data for the landing page. High traffic. |
 | **P0** | **Settings** | `getSettings` | `GET /settings` | **1 hour** | Global site settings (logo, colors) rarely change. |
-| **P0** | **Tenant** | `findByDomain` | `GET /tenant` | **1 hour** | Tenant config resolution is the first step for every request. |
+| **P0** | **Store** | `findByDomain` | `GET /store` | **1 hour** | Store config resolution is the first step for every request. |
 | **P0** | **Plans** | `findAll` | `GET /plans` | **1 hour** | Subscription plans are static. |
 | **P0** | **Category** | `findAll` | `GET /categories` | **1 hour** | Category trees are static and read often. |
 | **P1** | **Product** | `findLatest` | `GET /products/latest` | **5 mins** | Homepage product showcase. |
@@ -44,11 +44,11 @@ To prevent data leaks, inventory errors, or race conditions, the following categ
 ## Implementation Guidelines
 
 1.  **Cache Key Strategy**:
-    *   Must include `TenantId` to prevent data leaking between tenants.
-    *   Example: `multi-tenant-saas:tenant:{tenantId}:products:latest`
+    *   Must include `StoreId` to prevent data leaking between stores.
+    *   Example: `multi-store-saas:store:{storeId}:products:latest`
 2.  **Invalidation**:
     *   Implement **automated cache invalidation** on `POST`, `PUT`, `DELETE` events.
-    *   *Example*: When a Product is updated (`PUT /products/:id`), clear specific product cache keys or the whole product list cache for that tenant.
+    *   *Example*: When a Product is updated (`PUT /products/:id`), clear specific product cache keys or the whole product list cache for that store.
 3.  **Technology**:
     *   Use NestJS `@nestjs/cache-manager` with **Redis Store** (`cache-manager-redis-yet`).
     *   Use `CacheService` for manual/atomic get, set, and remember patterns.
@@ -57,9 +57,9 @@ To prevent data leaks, inventory errors, or race conditions, the following categ
 
 To maintain database stability and security, manual cache clearing controls are restricted to the **Super Admin panel**:
 
-1.  **Global Cache Clear**: Clears the system cache for all tenants globally (invokes `/super-admin/cache/clear-all`).
-2.  **Tenant Cache Clear**: Clears the cache for a selected tenant store (invokes `/super-admin/cache/clear-all?tenantId={tenantId}`). This evicts:
-    *   Standard tenant data cache (pages, catalogs, settings).
-    *   Tenant user permission manifests (`rbac:manifest`).
+1.  **Global Cache Clear**: Clears the system cache for all stores globally (invokes `/super-admin/cache/clear-all`).
+2.  **Store Cache Clear**: Clears the cache for a selected store store (invokes `/super-admin/cache/clear-all?storeId={storeId}`). This evicts:
+    *   Standard store data cache (pages, catalogs, settings).
+    *   Store user permission manifests (`rbac:manifest`).
 
 These controls are backed by spring-animated custom confirmation modals in the Super Admin platform settings to prevent accidental triggers.

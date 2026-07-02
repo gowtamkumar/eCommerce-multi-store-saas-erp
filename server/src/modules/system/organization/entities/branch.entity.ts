@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { WarehouseEntity } from './warehouse.entity'
 
@@ -33,13 +33,13 @@ export class BranchEntity extends BaseEntity {
   @Column({ type: 'numeric', name: 'longitude', precision: 10, scale: 7, nullable: true })
   longitude: number | null
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
+  @Column({ type: 'uuid', name: 'store_id' })
   @Index()
-  tenantId: string
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @OneToMany(() => WarehouseEntity, (warehouse) => warehouse.branch)
   warehouses: WarehouseEntity[]

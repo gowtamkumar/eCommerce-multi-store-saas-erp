@@ -17,11 +17,11 @@ export class WishlistService {
   ) {}
 
   async toggleWishlist(ctx: RequestContextDto, productId: string): Promise<{ added: boolean }> {
-    const { userId, tenantId } = ctx
+    const { userId, storeId } = ctx
     this.logger.log(`${this.toggleWishlist.name} Service Called for user ${userId}`)
 
     // Check if product exists
-    const product = await this.productRepository.findByIdWithRelations(productId, tenantId)
+    const product = await this.productRepository.findByIdWithRelations(productId, storeId)
     if (!product) {
       throw new NotFoundException('Product not found')
     }
@@ -31,9 +31,9 @@ export class WishlistService {
   }
 
   async getWishlist(ctx: RequestContextDto): Promise<any[]> {
-    const { userId, tenantId } = ctx
+    const { userId, storeId } = ctx
     this.logger.log(`${this.getWishlist.name} Service Called for user ${userId}`)
-    const items = await this.wishlistRepository.findByUserId(userId, tenantId)
+    const items = await this.wishlistRepository.findByUserId(userId, storeId)
 
     const activePromotions = await this.promotionService.findActivePromotions(ctx)
 
@@ -56,14 +56,14 @@ export class WishlistService {
   }
 
   async clearWishlist(ctx: RequestContextDto): Promise<void> {
-    const { userId, tenantId } = ctx
+    const { userId, storeId } = ctx
     this.logger.log(`${this.clearWishlist.name} Service Called for user ${userId}`)
-    await this.wishlistRepository.clearWishlist(userId, tenantId)
+    await this.wishlistRepository.clearWishlist(userId, storeId)
   }
 
   async removeFromWishlist(ctx: RequestContextDto, productId: string): Promise<void> {
-    const { userId, tenantId } = ctx
+    const { userId, storeId } = ctx
     this.logger.log(`${this.removeFromWishlist.name} Service Called for user ${userId}`)
-    await this.wishlistRepository.deleteWishlistItem(userId, productId, tenantId)
+    await this.wishlistRepository.deleteWishlistItem(userId, productId, storeId)
   }
 }

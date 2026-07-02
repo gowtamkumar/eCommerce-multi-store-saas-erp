@@ -1,7 +1,7 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { PurchaseOrderEntity } from './purchase-order.entity'
 import { SupplierInvoiceItemEntity } from './supplier-invoice-item.entity'
@@ -22,7 +22,7 @@ export enum ThreeWayMatchStatus {
 }
 
 @Entity('supplier_invoices')
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'status'])
 export class SupplierInvoiceEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   invoiceNumber: string
@@ -67,12 +67,12 @@ export class SupplierInvoiceEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   discrepancyNotes: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'created_by' })
   createdById: string

@@ -45,7 +45,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
 
   /**
    * Promote employees from PROBATION → ACTIVE when their probation period
-   * (tenant settings or default 90 days from joiningDate) has elapsed.
+   * (store settings or default 90 days from joiningDate) has elapsed.
    */
   private async runProbationAutoConfirm() {
     const em = this.dataSource.manager
@@ -61,15 +61,15 @@ export class HrmSchedulerProcessor extends WorkerHost {
     const settingsList = await em.find(SiteSettingsEntity)
     const settingsMap = new Map<string, SiteSettingsEntity>()
     for (const s of settingsList) {
-      settingsMap.set(s.tenantId, s)
+      settingsMap.set(s.storeId, s)
     }
 
     const eligibleEmployees: EmployeeEntity[] = []
     const now = new Date()
 
     for (const employee of employees) {
-      const tenantSettings = settingsMap.get(employee.tenantId)
-      const probationDays = tenantSettings?.probationDays ?? DEFAULT_PROBATION_DAYS
+      const storeSettings = settingsMap.get(employee.storeId)
+      const probationDays = storeSettings?.probationDays ?? DEFAULT_PROBATION_DAYS
 
       const cutoff = new Date(now)
       cutoff.setDate(cutoff.getDate() - probationDays)
@@ -96,7 +96,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
                 link: '/admin/profile',
                 userId: employee.userId,
               },
-              employee.tenantId,
+              employee.storeId,
             )
           } catch (e: any) {
             this.logger.error(`Failed to notify employee ${employee.id}: ${e.message}`)
@@ -117,7 +117,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
     let maxAlertDays = DOCUMENT_EXPIRY_ALERT_DAYS
 
     for (const s of settingsList) {
-      settingsMap.set(s.tenantId, s)
+      settingsMap.set(s.storeId, s)
       const alertDays = s.documentExpiryAlertDays ?? DOCUMENT_EXPIRY_ALERT_DAYS
       if (alertDays > maxAlertDays) {
         maxAlertDays = alertDays
@@ -133,8 +133,8 @@ export class HrmSchedulerProcessor extends WorkerHost {
       const employee = doc.employee
       if (!employee?.userId) continue
 
-      const tenantSettings = settingsMap.get(doc.tenantId)
-      const alertDays = tenantSettings?.documentExpiryAlertDays ?? DOCUMENT_EXPIRY_ALERT_DAYS
+      const storeSettings = settingsMap.get(doc.storeId)
+      const alertDays = storeSettings?.documentExpiryAlertDays ?? DOCUMENT_EXPIRY_ALERT_DAYS
 
       const ahead = new Date()
       ahead.setDate(ahead.getDate() + alertDays)
@@ -150,7 +150,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
               link: '/admin/profile',
               userId: employee.userId,
             },
-            doc.tenantId,
+            doc.storeId,
           )
         } catch (e: any) {
           this.logger.error(`Failed to send expiry alert for doc ${doc.id}: ${e.message}`)
@@ -178,7 +178,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
       const assignment = await this.hrmRepo.findEmployeeShift(
         session.employeeId,
         session.checkIn,
-        session.tenantId,
+        session.storeId,
       )
 
       let checkOutTime = new Date()
@@ -211,7 +211,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
       try {
         await this.hrmRepo.logAttendanceEvent({
           employeeId: session.employeeId,
-          tenantId: session.tenantId,
+          storeId: session.storeId,
           eventType: 'CHECK_OUT',
           source: AttendanceSource.SYSTEM,
           timestamp: checkOutTime,
@@ -231,7 +231,7 @@ export class HrmSchedulerProcessor extends WorkerHost {
               link: '/admin/profile',
               userId: session.employee.userId,
             },
-            session.tenantId,
+            session.storeId,
           )
         } catch (e: any) {
           this.logger.error(`Failed to notify employee ${session.employeeId} of auto check-out: ${e.message}`)

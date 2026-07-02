@@ -25,7 +25,7 @@ interface AuditLog {
     action: string;
     entity: string;
     entityId: string | null;
-    tenantId: string;
+    storeId: string;
     branchId?: string | null;
     warehouseId?: string | null;
     oldValue: Record<string, any> | null;
@@ -96,8 +96,8 @@ function AuditLogDetailsModal({ log, onClose }: AuditLogDetailsModalProps) {
                             <span className="text-xs font-bold text-slate-850 dark:text-slate-200 font-mono">{log.ipAddress || 'N/A'}</span>
                         </div>
                         <div className="p-4 bg-slate-50 dark:bg-slate-955/40 border border-slate-100 dark:border-slate-850 rounded-2xl">
-                            <p className="text-[8px] font-black text-slate-455 uppercase tracking-widest mb-1.5">Tenant ID</p>
-                            <span className="text-xs font-bold text-slate-850 dark:text-slate-200 font-mono truncate block" title={log.tenantId}>{log.tenantId}</span>
+                            <p className="text-[8px] font-black text-slate-455 uppercase tracking-widest mb-1.5">Store ID</p>
+                            <span className="text-xs font-bold text-slate-850 dark:text-slate-200 font-mono truncate block" title={log.storeId}>{log.storeId}</span>
                         </div>
                     </div>
 
@@ -170,7 +170,7 @@ export default function PlatformAuditLogsPage() {
     const [actionFilter, setActionFilter] = useState('');
     const [entityFilter, setEntityFilter] = useState('');
     const [actorSearch, setActorSearch] = useState('');
-    const [tenantFilter, setTenantFilter] = useState('');
+    const [storeFilter, setStoreFilter] = useState('');
     const [branchFilter, setBranchFilter] = useState('');
     const [warehouseFilter, setWarehouseFilter] = useState('');
     const [fromDate, setFromDate] = useState('');
@@ -189,7 +189,7 @@ export default function PlatformAuditLogsPage() {
             if (actionFilter) params.append('action', actionFilter);
             if (entityFilter) params.append('entity', entityFilter);
             if (actorSearch) params.append('userId', actorSearch);
-            if (tenantFilter) params.append('tenantId', tenantFilter);
+            if (storeFilter) params.append('storeId', storeFilter);
             if (branchFilter) params.append('branchId', branchFilter);
             if (warehouseFilter) params.append('warehouseId', warehouseFilter);
             if (fromDate) params.append('from', new Date(fromDate).toISOString());
@@ -205,7 +205,7 @@ export default function PlatformAuditLogsPage() {
         } finally {
             setLoading(false);
         }
-    }, [currentPage, actionFilter, entityFilter, actorSearch, tenantFilter, branchFilter, warehouseFilter, fromDate, toDate]);
+    }, [currentPage, actionFilter, entityFilter, actorSearch, storeFilter, branchFilter, warehouseFilter, fromDate, toDate]);
 
     useEffect(() => {
         fetchLogs();
@@ -215,7 +215,7 @@ export default function PlatformAuditLogsPage() {
         setActionFilter('');
         setEntityFilter('');
         setActorSearch('');
-        setTenantFilter('');
+        setStoreFilter('');
         setBranchFilter('');
         setWarehouseFilter('');
         setFromDate('');
@@ -263,13 +263,13 @@ export default function PlatformAuditLogsPage() {
             },
         },
         {
-            key: 'tenantId',
-            header: 'Partition (Tenant ID)',
+            key: 'storeId',
+            header: 'Partition (Store ID)',
             className: 'px-6 py-4',
             cell: (log) => (
                 <div className="flex flex-col gap-0.5">
                     <span className="font-bold text-slate-700 dark:text-slate-350">Merchant Partition</span>
-                    <span className="text-[9px] font-mono text-slate-400 max-w-[130px] truncate" title={log.tenantId}>{log.tenantId}</span>
+                    <span className="text-[9px] font-mono text-slate-400 max-w-[130px] truncate" title={log.storeId}>{log.storeId}</span>
                 </div>
             ),
         },
@@ -380,7 +380,7 @@ export default function PlatformAuditLogsPage() {
                             const apiBase = process.env.NEXT_PUBLIC_NEST_API_URL || 'http://localhost:4000';
                             const qs = new URLSearchParams();
                             if (actionFilter) qs.set('action', actionFilter);
-                            if (tenantFilter) qs.set('tenantId', tenantFilter);
+                            if (storeFilter) qs.set('storeId', storeFilter);
                             if (fromDate) qs.set('from', new Date(fromDate).toISOString());
                             if (toDate) qs.set('to', new Date(toDate).toISOString());
                             window.open(`${apiBase}/super-admin/audit-logs/export?${qs}`, '_blank');
@@ -425,9 +425,9 @@ export default function PlatformAuditLogsPage() {
                             <option value="ROLE_DELETED">ROLE_DELETED</option>
                             <option value="USER_ROLE_ASSIGNED">USER_ROLE_ASSIGNED</option>
                             <option value="USER_ROLE_REVOKED">USER_ROLE_REVOKED</option>
-                            <option value="TENANT_STATUS_CHANGE">TENANT_STATUS_CHANGE</option>
-                            <option value="TENANT_PLAN_CHANGE">TENANT_PLAN_CHANGE</option>
-                            <option value="TENANT_FEATURE_OVERRIDE">TENANT_FEATURE_OVERRIDE</option>
+                            <option value="STORE_STATUS_CHANGE">STORE_STATUS_CHANGE</option>
+                            <option value="STORE_PLAN_CHANGE">STORE_PLAN_CHANGE</option>
+                            <option value="STORE_FEATURE_OVERRIDE">STORE_FEATURE_OVERRIDE</option>
                             <option value="IMPERSONATE_START">IMPERSONATE_START</option>
                             <option value="PERMISSION_CHECK_FAILED">SECURITY ALERT</option>
                         </select>
@@ -465,15 +465,15 @@ export default function PlatformAuditLogsPage() {
                         </div>
                     </div>
 
-                    {/* Tenant ID */}
+                    {/* Store ID */}
                     <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tenant ID</label>
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Store ID</label>
                         <div className="relative group">
                             <input
                                 type="text"
-                                value={tenantFilter}
-                                onChange={(e) => { setTenantFilter(e.target.value); setCurrentPage(1); }}
-                                placeholder="Tenant UUID..."
+                                value={storeFilter}
+                                onChange={(e) => { setStoreFilter(e.target.value); setCurrentPage(1); }}
+                                placeholder="Store UUID..."
                                 className="w-full px-4 py-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-xs font-semibold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all placeholder-slate-355 dark:placeholder-slate-700"
                             />
                         </div>
@@ -533,7 +533,7 @@ export default function PlatformAuditLogsPage() {
                         />
                     </div>
                 </div>
-                {(actionFilter || entityFilter || actorSearch || tenantFilter || branchFilter || warehouseFilter || fromDate || toDate) && (
+                {(actionFilter || entityFilter || actorSearch || storeFilter || branchFilter || warehouseFilter || fromDate || toDate) && (
                     <div className="flex justify-end pt-2">
                         <button
                             onClick={handleResetFilters}

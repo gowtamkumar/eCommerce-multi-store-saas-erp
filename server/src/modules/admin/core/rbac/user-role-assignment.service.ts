@@ -16,7 +16,7 @@ export interface AssignRoleDto {
 }
 
 /**
- * Manages the assignment of roles to users within a tenant.
+ * Manages the assignment of roles to users within a store.
  * Handles scope validation and multi-role assignments.
  */
 @Injectable()
@@ -37,10 +37,10 @@ export class UserRoleAssignmentService {
     private readonly permissionResolutionService: PermissionResolutionService,
   ) {}
 
-  async getUserRoles(userId: string, tenantId: string): Promise<UserRoleAssignmentEntity[]> {
+  async getUserRoles(userId: string, storeId: string): Promise<UserRoleAssignmentEntity[]> {
     const now = new Date()
     const assignments = await this.assignmentRepo.find({
-      where: { userId, tenantId },
+      where: { userId, storeId },
       relations: {
         role: true,
       },
@@ -52,20 +52,20 @@ export class UserRoleAssignmentService {
 
   async assignRoleToUser(
     targetUserId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     dto: AssignRoleDto,
   ): Promise<UserRoleAssignmentEntity> {
-    this.logger.log(`Assigning role ${dto.roleId} to user ${targetUserId} in tenant ${tenantId}`)
+    this.logger.log(`Assigning role ${dto.roleId} to user ${targetUserId} in store ${storeId}`)
 
-    // 1. Validate user and role exist in this tenant
-    const user = await this.userRepo.findOne({ where: { id: targetUserId, tenantId } })
-    if (!user) throw new NotFoundException('User not found in this tenant')
+    // 1. Validate user and role exist in this store
+    const user = await this.userRepo.findOne({ where: { id: targetUserId, storeId } })
+    if (!user) throw new NotFoundException('User not found in this store')
 
-    const role = await this.roleRepo.findOne({ where: { id: dto.roleId, tenantId: tenantId } })
-    // If tenantId on role is null, it might be a system default role (if we supported cross-tenant defaults, but we seed per tenant, so it should match or be system default)
-    // For now, let's assume all roles (even system) are seeded per tenant.
+    const role = await this.roleRepo.findOne({ where: { id: dto.roleId, storeId: storeId } })
+    // If storeId on role is null, it might be a system default role (if we supported cross-store defaults, but we seed per store, so it should match or be system default)
+    // For now, let's assume all roles (even system) are seeded per store.
     if (
       !role &&
       !(await this.roleRepo.findOne({ where: { id: dto.roleId, isSystemDefault: true } }))
@@ -95,7 +95,7 @@ export class UserRoleAssignmentService {
     const assignment = this.assignmentRepo.create({
       userId: targetUserId,
       roleId: dto.roleId,
-      tenantId,
+      storeId,
       scopeType: dto.scopeType,
       scopeId: dto.scopeId ?? null,
       assignedBy: actorId,
@@ -106,7 +106,7 @@ export class UserRoleAssignmentService {
 
     // 4. Audit & Cache Invalidation
     await this.auditLogService.logUserRoleAssigned(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       targetUserId,
@@ -118,26 +118,26 @@ export class UserRoleAssignmentService {
       },
     )
 
-    await this.permissionResolutionService.invalidateUserPermissionCache(targetUserId, tenantId)
+    await this.permissionResolutionService.invalidateUserPermissionCache(targetUserId, storeId)
 
     return saved
   }
 
   async revokeRoleFromUser(
     assignmentId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     reason?: string,
   ): Promise<void> {
     const assignment = await this.assignmentRepo.findOne({
-      where: { id: assignmentId, tenantId },
+      where: { id: assignmentId, storeId },
     })
 
     if (!assignment) throw new NotFoundException('Role assignment not found')
 
     await this.auditLogService.logUserRoleRevoked(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       assignment.userId,
@@ -148,7 +148,7 @@ export class UserRoleAssignmentService {
     await this.assignmentRepo.remove(assignment)
     await this.permissionResolutionService.invalidateUserPermissionCache(
       assignment.userId,
-      tenantId,
+      storeId,
     )
   }
 }

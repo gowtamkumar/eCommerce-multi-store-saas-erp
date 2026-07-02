@@ -7,11 +7,11 @@ export class GenerateSupportTicketSummaryDto {
   @MaxLength(12000)
   conversationText: string
 
-  @ApiPropertyOptional({ description: 'Tenant/store context (name, plan, status — no secrets)' })
+  @ApiPropertyOptional({ description: 'Store/store context (name, plan, status — no secrets)' })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
-  tenantContext?: string
+  storeContext?: string
 
   @ApiPropertyOptional({ description: 'Related order or issue reference' })
   @IsOptional()

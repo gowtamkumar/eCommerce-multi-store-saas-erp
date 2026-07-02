@@ -40,7 +40,7 @@ export class OrderReturnResponseDto {
   receivedAt: Date | null
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   createdAt: Date

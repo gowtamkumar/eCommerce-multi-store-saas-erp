@@ -5,7 +5,7 @@ export interface TrafficData {
   requestCount: number;
 }
 
-export interface TenantAnalytics {
+export interface StoreAnalytics {
   id: string;
   storeName: string;
   subdomain: string;
@@ -15,7 +15,7 @@ export interface TenantAnalytics {
   stats: { users: number; products: number; orders: number; pages: number; traffic: number };
 }
 
-export type RankedTenantAnalytics = TenantAnalytics & { rank: number };
+export type RankedStoreAnalytics = StoreAnalytics & { rank: number };
 
 export interface BillingOverview {
   totalRevenue: number;
@@ -27,7 +27,7 @@ export interface BillingOverview {
 }
 
 export interface DashboardTrends {
-  tenants?: string | null;
+  stores?: string | null;
   users?: string | null;
   orders?: string | null;
   traffic?: string | null;
@@ -35,7 +35,7 @@ export interface DashboardTrends {
 }
 
 export interface DashboardStats {
-  totalTenants: number;
+  totalStores: number;
   totalUsers: number;
   totalOrders: number;
   totalReviews?: number;
@@ -47,7 +47,7 @@ export interface DashboardStats {
 
 /** Raw `data` payload returned by GET /super-admin/overview. */
 export interface RawOverviewData {
-  totalTenants?: number;
+  totalStores?: number;
   totalUsers?: number;
   totalOrders?: number;
   totalReviews?: number;
@@ -59,7 +59,7 @@ export interface RawOverviewData {
 export interface SuperAdminDashboardProps {
   stats: DashboardStats;
   traffic: TrafficData[];
-  tenantAnalytics: TenantAnalytics[];
+  storeAnalytics: StoreAnalytics[];
 }
 
 export type ActionTone = 'rose' | 'amber' | 'indigo' | 'emerald';

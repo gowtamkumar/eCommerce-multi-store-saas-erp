@@ -290,7 +290,7 @@ function AnalyticsDemo() {
   return (
     <div className="space-y-6 text-left text-slate-200">
       <div>
-        <h4 className="font-black text-white text-base font-display">Global Multi-tenant Sales Analytics</h4>
+        <h4 className="font-black text-white text-base font-display">Global Multi-store Sales Analytics</h4>
         <p className="text-xs text-slate-400">Collectively check transactions, conversion cycles, and brand channels.</p>
       </div>
 

@@ -14,25 +14,25 @@ export interface ProductQaResult {
   suggestedFollowUps: string[];
 }
 
-export function useProductQa(productSlug: string, tenantId?: string) {
+export function useProductQa(productSlug: string, storeId?: string) {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ProductQaMessage[]>([]);
 
   const checkAvailability = useCallback(async () => {
-    if (!tenantId) {
+    if (!storeId) {
       setAvailable(null);
       return;
     }
 
     try {
-      const res = await fetchAPI("/products/storefront-ai/status", { tenantId });
+      const res = await fetchAPI("/products/storefront-ai/status", { storeId });
       setAvailable(!!res.data?.productQaAvailable);
     } catch (error) {
       console.error("Product Q&A status check failed:", error);
       setAvailable(false);
     }
-  }, [tenantId]);
+  }, [storeId]);
 
   useEffect(() => {
     void checkAvailability();
@@ -40,13 +40,13 @@ export function useProductQa(productSlug: string, tenantId?: string) {
 
   const askQuestion = async (question: string): Promise<ProductQaResult | null> => {
     const trimmed = question.trim();
-    if (!trimmed || !tenantId) return null;
+    if (!trimmed || !storeId) return null;
 
     setLoading(true);
     try {
       const res = await fetchAPI(`/products/slug/${encodeURIComponent(productSlug)}/ask`, {
         method: "POST",
-        tenantId,
+        storeId,
         body: JSON.stringify({
           question: trimmed,
           conversationHistory: messages.slice(-6),

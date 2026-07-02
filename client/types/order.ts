@@ -93,6 +93,6 @@ export interface ReturnRequest {
   }>;
   createdAt: string;
   updatedAt: string;
-  tenantId: string;
+  storeId: string;
   users?: unknown; // Compatibility with existing code using 'users'
 }

@@ -18,16 +18,16 @@ export class SmsService {
   async sendSms(
     phone: string,
     message: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<{ success: boolean; messageId: string }> {
-    this.logger.log(`Sending SMS to ${phone} (Tenant: ${tenantId})`)
+    this.logger.log(`Sending SMS to ${phone} (Store: ${storeId})`)
 
     try {
-      // 1. Resolve Credentials (Tenant Settings > Global Config)
-      const { apiKey, senderId } = await this.getCredentials(tenantId)
+      // 1. Resolve Credentials (Store Settings > Global Config)
+      const { apiKey, senderId } = await this.getCredentials(storeId)
 
       if (!apiKey || !senderId) {
-        this.logger.error(`SMS credentials missing for tenant ${tenantId}`)
+        this.logger.error(`SMS credentials missing for store ${storeId}`)
         return { success: false, messageId: '' }
       }
 
@@ -72,12 +72,12 @@ export class SmsService {
     }
   }
 
-  private async getCredentials(tenantId: string): Promise<{ apiKey: string; senderId: string }> {
-    // 1. Try to get from tenant settings
-    if (tenantId) {
+  private async getCredentials(storeId: string): Promise<{ apiKey: string; senderId: string }> {
+    // 1. Try to get from store settings
+    if (storeId) {
       try {
-        const settings = await this.settingsService.findByTenantSettings({
-          tenantId,
+        const settings = await this.settingsService.findByStoreSettings({
+          storeId,
         } as RequestContextDto)
 
         if (settings?.sms?.apiKey && settings?.sms?.senderId) {
@@ -87,7 +87,7 @@ export class SmsService {
           }
         }
       } catch (err: any) {
-        this.logger.error(`Failed to load tenant settings: ${err.message}. Falling back to platform SMS config.`)
+        this.logger.error(`Failed to load store settings: ${err.message}. Falling back to platform SMS config.`)
       }
     }
 

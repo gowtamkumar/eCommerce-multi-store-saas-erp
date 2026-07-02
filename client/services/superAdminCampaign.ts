@@ -12,7 +12,7 @@ export interface PlatformCampaign {
     totalAudience: number;
     sentCount: number;
     failedCount: number;
-    targetTenants: boolean;
+    targetStores: boolean;
     targetSubscribers: boolean;
     targetUsers: boolean;
     createdAt: string;
@@ -39,7 +39,7 @@ export const createPlatformCampaign = async (data: {
     body?: string;
     imageUrl?: string;
     scheduleTime?: string | Date | null;
-    targetTenants?: boolean;
+    targetStores?: boolean;
     targetSubscribers?: boolean;
     targetUsers?: boolean;
 }) => {

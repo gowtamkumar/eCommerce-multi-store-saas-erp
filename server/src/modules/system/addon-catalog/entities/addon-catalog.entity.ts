@@ -10,7 +10,7 @@ import {
 /**
  * Superadmin-managed catalog of purchasable addon boosts.
  * Each row defines one addon type (e.g. +5 GB Storage, +1000 SKUs).
- * Tenants purchase these via /billing/purchase-addon using the slug.
+ * Stores purchase these via /billing/purchase-addon using the slug.
  *
  * boost_unit controls how the backend enforces limits:
  *   'mb'        → adds boost_value MB to storage cap

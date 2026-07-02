@@ -3,17 +3,17 @@ export {
   AI_PROVIDER_OPTIONS,
   DEFAULT_AI_CONFIG_FORM,
   type AiProviderId,
-  type TenantAiConfigForm,
-  type TenantAiConfigResponse,
+  type StoreAiConfigForm,
+  type StoreAiConfigResponse,
 } from "@/features/admin/setting/types/ai-config";
 
 export type PlatformAiConfigForm = Omit<
-  import("@/features/admin/setting/types/ai-config").TenantAiConfigForm,
+  import("@/features/admin/setting/types/ai-config").StoreAiConfigForm,
   "storefront" | "embeddingModel" | "automation" | "sensitive"
 >;
 
 export type PlatformAiConfigResponse = Omit<
-  import("@/features/admin/setting/types/ai-config").TenantAiConfigResponse,
+  import("@/features/admin/setting/types/ai-config").StoreAiConfigResponse,
   "storefront" | "automation" | "sensitive"
 >;
 

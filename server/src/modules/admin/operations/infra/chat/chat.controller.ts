@@ -33,9 +33,9 @@ export class ChatController {
     @Query('visitorId') visitorId: string,
     @Query('customerId') customerId?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const tenantId = ctx.tenantId || null
+    const storeId = ctx.storeId || null
     const conversation = await this.chatService.getOrCreateConversation(
-      tenantId,
+      storeId,
       visitorId,
       customerId,
     )
@@ -76,16 +76,16 @@ export class ChatController {
    */
   @Get('conversations')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get list of conversations for tenant dashboard' })
+  @ApiOperation({ summary: 'Get list of conversations for store dashboard' })
   async getConversations(
     @RequestContext() ctx: RequestContextDto,
     @Query('status') status?: string,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset?: number,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const tenantId = ctx.tenantId || null
+    const storeId = ctx.storeId || null
     const [conversations, total] = await this.chatService.getConversations(
-      tenantId,
+      storeId,
       status,
       limit,
       offset,
@@ -118,7 +118,7 @@ export class ChatController {
       conversationId,
       limit,
       offset,
-      ctx.tenantId || null,
+      ctx.storeId || null,
     )
 
     return {
@@ -142,7 +142,7 @@ export class ChatController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') conversationId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
-    await this.chatService.markAsRead(conversationId, 'AGENT', ctx.tenantId || null)
+    await this.chatService.markAsRead(conversationId, 'AGENT', ctx.storeId || null)
 
     return {
       success: true,

@@ -1,17 +1,17 @@
 services:
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: multi_tenant_postgres_db_dev
+    container_name: multi_store_postgres_db_dev
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: multi_tenant_ecommerce
+      POSTGRES_DB: multi_store_ecommerce
       TZ: "GMT"
       PGTZ: "GMT"
     ports:
       - "5434:5432"
     networks:
-      - multi_tenant_main_network
+      - multi_store_main_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
     deploy:
@@ -21,7 +21,7 @@ services:
           memory: 512M
 
   pgadmin:
-    container_name: multi_tenant_pgadmin_ecommerce
+    container_name: multi_store_pgadmin_ecommerce
     image: dpage/pgadmin4:latest
     environment:
       - PGADMIN_DEFAULT_EMAIL=gowtampaul0@gmail.com
@@ -31,7 +31,7 @@ services:
     depends_on:
       - postgres
     networks:
-      - multi_tenant_main_network
+      - multi_store_main_network
     deploy:
       resources:
         limits:
@@ -40,13 +40,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: multi_tenant_redis_dev
+    container_name: multi_store_redis_dev
     ports:
       - "6380:6379"
     volumes:
       - redis-data:/data # Optional: Persist Redis data
     networks:
-      - multi_tenant_main_network
+      - multi_store_main_network
     deploy:
       resources:
         limits:
@@ -55,7 +55,7 @@ services:
 
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: multi_tenant_redis_commander_dev
+    container_name: multi_store_redis_commander_dev
     profiles:
       - debug
     environment:
@@ -66,7 +66,7 @@ services:
     depends_on:
       - redis
     networks:
-      - multi_tenant_main_network
+      - multi_store_main_network
     deploy:
       resources:
         limits:
@@ -75,7 +75,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: multi_tenant_minio_dev
+    container_name: multi_store_minio_dev
     restart: "no"
     ports:
       - "9000:9000"
@@ -92,7 +92,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - multi_tenant_main_network
+      - multi_store_main_network
     deploy:
       resources:
         limits:
@@ -102,7 +102,7 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile.dev
-    container_name: multi_tenant_server_dev
+    container_name: multi_store_server_dev
     restart: "no"
     ports:
       - "3900:3900"
@@ -116,7 +116,7 @@ services:
       - postgres
       - redis
     networks:
-      - multi_tenant_main_network
+      - multi_store_main_network
     deploy:
       resources:
         limits:
@@ -127,7 +127,7 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile.dev
-    container_name: multi_tenant_client_dev
+    container_name: multi_store_client_dev
     restart: "no"
     ports:
       - "3000:3000"
@@ -138,7 +138,7 @@ services:
       - /app/node_modules
       - /app/.next
     networks:
-      - multi_tenant_main_network
+      - multi_store_main_network
     deploy:
       resources:
         limits:
@@ -146,7 +146,7 @@ services:
           memory: 2G
   # caddy:
   #   image: caddy:2.7-alpine
-  #   container_name: multi_tenant_caddy_dev
+  #   container_name: multi_store_caddy_dev
   #   restart: "no"
   #   ports:
   #     - "8080:80"
@@ -159,7 +159,7 @@ services:
   #     - server
   #     - client
   #   networks:
-  #     - multi_tenant_main_network
+  #     - multi_store_main_network
   #   deploy:
   #     resources:
   #       limits:
@@ -167,7 +167,7 @@ services:
   #         memory: 128M
 
 networks:
-  multi_tenant_main_network:
+  multi_store_main_network:
     driver: bridge
 
 volumes:

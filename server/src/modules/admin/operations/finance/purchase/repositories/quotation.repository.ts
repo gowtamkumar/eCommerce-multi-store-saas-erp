@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { QuotationEntity, QuotationStatus } from '../entities/quotation.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class QuotationRepository extends BaseTenantRepository<QuotationEntity> {
+export class QuotationRepository extends BaseStoreRepository<QuotationEntity> {
   constructor(
     @InjectRepository(QuotationEntity)
     repo: Repository<QuotationEntity>,
@@ -26,14 +26,14 @@ export class QuotationRepository extends BaseTenantRepository<QuotationEntity> {
     const repo = this.getRepo(manager)
     const quotation = repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     } as QuotationEntity)
     return repo.save(quotation)
   }
 
-  async findAllByRfq(rfqId: string, tenantId: string): Promise<QuotationEntity[]> {
+  async findAllByRfq(rfqId: string, storeId: string): Promise<QuotationEntity[]> {
     return this.repo.find({
-      where: { rfqId, tenantId },
+      where: { rfqId, storeId },
       relations: {
         supplier: true,
       },
@@ -43,12 +43,12 @@ export class QuotationRepository extends BaseTenantRepository<QuotationEntity> {
 
   async findById(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<QuotationEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         rfq: true,
         supplier: true,

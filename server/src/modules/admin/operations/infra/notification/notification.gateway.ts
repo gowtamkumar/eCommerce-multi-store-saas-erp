@@ -47,19 +47,19 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
 
       // Extract user metadata
       const userId = payload.sub || payload.id
-      const tenantId = payload.tenantId || null
+      const storeId = payload.storeId || null
       const role = payload.role
 
       // Store in client socket instance data
       client.data = {
         userId,
-        tenantId,
+        storeId,
         role,
       }
 
-      // Join tenant room for isolation
-      const tenantRoom = tenantId ? `tenant:${tenantId}` : 'tenant:global'
-      client.join(tenantRoom)
+      // Join store room for isolation
+      const storeRoom = storeId ? `store:${storeId}` : 'store:global'
+      client.join(storeRoom)
 
       // Join user specific room
       client.join(`user:${userId}`)
@@ -70,7 +70,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
       }
 
       this.logger.log(
-        `Client ${client.id} authenticated. User: ${userId}, Tenant: ${tenantId || 'global'}, Role: ${role || 'user'}`,
+        `Client ${client.id} authenticated. User: ${userId}, Store: ${storeId || 'global'}, Role: ${role || 'user'}`,
       )
     } catch (error: any) {
       this.logger.error(`Disconnecting client ${client.id}: Authentication failed.`, error.stack)
@@ -83,10 +83,10 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   }
 
   /**
-   * Send notification to a specific tenant room
+   * Send notification to a specific store room
    */
-  sendToTenant(tenantId: string | null, event: string, payload: any) {
-    const room = tenantId ? `tenant:${tenantId}` : 'tenant:global'
+  sendToStore(storeId: string | null, event: string, payload: any) {
+    const room = storeId ? `store:${storeId}` : 'store:global'
     this.server.to(room).emit(event, payload)
   }
 

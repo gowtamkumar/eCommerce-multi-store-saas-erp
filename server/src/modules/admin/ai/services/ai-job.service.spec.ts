@@ -42,18 +42,18 @@ describe('AiJobService', () => {
   })
 
   it('creates and enqueues embedding reindex job', async () => {
-    const job = await service.enqueueEmbeddingReindex('tenant-1')
+    const job = await service.enqueueEmbeddingReindex('store-1')
 
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        tenantId: 'tenant-1',
+        storeId: 'store-1',
         type: AiJobType.EMBEDDING_REINDEX,
         status: AiJobStatus.QUEUED,
       }),
     )
     expect(queueAddMock).toHaveBeenCalledWith(
       AiJobType.EMBEDDING_REINDEX,
-      expect.objectContaining({ tenantId: 'tenant-1' }),
+      expect.objectContaining({ storeId: 'store-1' }),
       expect.objectContaining({ jobId: 'job-1' }),
     )
     expect(job.bullJobId).toBe('bull-1')

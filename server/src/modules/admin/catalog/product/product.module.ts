@@ -1,5 +1,5 @@
 import { PurchaseModule } from '@/modules/admin/operations/finance/purchase/purchase.module'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { InventoryLedgerModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
 import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.module'
@@ -17,7 +17,7 @@ import { ProductService } from './services/product.service'
 import { BullModule } from '@nestjs/bullmq'
 import { ProductProcessor } from './queue/product.processor'
 import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog.module'
-import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
+import { SuperAdminCrossStoreRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-store.repository'
 import { FaqModule } from '@/modules/admin/content/faq/faq.module'
 import { BrandModule } from '../brand/brand.module'
 import { CategoryModule } from '../category/category.module'
@@ -48,7 +48,7 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
     InventoryLedgerModule,
     PurchaseModule,
     PromotionModule,
-    TenantModule,
+    StoreModule,
     AddonCatalogModule,
     FaqModule,
     BrandModule,
@@ -64,7 +64,7 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
     ProductRepository,
     ProductVariantRepository,
     ProductAttributeRepository,
-    SuperAdminCrossTenantRepository,
+    SuperAdminCrossStoreRepository,
     ProductEmbeddingService,
     ProductQaService,
     StorefrontAssistantService,

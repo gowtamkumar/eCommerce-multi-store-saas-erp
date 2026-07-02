@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { SubscriberEntity } from './entities/subscriber.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class SubscriberRepository extends BaseTenantRepository<SubscriberEntity> {
+export class SubscriberRepository extends BaseStoreRepository<SubscriberEntity> {
   constructor(
     @InjectRepository(SubscriberEntity)
     repo: Repository<SubscriberEntity>,
@@ -14,8 +14,8 @@ export class SubscriberRepository extends BaseTenantRepository<SubscriberEntity>
     super(SubscriberEntity, repo)
 }
 
-  async findByEmail(email: string, tenantId: string): Promise<SubscriberEntity | null> {
-    return this.repo.findOne({ where: { email: email.trim().toLowerCase(), tenantId } })
+  async findByEmail(email: string, storeId: string): Promise<SubscriberEntity | null> {
+    return this.repo.findOne({ where: { email: email.trim().toLowerCase(), storeId } })
   }
 
   async findByConfirmationToken(token: string): Promise<SubscriberEntity | null> {
@@ -38,7 +38,7 @@ export class SubscriberRepository extends BaseTenantRepository<SubscriberEntity>
     const subscriber = this.repo.create({
       ...dto,
       email: typeof dto.email === 'string' ? dto.email.trim().toLowerCase() : dto.email,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as SubscriberEntity)
     return this.repo.save(subscriber)
@@ -46,13 +46,13 @@ export class SubscriberRepository extends BaseTenantRepository<SubscriberEntity>
 
   async findAllWithFilters(
     filterDto: any,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
     const { page = 1, limit = 10, search } = filterDto
     const query = this.repo.createQueryBuilder('subscriber')
 
-    if (tenantId) {
-      query.andWhere('subscriber.tenantId = :tenantId', { tenantId })
+    if (storeId) {
+      query.andWhere('subscriber.storeId = :storeId', { storeId })
     }
 
     if (search) {

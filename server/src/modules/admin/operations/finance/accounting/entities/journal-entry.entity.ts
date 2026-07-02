@@ -10,11 +10,11 @@ import {
   BeforeRemove,
 } from 'typeorm'
 import { JournalType } from '@/common/enums/journal-type.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { LedgerEntryEntity } from './ledger-entry.entity'
 
 @Entity('journal_entries')
-@Index(['tenantId', 'date'])
+@Index(['storeId', 'date'])
 export class JournalEntryEntity extends BaseEntity {
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   date: Date
@@ -34,12 +34,12 @@ export class JournalEntryEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   referenceId: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @OneToMany(() => LedgerEntryEntity, (ledger) => ledger.journalEntry, { cascade: true })
   lines: LedgerEntryEntity[]

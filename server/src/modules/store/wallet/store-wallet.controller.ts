@@ -29,7 +29,7 @@ export class StoreWalletController {
       throw new UnauthorizedException('You must be logged in to view your wallet')
     }
 
-    const data = await this.walletService.getCustomerWalletSummary(ctx.userId, ctx.tenantId)
+    const data = await this.walletService.getCustomerWalletSummary(ctx.userId, ctx.storeId)
 
     return {
       success: true,

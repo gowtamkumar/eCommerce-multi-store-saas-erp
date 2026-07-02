@@ -1,6 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, Index, OneToMany } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
@@ -15,7 +15,7 @@ export enum PRStatus {
 }
 
 @Entity('purchase_requisitions')
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'status'])
 export class PurchaseRequisitionEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   prNumber: string
@@ -29,12 +29,12 @@ export class PurchaseRequisitionEntity extends BaseEntity {
   @Column({ type: 'date', name: 'required_date' })
   requiredDate: Date
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'requested_by' })
   requestedById: string

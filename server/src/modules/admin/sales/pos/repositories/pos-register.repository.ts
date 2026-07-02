@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { PosRegisterEntity } from '../entities/pos-register.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PosRegisterRepository extends BaseTenantRepository<PosRegisterEntity> {
+export class PosRegisterRepository extends BaseStoreRepository<PosRegisterEntity> {
   constructor(
     @InjectRepository(PosRegisterEntity)
     repo: Repository<PosRegisterEntity>,
@@ -14,18 +14,18 @@ export class PosRegisterRepository extends BaseTenantRepository<PosRegisterEntit
     super(PosRegisterEntity, repo)
 }
 
-  async findAll(tenantId: string): Promise<PosRegisterEntity[]> {
+  async findAll(storeId: string): Promise<PosRegisterEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         branch: true,
       },
     })
   }
 
-  async findOne(id: string, tenantId: string): Promise<PosRegisterEntity | null> {
+  async findOne(id: string, storeId: string): Promise<PosRegisterEntity | null> {
     return this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         branch: true,
       },
@@ -35,7 +35,7 @@ export class PosRegisterRepository extends BaseTenantRepository<PosRegisterEntit
   async create(data: any, ctx: RequestContextDto): Promise<PosRegisterEntity> {
     const register = this.repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     return this.repo.save(register) as any
   }

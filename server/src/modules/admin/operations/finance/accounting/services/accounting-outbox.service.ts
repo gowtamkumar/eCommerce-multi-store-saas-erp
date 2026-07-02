@@ -24,18 +24,18 @@ export class AccountingOutboxService {
     manager?: EntityManager,
   ): Promise<AccountingOutboxEntity> {
     const em = manager || this.dataSource.manager
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const payload = {
       journalEntry: data,
       context: {
-        tenantId,
+        storeId,
         userId: ctx.userId,
       },
     }
 
     const outbox = em.create(AccountingOutboxEntity, {
-      tenantId,
+      storeId,
       event: 'CREATE_JOURNAL_ENTRY',
       payload,
       status: 'PENDING',
@@ -83,7 +83,7 @@ export class AccountingOutboxService {
           try {
             const { journalEntry, context } = outbox.payload
             const ctx = new RequestContextDto()
-            ctx.tenantId = outbox.tenantId || context?.tenantId
+            ctx.storeId = outbox.storeId || context?.storeId
             ctx.userId = context?.userId
 
             // Post to General Ledger synchronously within this transaction
@@ -109,9 +109,9 @@ export class AccountingOutboxService {
                     message: `Journal entry outbox ID ${outbox.id} failed after maximum retry attempts. Error: ${outbox.error}`,
                     type: 'DANGER',
                     link: '/admin/finance/accounting',
-                    userId: null as any, // tenant-wide notification
+                    userId: null as any, // store-wide notification
                   },
-                  outbox.tenantId,
+                  outbox.storeId,
                 )
               } catch (notifErr: any) {
                 this.logger.error(

@@ -9,13 +9,13 @@ import FinanceSnapshot from './dashboard/FinanceSnapshot';
 import PlanDistribution from './dashboard/PlanDistribution';
 import PlatformTrafficChart from './dashboard/PlatformTrafficChart';
 import TopStoresTable from './dashboard/TopStoresTable';
-import { TenantHealthAiPanel } from './dashboard/TenantHealthAiPanel';
+import { StoreHealthAiPanel } from './dashboard/StoreHealthAiPanel';
 import { PlatformSupportAiPanel } from './dashboard/PlatformSupportAiPanel';
 
 export default function SuperAdminDashboard({
   stats: initialStats,
   traffic: initialTraffic,
-  tenantAnalytics: initialAnalytics,
+  storeAnalytics: initialAnalytics,
 }: SuperAdminDashboardProps) {
   const {
     days,
@@ -34,7 +34,7 @@ export default function SuperAdminDashboard({
   return (
     <div className="space-y-8">
       <DashboardHeader
-        totalTenants={stats.totalTenants}
+        totalStores={stats.totalStores}
         lastRefreshed={lastRefreshed}
         days={days}
         onDaysChange={setDays}
@@ -46,7 +46,7 @@ export default function SuperAdminDashboard({
 
       <ActionCenter stats={stats} billing={billing} />
 
-      <TenantHealthAiPanel days={days} />
+      <StoreHealthAiPanel days={days} />
 
       <PlatformSupportAiPanel />
 

@@ -26,13 +26,13 @@ export const vectorTransformer: ValueTransformer = {
 }
 
 @Entity('product_embeddings')
-@Index(['tenantId'])
+@Index(['storeId'])
 export class ProductEmbeddingEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
   @Column({ type: 'uuid', name: 'product_id' })
   productId: string

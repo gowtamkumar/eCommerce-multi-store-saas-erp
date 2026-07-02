@@ -22,12 +22,12 @@ export class CouponService {
     ctx: RequestContextDto,
   ): Promise<CouponEntity> {
     this.logger.log(`${this.createCoupon.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const existing = await this.couponRepository.findByCode(createCouponDto.code, tenantId)
+    const storeId = ctx.storeId
+    const existing = await this.couponRepository.findByCode(createCouponDto.code, storeId)
     if (existing) throw new BadRequestException('Coupon code already exists')
 
     const result = await this.couponRepository.createAndSave(createCouponDto, ctx)
-    await this.cacheService.delCacheByPattern('coupons:list*', tenantId)
+    await this.cacheService.delCacheByPattern('coupons:list*', storeId)
     return result
   }
 
@@ -36,31 +36,31 @@ export class CouponService {
     ctx: RequestContextDto,
   ): Promise<{ coupons: CouponEntity[]; total: number }> {
     this.logger.log(`${this.findAllCoupons.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 10, search = '', isActive } = filterDto
     const cacheKey = `coupons:list:p${page}:l${limit}:q${search}:a${isActive ?? 'all'}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [coupons, total] = await this.couponRepository.findAllWithFilters(filterDto, tenantId)
+        const [coupons, total] = await this.couponRepository.findAllWithFilters(filterDto, storeId)
         return { coupons, total }
       },
       300, // 5 min TTL
-      tenantId,
+      storeId,
     )
   }
 
   async findOneCoupon(id: string, ctx: RequestContextDto): Promise<CouponEntity> {
     this.logger.log(`${this.findOneCoupon.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `coupons:id:${id}`
 
     const coupon = await this.cacheService.rememberCache(
       cacheKey,
-      () => this.couponRepository.findById(id, tenantId),
+      () => this.couponRepository.findById(id, storeId),
       600, // 10 min TTL
-      tenantId,
+      storeId,
     )
 
     if (!coupon) throw new NotFoundException('Coupon not found')
@@ -69,15 +69,15 @@ export class CouponService {
 
   async findByCodeCoupon(code: string, ctx: RequestContextDto): Promise<CouponEntity> {
     this.logger.log(`${this.findByCodeCoupon.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `coupons:code:${code.toUpperCase()}`
 
     // Validate endpoint is hot-path — code lookups must be cached
     const coupon = await this.cacheService.rememberCache(
       cacheKey,
-      () => this.couponRepository.findByCode(code, tenantId),
+      () => this.couponRepository.findByCode(code, storeId),
       600,
-      tenantId,
+      storeId,
     )
 
     if (!coupon) throw new NotFoundException('Coupon not found')
@@ -91,7 +91,7 @@ export class CouponService {
    * the root cause of the over-redeem bug.
    */
   async findByCodeFresh(code: string, ctx: RequestContextDto): Promise<CouponEntity> {
-    const coupon = await this.couponRepository.findByCode(code, ctx.tenantId)
+    const coupon = await this.couponRepository.findByCode(code, ctx.storeId)
     if (!coupon) throw new NotFoundException('Coupon not found')
     return coupon
   }
@@ -102,21 +102,21 @@ export class CouponService {
     ctx: RequestContextDto,
   ): Promise<CouponEntity> {
     this.logger.log(`${this.updateCoupon.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const coupon = await this.couponRepository.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const coupon = await this.couponRepository.findById(id, storeId)
     if (!coupon) throw new NotFoundException('Coupon not found')
 
     if (updateCouponDto.code && updateCouponDto.code.toUpperCase() !== coupon.code) {
-      const existing = await this.couponRepository.findByCode(updateCouponDto.code, tenantId)
+      const existing = await this.couponRepository.findByCode(updateCouponDto.code, storeId)
       if (existing) throw new BadRequestException('Coupon code already exists')
     }
 
     const result = await this.couponRepository.updateAndSave(coupon, updateCouponDto)
     // Invalidate all affected cache keys
     await Promise.all([
-      this.cacheService.delCacheByPattern('coupons:list*', tenantId),
-      this.cacheService.delCache(`coupons:id:${id}`, tenantId),
-      this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
+      this.cacheService.delCacheByPattern('coupons:list*', storeId),
+      this.cacheService.delCache(`coupons:id:${id}`, storeId),
+      this.cacheService.delCache(`coupons:code:${coupon.code}`, storeId),
     ])
     return result
   }
@@ -126,15 +126,15 @@ export class CouponService {
     ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeCoupon.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const coupon = await this.couponRepository.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const coupon = await this.couponRepository.findById(id, storeId)
     if (!coupon) throw new NotFoundException('Coupon not found')
 
     await this.couponRepository.removeCoupon(coupon)
     await Promise.all([
-      this.cacheService.delCacheByPattern('coupons:list*', tenantId),
-      this.cacheService.delCache(`coupons:id:${id}`, tenantId),
-      this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
+      this.cacheService.delCacheByPattern('coupons:list*', storeId),
+      this.cacheService.delCache(`coupons:id:${id}`, storeId),
+      this.cacheService.delCache(`coupons:code:${coupon.code}`, storeId),
     ])
     return { success: true, message: 'Coupon deleted successfully' }
   }
@@ -145,7 +145,7 @@ export class CouponService {
     ctx: RequestContextDto,
   ): Promise<{ valid: boolean; coupon: CouponEntity; discountAmount: number }> {
     this.logger.log(`${this.validateCoupon.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     try {
       // Always hit the DB for validation — `usedCount` is the gate that
       // decides over-redemption and the cached copy can be stale.
@@ -179,15 +179,15 @@ export class CouponService {
 
   async incrementUsage(id: string, ctx: RequestContextDto): Promise<void> {
     this.logger.log(`${this.incrementUsage.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const coupon = await this.couponRepository.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const coupon = await this.couponRepository.findById(id, storeId)
     if (!coupon) throw new NotFoundException('Coupon not found')
     coupon.usedCount += 1
     await this.couponRepository.updateAndSave(coupon, {})
     // Invalidate code-based cache so validate reflects the new usedCount
     await Promise.all([
-      this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
-      this.cacheService.delCache(`coupons:id:${id}`, tenantId),
+      this.cacheService.delCache(`coupons:code:${coupon.code}`, storeId),
+      this.cacheService.delCache(`coupons:id:${id}`, storeId),
     ])
   }
 
@@ -202,19 +202,19 @@ export class CouponService {
     ctx: RequestContextDto,
     manager: EntityManager,
   ): Promise<CouponEntity> {
-    const tenantId = ctx.tenantId
-    const ok = await this.couponRepository.tryReserveUsage(id, tenantId, manager)
+    const storeId = ctx.storeId
+    const ok = await this.couponRepository.tryReserveUsage(id, storeId, manager)
     if (!ok) {
       throw new BadRequestException(
         'Coupon is no longer available (usage limit reached or coupon expired)',
       )
     }
-    const coupon = await manager.getRepository(CouponEntity).findOne({ where: { id, tenantId } })
+    const coupon = await manager.getRepository(CouponEntity).findOne({ where: { id, storeId } })
     if (!coupon) throw new BadRequestException('Coupon not found after reservation')
     // Schedule cache invalidation so subsequent /validate hits see fresh data.
     Promise.all([
-      this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
-      this.cacheService.delCache(`coupons:id:${id}`, tenantId),
+      this.cacheService.delCache(`coupons:code:${coupon.code}`, storeId),
+      this.cacheService.delCache(`coupons:id:${id}`, storeId),
     ]).catch((err) => this.logger.warn(`coupon cache invalidation failed: ${err?.message}`))
     return coupon
   }

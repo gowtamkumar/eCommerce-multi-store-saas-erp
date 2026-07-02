@@ -127,7 +127,7 @@ flowchart LR
    - Set `matchStatus = MATCHED`
    - Set `status = MATCHED`
 10. Save the invoice and commit the transaction.
-11. Invalidate cache key `si:list` for the tenant.
+11. Invalidate cache key `si:list` for the store.
 
 ### 2. List Supplier Invoices
 
@@ -175,7 +175,7 @@ flowchart LR
 
 - API GET `/supplier-invoices/aging` computes AP aging buckets.
 - Categorizes unpaid invoice balances into `current`, `1-30`, `31-60`, `61-90`, and `90+` days.
-- Uses all suppliers for the tenant and unpaid supplier invoice balances.
+- Uses all suppliers for the store and unpaid supplier invoice balances.
 
 ## Frontend Workflow Step-by-Step
 
@@ -230,7 +230,7 @@ flowchart LR
   - verify the PO has related `items` loaded.
   - verify GRNs are in `RECEIVED` status and contain the expected `receivedQty` values.
 - To add vendor credit note support, extend the `SupplierInvoiceStatus` flow and add a new line item type.
-- To support invoice search by PO number or supplier invoice item names, expand `SupplierInvoiceRepository.findAllByTenant()`.
+- To support invoice search by PO number or supplier invoice item names, expand `SupplierInvoiceRepository.findAllByStore()`.
 
 ## Summary
 

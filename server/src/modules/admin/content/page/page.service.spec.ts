@@ -4,7 +4,7 @@ import { PageRepository } from './page.repository'
 import { PageRevisionRepository } from './page-revision.repository'
 import { FaqService } from '@/modules/admin/content/faq/faq.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
+import { SuperAdminCrossStoreRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-store.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 describe('PageService', () => {
@@ -12,7 +12,7 @@ describe('PageService', () => {
   let pageRepository: any
 
   const mockContext: RequestContextDto = {
-    tenantId: 'test-tenant',
+    storeId: 'test-store',
     userId: 'test-user',
   } as any
 
@@ -28,7 +28,7 @@ describe('PageService', () => {
       invalidatePageCache: jest.fn(),
       delCache: jest.fn(),
     }
-    const mockCrossTenantRepository = {}
+    const mockCrossStoreRepository = {}
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -50,8 +50,8 @@ describe('PageService', () => {
           useValue: mockCacheService,
         },
         {
-          provide: SuperAdminCrossTenantRepository,
-          useValue: mockCrossTenantRepository,
+          provide: SuperAdminCrossStoreRepository,
+          useValue: mockCrossStoreRepository,
         },
       ],
     }).compile()

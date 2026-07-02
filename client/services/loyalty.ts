@@ -56,7 +56,7 @@ export async function getMyLoyalty(): Promise<MyLoyaltySummary> {
 }
 
 /**
- * Admin: Fetch current tenant's loyalty configurations.
+ * Admin: Fetch current store's loyalty configurations.
  */
 export async function getLoyaltyConfig(): Promise<LoyaltyConfig> {
   const res = await fetchAPI(`/marketing/loyalty/config`);
@@ -147,7 +147,7 @@ export interface LoyaltyRule {
 }
 
 /**
- * Admin: Fetch all loyalty rules for the current tenant.
+ * Admin: Fetch all loyalty rules for the current store.
  */
 export async function getLoyaltyRules(): Promise<LoyaltyRule[]> {
   const res = await fetchAPI(`/marketing/loyalty/rules`);

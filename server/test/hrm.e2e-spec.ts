@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { HrmService } from '@/modules/admin/operations/hrm/hrm.service'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
@@ -37,7 +37,7 @@ describe('HRM Module (e2e)', () => {
   let hrmService: HrmService
   let accountingService: AccountingService
   let userService: UserService
-  let tenant: TenantEntity
+  let store: StoreEntity
   let ctx: RequestContextDto
 
   beforeAll(async () => {
@@ -57,24 +57,24 @@ describe('HRM Module (e2e)', () => {
     const mailService = app.get(MailService)
     jest.spyOn(mailService, 'sendGenericEmail').mockResolvedValue(undefined as any)
 
-    // Create a mock tenant for testing
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    // Create a mock store for testing
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'E2E Test HRM Store',
       subdomain: `e2e-test-hrm-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
 
     ctx = new RequestContextDto()
-    ctx.tenantId = tenant.id
+    ctx.storeId = store.id
     ctx.userId = '00000000-0000-0000-0000-000000000000'
 
-    // Initialize Chart of Accounts for this tenant
-    await accountingService.initializeTenantCOA(ctx)
+    // Initialize Chart of Accounts for this store
+    await accountingService.initializeStoreCOA(ctx)
   })
 
   afterAll(async () => {
-    if (tenant) {
+    if (store) {
       try {
         await dataSource.query(`SET session_replication_role = 'replica'`)
       } catch (e) {}
@@ -103,16 +103,16 @@ describe('HRM Module (e2e)', () => {
       ]
       for (const table of tables) {
         try {
-          await dataSource.query(`DELETE FROM ${table} WHERE tenant_id = $1`, [tenant.id])
+          await dataSource.query(`DELETE FROM ${table} WHERE store_id = $1`, [store.id])
         } catch (e) {
           console.error(`Failed to delete from ${table}:`, e)
         }
       }
-      const tenantRepo = dataSource.getRepository(TenantEntity)
+      const storeRepo = dataSource.getRepository(StoreEntity)
       try {
-        await tenantRepo.delete(tenant.id)
+        await storeRepo.delete(store.id)
       } catch (e) {
-        console.error(`Failed to delete tenant:`, e)
+        console.error(`Failed to delete store:`, e)
       }
 
       try {
@@ -133,7 +133,7 @@ describe('HRM Module (e2e)', () => {
       const dept = await deptRepo.save(
         deptRepo.create({
           name: 'Engineering',
-          tenantId: tenant.id,
+          storeId: store.id,
         }),
       )
 
@@ -141,7 +141,7 @@ describe('HRM Module (e2e)', () => {
         jobRepo.create({
           title: 'Senior NestJS Developer',
           departmentId: dept.id,
-          tenantId: tenant.id,
+          storeId: store.id,
           status: 'PUBLISHED' as any,
           requirements: ['TypeScript', 'NestJS'],
           description: 'Build backend',
@@ -156,7 +156,7 @@ describe('HRM Module (e2e)', () => {
           phone: '1234567890',
           jobPostingId: job.id,
           status: ApplicantStatus.HR_ROUND,
-          tenantId: tenant.id,
+          storeId: store.id,
         }),
       )
 
@@ -195,16 +195,16 @@ describe('HRM Module (e2e)', () => {
       const deptRepo = dataSource.getRepository(DepartmentEntity)
 
       // Clear any employees/users/applicants from previous tests to ensure a clean slate
-      await dataSource.query('DELETE FROM employee_personal_details WHERE tenant_id = $1', [
-        tenant.id,
+      await dataSource.query('DELETE FROM employee_personal_details WHERE store_id = $1', [
+        store.id,
       ])
-      await dataSource.query('DELETE FROM employees WHERE tenant_id = $1', [tenant.id])
-      await dataSource.query('DELETE FROM users WHERE tenant_id = $1', [tenant.id])
+      await dataSource.query('DELETE FROM employees WHERE store_id = $1', [store.id])
+      await dataSource.query('DELETE FROM users WHERE store_id = $1', [store.id])
 
       const dept = await deptRepo.save(
         deptRepo.create({
           name: 'IT',
-          tenantId: tenant.id,
+          storeId: store.id,
         }),
       )
 
@@ -216,7 +216,7 @@ describe('HRM Module (e2e)', () => {
           password: 'password',
           email: `jane.smith-${Date.now()}@example.com`,
           role: UserRole.EMPLOYEE,
-          tenantId: tenant.id,
+          storeId: store.id,
         }),
       )
 
@@ -230,7 +230,7 @@ describe('HRM Module (e2e)', () => {
           status: EmployeeStatus.ACTIVE,
           employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
           joiningDate: new Date('2026-05-05T00:00:00Z'),
-          tenantId: tenant.id,
+          storeId: store.id,
           salaryConfig: {
             basicSalary: 3100,
             allowances: [{ type: 'HRA', amount: 200 }],
@@ -243,7 +243,7 @@ describe('HRM Module (e2e)', () => {
       await leaveRepo.save(
         leaveRepo.create({
           employeeId: employee.id,
-          tenantId: tenant.id,
+          storeId: store.id,
           leaveType: LeaveType.UNPAID,
           startDate: new Date('2026-05-12T00:00:00Z'),
           endDate: new Date('2026-05-12T23:59:59Z'),
@@ -263,7 +263,7 @@ describe('HRM Module (e2e)', () => {
         await attendanceRepo.save(
           attendanceRepo.create({
             employeeId: employee.id,
-            tenantId: tenant.id,
+            storeId: store.id,
             checkIn: new Date(`2026-05-${String(day).padStart(2, '0')}T09:00:00Z`),
             checkOut: new Date(`2026-05-${String(day).padStart(2, '0')}T17:00:00Z`),
             workHours: 8,

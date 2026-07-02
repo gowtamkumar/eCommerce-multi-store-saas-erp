@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { DataSource } from 'typeorm'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreService } from '@/modules/system/store/store.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
@@ -19,7 +19,7 @@ describe('SuperAdminService', () => {
           useValue: {},
         },
         {
-          provide: TenantService,
+          provide: StoreService,
           useValue: {},
         },
         {

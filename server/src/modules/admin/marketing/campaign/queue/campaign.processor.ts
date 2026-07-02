@@ -45,8 +45,8 @@ export class CampaignProcessor extends WorkerHost {
     }
   }
 
-  private async handleStartCampaign(data: { campaignId: string; tenantId: string }) {
-    const { campaignId, tenantId } = data
+  private async handleStartCampaign(data: { campaignId: string; storeId: string }) {
+    const { campaignId, storeId } = data
     const campaign = await this.campaignRepository.findByIdRaw(campaignId)
     if (!campaign) return
 
@@ -67,7 +67,7 @@ export class CampaignProcessor extends WorkerHost {
 
     this.logger.log(`Starting campaign: ${campaign.name} (${campaignId})`)
 
-    const audience = await this.audienceService.getAudience(tenantId, {
+    const audience = await this.audienceService.getAudience(storeId, {
       targetUsers: campaign.targetUsers,
       targetSubscribers: campaign.targetSubscribers,
       targetLeads: campaign.targetLeads,
@@ -85,7 +85,7 @@ export class CampaignProcessor extends WorkerHost {
           link: `/admin/campaigns`,
           userId: null as any, // Send to all admins
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger campaign budget notification: ${e.message}`)
@@ -100,7 +100,7 @@ export class CampaignProcessor extends WorkerHost {
         {
           campaignId,
           userId: member.source === 'user' ? member.id : null,
-          tenantId,
+          storeId,
           recipientKey,
           recipient: {
             email: member.email,
@@ -148,11 +148,11 @@ export class CampaignProcessor extends WorkerHost {
   private async handleSendMessage(data: {
     campaignId: string
     userId: string | null
-    tenantId: string
+    storeId: string
     recipientKey: string
     recipient: any
   }) {
-    const { campaignId, userId, tenantId, recipientKey, recipient } = data
+    const { campaignId, userId, storeId, recipientKey, recipient } = data
 
     if (!recipientKey) {
       this.logger.warn(`send-message missing recipientKey for campaign ${campaignId}`)
@@ -195,18 +195,18 @@ export class CampaignProcessor extends WorkerHost {
           to: recipient.email,
           subject: message.subject,
           html: message.htmlContent,
-          tenantId,
+          storeId,
         })
         success = true
       } else if (campaign.type === CampaignType.SMS && recipient.phone) {
-        const res = await this.smsService.sendSms(recipient.phone, message.text, tenantId)
+        const res = await this.smsService.sendSms(recipient.phone, message.text, storeId)
         success = res.success
       } else if (campaign.type === CampaignType.PUSH && userId) {
         try {
           await this.pushService.sendToUser(
             userId,
             { title: message.title, body: message.body, imageUrl: message.imageUrl },
-            tenantId,
+            storeId,
           )
           success = true
         } catch (e: any) {

@@ -41,9 +41,9 @@ export class InventoryLedgerService {
     manager?: any,
   ): Promise<InventoryLedgerEntity> {
     this.logger.log(`${this.createLedgerEntry.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const product = await this.productRepository.findByIdWithRelations(dto.productId, tenantId)
+    const product = await this.productRepository.findByIdWithRelations(dto.productId, storeId)
     if (!product) {
       throw new NotFoundException('Product not found')
     }
@@ -75,11 +75,11 @@ export class InventoryLedgerService {
     // Use transaction manager if provided
     const internalExecute = async (em: any) => {
       // 0. Acquire transaction-scoped advisory lock so concurrent writers on the
-      //    same (tenant, product, variant, warehouse) tuple serialize. This closes
+      //    same (store, product, variant, warehouse) tuple serialize. This closes
       //    the read-modify-write race in steps 1–4 below.
       await this.repository.acquireStockLock(
         em,
-        tenantId,
+        storeId,
         dto.productId,
         dto.variantId || null,
         dto.warehouseId || null,
@@ -90,7 +90,7 @@ export class InventoryLedgerService {
         dto.productId,
         dto.variantId || null,
         dto.warehouseId || null,
-        tenantId,
+        storeId,
         em,
       )
 
@@ -117,7 +117,7 @@ export class InventoryLedgerService {
 
         if (currentStock + incomingQty > 0) {
           if (dto.variantId) {
-            const variant = await this.variantRepository.findById(dto.variantId, tenantId, em)
+            const variant = await this.variantRepository.findById(dto.variantId, storeId, em)
             if (variant) {
               const currentAvgCost = Number(variant.averageCost || 0)
               const newAvgCost =
@@ -125,7 +125,7 @@ export class InventoryLedgerService {
                 (currentStock + incomingQty)
               await this.variantRepository.updateAverageCost(
                 dto.variantId,
-                tenantId,
+                storeId,
                 newAvgCost,
                 em,
               )
@@ -135,7 +135,7 @@ export class InventoryLedgerService {
             const newAvgCost =
               (currentStock * currentAvgCost + incomingQty * incomingCost) /
               (currentStock + incomingQty)
-            await this.productRepository.updateAverageCost(product.id, tenantId, newAvgCost, em)
+            await this.productRepository.updateAverageCost(product.id, storeId, newAvgCost, em)
           }
         }
       }
@@ -167,9 +167,9 @@ export class InventoryLedgerService {
 
     // Invalidate inventory caches
     await Promise.all([
-      this.cacheService.delCacheByPattern('inventory:ledger*', tenantId),
-      this.cacheService.delCacheByPattern('inventory:summary*', tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+      this.cacheService.delCacheByPattern('inventory:ledger*', storeId),
+      this.cacheService.delCacheByPattern('inventory:summary*', storeId),
+      this.cacheService.delCacheByPattern('dashboard*', storeId),
     ])
 
     // Trigger Low Stock / Out of Stock Warnings
@@ -177,7 +177,7 @@ export class InventoryLedgerService {
       const newGlobalStock = await this.repository.getLiveStock(
         dto.productId,
         dto.variantId || null,
-        tenantId,
+        storeId,
       )
       const currentGlobalStock = newGlobalStock - signedQty
 
@@ -201,10 +201,10 @@ export class InventoryLedgerService {
             link: `/admin/products/${product.id}`,
             userId: null as any,
           },
-          tenantId,
+          storeId,
         )
         this.mailService.sendLowStockAlertEmail(
-          tenantId,
+          storeId,
           product.name,
           skuText,
           newGlobalStock,
@@ -226,10 +226,10 @@ export class InventoryLedgerService {
             link: `/admin/products/${product.id}`,
             userId: null as any,
           },
-          tenantId,
+          storeId,
         )
         this.mailService.sendLowStockAlertEmail(
-          tenantId,
+          storeId,
           product.name,
           skuText,
           newGlobalStock,
@@ -256,15 +256,15 @@ export class InventoryLedgerService {
     totalPages: number
   }> {
     this.logger.log(`${this.findAllLedgerEntries.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `inventory:ledger:p${page}:l${limit}:q${search || ''}:t${type || ''}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.repository.findByTenant(
-          tenantId,
+        const [items, total] = await this.repository.findByStore(
+          storeId,
           page,
           limit,
           search,
@@ -279,7 +279,7 @@ export class InventoryLedgerService {
         }
       },
       300, // 5 min cache
-      tenantId,
+      storeId,
     )
   }
 
@@ -288,8 +288,8 @@ export class InventoryLedgerService {
     ctx: RequestContextDto,
   ): Promise<InventoryLedgerEntity[]> {
     this.logger.log(`${this.findByProductLedgerEntries.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.repository.findByProduct(productId, tenantId)
+    const storeId = ctx.storeId
+    return await this.repository.findByProduct(productId, storeId)
   }
 
   /**
@@ -298,7 +298,7 @@ export class InventoryLedgerService {
    */
   async getStockSummary(ctx: RequestContextDto, warehouseId?: string): Promise<any[]> {
     this.logger.log(`${this.getStockSummary.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const cacheKey = `inventory:summary:${warehouseId || 'global'}`
 
@@ -307,10 +307,10 @@ export class InventoryLedgerService {
       async () => {
         const [products] = await this.productRepository.findAllWithFilters(
           { limit: 1000 },
-          tenantId,
+          storeId,
         )
 
-        const sums = await this.repository.getStockSums(tenantId, warehouseId)
+        const sums = await this.repository.getStockSums(storeId, warehouseId)
         const stockMap = new Map<string, number>()
         sums.forEach((item: any) => {
           const key = item.variantId ? `${item.productId}:${item.variantId}` : item.productId
@@ -376,7 +376,7 @@ export class InventoryLedgerService {
         })
       },
       600,
-      tenantId,
+      storeId,
     )
   }
 
@@ -404,7 +404,7 @@ export class InventoryLedgerService {
     const sourceStock = await this.repository.getLiveStock(
       dto.productId,
       dto.variantId || null,
-      ctx.tenantId,
+      ctx.storeId,
       dto.sourceWarehouseId,
     )
 
@@ -489,7 +489,7 @@ export class InventoryLedgerService {
         const liveStock = await this.repository.getLiveStock(
           line.productId,
           line.variantId || null,
-          ctx.tenantId,
+          ctx.storeId,
           dto.warehouseId,
           manager,
         )
@@ -524,31 +524,31 @@ export class InventoryLedgerService {
   async getGlobalLiveStock(
     productId: string,
     variantId: string | null,
-    tenantId: string,
+    storeId: string,
     manager?: any,
   ): Promise<number> {
-    return await this.repository.getLiveStock(productId, variantId, tenantId, null, manager)
+    return await this.repository.getLiveStock(productId, variantId, storeId, null, manager)
   }
 
   async getLiveStock(
     productId: string,
     variantId: string | null,
-    tenantId: string,
+    storeId: string,
     warehouseId?: string | null,
     manager?: any,
   ): Promise<number> {
-    return await this.repository.getLiveStock(productId, variantId, tenantId, warehouseId, manager)
+    return await this.repository.getLiveStock(productId, variantId, storeId, warehouseId, manager)
   }
 
-  async getStockSums(tenantId: string, warehouseId?: string): Promise<any[]> {
-    return await this.repository.getStockSums(tenantId, warehouseId)
+  async getStockSums(storeId: string, warehouseId?: string): Promise<any[]> {
+    return await this.repository.getStockSums(storeId, warehouseId)
   }
 
   async getStockSumsByProductIds(
-    tenantId: string,
+    storeId: string,
     productIds: string[],
     warehouseId?: string,
   ): Promise<any[]> {
-    return await this.repository.getStockSumsByProductIds(tenantId, productIds, warehouseId)
+    return await this.repository.getStockSumsByProductIds(storeId, productIds, warehouseId)
   }
 }

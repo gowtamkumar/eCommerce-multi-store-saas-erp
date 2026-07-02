@@ -1,4 +1,4 @@
-# Enterprise Multi-Tenant SaaS ERP — Core Developer Guide
+# Enterprise Multi-Store SaaS ERP — Core Developer Guide
 
 **Document Version:** 1.0.0  
 **Prepared By:** Senior Systems Architect & Principal Engineer  
@@ -18,7 +18,7 @@ This SaaS ERP is built as a **Modular Monolith** using **NestJS**. While all dom
                                       ▼
                   ┌────────────────────────────────────────┐
                   │    RequestContext & Scoping Guards     │
-                  │ (Inject tenantId, branchId, userId)   │
+                  │ (Inject storeId, branchId, userId)   │
                   └───────────────────┬────────────────────┘
                                       ▼
                   ┌────────────────────────────────────────┐
@@ -35,10 +35,10 @@ This SaaS ERP is built as a **Modular Monolith** using **NestJS**. While all dom
 
 ### 1.1 Context Scoping Lifecycle
 Every incoming HTTP request goes through a strict verification lifecycle before reaching any service:
-1.  **Tenant Resolution Middleware:** Inspects the `Host` header (resolving `subdomain.yourplatform.com` or `customdomain.com` mapped in database) and injects `request.tenantId` into the Express request context.
+1.  **Store Resolution Middleware:** Inspects the `Host` header (resolving `subdomain.yourplatform.com` or `customdomain.com` mapped in database) and injects `request.storeId` into the Express request context.
 2.  **JWT Authentication Guard:** Extracts the JSON Web Token, loads the authenticated user, and binds `request.user` and `request.userId`.
 3.  **Scope Verification Guards:** 
-    *   `SubscriptionGuard`: Verifies that the tenant has the logical plan key (e.g., `staff_accounts`, `advanced_analytics`) for the accessed path.
+    *   `SubscriptionGuard`: Verifies that the store has the logical plan key (e.g., `staff_accounts`, `advanced_analytics`) for the accessed path.
     *   `BranchScopeGuard` / `WarehouseScopeGuard`: Limits staff requests to data within their permitted organizational boundaries.
 
 ---
@@ -48,24 +48,24 @@ Every incoming HTTP request goes through a strict verification lifecycle before 
 To maintain the architectural integrity of the Modular Monolith, every new feature (e.g., a *Fixed Asset* or *Manufacturing* module) must be implemented using this rigid 5-step pipeline.
 
 ### Step 2.1: Define the DB Entity
-All tenant-bound entities must explicitly define `tenantId`, map the relationship to `TenantEntity`, and include indexes to optimize multi-tenant lookups.
+All store-bound entities must explicitly define `storeId`, map the relationship to `StoreEntity`, and include indexes to optimize multi-store lookups.
 
 Create the file `server/src/modules/admin/operations/finance/asset/entities/fixed-asset.entity.ts`:
 ```typescript
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 @Entity('fixed_assets')
-@Index(['tenantId'])
-@Index(['tenantId', 'code'], { unique: true })
+@Index(['storeId'])
+@Index(['storeId', 'code'], { unique: true })
 export class FixedAssetEntity extends BaseEntity {
-  @Column({ name: 'tenant_id', type: 'uuid' })
-  tenantId: string
+  @Column({ name: 'store_id', type: 'uuid' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ unique: true })
   code: string
@@ -88,7 +88,7 @@ export class FixedAssetEntity extends BaseEntity {
 ```
 
 ### Step 2.2: Implement the Scoped Data Repository
-Never run database queries without scoping by `tenantId`. Create a transaction-safe service repository pattern:
+Never run database queries without scoping by `storeId`. Create a transaction-safe service repository pattern:
 
 ```typescript
 import { Injectable, Scope } from '@nestjs/common'
@@ -106,20 +106,20 @@ export class FixedAssetRepository {
 
   async findAll(ctx: RequestContextDto): Promise<FixedAssetEntity[]> {
     return this.repo.find({
-      where: { tenantId: ctx.tenantId },
+      where: { storeId: ctx.storeId },
     })
   }
 
   async findByCode(ctx: RequestContextDto, code: string): Promise<FixedAssetEntity | null> {
     return this.repo.findOne({
-      where: { tenantId: ctx.tenantId, code },
+      where: { storeId: ctx.storeId, code },
     })
   }
 
   async create(ctx: RequestContextDto, entityData: Partial<FixedAssetEntity>): Promise<FixedAssetEntity> {
     const asset = this.repo.create({
       ...entityData,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     return this.repo.save(asset)
   }
@@ -225,28 +225,28 @@ export class FixedAssetModule {}
 
 ---
 
-## 3. Multi-Tenant Database Security (The Boundary Guards)
+## 3. Multi-Store Database Security (The Boundary Guards)
 
-Every database table representing customer metrics must use composite indexing to optimize tenant queries. **Direct un-scoped queries on product variants or user accounts will fail security static analysis.**
+Every database table representing customer metrics must use composite indexing to optimize store queries. **Direct un-scoped queries on product variants or user accounts will fail security static analysis.**
 
 ### 3.1 Composite Unique Index Rule
-A common pitfall is creating simple unique indexes. If a tenant creates SKU `IPHONE-15`, that unique index will block *other* tenants from adding their own `IPHONE-15`.
-**Rule:** Every unique constraint must contain the `tenantId` field and ignore soft-deleted rows.
+A common pitfall is creating simple unique indexes. If a store creates SKU `IPHONE-15`, that unique index will block *other* stores from adding their own `IPHONE-15`.
+**Rule:** Every unique constraint must contain the `storeId` field and ignore soft-deleted rows.
 
 ```typescript
 @Entity('product_variants')
-@Index(['tenantId', 'sku'], { unique: true, where: '"deleted_at" IS NULL' })
+@Index(['storeId', 'sku'], { unique: true, where: '"deleted_at" IS NULL' })
 export class ProductVariantEntity extends BaseEntity { ... }
 ```
 
 ### 3.2 S3 File Bucket Isolation Pattern
-Upload parameters must partition storage buckets dynamically by tenant context to prevent data leaks.
+Upload parameters must partition storage buckets dynamically by store context to prevent data leaks.
 
 ```typescript
-export function getTenantUploadPath(tenantId: string, filename: string): string {
+export function getStoreUploadPath(storeId: string, filename: string): string {
   const fileHash = crypto.createHash('md5').update(filename + Date.now().toString()).digest('hex')
-  // Format: t/{tenantId}/{domain}/{hash_file}
-  return `t/${tenantId}/catalog/${fileHash}-${filename}`
+  // Format: t/{storeId}/{domain}/{hash_file}
+  return `t/${storeId}/catalog/${fileHash}-${filename}`
 }
 ```
 
@@ -263,7 +263,7 @@ Instead, we push stock change requests to the background FIFO queue using **Bull
 await this.productQueue.add(
   'update-stock',
   {
-    tenantId: ctx.tenantId,
+    storeId: ctx.storeId,
     variantId: orderItem.variantId,
     quantity: -orderItem.quantity, // Negative for Sales
     referenceType: 'ORDER',
@@ -275,12 +275,12 @@ await this.productQueue.add(
 // 2. Queue processor executes ledger insertion
 @Process('update-stock')
 async handleStockSync(job: Job) {
-  const { tenantId, variantId, quantity, referenceType, referenceId } = job.data
+  const { storeId, variantId, quantity, referenceType, referenceId } = job.data
   
   await this.dataSource.transaction(async (manager) => {
     // Insert row to inventory_transactions ledger
     const ledgerEntry = manager.create(InventoryTransactionEntity, {
-      tenantId,
+      storeId,
       variantId,
       quantity,
       referenceType,
@@ -317,8 +317,8 @@ export function validateJournalBalance(entries: LedgerEntryEntity[]): boolean {
 1.  **Strict Eager-Loading Prevention (N+1 queries):** Do not configure relations with `{ eager: true }` in TypeORM entity definitions. This forces recursive queries. Use explicit TypeORM `.createQueryBuilder().leftJoinAndSelect()` to load nested relations on demand.
 2.  **Redis Cache-Aside Scoping Pattern:**
     ```typescript
-    // Cache Prefix: t:{tenantId}:{module}:{customKey}
-    const cacheKey = `t:${ctx.tenantId}:reports:pl:${startDate}:${endDate}`
+    // Cache Prefix: t:{storeId}:{module}:{customKey}
+    const cacheKey = `t:${ctx.storeId}:reports:pl:${startDate}:${endDate}`
     
     const cachedData = await this.cacheManager.get(cacheKey)
     if (cachedData) return cachedData
@@ -329,5 +329,5 @@ export function validateJournalBalance(entries: LedgerEntryEntity[]): boolean {
     ```
 3.  **Soft-Deletes Scoping:** Every TypeORM find/query runner naturally appends `deletedAt IS NULL`. If writing raw SQL, always include:
     ```sql
-    WHERE deleted_at IS NULL AND tenant_id = :tenantId
+    WHERE deleted_at IS NULL AND store_id = :storeId
     ```

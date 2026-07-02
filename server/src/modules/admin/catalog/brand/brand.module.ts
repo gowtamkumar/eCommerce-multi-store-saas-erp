@@ -5,10 +5,10 @@ import { BrandController } from './brand.controller'
 import { BrandRepository } from './brand.repository'
 import { BrandService } from './brand.service'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BrandEntity]), TenantModule],
+  imports: [TypeOrmModule.forFeature([BrandEntity]), StoreModule],
   controllers: [BrandController],
   providers: [BrandService, BrandRepository],
   exports: [BrandService, BrandRepository],

@@ -22,7 +22,7 @@ export class TaxController {
   async seedDefaultRules(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<void>> {
-    await this.taxService.seedDefaultTenantTaxRules(ctx)
+    await this.taxService.seedDefaultStoreTaxRules(ctx)
     return {
       success: true,
       statusCode: 200,

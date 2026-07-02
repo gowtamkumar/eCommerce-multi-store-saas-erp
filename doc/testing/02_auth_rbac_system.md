@@ -116,7 +116,7 @@ WHERE email = 'cashier@lazzpharma.com';
 -- 2. Check user role assignment with branch scope restrictions
 SELECT user_id, role_id, scope_branch_id, scope_warehouse_id 
 FROM user_role_assignments 
-WHERE tenant_id = 'YOUR_TENANT_UUID' 
+WHERE store_id = 'YOUR_STORE_UUID' 
   AND user_id = (SELECT id FROM users WHERE email = 'cashier@lazzpharma.com' LIMIT 1);
 -- Expect: role_id matches Cashier role, scope_branch_id matches Dhaka Branch UUID, and scope_warehouse_id is null.
 ```

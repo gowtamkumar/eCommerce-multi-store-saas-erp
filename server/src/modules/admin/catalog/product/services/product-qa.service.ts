@@ -13,7 +13,7 @@ import {
 import { ProductService } from './product.service'
 import { StorefrontAiConfigService } from './storefront-ai-config.service'
 import { ProductEmbeddingService } from './product-embedding.service'
-import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
+import { StoreAiClientService } from '@/modules/admin/ai/services/store-ai-client.service'
 import {
   buildProductRagContext,
   isProductEligibleForStorefrontQa,
@@ -25,26 +25,26 @@ export class ProductQaService {
 
   constructor(
     private readonly productService: ProductService,
-    private readonly tenantAiClient: TenantAiClientService,
+    private readonly storeAiClient: StoreAiClientService,
     private readonly storefrontAiConfig: StorefrontAiConfigService,
     private readonly productEmbeddingService: ProductEmbeddingService,
   ) {}
 
-  async isProductQaAvailable(tenantId: string): Promise<boolean> {
+  async isProductQaAvailable(storeId: string): Promise<boolean> {
     const [providerReady, flags] = await Promise.all([
-      this.storefrontAiConfig.isProviderReady(tenantId),
-      this.storefrontAiConfig.getStorefrontFlags(tenantId),
+      this.storefrontAiConfig.isProviderReady(storeId),
+      this.storefrontAiConfig.getStorefrontFlags(storeId),
     ])
     return providerReady && flags.productQaEnabled
   }
 
   async askAboutProduct(
-    tenantId: string,
+    storeId: string,
     slug: string,
     dto: AskProductQuestionDto,
     ctx: RequestContextDto,
   ): Promise<ProductQaResultDto> {
-    if (!(await this.isProductQaAvailable(tenantId))) {
+    if (!(await this.isProductQaAvailable(storeId))) {
       throw new ServiceUnavailableException('Product Q&A is not available for this store')
     }
 
@@ -101,7 +101,7 @@ Return exactly this JSON shape:
     messages.push({ role: 'user', content: prompt })
 
     try {
-      const result = await this.tenantAiClient.chatCompletion(tenantId, messages, {
+      const result = await this.storeAiClient.chatCompletion(storeId, messages, {
         temperature: 0.3,
         maxTokens: 700,
         usageContext: { endpoint: 'products/slug/ask' },
@@ -112,11 +112,11 @@ Return exactly this JSON shape:
         suggestedFollowUps: [],
       })
 
-      void this.productEmbeddingService.recordAssistantEvent(tenantId, 'qa', false)
+      void this.productEmbeddingService.recordAssistantEvent(storeId, 'qa', false)
 
       return parsed
     } catch (error) {
-      this.logger.error(`Product Q&A failed for tenant ${tenantId}, slug ${slug}`, error)
+      this.logger.error(`Product Q&A failed for store ${storeId}, slug ${slug}`, error)
       throw error
     }
   }

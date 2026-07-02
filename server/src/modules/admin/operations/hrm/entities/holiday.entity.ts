@@ -1,22 +1,22 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, BeforeInsert, BeforeUpdate, Index } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 
 @Entity('holidays')
-@Index(['tenantId', 'year'])
-@Index(['tenantId', 'date'])
+@Index(['storeId', 'year'])
+@Index(['storeId', 'date'])
 export class HolidayEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   /**
    * Optional branch scope. NULL means the holiday applies to all branches
-   * within the tenant.
+   * within the store.
    */
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
   branchId: string | null

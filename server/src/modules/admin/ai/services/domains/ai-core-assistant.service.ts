@@ -1,6 +1,6 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
-import { maskApiKey, normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
+import { maskApiKey, normalizeStoreAiConfig } from '@/modules/system/store/utils/store-ai.util'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ModuleRef } from '@nestjs/core'
 import { AiChatDto } from '../../dto/ai-chat.dto'
@@ -10,7 +10,7 @@ import {
   buildDashboardKpiSnapshot,
 } from '../../utils/dashboard-kpi-context.util'
 import { AiAssistantBaseService } from '../ai-assistant-base.service'
-import { AiChatMessage, TenantAiClientService } from '../tenant-ai-client.service'
+import { AiChatMessage, StoreAiClientService } from '../store-ai-client.service'
 
 const ASSISTANT_SYSTEM_PROMPT = `You are a helpful e-commerce and ERP assistant for store administrators.
 Help with product ideas, marketing copy, operations questions, and business decisions.
@@ -20,13 +20,13 @@ Be concise, practical, and action-oriented. Never invent inventory, orders, or f
 export class AiCoreAssistantService {
   constructor(
     private readonly base: AiAssistantBaseService,
-    private readonly aiClient: TenantAiClientService,
+    private readonly aiClient: StoreAiClientService,
     private readonly moduleRef: ModuleRef,
   ) {}
 
-  async getStatus(tenantId: string) {
-    const config = await this.aiClient.getConfigForTenant(tenantId)
-    const normalized = normalizeTenantAiConfig(config)
+  async getStatus(storeId: string) {
+    const config = await this.aiClient.getConfigForStore(storeId)
+    const normalized = normalizeStoreAiConfig(config)
     const { hasApiKey } = maskApiKey(normalized.apiKey)
 
     return {
@@ -38,7 +38,7 @@ export class AiCoreAssistantService {
     }
   }
 
-  async chat(tenantId: string, dto: AiChatDto) {
+  async chat(storeId: string, dto: AiChatDto) {
     const messages: AiChatMessage[] = [{ role: 'system', content: ASSISTANT_SYSTEM_PROMPT }]
 
     for (const item of dto.history || []) {
@@ -47,7 +47,7 @@ export class AiCoreAssistantService {
 
     messages.push({ role: 'user', content: dto.message })
 
-    const result = await this.base.complete(tenantId, messages, 'ai/chat')
+    const result = await this.base.complete(storeId, messages, 'ai/chat')
     return {
       reply: result.content,
       model: result.model,
@@ -67,7 +67,7 @@ export class AiCoreAssistantService {
     const messages = buildDashboardCopilotMessages(snapshot, dto.message, dto.history || [])
 
     const result = await this.base.complete(
-      ctx.tenantId,
+      ctx.storeId,
       messages as AiChatMessage[],
       'ai/copilot/dashboard',
       {

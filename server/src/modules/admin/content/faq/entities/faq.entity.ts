@@ -3,13 +3,13 @@ import { FaqStatus } from '@/common/enums/faq-status.enum'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { PageEntity } from '@/modules/admin/content/page/entities/page.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('faqs')
-@Index(['tenantId', 'status'])
-@Index(['tenantId', 'productId'])
-@Index(['tenantId', 'pageId'])
+@Index(['storeId', 'status'])
+@Index(['storeId', 'productId'])
+@Index(['storeId', 'pageId'])
 export class FaqEntity extends BaseEntity {
   @Column({ type: 'text' })
   question: string
@@ -33,12 +33,12 @@ export class FaqEntity extends BaseEntity {
   status: FaqStatus
 
   @Index()
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', nullable: true, name: 'product_id' })
   productId: string

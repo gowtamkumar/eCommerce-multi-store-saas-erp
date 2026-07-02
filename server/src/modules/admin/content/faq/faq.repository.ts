@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { FaqStatus } from '@/common/enums/faq-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,7 +7,7 @@ import { FaqEntity } from './entities/faq.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class FaqRepository extends BaseTenantRepository<FaqEntity> {
+export class FaqRepository extends BaseStoreRepository<FaqEntity> {
   constructor(
     @InjectRepository(FaqEntity)
     repo: Repository<FaqEntity>,
@@ -17,12 +17,12 @@ export class FaqRepository extends BaseTenantRepository<FaqEntity> {
 
   async findAllWithFilters(
     filterDto: any,
-    tenantId: string,
+    storeId: string,
   ): Promise<{ faqs: FaqEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
     const query = this.repo
       .createQueryBuilder('faq')
-      .where('faq.tenantId = :tenantId', { tenantId })
+      .where('faq.storeId = :storeId', { storeId })
 
     if (status) {
       query.andWhere('faq.status = :status', { status })
@@ -42,21 +42,21 @@ export class FaqRepository extends BaseTenantRepository<FaqEntity> {
     return { faqs, total }
   }
 
-  async findById(id: string, tenantId: string): Promise<FaqEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findById(id: string, storeId: string): Promise<FaqEntity | null> {
+    return this.repo.findOne({ where: { id, storeId } })
   }
 
-  async findByPageId(pageId: string, tenantId: string): Promise<FaqEntity[]> {
+  async findByPageId(pageId: string, storeId: string): Promise<FaqEntity[]> {
     return this.repo.find({
-      where: { pageId, tenantId, status: FaqStatus.ACTIVE },
+      where: { pageId, storeId, status: FaqStatus.ACTIVE },
       order: { order: 'ASC', createdAt: 'DESC' },
     })
   }
 
-  async findGlobal(tenantId: string): Promise<FaqEntity[]> {
+  async findGlobal(storeId: string): Promise<FaqEntity[]> {
     return this.repo.find({
       where: {
-        tenantId,
+        storeId,
         productId: IsNull(),
         pageId: IsNull(),
         status: FaqStatus.ACTIVE,
@@ -65,12 +65,12 @@ export class FaqRepository extends BaseTenantRepository<FaqEntity> {
     })
   }
 
-  async findByIdsList(ids: string[], tenantId: string): Promise<FaqEntity[]> {
+  async findByIdsList(ids: string[], storeId: string): Promise<FaqEntity[]> {
     if (!ids || ids.length === 0) return []
     return this.repo.find({
       where: {
         id: In(ids),
-        tenantId,
+        storeId,
         status: FaqStatus.ACTIVE,
       },
       order: { order: 'ASC', createdAt: 'DESC' },
@@ -80,7 +80,7 @@ export class FaqRepository extends BaseTenantRepository<FaqEntity> {
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<FaqEntity> {
     const faq = this.repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as FaqEntity)
     return this.repo.save(faq)
@@ -104,13 +104,13 @@ export class FaqRepository extends BaseTenantRepository<FaqEntity> {
     if (!faqs || faqs.length === 0) return []
     const repo = this.txRepo(manager)
     const entities = faqs.map((faq) =>
-      repo.create({ ...faq, productId, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity),
+      repo.create({ ...faq, productId, storeId: ctx.storeId, userId: ctx.userId } as FaqEntity),
     )
     return repo.save(entities)
   }
 
-  async deleteByProductId(productId: string, tenantId: string, manager?: any): Promise<void> {
+  async deleteByProductId(productId: string, storeId: string, manager?: any): Promise<void> {
     const repo = this.txRepo(manager)
-    await repo.softDelete({ productId, tenantId })
+    await repo.softDelete({ productId, storeId })
   }
 }

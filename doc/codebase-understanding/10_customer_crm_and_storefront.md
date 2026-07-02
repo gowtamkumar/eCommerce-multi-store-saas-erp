@@ -107,7 +107,7 @@ Manages newsletter mailing list opt-ins from the storefront. Stores email, conse
 The cart is a **server-side persistent cart** (not browser localStorage-only), allowing customers to resume their cart across devices.
 
 ### Entities
-- **`CartEntity`:** One cart per active user session. Fields: `userId`, `tenantId`, `status` (ACTIVE, CHECKED_OUT, ABANDONED).
+- **`CartEntity`:** One cart per active user session. Fields: `userId`, `storeId`, `status` (ACTIVE, CHECKED_OUT, ABANDONED).
 - **`CartItemEntity`:** Line items in the cart. Fields: `variantId`, `quantity`, `unitPriceSnapshot`, `discountSnapshot`.
 
 ### `CartService` Key Methods

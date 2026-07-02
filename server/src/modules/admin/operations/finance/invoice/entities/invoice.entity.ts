@@ -1,12 +1,12 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('invoices')
-@Index(['tenantId', 'createdAt'])
+@Index(['storeId', 'createdAt'])
 export class InvoiceEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'invoice_number', unique: true, length: 100 })
   invoiceNumber: string
@@ -33,12 +33,12 @@ export class InvoiceEntity extends BaseEntity {
   @Index()
   status: InvoiceStatus
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

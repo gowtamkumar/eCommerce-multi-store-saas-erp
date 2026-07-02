@@ -15,10 +15,10 @@ export class QueryAuditLogDto {
   @Max(100)
   limit?: number = 20
 
-  /** Filter by tenant ID (super-admin only) */
+  /** Filter by store ID (super-admin only) */
   @IsOptional()
   @IsUUID()
-  tenantId?: string
+  storeId?: string
 
   /** Filter by branch ID */
   @IsOptional()

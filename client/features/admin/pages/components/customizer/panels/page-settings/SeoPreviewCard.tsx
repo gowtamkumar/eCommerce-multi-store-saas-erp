@@ -9,7 +9,7 @@ interface SeoPreviewCardProps {
 /**
  * Faux SERP card showing how the page will look in Google search results.
  * Falls back to the page title when metaTitle is empty and uses the
- * current window host so the URL preview matches the actual tenant domain.
+ * current window host so the URL preview matches the actual store domain.
  */
 export default function SeoPreviewCard({ data }: SeoPreviewCardProps) {
   const host = typeof window !== 'undefined' ? window.location.host : 'yourstore.com';

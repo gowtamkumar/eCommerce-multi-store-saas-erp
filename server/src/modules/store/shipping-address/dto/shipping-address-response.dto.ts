@@ -9,7 +9,7 @@ export class ShippingAddressResponseDto {
   userId?: string | null
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   label: string

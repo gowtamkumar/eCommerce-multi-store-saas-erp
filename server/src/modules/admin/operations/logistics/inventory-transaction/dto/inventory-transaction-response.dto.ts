@@ -40,7 +40,7 @@ export class InventoryLedgerResponseDto {
   referenceId: string
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

@@ -34,9 +34,9 @@ export class McpAuthGuard implements CanActivate {
         throw new UnauthorizedException('User not found')
       }
 
-      // Attach user and tenant context to request for subsequent RequestContext decorator lookup
+      // Attach user and store context to request for subsequent RequestContext decorator lookup
       request.user = { ...user, sessionId: decoded.sessionId || null }
-      request.tenantId = user.tenantId || null
+      request.storeId = user.storeId || null
 
       return true
     } catch (error) {

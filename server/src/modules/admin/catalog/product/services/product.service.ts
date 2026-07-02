@@ -7,7 +7,7 @@ import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/services/promotion.service'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreService } from '@/modules/system/store/store.service'
 import { InjectQueue } from '@nestjs/bullmq'
 import {
   ConflictException,
@@ -18,7 +18,7 @@ import {
 } from '@nestjs/common'
 import { Queue } from 'bullmq'
 import { DataSource, Not } from 'typeorm'
-import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { StoreFeatureEntity } from '@/modules/system/store/entities/store-feature.entity'
 import { PromotionTargetType } from '../../../sales/promotion/enums/promotion-target-type.enum'
 import { BrandRepository } from '../../brand/brand.repository'
 import { CreateProductDto } from '../dto/create-product.dto'
@@ -32,9 +32,9 @@ import { ProductVariantRepository } from '../repositories/variant.repository'
 import { generateEAN13, generateProductSku, generateVariantSku } from '../utils/catalog-id.util'
 import { AiJobService } from '@/modules/admin/ai/services/ai-job.service'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
-import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
-import { isTenantAiAutomationReady } from '@/common/utils/tenant-ai-automation.util'
-import { normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
+import { SuperAdminCrossStoreRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-store.repository'
+import { isStoreAiAutomationReady } from '@/common/utils/store-ai-automation.util'
+import { normalizeStoreAiConfig } from '@/modules/system/store/utils/store-ai.util'
 import { CategoryRepository } from '../../category/category.repository'
 import {
   ImportProductsDto,
@@ -64,23 +64,23 @@ export class ProductService {
     private cache: CacheService,
     private readonly inventoryService: InventoryLedgerService,
     private readonly promotionService: PromotionService,
-    private readonly tenantService: TenantService,
+    private readonly storeService: StoreService,
     private readonly dataSource: DataSource,
     private readonly addonCatalogService: AddonCatalogService,
     @InjectQueue('product') private readonly productQueue: Queue,
-    private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
+    private readonly crossStoreRepository: SuperAdminCrossStoreRepository,
     private readonly productEmbeddingService: ProductEmbeddingService,
     private readonly aiJobService: AiJobService,
     private readonly categoryRepository: CategoryRepository,
   ) {}
 
-  private async assertProductQuotaAvailable(tenantId: string): Promise<void> {
-    const tenant = await this.tenantService.findOneTenants(tenantId)
-    let maxProducts = Number(tenant.subscriptionPlan?.maxProducts ?? 0)
+  private async assertProductQuotaAvailable(storeId: string): Promise<void> {
+    const store = await this.storeService.findOneStores(storeId)
+    let maxProducts = Number(store.subscriptionPlan?.maxProducts ?? 0)
     if (!Number.isFinite(maxProducts) || maxProducts <= 0) return
 
-    const activeOverrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
-      where: { tenantId, isEnabled: true },
+    const activeOverrides = await this.dataSource.getRepository(StoreFeatureEntity).find({
+      where: { storeId, isEnabled: true },
     })
 
     // Load product addon definitions from DB dynamically (boost_unit === 'products')
@@ -96,7 +96,7 @@ export class ProductService {
       }
     }
 
-    const currentProducts = await this.productRepository.countByTenant(tenantId)
+    const currentProducts = await this.productRepository.countByStore(storeId)
     if (currentProducts >= maxProducts) {
       throw new ForbiddenException({
         success: false,
@@ -113,7 +113,7 @@ export class ProductService {
   private async attachPromotions(product: any, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
     if (!product) return product
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     try {
       const activePromos = await this.promotionService.findActivePromotions(ctx)
       if (!activePromos || activePromos.length === 0) return product
@@ -262,13 +262,13 @@ export class ProductService {
   // SKU & Barcode generation is handled by the shared utility:
   // server/src/modules/admin/catalog/product/utils/catalog-id.util.ts
 
-  private async populateProductsStock(products: any[], tenantId: string): Promise<any[]> {
+  private async populateProductsStock(products: any[], storeId: string): Promise<any[]> {
     if (!products || products.length === 0) return products
     try {
       // Only aggregate ledger rows for the products on this page, so the cost
-      // scales with the result size instead of the entire tenant inventory.
+      // scales with the result size instead of the entire store inventory.
       const productIds = products.map((p) => p.id).filter(Boolean)
-      const sums = await this.inventoryService.getStockSumsByProductIds(tenantId, productIds)
+      const sums = await this.inventoryService.getStockSumsByProductIds(storeId, productIds)
       const stockMap = new Map<string, number>()
       sums.forEach((item: any) => {
         const key = item.variantId ? `${item.productId}:${item.variantId}` : item.productId
@@ -298,7 +298,7 @@ export class ProductService {
     filterDto: FilterProductDto = { page: 1, limit: 5 },
   ): Promise<{ products: AugmentedProduct[]; total: number }> {
     this.logger.log(`${this.findAllProducts.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // Build a deterministic cache key from the filter parameters to absorb
     // repeated identical requests (e.g. multiple users on the same category page).
@@ -311,16 +311,16 @@ export class ProductService {
         const hasSearchQuery = Boolean(filterDto.q?.trim())
         const useHybrid =
           hasSearchQuery &&
-          (await this.productEmbeddingService.canUseHybridSearch(tenantId))
+          (await this.productEmbeddingService.canUseHybridSearch(storeId))
 
         if (useHybrid) {
           try {
-            const result = await this.findAllProductsHybrid(tenantId, filterDto, ctx)
-            void this.productEmbeddingService.recordSearchEvent(tenantId, 'hybrid', result.total)
+            const result = await this.findAllProductsHybrid(storeId, filterDto, ctx)
+            void this.productEmbeddingService.recordSearchEvent(storeId, 'hybrid', result.total)
             return result
           } catch (error) {
             this.logger.error(
-              `Hybrid search failed for tenant ${tenantId}. Falling back to keyword search.`,
+              `Hybrid search failed for store ${storeId}. Falling back to keyword search.`,
               error,
             )
           }
@@ -328,22 +328,22 @@ export class ProductService {
 
         const [products, total] = await this.productRepository.findAllWithFilters(
           filterDto,
-          tenantId,
+          storeId,
         )
-        const populated = await this.populateProductsStock(products, tenantId)
+        const populated = await this.populateProductsStock(products, storeId)
         const productsWithPromotions = await this.attachPromotionsMany(populated, ctx)
         if (hasSearchQuery) {
-          void this.productEmbeddingService.recordSearchEvent(tenantId, 'keyword', total)
+          void this.productEmbeddingService.recordSearchEvent(storeId, 'keyword', total)
         }
         return { products: productsWithPromotions, total }
       },
       60, // 60-second TTL — short enough to reflect stock/price updates
-      tenantId,
+      storeId,
     )
   }
 
   private async findAllProductsHybrid(
-    tenantId: string,
+    storeId: string,
     filterDto: FilterProductDto,
     ctx: RequestContextDto,
   ): Promise<{ products: AugmentedProduct[]; total: number }> {
@@ -351,21 +351,21 @@ export class ProductService {
     const limit = Math.max(1, parseInt(String(filterDto.limit)) || 10)
 
     const mergedIds = await this.productEmbeddingService.hybridSearchProductIds(
-      tenantId,
+      storeId,
       filterDto,
     )
     const pageIds = mergedIds.slice((page - 1) * limit, page * limit)
     const products = await this.productRepository.findByIdsWithFilters(
       pageIds,
       filterDto,
-      tenantId,
+      storeId,
     )
-    const populated = await this.populateProductsStock(products, tenantId)
+    const populated = await this.populateProductsStock(products, storeId)
     const productsWithPromotions = await this.attachPromotionsMany(populated, ctx)
 
     const [, keywordTotal] = await this.productRepository.findAllWithFilters(
       { ...filterDto, page: 1, limit: 1 },
-      tenantId,
+      storeId,
     )
 
     return {
@@ -374,30 +374,30 @@ export class ProductService {
     }
   }
 
-  async getEmbeddingIndexStatus(tenantId: string) {
-    return this.productEmbeddingService.getIndexStatus(tenantId)
+  async getEmbeddingIndexStatus(storeId: string) {
+    return this.productEmbeddingService.getIndexStatus(storeId)
   }
 
-  async reindexProductEmbeddings(tenantId: string) {
-    return this.productEmbeddingService.reindexTenantCatalog(tenantId)
+  async reindexProductEmbeddings(storeId: string) {
+    return this.productEmbeddingService.reindexStoreCatalog(storeId)
   }
 
-  async enqueueProductEmbeddingsReindex(tenantId: string) {
-    return this.productEmbeddingService.enqueueCatalogReindex(tenantId)
+  async enqueueProductEmbeddingsReindex(storeId: string) {
+    return this.productEmbeddingService.enqueueCatalogReindex(storeId)
   }
 
   async getFilterOptions(ctx: RequestContextDto, categoryId?: string): Promise<any> {
     this.logger.log(`${this.getFilterOptions.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `products:filter-options:${categoryId || 'all'}`
 
     return this.cache.rememberCache(
       cacheKey,
       async () => {
         const [prices, brands, variants] = await Promise.all([
-          this.productRepository.getPriceRange(tenantId, categoryId),
-          this.brandRepository.findBrandsForProducts(tenantId, categoryId),
-          this.variantRepository.findCombinationsForProducts(tenantId, categoryId),
+          this.productRepository.getPriceRange(storeId, categoryId),
+          this.brandRepository.findBrandsForProducts(storeId, categoryId),
+          this.variantRepository.findCombinationsForProducts(storeId, categoryId),
         ])
 
         const attributeMap: Record<string, Set<string>> = {}
@@ -425,20 +425,20 @@ export class ProductService {
         }
       },
       300, // 5 minutes
-      tenantId,
+      storeId,
     )
   }
 
   async findBySlugProduct(slug: string, ctx: RequestContextDto): Promise<ProductEntity> {
     this.logger.log(`${this.findBySlugProduct.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const product = await this.productRepository.findBySlugWithRelations(slug, tenantId)
+    const storeId = ctx.storeId
+    const product = await this.productRepository.findBySlugWithRelations(slug, storeId)
 
     if (!product) {
       throw new NotFoundException('Product not found')
     }
 
-    const populated = await this.populateProductsStock([product], tenantId)
+    const populated = await this.populateProductsStock([product], storeId)
     return await this.attachPromotions(populated[0], ctx)
   }
 
@@ -447,37 +447,37 @@ export class ProductService {
     limit: number = 10,
   ): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.findLatestProducts.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `products:latest:${limit}`
 
     return this.cache.rememberCache(
       cacheKey,
       async () => {
-        const products = await this.productRepository.findLatestProducts(tenantId, limit)
-        const populated = await this.populateProductsStock(products, tenantId)
+        const products = await this.productRepository.findLatestProducts(storeId, limit)
+        const populated = await this.populateProductsStock(products, storeId)
         return await this.attachPromotionsMany(populated, ctx)
       },
       300, // 5 minutes
-      tenantId,
+      storeId,
     )
   }
 
   async findOneProduct(id: string, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.findOneProduct.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `product:${id}`
 
     // Use rememberCache for consistent error handling and atomic get/set
     const product = await this.cache.rememberCache(
       cacheKey,
       async () => {
-        const p = await this.productRepository.findByIdWithRelations(id, tenantId)
+        const p = await this.productRepository.findByIdWithRelations(id, storeId)
         if (!p) throw new NotFoundException('Product not found')
-        const populated = await this.populateProductsStock([p], tenantId)
+        const populated = await this.populateProductsStock([p], storeId)
         return populated[0]
       },
       300, // 5 minutes
-      tenantId,
+      storeId,
     )
 
     return await this.attachPromotions(product, ctx)
@@ -489,14 +489,14 @@ export class ProductService {
     options?: { skipAutomation?: boolean },
   ): Promise<ProductEntity> {
     this.logger.log(`${this.createProduct.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     let poData: any = null
 
     const savedProduct = await this.dataSource.transaction(async (manager) => {
-      const existing = await this.productRepository.findBySlug(createProductDto.slug, tenantId)
+      const existing = await this.productRepository.findBySlug(createProductDto.slug, storeId)
       if (existing) throw new ConflictException('Product with this slug already exists')
-      await this.assertProductQuotaAvailable(tenantId)
+      await this.assertProductQuotaAvailable(storeId)
 
       const { faqs, attributes, variants, ...productData } = createProductDto
 
@@ -556,14 +556,14 @@ export class ProductService {
       return product
     })
 
-    await this.cache.delCacheByPattern('products:list:*', tenantId)
-    await this.cache.delCacheByPattern('products:latest:*', tenantId)
-    await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
+    await this.cache.delCacheByPattern('products:list:*', storeId)
+    await this.cache.delCacheByPattern('products:latest:*', storeId)
+    await this.cache.delCacheByPattern('products:filter-options:*', storeId)
 
     const created = await this.findOneProduct(savedProduct.id, ctx)
-    void this.productEmbeddingService.scheduleProductEmbeddingSync(tenantId, created.id)
+    void this.productEmbeddingService.scheduleProductEmbeddingSync(storeId, created.id)
     if (!options?.skipAutomation) {
-      void this.aiJobService.enqueueProductCreatedAutomation(tenantId, {
+      void this.aiJobService.enqueueProductCreatedAutomation(storeId, {
         productId: created.id,
         productName: created.name,
         category: created.category?.name,
@@ -579,18 +579,18 @@ export class ProductService {
     ctx: RequestContextDto,
   ): Promise<AugmentedProduct> {
     this.logger.log(`${this.updateProduct.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     let poData: any = null
 
     await this.dataSource.transaction(async (manager) => {
       // 1. Fetch Fresh Product (bypassing potentially stale cache for update)
-      const product = await this.productRepository.findByIdWithRelations(id, tenantId)
+      const product = await this.productRepository.findByIdWithRelations(id, storeId)
       if (!product) throw new NotFoundException('Product not found')
 
       // 2. Slug Validation
       if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
-        const existing = await this.productRepository.findBySlug(updateProductDto.slug, tenantId)
+        const existing = await this.productRepository.findBySlug(updateProductDto.slug, storeId)
         if (existing) throw new ConflictException('Product with this slug already exists')
       }
 
@@ -613,7 +613,7 @@ export class ProductService {
 
       // 5. Update FAQs
       if (faqs) {
-        await this.faqRepository.deleteByProductId(product.id, tenantId, manager)
+        await this.faqRepository.deleteByProductId(product.id, storeId, manager)
         if (faqs.length > 0) {
           await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
         }
@@ -621,7 +621,7 @@ export class ProductService {
 
       // 6. Update Attributes
       if (attributes) {
-        await this.attributeRepository.deleteByProductId(product.id, tenantId, manager)
+        await this.attributeRepository.deleteByProductId(product.id, storeId, manager)
         if (attributes.length > 0) {
           await this.attributeRepository.saveMultiple(attributes, product.id, ctx, manager)
         }
@@ -631,7 +631,7 @@ export class ProductService {
       const poItems = []
 
       if (variants) {
-        const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
+        const existingVariants = await this.variantRepository.findByProductId(product.id, storeId)
         const existingVariantIds = existingVariants.map((v) => v.id)
 
         const incomingVariantsWithId = variants.filter((v: any) => v.id)
@@ -664,7 +664,7 @@ export class ProductService {
           if (variantDto.sku) {
             const duplicate = await this.variantRepository.findBySku(
               variantDto.sku,
-              tenantId,
+              storeId,
               manager,
               true,
             )
@@ -679,7 +679,7 @@ export class ProductService {
           if (variantDto.isDefault) {
             await manager.update(
               ProductVariantEntity,
-              { productId: product.id, tenantId, id: Not(variantDto.id) },
+              { productId: product.id, storeId, id: Not(variantDto.id) },
               { isDefault: false },
             )
           }
@@ -698,7 +698,7 @@ export class ProductService {
           // Check for conflicts (including soft-deleted)
           const duplicate = await this.variantRepository.findBySku(
             variantDto.sku,
-            tenantId,
+            storeId,
             manager,
             true,
           )
@@ -726,22 +726,22 @@ export class ProductService {
           if (variantDto.isDefault) {
             await manager.update(
               ProductVariantEntity,
-              { productId: product.id, tenantId, id: Not(savedVariant.id) },
+              { productId: product.id, storeId, id: Not(savedVariant.id) },
               { isDefault: false },
             )
           }
         }
       }
 
-      await this.cache.delCache(`product:${id}`, tenantId)
+      await this.cache.delCache(`product:${id}`, storeId)
     })
 
-    await this.cache.delCacheByPattern('products:list:*', tenantId)
-    await this.cache.delCacheByPattern('products:latest:*', tenantId)
-    await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
+    await this.cache.delCacheByPattern('products:list:*', storeId)
+    await this.cache.delCacheByPattern('products:latest:*', storeId)
+    await this.cache.delCacheByPattern('products:filter-options:*', storeId)
 
     const updated = await this.findOneProduct(id, ctx)
-    void this.productEmbeddingService.scheduleProductEmbeddingSync(tenantId, updated.id)
+    void this.productEmbeddingService.scheduleProductEmbeddingSync(storeId, updated.id)
     return updated
   }
 
@@ -750,15 +750,15 @@ export class ProductService {
     ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeProduct.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const product = await this.findOneProduct(id, ctx)
-    await this.productEmbeddingService.removeEmbeddingsForProducts(tenantId, [id])
+    await this.productEmbeddingService.removeEmbeddingsForProducts(storeId, [id])
     await this.productRepository.removeProduct(product as any as ProductEntity)
 
-    await this.cache.delCache(`product:${id}`, tenantId)
-    await this.cache.delCacheByPattern('products:list:*', tenantId)
-    await this.cache.delCacheByPattern('products:latest:*', tenantId)
-    await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
+    await this.cache.delCache(`product:${id}`, storeId)
+    await this.cache.delCacheByPattern('products:list:*', storeId)
+    await this.cache.delCacheByPattern('products:latest:*', storeId)
+    await this.cache.delCacheByPattern('products:filter-options:*', storeId)
 
     return { success: true, message: 'Product deleted successfully' }
   }
@@ -770,7 +770,7 @@ export class ProductService {
     variantId?: string,
   ): Promise<any> {
     this.logger.log(`${this.decrementStock.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     return await this.inventoryService.createLedgerEntry(
       {
         productId,
@@ -783,15 +783,15 @@ export class ProductService {
     )
   }
 
-  async findAllProductsCrossTenant(): Promise<ProductEntity[]> {
-    this.logger.log(`${this.findAllProductsCrossTenant.name} Service Called`)
-    return await this.crossTenantRepository.findAllProductsCrossTenant()
+  async findAllProductsCrossStore(): Promise<ProductEntity[]> {
+    this.logger.log(`${this.findAllProductsCrossStore.name} Service Called`)
+    return await this.crossStoreRepository.findAllProductsCrossStore()
   }
 
-  async countByTenant(ctx: RequestContextDto): Promise<number> {
-    this.logger.log(`${this.countByTenant.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.productRepository.countProducts(tenantId)
+  async countByStore(ctx: RequestContextDto): Promise<number> {
+    this.logger.log(`${this.countByStore.name} Service Called`)
+    const storeId = ctx.storeId
+    return await this.productRepository.countProducts(storeId)
   }
 
   async productOverview(): Promise<any> {
@@ -803,7 +803,7 @@ export class ProductService {
     dto: ImportProductsDto,
     ctx: RequestContextDto,
   ): Promise<ImportProductsResultDto> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const importBatchId = randomUUID()
     const createdProductIds: string[] = []
     const pendingDescriptionProductIds: string[] = []
@@ -825,7 +825,7 @@ export class ProductService {
 
         let slug = baseSlug
         let suffix = 2
-        while (usedSlugs.has(slug) || (await this.productRepository.findBySlug(slug, tenantId))) {
+        while (usedSlugs.has(slug) || (await this.productRepository.findBySlug(slug, storeId))) {
           slug = `${baseSlug}-${suffix}`
           suffix += 1
         }
@@ -835,7 +835,7 @@ export class ProductService {
         if (row.category?.trim()) {
           const categoryKey = row.category.trim().toLowerCase()
           if (!categoryCache.has(categoryKey)) {
-            categoryCache.set(categoryKey, await this.resolveImportCategoryId(row.category.trim(), tenantId))
+            categoryCache.set(categoryKey, await this.resolveImportCategoryId(row.category.trim(), storeId))
           }
           categoryId = categoryCache.get(categoryKey) ?? undefined
         }
@@ -877,9 +877,9 @@ export class ProductService {
     if (
       dto.generateDescriptions &&
       pendingDescriptionProductIds.length > 0 &&
-      (await this.canQueueBulkDescriptionImport(tenantId))
+      (await this.canQueueBulkDescriptionImport(storeId))
     ) {
-      const job = await this.aiJobService.enqueueBulkDescriptionImport(tenantId, {
+      const job = await this.aiJobService.enqueueBulkDescriptionImport(storeId, {
         importBatchId,
         productIds: pendingDescriptionProductIds,
       })
@@ -897,28 +897,28 @@ export class ProductService {
     }
   }
 
-  private async canQueueBulkDescriptionImport(tenantId: string): Promise<boolean> {
-    const tenant = await this.tenantService.findOneTenants(tenantId)
-    const config = normalizeTenantAiConfig(tenant.aiConfig || null)
-    return isTenantAiAutomationReady(config)
+  private async canQueueBulkDescriptionImport(storeId: string): Promise<boolean> {
+    const store = await this.storeService.findOneStores(storeId)
+    const config = normalizeStoreAiConfig(store.aiConfig || null)
+    return isStoreAiAutomationReady(config)
   }
 
   private async resolveImportCategoryId(
     categoryRef: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<string | null> {
     const uuidPattern =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     if (uuidPattern.test(categoryRef)) {
-      const category = await this.categoryRepository.findById(categoryRef, tenantId)
+      const category = await this.categoryRepository.findById(categoryRef, storeId)
       return category?.id ?? null
     }
 
     const slug = slugifyProductName(categoryRef)
-    const bySlug = await this.categoryRepository.findBySlug(slug, tenantId)
+    const bySlug = await this.categoryRepository.findBySlug(slug, storeId)
     if (bySlug) return bySlug.id
 
-    const categories = await this.categoryRepository.findAllByTenant(tenantId)
+    const categories = await this.categoryRepository.findAllByStore(storeId)
     const match = categories.find(
       (category) => category.name.trim().toLowerCase() === categoryRef.trim().toLowerCase(),
     )

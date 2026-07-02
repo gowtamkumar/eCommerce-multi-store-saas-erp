@@ -2,28 +2,28 @@ import { Suspense } from "react";
 import SuperAdminDashboard from "@/features/system/components/SuperAdminDashboard";
 import { fetchSuperAdminAPI } from "@/services/superAdminApi";
 import { buildDashboardStats } from "@/features/system/lib/dashboard";
-import type { TenantAnalytics } from "@/features/system/types/dashboard.types";
+import type { StoreAnalytics } from "@/features/system/types/dashboard.types";
 
 async function getSuperAdminDashboardData() {
   try {
     const [overview, analyticsRes] = await Promise.all([
       fetchSuperAdminAPI('/super-admin/overview?days=7'),
-      fetchSuperAdminAPI('/super-admin/tenants/analytics')
+      fetchSuperAdminAPI('/super-admin/stores/analytics')
     ]);
 
-    const tenants: TenantAnalytics[] = analyticsRes.data || [];
+    const stores: StoreAnalytics[] = analyticsRes.data || [];
 
     return {
-      stats: buildDashboardStats(overview.data, tenants),
+      stats: buildDashboardStats(overview.data, stores),
       traffic: overview.data?.traffic || [],
-      tenantAnalytics: tenants
+      storeAnalytics: stores
     };
   } catch (error) {
     console.error("Error fetching super admin dashboard data:", error);
     return {
       stats: buildDashboardStats(undefined, []),
       traffic: [],
-      tenantAnalytics: []
+      storeAnalytics: []
     };
   }
 }
@@ -61,7 +61,7 @@ async function DashboardContent() {
     <SuperAdminDashboard
       stats={data.stats}
       traffic={data.traffic}
-      tenantAnalytics={data.tenantAnalytics}
+      storeAnalytics={data.storeAnalytics}
     />
   );
 }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { planColor, tenantStatusHref } from '../../lib/dashboard';
+import { planColor, storeStatusHref } from '../../lib/dashboard';
 import type { DashboardStats } from '../../types/dashboard.types';
 
 const STATUS_ICONS: Record<string, ReactNode> = {
@@ -21,7 +21,7 @@ export default function PlanDistribution({ stats }: { stats: DashboardStats }) {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-8 shadow-sm">
       <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Plan Distribution</h2>
-      <p className="text-xs text-slate-400 mb-6">{stats.totalTenants} stores total</p>
+      <p className="text-xs text-slate-400 mb-6">{stats.totalStores} stores total</p>
       <div className="space-y-5">
         {planEntries.length === 0 ? (
           <p className="text-sm text-slate-400 italic text-center py-4">No store data yet</p>
@@ -37,7 +37,7 @@ export default function PlanDistribution({ stats }: { stats: DashboardStats }) {
               <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${stats.totalTenants > 0 ? (count / stats.totalTenants) * 100 : 0}%` }}
+                  animate={{ width: `${stats.totalStores > 0 ? (count / stats.totalStores) * 100 : 0}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
                   className={`h-full rounded-full ${planColor(plan)}`}
                 />
@@ -54,7 +54,7 @@ export default function PlanDistribution({ stats }: { stats: DashboardStats }) {
             {statusEntries.map(([status, count]) => (
               <Link
                 key={status}
-                href={tenantStatusHref(status)}
+                href={storeStatusHref(status)}
                 className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
               >
                 {STATUS_ICONS[status] || <CheckCircle2 className="w-4 h-4 text-slate-400" />}

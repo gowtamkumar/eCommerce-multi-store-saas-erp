@@ -33,7 +33,7 @@ server/src/modules/admin/operations/hrm/
 
 ### 1.1 Organizational Structure
 *   **`DepartmentEntity` (`entities/department.entity.ts`):**
-    Logical groupings for employees (e.g. Sales, Operations, Finance). Scoped by `tenantId`. Simple structure: `name`, `description`.
+    Logical groupings for employees (e.g. Sales, Operations, Finance). Scoped by `storeId`. Simple structure: `name`, `description`.
 
 *   **`DesignationEntity` (`entities/designation.entity.ts`):**
     Job titles within departments (e.g. Senior Accountant, Branch Manager). Linked to `DepartmentEntity` via FK.
@@ -42,7 +42,7 @@ server/src/modules/admin/operations/hrm/
 *   **`EmployeeEntity` (`entities/employee.entity.ts`):**
     Core employee record. Contains:
     - `userId` — FK linking to the staff `UserEntity` (authentication account)
-    - `employeeCode` — Unique code per tenant (e.g. `EMP-001`)
+    - `employeeCode` — Unique code per store (e.g. `EMP-001`)
     - `departmentId`, `designationId` — Org tree placement
     - `branchId` — Primary branch assignment
     - `joiningDate`, `confirmationDate`

@@ -1,6 +1,6 @@
 export {
-  BaseTenantRepository,
+  BaseStoreRepository,
   type PaginatedResult,
   type PaginationOptions,
   type SortDirection,
-} from './base-tenant.repository'
+} from './base-store.repository'

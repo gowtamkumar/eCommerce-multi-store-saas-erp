@@ -20,7 +20,7 @@ function SuccessContent() {
 
     const updateSettings = async () => {
       try {
-        // Call backend complete/success to ensure tenant is updated
+        // Call backend complete/success to ensure store is updated
         if (tran_id) {
           const { fetchAPI } = await import("@/services/api");
           await fetchAPI(`/billing/complete/success?tran_id=${tran_id}`, {

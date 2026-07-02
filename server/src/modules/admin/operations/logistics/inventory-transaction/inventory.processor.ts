@@ -5,7 +5,7 @@ import { Job } from 'bullmq'
 import { DataSource } from 'typeorm'
 import { StockReservationService } from './stock-reservation.service'
 import { ProductBatchService } from './product-batch.service'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 @Processor('inventory')
 export class InventoryProcessor extends WorkerHost {
@@ -39,28 +39,28 @@ export class InventoryProcessor extends WorkerHost {
   }
 
   /**
-   * Sweeps expired batches across every tenant and writes off any residual stock.
+   * Sweeps expired batches across every store and writes off any residual stock.
    * The actual transactional work runs inside ProductBatchService.markExpiredBatches.
    */
   async handleSweepExpiredBatches() {
     this.logger.log('Starting daily sweep of expired product batches...')
-    const tenantRepo = this.dataSource.getRepository(TenantEntity)
-    const tenants = await tenantRepo.find({
+    const storeRepo = this.dataSource.getRepository(StoreEntity)
+    const stores = await storeRepo.find({
       select: {
         id: true,
       },
     })
     let totalAffected = 0
-    for (const tenant of tenants) {
+    for (const store of stores) {
       try {
-        const affected = await this.productBatchService.markExpiredBatches(tenant.id)
+        const affected = await this.productBatchService.markExpiredBatches(store.id)
         if (affected > 0) {
-          this.logger.log(`Tenant ${tenant.id}: marked ${affected} expired batch(es)`)
+          this.logger.log(`Store ${store.id}: marked ${affected} expired batch(es)`)
         }
         totalAffected += affected
       } catch (err: any) {
         this.logger.error(
-          `Tenant ${tenant.id}: expired-batch sweep failed: ${err.message}`,
+          `Store ${store.id}: expired-batch sweep failed: ${err.message}`,
           err.stack,
         )
       }

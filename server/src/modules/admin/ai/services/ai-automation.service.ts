@@ -1,9 +1,9 @@
 import { CartAbandonedEvent, ProductCreatedEvent } from '@/common/events/ai-domain.events'
 import { AiJobType } from '@/common/enums/ai-job-type.enum'
 import { OrderStatus } from '@/common/enums/order-status.enum'
-import { isTenantAiAutomationReady } from '@/common/utils/tenant-ai-automation.util'
+import { isStoreAiAutomationReady } from '@/common/utils/store-ai-automation.util'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
-import { normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
+import { normalizeStoreAiConfig } from '@/modules/system/store/utils/store-ai.util'
 import { Injectable, Logger } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { GenerateInvoiceOcrDto } from '../dto/generate-invoice-ocr.dto'
@@ -11,7 +11,7 @@ import { AiCatalogAssistantService } from './domains/ai-catalog-assistant.servic
 import { AiCrmAssistantService } from './domains/ai-crm-assistant.service'
 import { AiProcurementAssistantService } from './domains/ai-procurement-assistant.service'
 import { AiJobService } from './ai-job.service'
-import { TenantAiClientService } from './tenant-ai-client.service'
+import { StoreAiClientService } from './store-ai-client.service'
 import { ProductEmbeddingService } from '@/modules/admin/catalog/product/services/product-embedding.service'
 
 const DEMAND_FORECAST_LOOKBACK_DAYS = 60
@@ -26,7 +26,7 @@ export class AiAutomationService {
     private readonly catalogAssistant: AiCatalogAssistantService,
     private readonly crmAssistant: AiCrmAssistantService,
     private readonly procurementAssistant: AiProcurementAssistantService,
-    private readonly tenantAiClient: TenantAiClientService,
+    private readonly storeAiClient: StoreAiClientService,
     private readonly productRepository: ProductRepository,
     private readonly productEmbeddingService: ProductEmbeddingService,
     private readonly dataSource: DataSource,
@@ -37,15 +37,15 @@ export class AiAutomationService {
       return { skipped: true, reason: 'seo_already_set', productId: event.productId }
     }
 
-    const config = await this.tenantAiClient.getConfigForTenant(event.tenantId)
-    const normalized = normalizeTenantAiConfig(config)
+    const config = await this.storeAiClient.getConfigForStore(event.storeId)
+    const normalized = normalizeStoreAiConfig(config)
 
-    if (!isTenantAiAutomationReady(normalized) || !normalized.automation.productSeoOnCreate) {
+    if (!isStoreAiAutomationReady(normalized) || !normalized.automation.productSeoOnCreate) {
       return { skipped: true, reason: 'automation_disabled', productId: event.productId }
     }
 
     const duplicate = await this.aiJobService.hasRecentPayloadJob(
-      event.tenantId,
+      event.storeId,
       AiJobType.BULK_SEO,
       'productId',
       event.productId,
@@ -55,20 +55,20 @@ export class AiAutomationService {
       return { skipped: true, reason: 'recent_job_exists', productId: event.productId }
     }
 
-    const job = await this.aiJobService.enqueueProductSeoDraft(event.tenantId, event.productId)
+    const job = await this.aiJobService.enqueueProductSeoDraft(event.storeId, event.productId)
     return { enqueued: AiJobType.BULK_SEO, productId: event.productId, jobId: job.id }
   }
 
   async handleCartAbandoned(event: CartAbandonedEvent): Promise<Record<string, unknown>> {
-    const config = await this.tenantAiClient.getConfigForTenant(event.tenantId)
-    const normalized = normalizeTenantAiConfig(config)
+    const config = await this.storeAiClient.getConfigForStore(event.storeId)
+    const normalized = normalizeStoreAiConfig(config)
 
-    if (!isTenantAiAutomationReady(normalized) || !normalized.automation.abandonedCartDraft) {
+    if (!isStoreAiAutomationReady(normalized) || !normalized.automation.abandonedCartDraft) {
       return { skipped: true, reason: 'automation_disabled', cartId: event.cartId }
     }
 
     const duplicate = await this.aiJobService.hasRecentCartAbandonedAutomation(
-      event.tenantId,
+      event.storeId,
       event.cartId,
       24,
     )
@@ -76,19 +76,19 @@ export class AiAutomationService {
       return { skipped: true, reason: 'recent_job_exists', cartId: event.cartId }
     }
 
-    const job = await this.aiJobService.enqueueCartAbandonedDraft(event.tenantId, event)
+    const job = await this.aiJobService.enqueueCartAbandonedDraft(event.storeId, event)
     return { enqueued: AiJobType.CART_ABANDONED_DRAFT, cartId: event.cartId, jobId: job.id }
   }
 
   async dispatchAutomationEvent(
-    tenantId: string,
+    storeId: string,
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const eventType = payload.eventType as string
 
     if (eventType === 'product.created') {
       return this.handleProductCreated({
-        tenantId,
+        storeId,
         productId: String(payload.productId ?? ''),
         productName: String(payload.productName ?? ''),
         category: payload.category ? String(payload.category) : undefined,
@@ -98,7 +98,7 @@ export class AiAutomationService {
 
     if (eventType === 'cart.abandoned') {
       return this.handleCartAbandoned({
-        tenantId,
+        storeId,
         cartId: String(payload.cartId ?? ''),
         customerName: String(payload.customerName ?? 'Customer'),
         customerEmail: payload.customerEmail ? String(payload.customerEmail) : undefined,
@@ -114,10 +114,10 @@ export class AiAutomationService {
   }
 
   async runProductSeoDraftJob(
-    tenantId: string,
+    storeId: string,
     productId: string,
   ): Promise<Record<string, unknown>> {
-    const product = await this.productRepository.findProductById(productId, tenantId)
+    const product = await this.productRepository.findProductById(productId, storeId)
     if (!product) {
       return { skipped: true, reason: 'product_not_found', productId }
     }
@@ -127,7 +127,7 @@ export class AiAutomationService {
       return { skipped: true, reason: 'seo_already_set', productId }
     }
 
-    const draft = await this.catalogAssistant.generateProductContent(tenantId, {
+    const draft = await this.catalogAssistant.generateProductContent(storeId, {
       productName: product.name,
       category: product.category?.name,
       existingDescription: product.description || product.shortDescription || undefined,
@@ -146,7 +146,7 @@ export class AiAutomationService {
   }
 
   async runBulkDescriptionImportJob(
-    tenantId: string,
+    storeId: string,
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const productIds = Array.isArray(payload.productIds)
@@ -163,7 +163,7 @@ export class AiAutomationService {
     for (const productId of productIds) {
       try {
         const outcome = await this.generateAndApplyImportedDescription(
-          tenantId,
+          storeId,
           productId,
           applyToProducts,
         )
@@ -194,11 +194,11 @@ export class AiAutomationService {
   }
 
   private async generateAndApplyImportedDescription(
-    tenantId: string,
+    storeId: string,
     productId: string,
     applyToProducts: boolean,
   ): Promise<Record<string, unknown>> {
-    const product = await this.productRepository.findProductById(productId, tenantId)
+    const product = await this.productRepository.findProductById(productId, storeId)
     if (!product) {
       return { productId, skipped: true, reason: 'product_not_found' }
     }
@@ -208,7 +208,7 @@ export class AiAutomationService {
       return { productId, productName: product.name, skipped: true, reason: 'has_description' }
     }
 
-    const draft = await this.catalogAssistant.generateProductContent(tenantId, {
+    const draft = await this.catalogAssistant.generateProductContent(storeId, {
       productName: product.name,
       category: product.category?.name,
       keywords: undefined,
@@ -225,7 +225,7 @@ export class AiAutomationService {
           ? product.metaDescription
           : draft.seoDescription,
       })
-      void this.productEmbeddingService.scheduleProductEmbeddingSync(tenantId, productId)
+      void this.productEmbeddingService.scheduleProductEmbeddingSync(storeId, productId)
     }
 
     return {
@@ -261,11 +261,11 @@ export class AiAutomationService {
   }
 
   async runCartAbandonedDraftJob(
-    tenantId: string,
+    storeId: string,
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const cartId = String(payload.cartId ?? '')
-    const draft = await this.crmAssistant.generateAbandonedCartMessage(tenantId, {
+    const draft = await this.crmAssistant.generateAbandonedCartMessage(storeId, {
       cartSummary: String(payload.cartSummary ?? ''),
       customerName: String(payload.customerName ?? 'Customer'),
       customerEmail: payload.customerEmail ? String(payload.customerEmail) : undefined,
@@ -283,17 +283,17 @@ export class AiAutomationService {
   }
 
   async runInvoiceOcrJob(
-    tenantId: string,
+    storeId: string,
     payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     const dto = payload as unknown as GenerateInvoiceOcrDto
-    const result = await this.procurementAssistant.generateInvoiceOcr(tenantId, dto)
+    const result = await this.procurementAssistant.generateInvoiceOcr(storeId, dto)
     return { draftOnly: true, ...result }
   }
 
-  async runDemandForecastJob(tenantId: string): Promise<Record<string, unknown>> {
-    const salesSummary = await this.buildDemandForecastContext(tenantId)
-    const forecast = await this.catalogAssistant.generateDemandForecast(tenantId, {
+  async runDemandForecastJob(storeId: string): Promise<Record<string, unknown>> {
+    const salesSummary = await this.buildDemandForecastContext(storeId)
+    const forecast = await this.catalogAssistant.generateDemandForecast(storeId, {
       salesSummary,
       tone: 'practical',
     })
@@ -305,7 +305,7 @@ export class AiAutomationService {
     }
   }
 
-  private async buildDemandForecastContext(tenantId: string): Promise<string> {
+  private async buildDemandForecastContext(storeId: string): Promise<string> {
     const since = new Date()
     since.setUTCDate(since.getUTCDate() - DEMAND_FORECAST_LOOKBACK_DAYS)
 
@@ -318,22 +318,22 @@ export class AiAutomationService {
         COALESCE(p.stock, 0) AS stock,
         COALESCE(SUM(oi.quantity), 0) AS sold_qty
       FROM products p
-      LEFT JOIN order_items oi ON oi.product_id = p.id AND oi.tenant_id = p.tenant_id
+      LEFT JOIN order_items oi ON oi.product_id = p.id AND oi.store_id = p.store_id
       LEFT JOIN orders o ON o.id = oi.order_id
-        AND o.tenant_id = p.tenant_id
+        AND o.store_id = p.store_id
         AND o.created_at >= $2
         AND o.status != $3
-      WHERE p.tenant_id = $1
+      WHERE p.store_id = $1
         AND p.deleted_at IS NULL
       GROUP BY p.id, p.name, p.sku, p.stock
       ORDER BY sold_qty DESC, p.stock ASC
       LIMIT $4
       `,
-      [tenantId, since, OrderStatus.CANCELLED, DEMAND_FORECAST_TOP_PRODUCTS],
+      [storeId, since, OrderStatus.CANCELLED, DEMAND_FORECAST_TOP_PRODUCTS],
     )
 
     if (!rows.length) {
-      return 'No product sales or stock data available for this tenant in the lookback window.'
+      return 'No product sales or stock data available for this store in the lookback window.'
     }
 
     const lines = rows.map(
@@ -342,7 +342,7 @@ export class AiAutomationService {
     )
 
     return [
-      `Tenant demand snapshot (${DEMAND_FORECAST_LOOKBACK_DAYS}-day order history, cancelled excluded):`,
+      `Store demand snapshot (${DEMAND_FORECAST_LOOKBACK_DAYS}-day order history, cancelled excluded):`,
       ...lines,
       '',
       'Provide read-only reorder suggestions. Do not invent SKUs or quantities not listed.',

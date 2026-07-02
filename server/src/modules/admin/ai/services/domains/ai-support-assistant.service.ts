@@ -17,7 +17,7 @@ export class AiSupportAssistantService {
   ) {}
 
   async generateSupportReply(
-    tenantId: string,
+    storeId: string,
     dto: GenerateSupportReplyDto,
   ): Promise<SupportReplyResultDto> {
     const prompt = `Draft a live-chat reply for a support agent as JSON only (no markdown fences).
@@ -38,7 +38,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -57,7 +57,7 @@ Return exactly this JSON shape:
   }
 
   async generateSupportConversationSummary(
-    tenantId: string,
+    storeId: string,
     dto: GenerateSupportConversationSummaryDto,
   ): Promise<SupportConversationSummaryResultDto> {
     const prompt = `Summarize this live support chat for an internal agent handoff as JSON only (no markdown fences).
@@ -81,7 +81,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -103,7 +103,7 @@ Return exactly this JSON shape:
   }
 
   async generateSupportMessageIntents(
-    tenantId: string,
+    storeId: string,
     dto: GenerateSupportMessageIntentsDto,
   ): Promise<SupportMessageIntentsResultDto> {
     if (!dto.messages.length) {
@@ -132,7 +132,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

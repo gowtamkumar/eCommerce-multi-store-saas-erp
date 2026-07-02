@@ -1,6 +1,6 @@
-# Multi-Tenant SaaS Subscription Plan Entitlements & Feature Mappings
+# Multi-Store SaaS Subscription Plan Entitlements & Feature Mappings
 
-This document outlines the **Core Entitlements and Plan-Tier Mappings** for the multi-tenant SaaS ERP platform. It serves as the definitive reference guide for product owners, sales personnel, and engineers, bridging the gap between tenant-level **Subscription Plans** and individual user-level **Dynamic RBAC Permissions**.
+This document outlines the **Core Entitlements and Plan-Tier Mappings** for the multi-store SaaS ERP platform. It serves as the definitive reference guide for product owners, sales personnel, and engineers, bridging the gap between store-level **Subscription Plans** and individual user-level **Dynamic RBAC Permissions**.
 
 ---
 
@@ -9,12 +9,12 @@ This document outlines the **Core Entitlements and Plan-Tier Mappings** for the 
 To fully secure any ERP resource, the system enforces a **two-key validation** process. An action is granted only when **both** validation keys are present.
 
 ```
-                  🔑 KEY 1: TENANT LEVEL             🔑 KEY 2: USER LEVEL
+                  🔑 KEY 1: STORE LEVEL             🔑 KEY 2: USER LEVEL
                ┌───────────────────────────┐      ┌───────────────────────────┐
                │    Subscription Plan      │      │    Dynamic RBAC Role      │
                │  Is this feature flag     │      │   Does this specific user │
                │   unlocked for this       │      │  possess the required     │
-               │        tenant?            │      │     permission slug?      │
+               │        store?            │      │     permission slug?      │
                └─────────────┬─────────────┘      └─────────────┬─────────────┘
                              │                                  │
                              └────────────────┬─────────────────┘
@@ -23,7 +23,7 @@ To fully secure any ERP resource, the system enforces a **two-key validation** p
                               ✅ Resource Access Granted
 ```
 
-1. **Layer 1: Subscription Gate (Tenant-Level):** Checks if the tenant's subscription plan features includes the required feature slug (e.g. `@RequireFeature('hrm')`).
+1. **Layer 1: Subscription Gate (Store-Level):** Checks if the store's subscription plan features includes the required feature slug (e.g. `@RequireFeature('hrm')`).
 2. **Layer 2: Permission Gate (User-Level):** Resolves the user's dynamic roles and overrides (`@RequirePermissions(SystemPermissions.HRM_VIEW)`) to ensure the logged-in staff member has explicit clearance for that action.
 
 ---
@@ -74,10 +74,10 @@ Ideal for growing retail stores requiring automated POS operations, customer rel
   - `/admin/expenses` (Basic cost tracking)
   - `/admin/fulfillment` (Order packing and manual status updates)
   - `/admin/couriers` (Integrate shipping routes/rules)
-  - `/admin/settings` (Tenant configuration, custom SEO profiles)
+  - `/admin/settings` (Store configuration, custom SEO profiles)
 
 ### 2.3 Enterprise Plan
-Optimized for multi-tenant organizations with multi-branch corporate governance, full accounting ledgers, advanced supply chain management, and HRM payroll systems.
+Optimized for multi-store organizations with multi-branch corporate governance, full accounting ledgers, advanced supply chain management, and HRM payroll systems.
 * **Monthly Price:** $99.00
 * **Core Entitlements:** Pro Seller features + Multi-Warehouse scoping, Purchase Order flows, Goods Received Notes (GRN), Balance Sheets, General Ledger, and Employee Attendance/Payroll.
 * **Unlocked Feature Slugs:**
@@ -128,16 +128,16 @@ Optimized for multi-tenant organizations with multi-branch corporate governance,
 ## 4. Operational Playbook for Entitlements Administration
 
 ### 4.1 Plan Upgrades
-When a tenant upgrades from **Pro Seller** to **Enterprise**:
-1. The billing integration completes the transaction and updates the tenant's `subscription_plan_id`.
-2. The system invalidates the cached tenant details and permission manifests for all tenant users.
+When a store upgrades from **Pro Seller** to **Enterprise**:
+1. The billing integration completes the transaction and updates the store's `subscription_plan_id`.
+2. The system invalidates the cached store details and permission manifests for all store users.
 3. Next time the user's browser triggers an action, the refreshed JWT or `user.features` manifest automatically exposes the Enterprise paths.
 
 ### 4.2 Plan Downgrades
-When a tenant downgrades to **Starter**:
+When a store downgrades to **Starter**:
 1. Feature flags for modules like `/admin/hrm` are set to inactive.
-2. If a tenant user goes directly to `/admin/hrm/employees` via their browser address bar, the backend `SubscriptionGuard` immediately intercept the request, validates the Starter tier, and returns a `403 Feature Locked` payload.
-3. The custom roles configured under Enterprise (e.g. "HR Assistant") are **preserved** (not deleted) but become completely inactive until the tenant re-subscribes.
+2. If a store user goes directly to `/admin/hrm/employees` via their browser address bar, the backend `SubscriptionGuard` immediately intercept the request, validates the Starter tier, and returns a `403 Feature Locked` payload.
+3. The custom roles configured under Enterprise (e.g. "HR Assistant") are **preserved** (not deleted) but become completely inactive until the store re-subscribes.
 
 ---
 

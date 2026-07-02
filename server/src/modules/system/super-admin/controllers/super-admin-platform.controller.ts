@@ -77,7 +77,7 @@ export class SuperAdminPlatformController {
         role: UserRole.SUPER_ADMIN,
         isAdmin: true,
       } as any,
-      { tenantId: null, userId: null } as RequestContextDto,
+      { storeId: null, userId: null } as RequestContextDto,
     )
 
     // Create or Update Initial Subscription Plans
@@ -209,7 +209,7 @@ export class SuperAdminPlatformController {
         await this.planService.updateSubscriptionPlan(existing.id, planData)
       } else {
         await this.planService.createSubscriptionPlan(planData, {
-          tenantId: null,
+          storeId: null,
           userId: null,
         } as RequestContextDto)
       }
@@ -322,7 +322,7 @@ export class SuperAdminPlatformController {
         minio: minioStatus,
         version: appVersion,
         timestamp: new Date().toISOString(),
-        service: 'eCommerce Multi-Tenant SaaS Backend',
+        service: 'eCommerce Multi-Store SaaS Backend',
       },
     }
   }
@@ -377,7 +377,7 @@ export class SuperAdminPlatformController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const ctx = { tenantId: null, userId: null, user: { role: 'super_admin' } } as any
+    const ctx = { storeId: null, userId: null, user: { role: 'super_admin' } } as any
     const result = await this.auditLogService.findAllAuditLogs(ctx, {
       page: Number(page) || 1,
       limit: Number(limit) || 20,
@@ -401,11 +401,11 @@ export class SuperAdminPlatformController {
   async exportAuditLogsCSV(
     @Res() res: Response,
     @Query('action') action?: string,
-    @Query('tenantId') tenantId?: string,
+    @Query('storeId') storeId?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ): Promise<void> {
-    const ctx = { tenantId: tenantId || null, userId: null, user: { role: 'super_admin' } } as any
+    const ctx = { storeId: storeId || null, userId: null, user: { role: 'super_admin' } } as any
     const { data } = await this.auditLogService.findAllAuditLogs(ctx, {
       page: 1,
       limit: 5000,
@@ -421,7 +421,7 @@ export class SuperAdminPlatformController {
         'Entity',
         'Entity ID',
         'Actor',
-        'Tenant ID',
+        'Store ID',
         'IP Address',
         'Created At',
       ].join(','),
@@ -432,7 +432,7 @@ export class SuperAdminPlatformController {
           log.entity,
           log.entityId || '',
           `"${(log.actorName || '').replace(/"/g, '""')}"`,
-          log.tenantId || '',
+          log.storeId || '',
           log.ipAddress || '',
           log.createdAt ? new Date(log.createdAt).toISOString() : '',
         ].join(','),
@@ -450,20 +450,20 @@ export class SuperAdminPlatformController {
   @Roles(UserRole.SUPER_ADMIN)
   @Post('/cache/clear-all')
   @HttpCode(200)
-  async clearCacheAll(@Query('tenantId') tenantId?: string): Promise<BaseApiSuccessResponse<null>> {
+  async clearCacheAll(@Query('storeId') storeId?: string): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(
-      `Super Admin called clearCacheAll${tenantId ? ` for tenant ${sanitizeLog(tenantId)}` : ''}.`,
+      `Super Admin called clearCacheAll${storeId ? ` for store ${sanitizeLog(storeId)}` : ''}.`,
     )
-    if (tenantId) {
-      await this.cacheService.clearTenantCache(tenantId)
+    if (storeId) {
+      await this.cacheService.clearStoreCache(storeId)
     } else {
       await this.cacheService.clearFullCache()
     }
     return {
       success: true,
       statusCode: 200,
-      message: tenantId
-        ? `Cache for tenant ${tenantId} cleared successfully`
+      message: storeId
+        ? `Cache for store ${storeId} cleared successfully`
         : 'Global system cache cleared successfully',
       data: null,
     }
@@ -488,10 +488,10 @@ export class SuperAdminPlatformController {
     // 2. Generate impersonation token
     const impersonateToken = await this.authService.createImpersonateToken(user.id)
 
-    // Audit the impersonation against the target user's tenant for traceability.
-    if (user.tenantId) {
+    // Audit the impersonation against the target user's store for traceability.
+    if (user.storeId) {
       await this.auditLogService.log(
-        { tenantId: user.tenantId, userId: ctx.userId, user: ctx.user } as RequestContextDto,
+        { storeId: user.storeId, userId: ctx.userId, user: ctx.user } as RequestContextDto,
         {
           userId: ctx.userId,
           actorName: ctx.user?.username,
@@ -506,13 +506,13 @@ export class SuperAdminPlatformController {
     // 3. Construct redirect URL
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
     let redirectUrl = `${frontendUrl}/login?impersonateToken=${impersonateToken}`
-    if (user.tenant?.subdomain) {
+    if (user.store?.subdomain) {
       try {
         const url = new URL(frontendUrl)
-        url.hostname = `${user.tenant.subdomain}.${url.hostname}`
+        url.hostname = `${user.store.subdomain}.${url.hostname}`
         redirectUrl = `${url.origin}/login?impersonateToken=${impersonateToken}`
       } catch (e: any) {
-        redirectUrl = `http://${user.tenant.subdomain}.localhost:3000/login?impersonateToken=${impersonateToken}`
+        redirectUrl = `http://${user.store.subdomain}.localhost:3000/login?impersonateToken=${impersonateToken}`
       }
     }
 

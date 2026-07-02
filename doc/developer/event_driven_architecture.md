@@ -13,7 +13,7 @@ When a new user joins your platform, there are many "small" tasks that shouldn't
 *   **Background Tasks**: Send "Welcome" email, initialize a default wishlist, sync data to a marketing tool like Mailchimp.
 
 ### 3. Inventory & Catalog Module
-Inventory updates can be complex, especially with multi-tenant stock management.
+Inventory updates can be complex, especially with multi-store stock management.
 *   **Events**: `stock.low`, `product.created`.
 *   **Background Tasks**: 
     *   `stock.low` → Automatically notify the store manager to reorder.

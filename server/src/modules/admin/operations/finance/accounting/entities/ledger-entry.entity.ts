@@ -3,10 +3,10 @@ import { Column, Entity, JoinColumn, ManyToOne, Index, BeforeUpdate, BeforeRemov
 import { LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { AccountEntity } from './account.entity'
 import { JournalEntryEntity } from './journal-entry.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 @Entity('ledger_entries')
-@Index(['tenantId', 'accountId'])
+@Index(['storeId', 'accountId'])
 export class LedgerEntryEntity extends BaseEntity {
   @ManyToOne(() => JournalEntryEntity, (journal) => journal.lines, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'journal_entry_id' })
@@ -43,12 +43,12 @@ export class LedgerEntryEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   balanceAfter: number // Running balance for the specific account
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @BeforeUpdate()
   @BeforeRemove()

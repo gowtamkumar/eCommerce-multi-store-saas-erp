@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,7 +6,7 @@ import { EntityManager, Repository } from 'typeorm'
 import { PaymentEntity } from '../entities/payment.entity'
 
 @Injectable()
-export class PaymentRepository extends BaseTenantRepository<PaymentEntity> {
+export class PaymentRepository extends BaseStoreRepository<PaymentEntity> {
   constructor(
     @InjectRepository(PaymentEntity)
     repo: Repository<PaymentEntity>,
@@ -16,9 +16,9 @@ export class PaymentRepository extends BaseTenantRepository<PaymentEntity> {
 
   async findByTransactionId(
     transactionId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<PaymentEntity | null> {
-    return await this.repo.findOne({ where: { transactionId, tenantId } })
+    return await this.repo.findOne({ where: { transactionId, storeId } })
   }
 
   /**
@@ -34,7 +34,7 @@ export class PaymentRepository extends BaseTenantRepository<PaymentEntity> {
     const repo = manager ? manager.getRepository(PaymentEntity) : this.repo
     const payment = repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as any) as unknown as PaymentEntity
     return await (repo.save(payment) as Promise<PaymentEntity>)
@@ -44,8 +44,8 @@ export class PaymentRepository extends BaseTenantRepository<PaymentEntity> {
    * Server-side paginated list of payments for the admin dashboard.
    * Replaces the previous unbounded `find()` that returned all records.
    */
-  async findPaymentsByTenant(
-    tenantId: string,
+  async findPaymentsByStore(
+    storeId: string,
     page: number,
     limit: number,
     search?: string,
@@ -55,7 +55,7 @@ export class PaymentRepository extends BaseTenantRepository<PaymentEntity> {
     const qb = this.repo
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.order', 'order')
-      .where('payment.tenantId = :tenantId', { tenantId })
+      .where('payment.storeId = :storeId', { storeId })
       .orderBy('payment.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -82,11 +82,11 @@ export class PaymentRepository extends BaseTenantRepository<PaymentEntity> {
    * Fetch payments by user — uses QueryBuilder JOIN to avoid unreliable
    * nested `where: { order: { userId } }` TypeORM patterns.
    */
-  async findPaymentsByUser(userId: string, tenantId: string): Promise<PaymentEntity[]> {
+  async findPaymentsByUser(userId: string, storeId: string): Promise<PaymentEntity[]> {
     return this.repo
       .createQueryBuilder('payment')
       .innerJoinAndSelect('payment.order', 'order')
-      .where('payment.tenantId = :tenantId', { tenantId })
+      .where('payment.storeId = :storeId', { storeId })
       .andWhere('order.userId = :userId', { userId })
       .orderBy('payment.createdAt', 'DESC')
       .getMany()

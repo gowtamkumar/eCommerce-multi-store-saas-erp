@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { FindOptionsWhere, LessThanOrEqual, Repository } from 'typeorm'
@@ -13,7 +13,7 @@ import type { PaginatedResult } from '../hrm.repository'
 const DEFAULT_LIMIT = 20
 
 @Injectable()
-export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> {
+export class HrmEmployeeRepository extends BaseStoreRepository<EmployeeEntity> {
   constructor(
     @InjectRepository(EmployeeEntity)
     public readonly employeeRepo: Repository<EmployeeEntity>,
@@ -37,7 +37,7 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
   }
 
   async findAllEmployees(
-    tenantId: string,
+    storeId: string,
     branchId?: string,
     options?: {
       page?: number
@@ -49,7 +49,7 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
   ): Promise<PaginatedResult<EmployeeEntity>> {
     const page = options?.page ?? 1
     const limit = options?.limit ?? DEFAULT_LIMIT
-    const where: FindOptionsWhere<EmployeeEntity> = { tenantId }
+    const where: FindOptionsWhere<EmployeeEntity> = { storeId }
     if (branchId) where.branchId = branchId
     if (options?.departmentId) where.departmentId = options.departmentId
     if (options?.status) where.status = options.status as any
@@ -62,7 +62,7 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
       .leftJoinAndSelect('e.branch', 'branch')
       .leftJoinAndSelect('e.manager', 'manager')
       .leftJoinAndSelect('e.personalDetails', 'personalDetails')
-      .where('e.tenantId = :tenantId', { tenantId })
+      .where('e.storeId = :storeId', { storeId })
 
     if (branchId) qb.andWhere('e.branchId = :branchId', { branchId })
     if (options?.departmentId)
@@ -82,8 +82,8 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
     return { data, total, page, limit }
   }
 
-  async findEmployeesAll(tenantId: string, branchId?: string): Promise<EmployeeEntity[]> {
-    const where: FindOptionsWhere<EmployeeEntity> = { tenantId }
+  async findEmployeesAll(storeId: string, branchId?: string): Promise<EmployeeEntity[]> {
+    const where: FindOptionsWhere<EmployeeEntity> = { storeId }
     if (branchId) where.branchId = branchId
     return this.employeeRepo.find({
       where,
@@ -98,9 +98,9 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
     })
   }
 
-  async findEmployeeById(id: string, tenantId: string): Promise<EmployeeEntity | null> {
+  async findEmployeeById(id: string, storeId: string): Promise<EmployeeEntity | null> {
     return this.employeeRepo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         user: true,
         department: true,
@@ -123,14 +123,14 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
 
   // --- Holidays ---
   async findHolidaysInRange(
-    tenantId: string,
+    storeId: string,
     startDate: Date,
     endDate: Date,
     branchId?: string,
   ): Promise<HolidayEntity[]> {
     const qb = this.holidayRepo
       .createQueryBuilder('h')
-      .where('h.tenantId = :tenantId', { tenantId })
+      .where('h.storeId = :storeId', { storeId })
       .andWhere('h.date >= :startDate', { startDate })
       .andWhere('h.date <= :endDate', { endDate })
 
@@ -184,19 +184,19 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
 
   // --- Employee ID sequence ---
   /**
-   * Atomically increments the per-tenant employee-id counter and returns the
+   * Atomically increments the per-store employee-id counter and returns the
    * generated code. Uses a single UPDATE with RETURNING so concurrent calls
    * cannot mint duplicates.
    */
-  async nextEmployeeId(tenantId: string): Promise<string> {
-    let seq = await this.employeeIdSeqRepo.findOne({ where: { tenantId } })
+  async nextEmployeeId(storeId: string): Promise<string> {
+    let seq = await this.employeeIdSeqRepo.findOne({ where: { storeId } })
     if (!seq) {
-      seq = this.employeeIdSeqRepo.create({ tenantId })
+      seq = this.employeeIdSeqRepo.create({ storeId })
       try {
         await this.employeeIdSeqRepo.save(seq)
       } catch {
         // race: another caller created it concurrently
-        seq = await this.employeeIdSeqRepo.findOne({ where: { tenantId } })
+        seq = await this.employeeIdSeqRepo.findOne({ where: { storeId } })
       }
     }
 
@@ -204,7 +204,7 @@ export class HrmEmployeeRepository extends BaseTenantRepository<EmployeeEntity> 
       .createQueryBuilder()
       .update(EmployeeIdSequenceEntity)
       .set({ lastValue: () => '"last_value" + 1' })
-      .where('tenant_id = :tenantId', { tenantId })
+      .where('store_id = :storeId', { storeId })
       .returning(['lastValue', 'prefix', 'padLength'])
       .execute()
 

@@ -42,11 +42,11 @@ export class SettingsController {
 
   @Get()
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
-  async findByTenantSettings(
+  async findByStoreSettings(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByTenantSettings.`)
-    const settings = await this.settingsService.findByTenantSettings(ctx)
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByStoreSettings.`)
+    const settings = await this.settingsService.findByStoreSettings(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -61,7 +61,7 @@ export class SettingsController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
     this.logger.verbose(`System called getPublicSettings.`)
-    const settings = await this.settingsService.findByTenantSettings(ctx)
+    const settings = await this.settingsService.findByStoreSettings(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -96,7 +96,7 @@ export class SettingsController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called clearCache.`)
-    await this.cacheService.clearTenantCache(ctx.tenantId)
+    await this.cacheService.clearStoreCache(ctx.storeId)
     return {
       success: true,
       statusCode: 200,

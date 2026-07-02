@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { DepartmentEntity } from '../entities/department.entity'
 import { DesignationEntity } from '../entities/designation.entity'
 
 @Injectable()
-export class HrmOrganizationRepository extends BaseTenantRepository<DepartmentEntity> {
+export class HrmOrganizationRepository extends BaseStoreRepository<DepartmentEntity> {
   constructor(
     @InjectRepository(DepartmentEntity)
     private readonly departmentRepo: Repository<DepartmentEntity>,
@@ -21,12 +21,12 @@ export class HrmOrganizationRepository extends BaseTenantRepository<DepartmentEn
     return this.departmentRepo.save(this.departmentRepo.create(data))
   }
 
-  async findAllDepartments(tenantId: string): Promise<DepartmentEntity[]> {
-    return this.departmentRepo.find({ where: { tenantId } })
+  async findAllDepartments(storeId: string): Promise<DepartmentEntity[]> {
+    return this.departmentRepo.find({ where: { storeId } })
   }
 
-  async findDepartmentById(id: string, tenantId: string): Promise<DepartmentEntity | null> {
-    return this.departmentRepo.findOne({ where: { id, tenantId } })
+  async findDepartmentById(id: string, storeId: string): Promise<DepartmentEntity | null> {
+    return this.departmentRepo.findOne({ where: { id, storeId } })
   }
 
   async updateDepartment(id: string, data: Partial<DepartmentEntity>): Promise<void> {
@@ -42,17 +42,17 @@ export class HrmOrganizationRepository extends BaseTenantRepository<DepartmentEn
     return this.designationRepo.save(this.designationRepo.create(data))
   }
 
-  async findAllDesignations(tenantId: string): Promise<DesignationEntity[]> {
+  async findAllDesignations(storeId: string): Promise<DesignationEntity[]> {
     return this.designationRepo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         department: true,
       },
     })
   }
 
-  async findDesignationById(id: string, tenantId: string): Promise<DesignationEntity | null> {
-    return this.designationRepo.findOne({ where: { id, tenantId } })
+  async findDesignationById(id: string, storeId: string): Promise<DesignationEntity | null> {
+    return this.designationRepo.findOne({ where: { id, storeId } })
   }
 
   async updateDesignation(id: string, data: Partial<DesignationEntity>): Promise<void> {

@@ -3,7 +3,7 @@
 Your guideline is a **good high-level architecture**, but production-level ERP HRM requires:
 
 * scalable domain architecture
-* multi-tenant security
+* multi-store security
 * workflow engine
 * payroll accuracy
 * audit logs
@@ -96,11 +96,11 @@ PostgreSQL + Redis + S3
 
 ---
 
-# 3. Multi-Tenant ERP Structure
+# 3. Multi-Store ERP Structure
 
 This is CRITICAL.
 
-Every table must support tenant isolation.
+Every table must support store isolation.
 
 ---
 
@@ -108,7 +108,7 @@ Every table must support tenant isolation.
 
 ```sql
 id UUID PK
-tenant_id UUID
+store_id UUID
 created_at
 updated_at
 deleted_at
@@ -155,7 +155,7 @@ Business HR data.
 employees
 ---------
 id
-tenant_id
+store_id
 user_id
 employee_code
 branch_id
@@ -1104,7 +1104,7 @@ For your ERP:
 * accounting integration
 * audit logs everywhere
 * queue processing
-* multi-tenant isolation
+* multi-store isolation
 * RBAC + row permissions
 * document versioning
 

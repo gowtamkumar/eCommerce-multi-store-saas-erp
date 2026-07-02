@@ -36,7 +36,7 @@ export class AdminMediaController {
     @Query() filterDto: FilterFileDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`)
-    const result = await this.filesService.getFiles(filterDto, ctx.tenantId)
+    const result = await this.filesService.getFiles(filterDto, ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -67,7 +67,7 @@ export class AdminMediaController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFile.`)
-    await this.filesService.deleteFile(id, ctx.tenantId)
+    await this.filesService.deleteFile(id, ctx.storeId)
     return {
       success: true,
       statusCode: 200,

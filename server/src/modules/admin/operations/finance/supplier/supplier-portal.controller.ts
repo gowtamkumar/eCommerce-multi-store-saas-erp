@@ -17,9 +17,9 @@ export class SupplierPortalController {
   ) {}
 
   private async getLinkedSupplier(ctx: RequestContextDto) {
-    const supplier = await (this.supplierService as any).repository.findByUserIdAndTenant(
+    const supplier = await (this.supplierService as any).repository.findByUserIdAndStore(
       ctx.userId,
-      ctx.tenantId,
+      ctx.storeId,
     )
     if (!supplier) {
       throw new ForbiddenException(

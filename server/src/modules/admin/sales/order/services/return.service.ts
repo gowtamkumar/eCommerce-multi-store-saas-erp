@@ -42,11 +42,11 @@ export class ReturnService {
     dto: CreateReturnDto,
   ): Promise<OrderReturnEntity> {
     this.logger.log(`${this.createReturnRequest.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
     const { orderId, items, reason, returnType, refundMethod } = dto
 
-    const order = await this.orderRepository.findOrderById(orderId, tenantId)
+    const order = await this.orderRepository.findOrderById(orderId, storeId)
 
     if (!order || order.userId !== userId) {
       throw new NotFoundException('Order not found or does not belong to user')
@@ -141,14 +141,14 @@ export class ReturnService {
           link: `/admin/returns/${result.id}`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger return/refund notification: ${e.message}`)
     }
 
     // Invalidate the admin list cache so the new return appears immediately
-    await this.cacheService.delCache('returns:all', tenantId)
+    await this.cacheService.delCache('returns:all', storeId)
     return result
   }
 
@@ -157,30 +157,30 @@ export class ReturnService {
     filterDto: FilterReturnDto,
   ): Promise<{ data: OrderReturnEntity[]; total: number }> {
     this.logger.log(`${this.findAllReturns.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // Create a unique cache key based on the filter parameters
     const cacheKey = `returns:all:${JSON.stringify(filterDto)}`
 
     return this.cacheService.rememberCache(
       cacheKey,
-      () => this.returnRepository.findPaginated(tenantId, filterDto),
+      () => this.returnRepository.findPaginated(storeId, filterDto),
       120, // 2-minute cache
-      tenantId,
+      storeId,
     )
   }
 
   async findByUser(ctx: RequestContextDto): Promise<OrderReturnEntity[]> {
     this.logger.log(`${this.findByUser.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
-    return await this.returnRepository.findByUserWithRelations(userId, tenantId)
+    return await this.returnRepository.findByUserWithRelations(userId, storeId)
   }
 
   async findOneReturn(id: string, ctx: RequestContextDto): Promise<OrderReturnEntity> {
     this.logger.log(`${this.findOneReturn.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, storeId)
 
     if (!returnRequest) {
       throw new NotFoundException('Return request not found')
@@ -195,8 +195,8 @@ export class ReturnService {
    */
   async markItemsReceived(id: string, ctx: RequestContextDto): Promise<OrderReturnEntity> {
     this.logger.log(`${this.markItemsReceived.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, storeId)
     if (!returnRequest) throw new NotFoundException('Return request not found')
 
     const terminalStatuses = [
@@ -215,14 +215,14 @@ export class ReturnService {
     }
 
     const updated = await this.returnRepository.markReceived(returnRequest)
-    await this.notifyReturnStatus(updated, tenantId, ReturnStatus.RECEIVED)
+    await this.notifyReturnStatus(updated, storeId, ReturnStatus.RECEIVED)
     await Promise.all([
-      this.cacheService.delCacheByPattern('returns:all*', tenantId),
-      this.cacheService.delCacheByPattern('analytics*', tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', tenantId),
-      this.cacheService.delCacheByPattern('pnl*', tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+      this.cacheService.delCacheByPattern('returns:all*', storeId),
+      this.cacheService.delCacheByPattern('analytics*', storeId),
+      this.cacheService.delCacheByPattern('dashboard*', storeId),
+      this.cacheService.delCacheByPattern('pnl*', storeId),
+      this.cacheService.delCacheByPattern('cashflow*', storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', storeId),
     ])
     return updated
   }
@@ -238,8 +238,8 @@ export class ReturnService {
     newOrderId: string,
   ): Promise<OrderReturnEntity> {
     this.logger.log(`${this.linkExchangeOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, storeId)
     if (!returnRequest) throw new NotFoundException('Return request not found')
 
     if (
@@ -280,14 +280,14 @@ export class ReturnService {
     }
 
     await Promise.all([
-      this.cacheService.delCacheByPattern('returns:all*', tenantId),
-      this.cacheService.delCacheByPattern('analytics*', tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', tenantId),
-      this.cacheService.delCacheByPattern('pnl*', tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+      this.cacheService.delCacheByPattern('returns:all*', storeId),
+      this.cacheService.delCacheByPattern('analytics*', storeId),
+      this.cacheService.delCacheByPattern('dashboard*', storeId),
+      this.cacheService.delCacheByPattern('pnl*', storeId),
+      this.cacheService.delCacheByPattern('cashflow*', storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', storeId),
     ])
-    await this.notifyReturnStatus(updated, tenantId, ReturnStatus.EXCHANGED)
+    await this.notifyReturnStatus(updated, storeId, ReturnStatus.EXCHANGED)
     return updated
   }
 
@@ -299,8 +299,8 @@ export class ReturnService {
     refundMethod?: RefundMethod,
   ): Promise<OrderReturnEntity> {
     this.logger.log(`${this.updateReturnRequestStatus.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, storeId)
 
     if (!returnRequest) {
       throw new NotFoundException('Return request not found')
@@ -358,16 +358,16 @@ export class ReturnService {
       await this.processRefund(updated, ctx)
     }
 
-    await this.notifyReturnStatus(updated, tenantId, targetStatus)
+    await this.notifyReturnStatus(updated, storeId, targetStatus)
 
     // Invalidate the admin list cache
     await Promise.all([
-      this.cacheService.delCacheByPattern('returns:all*', tenantId),
-      this.cacheService.delCacheByPattern('analytics*', tenantId),
-      this.cacheService.delCacheByPattern('dashboard*', tenantId),
-      this.cacheService.delCacheByPattern('pnl*', tenantId),
-      this.cacheService.delCacheByPattern('cashflow*', tenantId),
-      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+      this.cacheService.delCacheByPattern('returns:all*', storeId),
+      this.cacheService.delCacheByPattern('analytics*', storeId),
+      this.cacheService.delCacheByPattern('dashboard*', storeId),
+      this.cacheService.delCacheByPattern('pnl*', storeId),
+      this.cacheService.delCacheByPattern('cashflow*', storeId),
+      this.cacheService.delCacheByPattern('finance:summary*', storeId),
     ])
     return updated
   }
@@ -409,7 +409,7 @@ export class ReturnService {
           this.logger.log(
             `Wallet credited for return ${returnRequest.id}: customer=${customerId}, amount=${refundAmount}`,
           )
-          await this.notifyStoreCreditRefund(returnRequest, customerId, refundAmount, ctx.tenantId)
+          await this.notifyStoreCreditRefund(returnRequest, customerId, refundAmount, ctx.storeId)
         } catch (e: any) {
           this.logger.error(`Failed to credit wallet for return ${returnRequest.id}: ${e.message}`)
         }
@@ -449,7 +449,7 @@ export class ReturnService {
 
   private async notifyReturnStatus(
     returnRequest: OrderReturnEntity,
-    tenantId: string,
+    storeId: string,
     status: ReturnStatus,
   ): Promise<void> {
     if (status === ReturnStatus.PENDING) return
@@ -484,7 +484,7 @@ export class ReturnService {
           link: `/admin/returns/${returnRequest.id}`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
 
       const customerId = returnRequest.order?.userId || (returnRequest as any).userId
@@ -497,7 +497,7 @@ export class ReturnService {
             link: `/account/returns/${returnRequest.id}`,
             userId: customerId,
           },
-          tenantId,
+          storeId,
         )
       }
     } catch (e: any) {
@@ -509,7 +509,7 @@ export class ReturnService {
     returnRequest: OrderReturnEntity,
     customerId: string,
     refundAmount: number,
-    tenantId: string,
+    storeId: string,
   ): Promise<void> {
     try {
       await this.notificationService.createNotification(
@@ -520,7 +520,7 @@ export class ReturnService {
           link: `/account/returns/${returnRequest.id}`,
           userId: customerId,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger store credit notification: ${e.message}`)

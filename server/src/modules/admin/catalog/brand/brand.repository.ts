@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,7 +7,7 @@ import { ProductEntity } from '../product/entities/product.entity'
 import { BrandEntity } from './entities/brand.entity'
 
 @Injectable()
-export class BrandRepository extends BaseTenantRepository<BrandEntity> {
+export class BrandRepository extends BaseStoreRepository<BrandEntity> {
   constructor(
     @InjectRepository(BrandEntity)
     repo: Repository<BrandEntity>,
@@ -15,23 +15,23 @@ export class BrandRepository extends BaseTenantRepository<BrandEntity> {
     super(BrandEntity, repo)
   }
 
-  async findBySlug(slug: string, tenantId: string): Promise<BrandEntity | null> {
-    return this.repo.findOne({ where: { slug, tenantId } })
+  async findBySlug(slug: string, storeId: string): Promise<BrandEntity | null> {
+    return this.repo.findOne({ where: { slug, storeId } })
   }
 
-  async findById(id: string, tenantId: string): Promise<BrandEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findById(id: string, storeId: string): Promise<BrandEntity | null> {
+    return this.repo.findOne({ where: { id, storeId } })
   }
 
-  async findAllByTenant(tenantId: string): Promise<BrandEntity[]> {
+  async findAllByStore(storeId: string): Promise<BrandEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       order: { name: 'ASC' },
     })
   }
 
   /**
-   * Retrieve all brands across tenants. Used when no tenant context is provided
+   * Retrieve all brands across stores. Used when no store context is provided
    * (e.g., super‑admin UI). Returns brands ordered by name.
    */
   async findAll(): Promise<BrandEntity[]> {
@@ -39,17 +39,17 @@ export class BrandRepository extends BaseTenantRepository<BrandEntity> {
   }
 
   /**
-   * Expose a query builder for brands without tenant filtering.
+   * Expose a query builder for brands without store filtering.
    */
   getAllBrandsQueryBuilder() {
     return this.repo.createQueryBuilder('brand')
   }
 
-  async findAllWithProductCounts(tenantId: string) {
+  async findAllWithProductCounts(storeId: string) {
     return this.repo
       .createQueryBuilder('brand')
       .leftJoin('brand.products', 'product')
-      .where('brand.tenantId = :tenantId', { tenantId })
+      .where('brand.storeId = :storeId', { storeId })
       .select([
         'brand.id as id',
         'brand.name as name',
@@ -68,7 +68,7 @@ export class BrandRepository extends BaseTenantRepository<BrandEntity> {
   async createAndSave(data: Partial<BrandEntity>, ctx: RequestContextDto): Promise<BrandEntity> {
     const brand = this.repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as BrandEntity)
     return this.repo.save(brand)
@@ -83,11 +83,11 @@ export class BrandRepository extends BaseTenantRepository<BrandEntity> {
     await this.repo.softRemove(brand)
   }
 
-  async findBrandsForProducts(tenantId: string, categoryId?: string) {
+  async findBrandsForProducts(storeId: string, categoryId?: string) {
     const brandQuery = this.repo
       .createQueryBuilder('brand')
       .innerJoin(ProductEntity, 'product', 'product.brandId = brand.id')
-      .where('brand.tenantId = :tenantId', { tenantId })
+      .where('brand.storeId = :storeId', { storeId })
       .select('brand.id', 'id')
       .addSelect('brand.name', 'name')
       .addSelect('brand.slug', 'slug')

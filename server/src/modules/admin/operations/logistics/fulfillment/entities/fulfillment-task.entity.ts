@@ -5,10 +5,10 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { FulfillmentItemEntity } from './fulfillment-item.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 @Entity('fulfillment_tasks')
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'status'])
 export class FulfillmentTaskEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
   orderId: string
@@ -47,10 +47,10 @@ export class FulfillmentTaskEntity extends BaseEntity {
   @OneToMany(() => FulfillmentItemEntity, (item) => item.task, { cascade: true })
   items: FulfillmentItemEntity[]
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

@@ -1,42 +1,42 @@
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import {
-  isTenantAiProviderReady,
+  isStoreAiProviderReady,
   normalizeStorefrontAiConfig,
 } from '@/common/utils/storefront-ai-config.util'
-import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
+import { StoreAiClientService } from '@/modules/admin/ai/services/store-ai-client.service'
 import { Injectable } from '@nestjs/common'
 
 @Injectable()
 export class StorefrontAiConfigService {
   constructor(
-    private readonly tenantAiClient: TenantAiClientService,
+    private readonly storeAiClient: StoreAiClientService,
     private readonly permissionResolution: PermissionResolutionService,
   ) {}
 
-  async isPlanAiEnabled(tenantId: string): Promise<boolean> {
-    return this.permissionResolution.isFeatureEnabledForTenant(tenantId, 'ai')
+  async isPlanAiEnabled(storeId: string): Promise<boolean> {
+    return this.permissionResolution.isFeatureEnabledForStore(storeId, 'ai')
   }
 
-  async getProviderConfig(tenantId: string) {
-    return this.tenantAiClient.getConfigForTenant(tenantId)
+  async getProviderConfig(storeId: string) {
+    return this.storeAiClient.getConfigForStore(storeId)
   }
 
-  async isProviderReady(tenantId: string): Promise<boolean> {
-    if (!(await this.isPlanAiEnabled(tenantId))) {
+  async isProviderReady(storeId: string): Promise<boolean> {
+    if (!(await this.isPlanAiEnabled(storeId))) {
       return false
     }
 
     try {
-      const config = await this.getProviderConfig(tenantId)
-      return isTenantAiProviderReady(config)
+      const config = await this.getProviderConfig(storeId)
+      return isStoreAiProviderReady(config)
     } catch {
       return false
     }
   }
 
-  async getStorefrontFlags(tenantId: string) {
+  async getStorefrontFlags(storeId: string) {
     try {
-      const config = await this.getProviderConfig(tenantId)
+      const config = await this.getProviderConfig(storeId)
       return normalizeStorefrontAiConfig(config.storefront)
     } catch {
       return normalizeStorefrontAiConfig(null)

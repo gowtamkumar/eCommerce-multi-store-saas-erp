@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,7 +6,7 @@ import { Repository } from 'typeorm'
 import { PageReusableBlockEntity } from './entities/page-reusable-block.entity'
 
 @Injectable()
-export class PageReusableBlockRepository extends BaseTenantRepository<PageReusableBlockEntity> {
+export class PageReusableBlockRepository extends BaseStoreRepository<PageReusableBlockEntity> {
   constructor(
     @InjectRepository(PageReusableBlockEntity)
     repo: Repository<PageReusableBlockEntity>,
@@ -20,7 +20,7 @@ export class PageReusableBlockRepository extends BaseTenantRepository<PageReusab
   ): Promise<PageReusableBlockEntity> {
     const block = this.repo.create({
       ...payload,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId ?? null,
     } as PageReusableBlockEntity)
     return this.repo.save(block)
@@ -28,13 +28,13 @@ export class PageReusableBlockRepository extends BaseTenantRepository<PageReusab
 
   async list(ctx: RequestContextDto): Promise<PageReusableBlockEntity[]> {
     return this.repo.find({
-      where: { tenantId: ctx.tenantId },
+      where: { storeId: ctx.storeId },
       order: { createdAt: 'DESC' },
     })
   }
 
   async findOne(id: string, ctx: RequestContextDto): Promise<PageReusableBlockEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    return this.repo.findOne({ where: { id, storeId: ctx.storeId } })
   }
 
   async update(

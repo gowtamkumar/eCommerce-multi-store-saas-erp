@@ -16,7 +16,7 @@ export class HrmPerformanceService {
   async createPerformanceReview(data: any, ctx: RequestContextDto) {
     const review = await this.hrmRepo.createPerformanceReview({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
@@ -44,10 +44,10 @@ export class HrmPerformanceService {
   }
 
   async getAllPerformanceReviews(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllPerformanceReviews(ctx.tenantId)
+    return this.hrmRepo.findAllPerformanceReviews(ctx.storeId)
   }
 
   async getEmployeeReviews(employeeId: string, ctx: RequestContextDto) {
-    return this.hrmRepo.findEmployeeReviews(employeeId, ctx.tenantId)
+    return this.hrmRepo.findEmployeeReviews(employeeId, ctx.storeId)
   }
 }

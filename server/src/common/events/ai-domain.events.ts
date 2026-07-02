@@ -1,7 +1,7 @@
 export type AiAutomationEventType = 'product.created' | 'cart.abandoned'
 
 export interface ProductCreatedEvent {
-  tenantId: string
+  storeId: string
   productId: string
   productName: string
   category?: string
@@ -9,7 +9,7 @@ export interface ProductCreatedEvent {
 }
 
 export interface CartAbandonedEvent {
-  tenantId: string
+  storeId: string
   cartId: string
   customerName: string
   customerEmail?: string

@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { Injectable } from '@nestjs/common'
@@ -8,7 +8,7 @@ import { EntityManager, Repository } from 'typeorm'
 import { InventoryLedgerEntity } from './entities/inventory-ledger.entity'
 
 @Injectable()
-export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLedgerEntity> {
+export class InventoryLedgerRepository extends BaseStoreRepository<InventoryLedgerEntity> {
   constructor(
     @InjectRepository(InventoryLedgerEntity)
     repo: Repository<InventoryLedgerEntity>,
@@ -18,7 +18,7 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
 
   /**
    * Acquires a Postgres transaction-scoped advisory lock keyed by
-   * (tenant, product, variant, warehouse). All writers serialize on this key
+   * (store, product, variant, warehouse). All writers serialize on this key
    * for the duration of the surrounding transaction — eliminates the
    * read-modify-write race in `createLedgerEntry` and any FEFO allocation
    * that calls into it.
@@ -28,20 +28,20 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
    */
   async acquireStockLock(
     manager: EntityManager,
-    tenantId: string,
+    storeId: string,
     productId: string,
     variantId: string | null,
     warehouseId: string | null,
   ): Promise<void> {
-    const composite = `inv:${tenantId}:${productId}:${variantId ?? 'null'}:${warehouseId ?? 'null'}`
+    const composite = `inv:${storeId}:${productId}:${variantId ?? 'null'}:${warehouseId ?? 'null'}`
     const hash = createHash('sha256').update(composite).digest()
     // Take first 8 bytes, interpret as signed int64 (Postgres bigint domain).
     const lockId = hash.readBigInt64BE(0).toString()
     await manager.query('SELECT pg_advisory_xact_lock($1::bigint)', [lockId])
   }
 
-  async findByTenant(
-    tenantId: string,
+  async findByStore(
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -53,7 +53,7 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
       .leftJoinAndSelect('it.variant', 'variant')
       .leftJoinAndSelect('it.user', 'user')
       .leftJoinAndSelect('it.warehouse', 'warehouse')
-      .where('it.tenantId = :tenantId', { tenantId })
+      .where('it.storeId = :storeId', { storeId })
       .orderBy('it.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -75,11 +75,11 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
     productId: string,
     variantId: string | null,
     warehouseId: string | null,
-    tenantId: string,
+    storeId: string,
     manager?: any,
   ): Promise<number> {
     const repo = this.txRepo(manager)
-    const where: Record<string, any> = { productId, tenantId }
+    const where: Record<string, any> = { productId, storeId }
     if (variantId) where.variantId = variantId
     if (warehouseId) where.warehouseId = warehouseId
 
@@ -91,9 +91,9 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
     return lastEntry ? Number(lastEntry.balanceAfter) : 0
   }
 
-  async findByProduct(productId: string, tenantId: string): Promise<InventoryLedgerEntity[]> {
+  async findByProduct(productId: string, storeId: string): Promise<InventoryLedgerEntity[]> {
     return await this.repo.find({
-      where: { productId, tenantId },
+      where: { productId, storeId },
       order: { createdAt: 'DESC' },
       relations: {
         product: true,
@@ -112,7 +112,7 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
     const repo = this.txRepo(manager)
     const transaction = repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as Partial<InventoryLedgerEntity>)
     if (dto.createdAt) {
@@ -120,13 +120,13 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
     }
     return repo.save(transaction)
   }
-  async getStockSums(tenantId: string, warehouseId?: string): Promise<any[]> {
+  async getStockSums(storeId: string, warehouseId?: string): Promise<any[]> {
     const qb = this.repo
       .createQueryBuilder('ledger')
       .select('ledger.productId', 'productId')
       .addSelect('ledger.variantId', 'variantId')
       .addSelect('SUM(ledger.quantity)', 'sum')
-      .where('ledger.tenantId = :tenantId', { tenantId })
+      .where('ledger.storeId = :storeId', { storeId })
 
     if (warehouseId) {
       qb.andWhere('ledger.warehouseId = :warehouseId', { warehouseId })
@@ -137,12 +137,12 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
 
   /**
    * Stock sums restricted to a specific set of product IDs. Used to enrich a
-   * single page of products without aggregating the entire tenant ledger,
+   * single page of products without aggregating the entire store ledger,
    * which keeps product list/detail cost proportional to the page size rather
    * than total inventory movements.
    */
   async getStockSumsByProductIds(
-    tenantId: string,
+    storeId: string,
     productIds: string[],
     warehouseId?: string,
   ): Promise<any[]> {
@@ -153,7 +153,7 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
       .select('ledger.productId', 'productId')
       .addSelect('ledger.variantId', 'variantId')
       .addSelect('SUM(ledger.quantity)', 'sum')
-      .where('ledger.tenantId = :tenantId', { tenantId })
+      .where('ledger.storeId = :storeId', { storeId })
       .andWhere('ledger.productId IN (:...productIds)', { productIds })
 
     if (warehouseId) {
@@ -165,7 +165,7 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
   async getLiveStock(
     productId: string,
     variantId: string | null,
-    tenantId: string,
+    storeId: string,
     warehouseId?: string | null,
     manager?: any,
   ): Promise<number> {
@@ -175,7 +175,7 @@ export class InventoryLedgerRepository extends BaseTenantRepository<InventoryLed
       .createQueryBuilder('ledger')
       .select('SUM(ledger.quantity)', 'sum')
       .where('ledger.productId = :productId', { productId })
-      .andWhere('ledger.tenantId = :tenantId', { tenantId })
+      .andWhere('ledger.storeId = :storeId', { storeId })
 
     if (variantId) {
       query.andWhere('ledger.variantId = :variantId', { variantId })

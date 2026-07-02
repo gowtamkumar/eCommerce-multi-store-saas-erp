@@ -43,10 +43,10 @@ export class SubscriberService {
     ctx: RequestContextDto,
     signupCtx: SignupContext = {},
   ): Promise<{ ok: true }> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const email = createSubscriberDto.email.trim().toLowerCase()
 
-    const existing = await this.subscriberRepository.findByEmail(email, tenantId)
+    const existing = await this.subscriberRepository.findByEmail(email, storeId)
 
     if (existing) {
       switch (existing.status) {
@@ -68,7 +68,7 @@ export class SubscriberService {
           existing.consentIp = signupCtx.ip ?? existing.consentIp
           existing.consentUserAgent = signupCtx.userAgent ?? existing.consentUserAgent
           await this.subscriberRepository.save(existing)
-          await this.sendConfirmationEmail(existing, tenantId)
+          await this.sendConfirmationEmail(existing, storeId)
           return { ok: true }
       }
     }
@@ -86,8 +86,8 @@ export class SubscriberService {
       },
       ctx,
     )
-    await this.sendConfirmationEmail(subscriber, tenantId)
-    await this.cache.delCacheByPattern('subscribers:list*', tenantId)
+    await this.sendConfirmationEmail(subscriber, storeId)
+    await this.cache.delCacheByPattern('subscribers:list*', storeId)
     return { ok: true }
   }
 
@@ -101,9 +101,9 @@ export class SubscriberService {
     ctx: RequestContextDto,
   ): Promise<SubscriberEntity> {
     this.logger.log(`${this.createSubscriber.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const email = createSubscriberDto.email.trim().toLowerCase()
-    const existing = await this.subscriberRepository.findByEmail(email, tenantId)
+    const existing = await this.subscriberRepository.findByEmail(email, storeId)
     if (existing) {
       throw new ConflictException('Email is already subscribed to this store')
     }
@@ -119,7 +119,7 @@ export class SubscriberService {
       },
       ctx,
     )
-    await this.cache.delCacheByPattern('subscribers:list*', tenantId)
+    await this.cache.delCacheByPattern('subscribers:list*', storeId)
     return subscriber
   }
 
@@ -142,7 +142,7 @@ export class SubscriberService {
       subscriber.unsubscribeToken = this.generateToken()
     }
     await this.subscriberRepository.save(subscriber)
-    await this.cache.delCacheByPattern('subscribers:list*', subscriber.tenantId)
+    await this.cache.delCacheByPattern('subscribers:list*', subscriber.storeId)
     return { confirmed: true }
   }
 
@@ -161,7 +161,7 @@ export class SubscriberService {
     subscriber.isActive = false
     subscriber.unsubscribedAt = new Date()
     await this.subscriberRepository.save(subscriber)
-    await this.cache.delCacheByPattern('subscribers:list*', subscriber.tenantId)
+    await this.cache.delCacheByPattern('subscribers:list*', subscriber.storeId)
     return { unsubscribed: true }
   }
 
@@ -169,8 +169,8 @@ export class SubscriberService {
    * Mark an email as permanently suppressed — driven by webhooks from the
    * email provider on hard bounces or spam complaints.
    */
-  async suppress(email: string, tenantId: string, reason?: string): Promise<void> {
-    const subscriber = await this.subscriberRepository.findByEmail(email, tenantId)
+  async suppress(email: string, storeId: string, reason?: string): Promise<void> {
+    const subscriber = await this.subscriberRepository.findByEmail(email, storeId)
     if (!subscriber) return
     subscriber.status = SubscriberStatus.SUPPRESSED
     subscriber.isActive = false
@@ -181,11 +181,11 @@ export class SubscriberService {
   /**
    * GDPR data-subject erasure — drop the row entirely. Use with care.
    */
-  async deleteByEmail(email: string, tenantId: string): Promise<{ deleted: boolean }> {
-    const subscriber = await this.subscriberRepository.findByEmail(email, tenantId)
+  async deleteByEmail(email: string, storeId: string): Promise<{ deleted: boolean }> {
+    const subscriber = await this.subscriberRepository.findByEmail(email, storeId)
     if (!subscriber) return { deleted: false }
     await this.subscriberRepository.remove(subscriber)
-    await this.cache.delCacheByPattern('subscribers:list*', tenantId)
+    await this.cache.delCacheByPattern('subscribers:list*', storeId)
     return { deleted: true }
   }
 
@@ -194,15 +194,15 @@ export class SubscriberService {
     ctx: RequestContextDto,
   ): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
     this.logger.log(`${this.findAllSubscribers.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 10, search = '' } = filterDto || {}
     const cacheKey = `subscribers:list:p${page}:l${limit}:q${search}`
 
     return this.cache.rememberCache(
       cacheKey,
-      () => this.subscriberRepository.findAllWithFilters(filterDto || {}, tenantId),
+      () => this.subscriberRepository.findAllWithFilters(filterDto || {}, storeId),
       300,
-      tenantId || 'global',
+      storeId || 'global',
     )
   }
 
@@ -212,7 +212,7 @@ export class SubscriberService {
 
   private async sendConfirmationEmail(
     subscriber: SubscriberEntity,
-    tenantId: string,
+    storeId: string,
   ): Promise<void> {
     if (!this.mailService || !subscriber.confirmationToken) {
       this.logger.warn(
@@ -221,7 +221,7 @@ export class SubscriberService {
       return
     }
     try {
-      const base = await this.getPublicBaseUrl(tenantId)
+      const base = await this.getPublicBaseUrl(storeId)
       const verifyUrl = `${base}/api/v1/subscribers/confirm?token=${subscriber.confirmationToken}`
       const unsubUrl = `${base}/api/v1/subscribers/unsubscribe?token=${subscriber.unsubscribeToken ?? ''}`
       await this.mailService.sendGenericEmail({
@@ -237,7 +237,7 @@ export class SubscriberService {
             Don't want any messages? <a href="${unsubUrl}">Unsubscribe</a>.
           </p>
         `,
-        tenantId,
+        storeId,
       })
     } catch (e: any) {
       // Never throw — the user already submitted a form.
@@ -245,10 +245,10 @@ export class SubscriberService {
     }
   }
 
-  private async getPublicBaseUrl(_tenantId: string): Promise<string> {
-    // Public base URL is configured per-environment. If you need per-tenant
+  private async getPublicBaseUrl(_storeId: string): Promise<string> {
+    // Public base URL is configured per-environment. If you need per-store
     // domains here, wire `SettingsService` and read `publicBaseUrl` from
-    // the tenant's site-settings row.
+    // the store's site-settings row.
     return process.env.PUBLIC_BASE_URL?.replace(/\/+$/, '') || 'http://localhost:3000'
   }
 }

@@ -21,24 +21,24 @@ export class AccountingService {
   ) {}
 
   /**
-   * Initializes the default Chart of Accounts for a tenant.
-   * Should be called during tenant onboarding.
+   * Initializes the default Chart of Accounts for a store.
+   * Should be called during store onboarding.
    */
-  async initializeTenantCOA(ctx: RequestContextDto, manager?: EntityManager) {
+  async initializeStoreCOA(ctx: RequestContextDto, manager?: EntityManager) {
     const repo = manager
       ? manager.getRepository(AccountEntity)
       : this.dataSource.getRepository(AccountEntity)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const count = await repo.count({ where: { tenantId } })
+    const count = await repo.count({ where: { storeId } })
     if (count > 0) return
 
-    this.logger.log(`Initializing COA for tenant ${tenantId}`)
+    this.logger.log(`Initializing COA for store ${storeId}`)
 
     const accounts = DEFAULT_CHART_OF_ACCOUNTS.map((coa) =>
       repo.create({
         ...coa,
-        tenantId,
+        storeId,
       }),
     )
 
@@ -65,7 +65,7 @@ export class AccountingService {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const queryRunner = manager ? null : this.dataSource.createQueryRunner()
     const em = manager || queryRunner.manager
 
@@ -81,7 +81,7 @@ export class AccountingService {
       const dateToCheck = data.date ? new Date(data.date) : new Date()
       const closedPeriod = await em
         .createQueryBuilder(FiscalPeriodEntity, 'fp')
-        .where('fp.tenantId = :tenantId', { tenantId })
+        .where('fp.storeId = :storeId', { storeId })
         .andWhere('fp.status = :status', { status: FiscalPeriodStatus.CLOSED })
         .andWhere(':dateToCheck BETWEEN fp.startDate AND fp.endDate', { dateToCheck })
         .getOne()
@@ -95,7 +95,7 @@ export class AccountingService {
       // Idempotency guard: if a journal already exists for referenceType + referenceId, return existing entry
       if (data.referenceType && data.referenceId) {
         const existing = await em.findOne(JournalEntryEntity, {
-          where: { referenceType: data.referenceType, referenceId: data.referenceId, tenantId },
+          where: { referenceType: data.referenceType, referenceId: data.referenceId, storeId },
         })
         if (existing) {
           this.logger.warn(
@@ -107,7 +107,7 @@ export class AccountingService {
       }
 
       // Determine Base Currency and Exchange Rate
-      const settings = await em.findOne(SiteSettingsEntity, { where: { tenantId } })
+      const settings = await em.findOne(SiteSettingsEntity, { where: { storeId } })
       const baseCurrency = (settings?.currency || 'USD').toUpperCase()
       const txCurrency = (data.currency || baseCurrency).toUpperCase()
 
@@ -163,7 +163,7 @@ export class AccountingService {
       // Automatically insert a balancing line to the Forex Gain/Loss account 8000 when discrepancy exceeds 0.02
       if (Math.abs(diff) > 0.02) {
         let forexAccount = await em.findOne(AccountEntity, {
-          where: { code: '8000', tenantId },
+          where: { code: '8000', storeId },
         })
         if (!forexAccount) {
           forexAccount = em.create(AccountEntity, {
@@ -173,7 +173,7 @@ export class AccountingService {
             category: AccountCategory.OPERATING_EXPENSE,
             isSystem: true,
             balance: 0,
-            tenantId,
+            storeId,
           })
           await em.save(AccountEntity, forexAccount)
         }
@@ -216,7 +216,7 @@ export class AccountingService {
         totalAmount: debitTotalTx,
         currency: txCurrency,
         exchangeRate: headerExchangeRate,
-        tenantId,
+        storeId,
         isReversal: data.isReversal || false,
         reversedJournalEntryId: data.reversedJournalEntryId || null,
       })
@@ -228,14 +228,14 @@ export class AccountingService {
       // 3. Process Ledger Lines
       const uniqueCodes = [...new Set(baseLines.map((l) => l.accountCode))]
       const accounts = (await em.find(AccountEntity, {
-        where: { code: In(uniqueCodes), tenantId },
+        where: { code: In(uniqueCodes), storeId },
       })) as AccountEntity[]
       const accountByCode = new Map(accounts.map((a) => [a.code, a]))
 
       const missingCode = uniqueCodes.find((code) => !accountByCode.has(code))
       if (missingCode) {
         throw new NotFoundException(
-          `Account with code ${missingCode} not found for tenant ${tenantId}`,
+          `Account with code ${missingCode} not found for store ${storeId}`,
         )
       }
 
@@ -277,7 +277,7 @@ export class AccountingService {
             transactionAmount: line.txAmount,
             exchangeRate: line.exchangeRate,
             balanceAfter: account.balance,
-            tenantId,
+            storeId,
           }),
         )
       }
@@ -295,14 +295,14 @@ export class AccountingService {
     }
   }
 
-  async findAccountByCode(code: string, tenantId: string): Promise<AccountEntity | null> {
-    return this.dataSource.getRepository(AccountEntity).findOne({ where: { code, tenantId } })
+  async findAccountByCode(code: string, storeId: string): Promise<AccountEntity | null> {
+    return this.dataSource.getRepository(AccountEntity).findOne({ where: { code, storeId } })
   }
 
   // Account CRUD
   async getAccounts(ctx: RequestContextDto): Promise<AccountEntity[]> {
     return this.dataSource.getRepository(AccountEntity).find({
-      where: { tenantId: ctx.tenantId },
+      where: { storeId: ctx.storeId },
       order: { code: 'ASC' },
     })
   }
@@ -318,13 +318,13 @@ export class AccountingService {
     ctx: RequestContextDto,
   ): Promise<AccountEntity> {
     const repo = this.dataSource.getRepository(AccountEntity)
-    const existing = await repo.findOne({ where: { code: data.code, tenantId: ctx.tenantId } })
+    const existing = await repo.findOne({ where: { code: data.code, storeId: ctx.storeId } })
     if (existing) {
       throw new BadRequestException(`Account with code ${data.code} already exists.`)
     }
     const account = repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       balance: 0,
     })
     return repo.save(account)
@@ -336,7 +336,7 @@ export class AccountingService {
     ctx: RequestContextDto,
   ): Promise<AccountEntity> {
     const repo = this.dataSource.getRepository(AccountEntity)
-    const account = await repo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const account = await repo.findOne({ where: { id, storeId: ctx.storeId } })
     if (!account) {
       throw new NotFoundException('Account not found')
     }
@@ -349,7 +349,7 @@ export class AccountingService {
 
   async deleteAccount(id: string, ctx: RequestContextDto): Promise<void> {
     const repo = this.dataSource.getRepository(AccountEntity)
-    const account = await repo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const account = await repo.findOne({ where: { id, storeId: ctx.storeId } })
     if (!account) {
       throw new NotFoundException('Account not found')
     }
@@ -364,7 +364,7 @@ export class AccountingService {
 
   async getJournalEntries(ctx: RequestContextDto): Promise<JournalEntryEntity[]> {
     return this.dataSource.getRepository(JournalEntryEntity).find({
-      where: { tenantId: ctx.tenantId },
+      where: { storeId: ctx.storeId },
       relations: {
         lines: {
           account: true,
@@ -377,7 +377,7 @@ export class AccountingService {
   // Fiscal Period Management
   async getFiscalPeriods(ctx: RequestContextDto): Promise<FiscalPeriodEntity[]> {
     return this.dataSource.getRepository(FiscalPeriodEntity).find({
-      where: { tenantId: ctx.tenantId },
+      where: { storeId: ctx.storeId },
       order: { startDate: 'DESC' },
     })
   }
@@ -392,7 +392,7 @@ export class AccountingService {
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
       status: FiscalPeriodStatus.OPEN,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     return repo.save(period)
   }
@@ -403,7 +403,7 @@ export class AccountingService {
     ctx: RequestContextDto,
   ): Promise<FiscalPeriodEntity> {
     const repo = this.dataSource.getRepository(FiscalPeriodEntity)
-    const period = await repo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const period = await repo.findOne({ where: { id, storeId: ctx.storeId } })
     if (!period) {
       throw new NotFoundException('Fiscal period not found')
     }
@@ -416,7 +416,7 @@ export class AccountingService {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<JournalEntryEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const queryRunner = manager ? null : this.dataSource.createQueryRunner()
     const em = manager || queryRunner.manager
 
@@ -428,7 +428,7 @@ export class AccountingService {
     try {
       // 1. Fetch original entry with lines and account relation
       const original = await em.findOne(JournalEntryEntity, {
-        where: { id, tenantId },
+        where: { id, storeId },
         relations: {
           lines: {
             account: true,
@@ -446,7 +446,7 @@ export class AccountingService {
 
       // Check if this journal entry has already been reversed
       const alreadyReversed = await em.findOne(JournalEntryEntity, {
-        where: { reversedJournalEntryId: id, tenantId },
+        where: { reversedJournalEntryId: id, storeId },
       })
       if (alreadyReversed) {
         throw new BadRequestException('This journal entry has already been reversed')

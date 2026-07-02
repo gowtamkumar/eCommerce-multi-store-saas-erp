@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -11,7 +11,7 @@ import { PaginationDto } from '@/common/dto/pagination.dto'
 import { GrnStatus } from '@/common/enums/grn-status.enum'
 
 @Injectable()
-export class GrnRepository extends BaseTenantRepository<GoodsReceivedNoteEntity> {
+export class GrnRepository extends BaseStoreRepository<GoodsReceivedNoteEntity> {
   constructor(
     @InjectRepository(GoodsReceivedNoteEntity)
     private readonly repository: Repository<GoodsReceivedNoteEntity>,
@@ -39,19 +39,19 @@ export class GrnRepository extends BaseTenantRepository<GoodsReceivedNoteEntity>
       receivedByUserId: ctx.userId,
       status: dto.status || GrnStatus.DRAFT,
       notes: dto.notes,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       items: dto.items.map((item) => ({
         ...item,
-        tenantId: ctx.tenantId,
+        storeId: ctx.storeId,
       })),
     })
 
     return repo.save(grn)
   }
 
-  async findById(id: string, tenantId: string): Promise<GoodsReceivedNoteEntity> {
+  async findById(id: string, storeId: string): Promise<GoodsReceivedNoteEntity> {
     const grn = await this.repository.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         items: {
           product: true,
@@ -72,7 +72,7 @@ export class GrnRepository extends BaseTenantRepository<GoodsReceivedNoteEntity>
   }
 
   async findAll(
-    tenantId: string,
+    storeId: string,
     paginationDto: PaginationDto,
     status?: GrnStatus,
   ): Promise<{ items: GoodsReceivedNoteEntity[]; total: number }> {
@@ -82,7 +82,7 @@ export class GrnRepository extends BaseTenantRepository<GoodsReceivedNoteEntity>
       .leftJoinAndSelect('grn.warehouse', 'warehouse')
       .leftJoinAndSelect('grn.items', 'items')
       .leftJoinAndSelect('grn.purchaseOrder', 'purchaseOrder')
-      .where('grn.tenantId = :tenantId', { tenantId })
+      .where('grn.storeId = :storeId', { storeId })
 
     if (status) {
       query.andWhere('grn.status = :status', { status })
@@ -106,13 +106,13 @@ export class GrnRepository extends BaseTenantRepository<GoodsReceivedNoteEntity>
     return repo.save(grn)
   }
 
-  async generateGrnNumber(tenantId: string): Promise<string> {
+  async generateGrnNumber(storeId: string): Promise<string> {
     const today = new Date()
     const prefix = `GRN-${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}-`
 
     const lastGrn = await this.repository
       .createQueryBuilder('grn')
-      .where('grn.tenantId = :tenantId', { tenantId })
+      .where('grn.storeId = :storeId', { storeId })
       .andWhere('grn.grnNumber LIKE :prefix', { prefix: `${prefix}%` })
       .orderBy('grn.grnNumber', 'DESC')
       .getOne()

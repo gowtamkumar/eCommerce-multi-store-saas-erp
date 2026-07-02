@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -10,7 +10,7 @@ import {
 } from '../entities/recruitment.entity'
 
 @Injectable()
-export class HrmRecruitmentRepository extends BaseTenantRepository<JobPostingEntity> {
+export class HrmRecruitmentRepository extends BaseStoreRepository<JobPostingEntity> {
   constructor(
     @InjectRepository(JobPostingEntity)
     public readonly jobPostingRepo: Repository<JobPostingEntity>,
@@ -26,9 +26,9 @@ export class HrmRecruitmentRepository extends BaseTenantRepository<JobPostingEnt
     return this.jobPostingRepo.save(this.jobPostingRepo.create(data))
   }
 
-  async findAllJobPostings(tenantId: string): Promise<JobPostingEntity[]> {
+  async findAllJobPostings(storeId: string): Promise<JobPostingEntity[]> {
     return this.jobPostingRepo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         department: true,
       },
@@ -39,9 +39,9 @@ export class HrmRecruitmentRepository extends BaseTenantRepository<JobPostingEnt
     return this.applicantRepo.save(this.applicantRepo.create(data))
   }
 
-  async findAllApplicants(tenantId: string): Promise<ApplicantEntity[]> {
+  async findAllApplicants(storeId: string): Promise<ApplicantEntity[]> {
     return this.applicantRepo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         jobPosting: true,
         interviews: true,
@@ -50,9 +50,9 @@ export class HrmRecruitmentRepository extends BaseTenantRepository<JobPostingEnt
     })
   }
 
-  async findApplicantById(id: string, tenantId: string): Promise<ApplicantEntity | null> {
+  async findApplicantById(id: string, storeId: string): Promise<ApplicantEntity | null> {
     return this.applicantRepo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         jobPosting: true,
       },
@@ -69,10 +69,10 @@ export class HrmRecruitmentRepository extends BaseTenantRepository<JobPostingEnt
 
   async findInterviewsByApplicant(
     applicantId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<InterviewEntity[]> {
     return this.interviewRepo.find({
-      where: { applicantId, tenantId },
+      where: { applicantId, storeId },
       relations: {
         interviewer: {
           user: true,

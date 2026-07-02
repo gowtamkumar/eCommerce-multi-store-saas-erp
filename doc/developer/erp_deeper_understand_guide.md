@@ -1,7 +1,7 @@
 # ERP & E-Commerce: Deep-Dive Architectural & Domain Guide
 *Written from the perspective of a Senior Systems Architect & Principal Engineer.*
 
-Welcome to the definitive guide to this **Multi-Tenant SaaS E-commerce & Enterprise Resource Planning (ERP)** system. 
+Welcome to the definitive guide to this **Multi-Store SaaS E-commerce & Enterprise Resource Planning (ERP)** system. 
 
 ERP projects are notoriously complex because they bridge two very different worlds:
 1. **The Fast-Paced Commerce World**: Web storefronts, cart checkouts, and mobile POS terminals that need real-time, low-latency responsiveness.
@@ -56,14 +56,14 @@ Each domain is strictly decoupled at the code level, communicating via asynchron
 ```mermaid
 graph TD
     %% Base Subdomains
-    Tenant[SaaS Tenant Platform] --> Identity[Identity Domain: RBAC & Users]
-    Tenant --> Org[Organization Domain: Branches & Warehouses]
-    Tenant --> Catalog[Catalog Domain: Products, Pricing & Variants]
-    Tenant --> Commerce[Commerce Domain: Online E-Commerce & Retail POS]
-    Tenant --> Logistics[Logistics Domain: GRN, Fulfillment & Inventory Ledger]
-    Tenant --> Procurement[Procurement Domain: SCM, RFQs, POs & Supplier Ledger]
-    Tenant --> Finance[Finance Domain: Double-Entry Ledger, AR/AP, Taxes]
-    Tenant --> HRM[HRM Domain: Shifts, Attendance, Leaves & Payroll]
+    Store[SaaS Store Platform] --> Identity[Identity Domain: RBAC & Users]
+    Store --> Org[Organization Domain: Branches & Warehouses]
+    Store --> Catalog[Catalog Domain: Products, Pricing & Variants]
+    Store --> Commerce[Commerce Domain: Online E-Commerce & Retail POS]
+    Store --> Logistics[Logistics Domain: GRN, Fulfillment & Inventory Ledger]
+    Store --> Procurement[Procurement Domain: SCM, RFQs, POs & Supplier Ledger]
+    Store --> Finance[Finance Domain: Double-Entry Ledger, AR/AP, Taxes]
+    Store --> HRM[HRM Domain: Shifts, Attendance, Leaves & Payroll]
 
     %% Event Connections
     Commerce -- Sale Event --> Finance
@@ -80,22 +80,22 @@ graph TD
 ---
 
 ## Module 1: Multi-Tenancy & Identity Domain
-*Found in: `server/src/modules/system/tenant` & `server/src/modules/admin/core/user`*
+*Found in: `server/src/modules/system/store` & `server/src/modules/admin/core/user`*
 
 ### 1. What is it?
-This is a **Multi-Tenant SaaS (Software as a Service)**. A single server running in the cloud hosts hundreds of completely separate businesses (tenants). Each business has its own sub-domain (e.g., `apple.store.com`, `nike.store.com`), its own staff, its own database scopes, and its own customers.
+This is a **Multi-Store SaaS (Software as a Service)**. A single server running in the cloud hosts hundreds of completely separate businesses (stores). Each business has its own sub-domain (e.g., `apple.store.com`, `nike.store.com`), its own staff, its own database scopes, and its own customers.
 
 ### 2. Core Tables
-*   `tenants`: The master list of SaaS clients. Contains their status, subdomain, custom domains, and subscription plan (trial, active, expired).
+*   `stores`: The master list of SaaS clients. Contains their status, subdomain, custom domains, and subscription plan (trial, active, expired).
 *   `users`: Authentication credentials. Holds passwords, emails, verification codes, and roles.
 *   `staff_invitations`: Safe invitation tokens sent to new employees.
 
 ### 3. Connection & Why: The Security Scoping
-To prevent Tenant A from seeing Tenant B's data, **every single database entity (except global system tables) must contain a `tenant_id` column.**
+To prevent Store A from seeing Store B's data, **every single database entity (except global system tables) must contain a `store_id` column.**
 When a request hits the NestJS server:
-1. An Express middleware inspects the request headers or subdomain (e.g., `tenant-id: xxxx` or `apple.yourdomain.com`).
+1. An Express middleware inspects the request headers or subdomain (e.g., `store-id: xxxx` or `apple.yourdomain.com`).
 2. The user's JWT token is parsed.
-3. The database queries are automatically injected with `.andWhere('entity.tenantId = :tenantId')` to guarantee isolation.
+3. The database queries are automatically injected with `.andWhere('entity.storeId = :storeId')` to guarantee isolation.
 
 ---
 
@@ -109,11 +109,11 @@ In simple shops, you have a single counter with a pile of boxes behind it. In an
 
 ```mermaid
 graph TD
-    Tenant[SaaS Tenant]
-    Tenant --> BranchA[Branch A: Retail Store Downtown]
-    Tenant --> BranchB[Branch B: E-Commerce Storefront]
-    Tenant --> WarehouseA[Warehouse A: Main Fulfillment Center]
-    Tenant --> WarehouseB[Warehouse B: Airport Transit Hub]
+    Store[SaaS Store]
+    Store --> BranchA[Branch A: Retail Store Downtown]
+    Store --> BranchB[Branch B: E-Commerce Storefront]
+    Store --> WarehouseA[Warehouse A: Main Fulfillment Center]
+    Store --> WarehouseB[Warehouse B: Airport Transit Hub]
     
     BranchA -. Can fulfill orders from .-> WarehouseA
     BranchB -. Can fulfill orders from .-> WarehouseA
@@ -127,7 +127,7 @@ graph TD
 
 ### 3. Connection & Why: Branch vs. Warehouse Separation
 **Why are they separated?**
-A typical developer mistake is creating `Tenant -> Branch -> Inventory`. This fails at scale because:
+A typical developer mistake is creating `Store -> Branch -> Inventory`. This fails at scale because:
 1. An E-commerce website (a virtual Branch) doesn't have its own physical shelves; it ships goods from a regional Warehouse.
 2. A retail Branch may run out of stock and request a direct delivery from a central Warehouse.
 By decoupling **Branches (legal/financial operations)** from **Warehouses (physical stock storage)**, a single warehouse can serve multiple branches, and a single branch can pull inventory from different warehouses.
@@ -175,7 +175,7 @@ The procurement engine manages the entire life-cycle of sourcing and buying inve
 sequenceDiagram
     autonumber
     actor Mgr as Warehouse/Branch Manager
-    actor Admin as Tenant Admin / CFO
+    actor Admin as Store Admin / CFO
     participant Sup as External Supplier
     participant PR as Purchase Requisition
     participant RFQ as Request for Quotation
@@ -239,7 +239,7 @@ if (dto.status === GrnStatus.RECEIVED) {
   // 2. Increase the Accounts Payable debt to the Supplier
   await this.apLedgerRepository.createEntry({
     supplierId: grn.supplierId,
-    tenantId: ctx.tenantId,
+    storeId: ctx.storeId,
     referenceType: SupplierAPReferenceType.GRN,
     referenceId: grn.id,
     credit: totalGrnCost, // We owe this money to the vendor now
@@ -345,12 +345,12 @@ graph TD
 
 If you are tasked with completing or expanding this SaaS ERP system, always follow this six-step implementation pipeline:
 
-1.  **Scope by Tenant and Org Unit**: Always ask: *"Which Tenant owns this record?"* and *"Which Branch (Sales) or Warehouse (Stock) is executing this action?"*
+1.  **Scope by Store and Org Unit**: Always ask: *"Which Store owns this record?"* and *"Which Branch (Sales) or Warehouse (Stock) is executing this action?"*
 2.  **Use the Ledger for Inventory**: Never do direct mathematical additions or subtractions on product entities. Always write balanced ledger rows to the `InventoryLedger` using positive quantities for inputs (purchases, customer returns) and negative quantities for outputs (store sales, scrap/damage waste).
 3.  **Automate Finance with Events**: Avoid hardcoupling catalog or sales modules directly with financial accounting code. Emit NestJS `EventEmitter` events (e.g., `grn.verified`, `order.paid`) and let the `accounting` module listen to these events asynchronously to record double-entry entries in the General Ledger.
-4.  **Enforce Multi-Tenant Database Security**: Ensure all repository queries check `tenant_id` scoping inside database transactions.
+4.  **Enforce Multi-Store Database Security**: Ensure all repository queries check `store_id` scoping inside database transactions.
 5.  **Always Perform 3-Way Matching**: Before paying suppliers, verify that the **Purchase Order** matches what was physically verified in the **GRN** and billed in the **Supplier Invoice**.
 6.  **Protect Raw Audit Logs**: Raw punches, financial ledgers, and audit logs are legally sensitive. Never provide APIs to delete or directly modify these tables. Implement adjustment/reversal operations instead.
 
 ---
-*For any questions during feature development, refer to specific design files located in the [doc/](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-tenant-saas/doc/) folder.*
+*For any questions during feature development, refer to specific design files located in the [doc/](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-store-saas/doc/) folder.*

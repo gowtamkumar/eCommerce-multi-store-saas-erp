@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,7 +6,7 @@ import { EntityManager, Repository } from 'typeorm'
 import { PRStatus, PurchaseRequisitionEntity } from '../entities/purchase-requisition.entity'
 
 @Injectable()
-export class PurchaseRequisitionRepository extends BaseTenantRepository<PurchaseRequisitionEntity> {
+export class PurchaseRequisitionRepository extends BaseStoreRepository<PurchaseRequisitionEntity> {
   constructor(
     @InjectRepository(PurchaseRequisitionEntity)
     repo: Repository<PurchaseRequisitionEntity>,
@@ -18,9 +18,9 @@ export class PurchaseRequisitionRepository extends BaseTenantRepository<Purchase
     return this.txRepo(manager)
   }
 
-  async generatePRNumber(tenantId: string, manager?: EntityManager): Promise<string> {
+  async generatePRNumber(storeId: string, manager?: EntityManager): Promise<string> {
     const repo = this.getRepo(manager)
-    const count = await repo.count({ where: { tenantId } })
+    const count = await repo.count({ where: { storeId } })
     return `PR-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
   }
 
@@ -30,18 +30,18 @@ export class PurchaseRequisitionRepository extends BaseTenantRepository<Purchase
     manager?: EntityManager,
   ): Promise<PurchaseRequisitionEntity> {
     const repo = this.getRepo(manager)
-    const prNumber = await this.generatePRNumber(ctx.tenantId, manager)
+    const prNumber = await this.generatePRNumber(ctx.storeId, manager)
     const pr = repo.create({
       ...data,
       prNumber,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       requestedById: ctx.userId,
     } as PurchaseRequisitionEntity)
     return repo.save(pr)
   }
 
-  async findAllByTenant(
-    tenantId: string,
+  async findAllByStore(
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -56,7 +56,7 @@ export class PurchaseRequisitionRepository extends BaseTenantRepository<Purchase
       // include items and product relation so list responses contain item details/counts
       .leftJoinAndSelect('pr.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
-      .where('pr.tenantId = :tenantId', { tenantId })
+      .where('pr.storeId = :storeId', { storeId })
       .orderBy('pr.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -76,12 +76,12 @@ export class PurchaseRequisitionRepository extends BaseTenantRepository<Purchase
 
   async findByIdWithRelations(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<PurchaseRequisitionEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         requestedBy: true,
         approvedBy: true,
@@ -96,12 +96,12 @@ export class PurchaseRequisitionRepository extends BaseTenantRepository<Purchase
 
   async findById(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<PurchaseRequisitionEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 

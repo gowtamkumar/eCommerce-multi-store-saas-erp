@@ -51,7 +51,7 @@ export class RoleController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<RoleEntity[]>> {
     const roles = await this.roleRepo.find({
-      where: [{ tenantId: ctx.tenantId }, { isSystemDefault: true }],
+      where: [{ storeId: ctx.storeId }, { isSystemDefault: true }],
       relations: {
         permissions: true,
       },
@@ -83,7 +83,7 @@ export class RoleController {
     const role = this.roleRepo.create({
       name,
       description,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       permissions,
     })
 
@@ -107,7 +107,7 @@ export class RoleController {
     const { name, description, permissionCodes } = body
 
     const role = await this.roleRepo.findOne({
-      where: { id, tenantId: ctx.tenantId },
+      where: { id, storeId: ctx.storeId },
     })
 
     if (!role) {
@@ -144,7 +144,7 @@ export class RoleController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     const role = await this.roleRepo.findOne({
-      where: { id, tenantId: ctx.tenantId },
+      where: { id, storeId: ctx.storeId },
     })
 
     if (!role) {

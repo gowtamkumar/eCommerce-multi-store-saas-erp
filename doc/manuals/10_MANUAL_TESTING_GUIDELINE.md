@@ -1,13 +1,13 @@
-# Enterprise Multi-Tenant SaaS ERP — Manual Testing Guidelines
+# Enterprise Multi-Store SaaS ERP — Manual Testing Guidelines
 
-This document outlines the step-by-step, module-by-module manual testing protocols for the eCommerce Multi-Tenant SaaS ERP platform. It is designed to help engineers, QA testers, and developers verify end-to-end business scenarios across the entire modular monolith.
+This document outlines the step-by-step, module-by-module manual testing protocols for the eCommerce Multi-Store SaaS ERP platform. It is designed to help engineers, QA testers, and developers verify end-to-end business scenarios across the entire modular monolith.
 
 ---
 
 ## Testing Environment Requirements
 Before beginning, ensure:
 1. **Database & Services**: PostgreSQL, Redis, and BullMQ workers are running.
-2. **Access URL**: Use the local development URL (e.g., `http://localhost:3000` or `http://tenant.localhost:3000`).
+2. **Access URL**: Use the local development URL (e.g., `http://localhost:3000` or `http://store.localhost:3000`).
 3. **Mail/SMS Sandbox**: MailHog or a local terminal mail-catcher is running to verify OTPs and invitations.
 4. **Tools**: Postman/Insomnia (for API endpoints) and a web browser with developer tools open to monitor local storage and networks.
 
@@ -17,7 +17,7 @@ Before beginning, ensure:
 
 ```mermaid
 graph TD
-    A[Super-Admin SaaS Billing] -->|Onboard Tenant| B[Auth & RBAC Setup]
+    A[Super-Admin SaaS Billing] -->|Onboard Store| B[Auth & RBAC Setup]
     B -->|Define Roles & Invite Staff| C[Physical & Financial Org Setup]
     C -->|Branches, Warehouses, COA| D[Catalog & Procurement]
     D -->|Add Products, PO, 3-Way Match, GRN| E[Inventory & Transfer]
@@ -29,12 +29,12 @@ graph TD
 
 ---
 
-## Module 1: Platform Super-Admin & Tenant Lifecycle
+## Module 1: Platform Super-Admin & Store Lifecycle
 
-### 1.1 Tenant Onboarding & Routing
-*   **Goal**: Verify that new tenants can register, receive a clean database sandbox, and route via subdomains.
+### 1.1 Store Onboarding & Routing
+*   **Goal**: Verify that new stores can register, receive a clean database sandbox, and route via subdomains.
 *   **Steps**:
-    1. Send a POST request to `/api/system/tenants/onboard` with a new tenant payload:
+    1. Send a POST request to `/api/system/stores/onboard` with a new store payload:
        ```json
        {
          "storeName": "Apex Retail",
@@ -44,25 +44,25 @@ graph TD
          "planId": "[UUID_OF_ENTERPRISE_PLAN]"
        }
        ```
-    2. Check the database to confirm the `tenant` record is created, and default roles/Chart of Accounts (COA) are seeded for this `tenantId`.
-    3. Access `http://apex.localhost:3000/api/public/tenant/apex` and verify it returns correct tenant metadata (theme, status).
-    4. Verify tenant isolation: Attempt to query `apex` resources using a token from a different tenant. Ensure a `403 Forbidden` or `404 Not Found` is returned.
+    2. Check the database to confirm the `store` record is created, and default roles/Chart of Accounts (COA) are seeded for this `storeId`.
+    3. Access `http://apex.localhost:3000/api/public/store/apex` and verify it returns correct store metadata (theme, status).
+    4. Verify store isolation: Attempt to query `apex` resources using a token from a different store. Ensure a `403 Forbidden` or `404 Not Found` is returned.
 
 ### 1.2 Custom Domain Mapping & DNS Verification
-*   **Goal**: Verify that tenants can map custom domains and trigger DNS validation.
+*   **Goal**: Verify that stores can map custom domains and trigger DNS validation.
 *   **Steps**:
-    1. Log in as the Tenant Owner of `apex`.
-    2. Submit a custom domain (e.g., `apexretail.com`) via POST `/api/system/tenants/domain`.
+    1. Log in as the Store Owner of `apex`.
+    2. Submit a custom domain (e.g., `apexretail.com`) via POST `/api/system/stores/domain`.
     3. Verify that `customDomainStatus` is marked as `PENDING`.
     4. Mock DNS/CNAME resolution on the local server or trigger the verification endpoint.
     5. Verify the domain status changes to `VERIFIED` and `customDomainVerifiedAt` is populated.
 
 ### 1.3 Subscription Gating
-*   **Goal**: Ensure features are locked according to the tenant's active subscription plan.
+*   **Goal**: Ensure features are locked according to the store's active subscription plan.
 *   **Steps**:
-    1. Onboard a tenant on a "Basic" plan that excludes "HRM Payroll".
-    2. Try to access `/api/admin/hrm/payroll/process` with this tenant's credentials. Verify the request is blocked by the `SubscriptionGuard` with a `403 Forbidden` (Feature Not Entitled).
-    3. Update the tenant's plan to "Enterprise" using the Super-Admin endpoint.
+    1. Onboard a store on a "Basic" plan that excludes "HRM Payroll".
+    2. Try to access `/api/admin/hrm/payroll/process` with this store's credentials. Verify the request is blocked by the `SubscriptionGuard` with a `403 Forbidden` (Feature Not Entitled).
+    3. Update the store's plan to "Enterprise" using the Super-Admin endpoint.
     4. Re-attempt the payroll access. Verify the request is now allowed.
     5. Set the subscription expiry date (`subscriptionEndsAt`) to a past timestamp. Verify all admin dashboard calls return a subscription expired block.
 
@@ -73,7 +73,7 @@ graph TD
 ### 2.1 Staff Invitation Flow
 *   **Goal**: Test invitation delivery, token expiration, and automated role assignment.
 *   **Steps**:
-    1. Log in as Tenant Owner. Navigate to Staff Settings and send an invite to `cashier@apex.com` with the role of `Cashier`.
+    1. Log in as Store Owner. Navigate to Staff Settings and send an invite to `cashier@apex.com` with the role of `Cashier`.
     2. Verify that an entry is added to `StaffInvitationEntity` with status `PENDING` and a valid token.
     3. Open the email sandbox, extract the invitation link, and navigate to the acceptance URL.
     4. Fill out the registration form. Submit.
@@ -92,7 +92,7 @@ graph TD
 *   **Goal**: Verify that direct permission overrides take precedence over role definitions.
 *   **Steps**:
     1. Ensure the `Cashier` role does *not* contain the `pos:override-price` permission.
-    2. As Tenant Owner, assign a direct override to the cashier user: set `permissionCode: "pos:override-price"` and `isGranted: true`.
+    2. As Store Owner, assign a direct override to the cashier user: set `permissionCode: "pos:override-price"` and `isGranted: true`.
     3. Log in as the cashier and verify that POS price changes are now allowed.
     4. Set the override `isGranted: false` and verify the action is immediately blocked again.
 
@@ -107,7 +107,7 @@ graph TD
     2. Create a physical branch (e.g., "Dhaka Central") and a physical warehouse (e.g., "Main Distribution Center").
     3. Link the warehouse to the branch.
     4. Create multiple warehouse bins (e.g., Zone: `A`, Bin Code: `A-01-01`).
-    5. Verify in the database that tables `branch`, `warehouse`, and `warehouse_bin` display records correctly mapped to your active `tenantId`.
+    5. Verify in the database that tables `branch`, `warehouse`, and `warehouse_bin` display records correctly mapped to your active `storeId`.
 
 ### 3.2 Chart of Accounts (COA) Initialization
 *   **Goal**: Ensure default financial accounts exist and are structured correctly.
@@ -293,7 +293,7 @@ graph TD
 
 ## Escalation & Bug Reporting
 If a manual test fails, document:
-1. **Tenant Subdomain & Context**: (e.g., `apex.localhost:3000`)
+1. **Store Subdomain & Context**: (e.g., `apex.localhost:3000`)
 2. **User Role Used**: (e.g., Scoped Cashier, Global Admin)
 3. **Payload / Steps Performed**
 4. **Error Logs**: Extract from NestJS console (`docker-compose logs server`) or audit logs.

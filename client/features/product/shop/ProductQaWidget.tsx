@@ -19,7 +19,7 @@ interface ProductQaWidgetProps {
 export default function ProductQaWidget({ productSlug, productName }: ProductQaWidgetProps) {
   const { settings } = useSettings();
   const { available, loading, messages, askQuestion, resetConversation } =
-    useProductQa(productSlug, settings?.tenantId);
+    useProductQa(productSlug, settings?.storeId);
   const [question, setQuestion] = useState("");
   const [suggestedFollowUps, setSuggestedFollowUps] = useState<string[]>([]);
 
@@ -30,7 +30,7 @@ export default function ProductQaWidget({ productSlug, productName }: ProductQaW
     return DEFAULT_PROMPTS;
   }, [suggestedFollowUps]);
 
-  if (!settings?.tenantId || available !== true) {
+  if (!settings?.storeId || available !== true) {
     return null;
   }
 

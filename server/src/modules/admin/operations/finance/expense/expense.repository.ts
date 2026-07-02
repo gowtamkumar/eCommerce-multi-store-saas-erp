@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -16,7 +16,7 @@ interface FindAllOptions {
 }
 
 @Injectable()
-export class ExpenseRepository extends BaseTenantRepository<ExpenseEntity> {
+export class ExpenseRepository extends BaseStoreRepository<ExpenseEntity> {
   constructor(
     @InjectRepository(ExpenseEntity)
     repo: Repository<ExpenseEntity>,
@@ -28,7 +28,7 @@ export class ExpenseRepository extends BaseTenantRepository<ExpenseEntity> {
     const expense = this.repo.create({
       ...dto,
       branchId: dto.branchId || ctx.branchId || null,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as ExpenseEntity)
     return this.repo.save(expense)
@@ -39,14 +39,14 @@ export class ExpenseRepository extends BaseTenantRepository<ExpenseEntity> {
    * Replaces the unbounded `find()` call to prevent memory exhaustion.
    */
   async findAllPaginated(
-    tenantId: string,
+    storeId: string,
     options: FindAllOptions = {},
   ): Promise<[ExpenseEntity[], number]> {
     const { page = 1, limit = 20, category, q, startDate, endDate, branchId } = options
 
     const qb = this.repo
       .createQueryBuilder('expense')
-      .where('expense.tenantId = :tenantId', { tenantId })
+      .where('expense.storeId = :storeId', { storeId })
       .orderBy('expense.expenseDate', 'DESC')
       .addOrderBy('expense.createdAt', 'DESC')
       .take(limit)
@@ -82,14 +82,14 @@ export class ExpenseRepository extends BaseTenantRepository<ExpenseEntity> {
    * NOT exposed via the public API.
    */
   async findAllRaw(
-    tenantId: string,
+    storeId: string,
     startDate?: Date,
     endDate?: Date,
     branchId?: string,
   ): Promise<ExpenseEntity[]> {
     const qb = this.repo
       .createQueryBuilder('expense')
-      .where('expense.tenantId = :tenantId', { tenantId })
+      .where('expense.storeId = :storeId', { storeId })
       .orderBy('expense.expenseDate', 'DESC')
 
     if (branchId) {
@@ -107,8 +107,8 @@ export class ExpenseRepository extends BaseTenantRepository<ExpenseEntity> {
     return qb.getMany()
   }
 
-  async findByIdAndTenant(id: string, tenantId: string): Promise<ExpenseEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findByIdAndStore(id: string, storeId: string): Promise<ExpenseEntity | null> {
+    return this.repo.findOne({ where: { id, storeId } })
   }
 
   async updateAndSave(expense: ExpenseEntity, dto: any): Promise<ExpenseEntity> {

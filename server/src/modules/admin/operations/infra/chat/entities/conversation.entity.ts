@@ -1,14 +1,14 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { ChatMessageEntity } from './chat-message.entity'
 
 @Entity('chat_conversations')
-@Index(['tenantId', 'visitorId'])
+@Index(['storeId', 'visitorId'])
 export class ConversationEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
-  tenantId: string | null
+  @Column({ type: 'uuid', name: 'store_id', nullable: true })
+  storeId: string | null
 
   @Column({ type: 'varchar', length: 255, name: 'visitor_id' })
   visitorId: string
@@ -32,9 +32,9 @@ export class ConversationEntity extends BaseEntity {
   @JoinColumn({ name: 'customer_id' })
   customer: UserEntity | null
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity | null
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity | null
 
   @OneToMany(() => ChatMessageEntity, (message) => message.conversation)
   messages: ChatMessageEntity[]

@@ -48,7 +48,7 @@ erDiagram
 - `adminComment` (Text, Nullable) -> Internal notes
 - `refundAmount` (Decimal) -> Calculated refund value
 - `items` (JSONB) -> Array of returned products: `[{ productId, variantId, quantity }]`
-- `tenantId` (UUID) -> Multi-tenant boundary
+- `storeId` (UUID) -> Multi-store boundary
 
 #### `OrderItemEntity` (`order_items` table)
 - `unitPrice` (Decimal) -> Original unit cost
@@ -66,7 +66,7 @@ The Return & Refund module follows a strict lifecycle state machine:
 
 ### Flow A: Creating a Return Request (`POST /api/v1/returns`)
 1. **Initiation**: The request is created either by a customer (via Storefront) or a cashier (via Admin Return Modal or POS Register).
-2. **Order Verification**: The backend validates that the original order exists and belongs to the active tenant.
+2. **Order Verification**: The backend validates that the original order exists and belongs to the active store.
 3. **Item Quantities Validation**: The backend checks each returned item against the original order items:
    - Validates that the product and variant exist in the original order.
    - Checks that the return quantity does not exceed the originally purchased quantity.

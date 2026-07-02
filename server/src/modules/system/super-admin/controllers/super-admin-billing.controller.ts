@@ -67,13 +67,13 @@ export class SuperAdminBillingController {
     const invoices = await this.superAdminService.getInvoicesForExport()
 
     const rows = [
-      ['Invoice #', 'Tenant', 'Plan', 'Amount', 'Currency', 'Status', 'Billing Cycle', 'Date'].join(
+      ['Invoice #', 'Store', 'Plan', 'Amount', 'Currency', 'Status', 'Billing Cycle', 'Date'].join(
         ',',
       ),
       ...invoices.map((inv) =>
         [
           inv.invoiceNumber,
-          `"${(inv.tenant?.storeName || '').replace(/"/g, '""')}"`,
+          `"${(inv.store?.storeName || '').replace(/"/g, '""')}"`,
           inv.subscriptionPlan?.name || '',
           inv.amount,
           inv.currency,

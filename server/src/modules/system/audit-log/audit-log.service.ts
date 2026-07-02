@@ -51,16 +51,16 @@ export class AuditLogService {
   // Permission-Specific Typed Audit Methods
   // ─────────────────────────────────────────────────────────────────
 
-  /** Fired when a tenant admin creates a new role */
+  /** Fired when a store admin creates a new role */
   async logRoleCreated(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     roleId: string,
     roleName: string,
     permissionSlugs: string[],
   ): Promise<void> {
-    await this.safeLog(tenantId, actorId, actorName, 'ROLE_CREATED', 'Role', roleId, null, {
+    await this.safeLog(storeId, actorId, actorName, 'ROLE_CREATED', 'Role', roleId, null, {
       name: roleName,
       permissions: permissionSlugs,
     })
@@ -68,26 +68,26 @@ export class AuditLogService {
 
   /** Fired when a role's name, description, or permission set changes */
   async logRoleModified(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     roleId: string,
     before: Record<string, any>,
     after: Record<string, any>,
   ): Promise<void> {
-    await this.safeLog(tenantId, actorId, actorName, 'ROLE_MODIFIED', 'Role', roleId, before, after)
+    await this.safeLog(storeId, actorId, actorName, 'ROLE_MODIFIED', 'Role', roleId, before, after)
   }
 
   /** Fired when a role is deleted */
   async logRoleDeleted(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     roleId: string,
     roleName: string,
   ): Promise<void> {
     await this.safeLog(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       'ROLE_DELETED',
@@ -100,7 +100,7 @@ export class AuditLogService {
 
   /** Fired when a role is assigned to a user */
   async logUserRoleAssigned(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     targetUserId: string,
@@ -108,7 +108,7 @@ export class AuditLogService {
     scope: { scopeType: string; scopeId?: string | null; expiresAt?: Date | null },
   ): Promise<void> {
     await this.safeLog(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       'USER_ROLE_ASSIGNED',
@@ -121,7 +121,7 @@ export class AuditLogService {
 
   /** Fired when a role is revoked from a user */
   async logUserRoleRevoked(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     targetUserId: string,
@@ -129,7 +129,7 @@ export class AuditLogService {
     reason?: string,
   ): Promise<void> {
     await this.safeLog(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       'USER_ROLE_REVOKED',
@@ -142,7 +142,7 @@ export class AuditLogService {
 
   /** Fired when an explicit allow/deny override is added to a user */
   async logPermissionOverrideAdded(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     targetUserId: string,
@@ -152,7 +152,7 @@ export class AuditLogService {
     expiresAt: Date | null,
   ): Promise<void> {
     await this.safeLog(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       'PERMISSION_OVERRIDE_ADDED',
@@ -165,7 +165,7 @@ export class AuditLogService {
 
   /** Fired when an override is removed */
   async logPermissionOverrideRemoved(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     overrideId: string,
@@ -173,7 +173,7 @@ export class AuditLogService {
     permissionSlug: string,
   ): Promise<void> {
     await this.safeLog(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       'PERMISSION_OVERRIDE_REMOVED',
@@ -189,13 +189,13 @@ export class AuditLogService {
    * to detect suspicious access attempts or misconfigured roles.
    */
   async logPermissionCheckFailed(
-    tenantId: string,
+    storeId: string,
     userId: string,
     permissionSlug: string,
     reason?: string,
   ): Promise<void> {
     await this.safeLog(
-      tenantId,
+      storeId,
       userId,
       null,
       'PERMISSION_CHECK_FAILED',
@@ -211,7 +211,7 @@ export class AuditLogService {
   // ─────────────────────────────────────────────────────────────────
 
   /**
-   * Paginated list with optional filters — tenant-scoped always.
+   * Paginated list with optional filters — store-scoped always.
    */
   async findAllAuditLogs(
     ctx: RequestContextDto,
@@ -219,20 +219,20 @@ export class AuditLogService {
   ): Promise<{ data: AuditLogEntity[]; meta: any }> {
     this.logger.log(`${this.findAllAuditLogs.name} Service Called`)
 
-    // Scoping check: If super_admin or admin role, allow querying by any tenantId (or all if omitted).
-    // Otherwise, strictly force tenantId to be the user's tenantId.
+    // Scoping check: If super_admin or admin role, allow querying by any storeId (or all if omitted).
+    // Otherwise, strictly force storeId to be the user's storeId.
     const userRole = ctx.user?.role || ''
     const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
 
-    // Non-global admins are strictly confined to their own JWT tenant. We never
-    // fall back to a header-derived (or null) tenant here, otherwise omitting
-    // the `x-tenant-id` header would expose every tenant's logs.
-    const targetTenantId: string | null = isGlobalAdmin
-      ? (query.tenantId ?? null)
-      : this.resolveOwnTenant(ctx)
+    // Non-global admins are strictly confined to their own JWT store. We never
+    // fall back to a header-derived (or null) store here, otherwise omitting
+    // the `x-store-id` header would expose every store's logs.
+    const targetStoreId: string | null = isGlobalAdmin
+      ? (query.storeId ?? null)
+      : this.resolveOwnStore(ctx)
 
     const { page = 1, limit = 20, userId, action, entity, entityId, from, to } = query
-    const [data, total] = await this.auditLogRepository.findAllWithFilters(targetTenantId, {
+    const [data, total] = await this.auditLogRepository.findAllWithFilters(targetStoreId, {
       page,
       limit,
       userId,
@@ -255,32 +255,32 @@ export class AuditLogService {
   }
 
   /**
-   * Single audit log entry — tenant-scoped.
+   * Single audit log entry — store-scoped.
    */
   async findOneAuditLog(id: string, ctx: RequestContextDto): Promise<AuditLogEntity | null> {
     this.logger.log(`${this.findOneAuditLog.name} Service Called`)
     const userRole = ctx.user?.role || ''
     const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
 
-    const targetTenantId = isGlobalAdmin ? null : this.resolveOwnTenant(ctx)
-    return await this.auditLogRepository.findById(id, targetTenantId)
+    const targetStoreId = isGlobalAdmin ? null : this.resolveOwnStore(ctx)
+    return await this.auditLogRepository.findById(id, targetStoreId)
   }
 
   /**
-   * Resolves the authenticated user's own tenant from the JWT-backed context,
-   * rejecting the request when no tenant is bound. Prevents tenant admins from
-   * widening scope by omitting the tenant header.
+   * Resolves the authenticated user's own store from the JWT-backed context,
+   * rejecting the request when no store is bound. Prevents store admins from
+   * widening scope by omitting the store header.
    */
-  private resolveOwnTenant(ctx: RequestContextDto): string {
-    const tenantId = ctx.user?.tenantId || ctx.tenantId
-    if (!tenantId) {
-      throw new ForbiddenException('Tenant context is required.')
+  private resolveOwnStore(ctx: RequestContextDto): string {
+    const storeId = ctx.user?.storeId || ctx.storeId
+    if (!storeId) {
+      throw new ForbiddenException('Store context is required.')
     }
-    return tenantId
+    return storeId
   }
 
   /**
-   * Delete all logs older than N days for a tenant (data-retention helper).
+   * Delete all logs older than N days for a store (data-retention helper).
    */
   async deleteOlderThanAuditLogs(
     ctx: RequestContextDto,
@@ -289,13 +289,13 @@ export class AuditLogService {
     this.logger.log(`${this.deleteOlderThanAuditLogs.name} Service Called`)
     const userRole = ctx.user?.role || ''
     const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
-    const tenantId = isGlobalAdmin ? ctx.tenantId : this.resolveOwnTenant(ctx)
+    const storeId = isGlobalAdmin ? ctx.storeId : this.resolveOwnStore(ctx)
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
 
-    await this.auditLogRepository.deleteOlderThan(tenantId, cutoff)
+    await this.auditLogRepository.deleteOlderThan(storeId, cutoff)
 
-    return { message: `Audit logs older than ${days} days deleted for tenant ${tenantId}` }
+    return { message: `Audit logs older than ${days} days deleted for store ${storeId}` }
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -303,7 +303,7 @@ export class AuditLogService {
   // ─────────────────────────────────────────────────────────────────
 
   private async safeLog(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string | null,
     action: string,
@@ -314,7 +314,7 @@ export class AuditLogService {
   ): Promise<void> {
     try {
       await this.auditLogRepository.createAndSave(
-        { tenantId } as RequestContextDto,
+        { storeId } as RequestContextDto,
         {
           userId: actorId,
           actorId,

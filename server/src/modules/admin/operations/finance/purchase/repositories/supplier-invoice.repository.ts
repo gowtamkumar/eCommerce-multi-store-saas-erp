@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { SupplierInvoiceEntity, SupplierInvoiceStatus } from '../entities/suppli
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class SupplierInvoiceRepository extends BaseTenantRepository<SupplierInvoiceEntity> {
+export class SupplierInvoiceRepository extends BaseStoreRepository<SupplierInvoiceEntity> {
   constructor(
     @InjectRepository(SupplierInvoiceEntity)
     repo: Repository<SupplierInvoiceEntity>,
@@ -26,14 +26,14 @@ export class SupplierInvoiceRepository extends BaseTenantRepository<SupplierInvo
     const repo = this.getRepo(manager)
     const invoice = repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       createdById: ctx.userId,
     } as SupplierInvoiceEntity)
     return repo.save(invoice)
   }
 
-  async findAllByTenant(
-    tenantId: string,
+  async findAllByStore(
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -44,7 +44,7 @@ export class SupplierInvoiceRepository extends BaseTenantRepository<SupplierInvo
       .leftJoinAndSelect('si.supplier', 'supplier')
       .leftJoinAndSelect('si.purchaseOrder', 'purchaseOrder')
       .leftJoinAndSelect('si.createdBy', 'createdBy')
-      .where('si.tenantId = :tenantId', { tenantId })
+      .where('si.storeId = :storeId', { storeId })
       .orderBy('si.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -64,12 +64,12 @@ export class SupplierInvoiceRepository extends BaseTenantRepository<SupplierInvo
 
   async findByIdWithRelations(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<SupplierInvoiceEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         supplier: true,
         purchaseOrder: true,
@@ -83,12 +83,12 @@ export class SupplierInvoiceRepository extends BaseTenantRepository<SupplierInvo
 
   async findById(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<SupplierInvoiceEntity | null> {
     const repo = this.getRepo(manager)
     return await repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 

@@ -7,10 +7,10 @@ import { SubscriberService } from './subscriber.service'
 import { SubscriberEntity } from './entities/subscriber.entity'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SubscriberEntity]), CacheModule, TenantModule, MailModule],
+  imports: [TypeOrmModule.forFeature([SubscriberEntity]), CacheModule, StoreModule, MailModule],
   controllers: [SubscriberController],
   providers: [SubscriberService, SubscriberRepository],
   exports: [SubscriberService, SubscriberRepository],

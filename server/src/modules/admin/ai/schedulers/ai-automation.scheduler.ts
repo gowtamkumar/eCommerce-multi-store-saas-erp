@@ -4,15 +4,15 @@ import {
 } from '@/common/constants/abandoned-cart.constants'
 import { CartAbandonedEvent } from '@/common/events/ai-domain.events'
 import { CartEntity } from '@/modules/store/cart/entities/cart.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { AiJobType } from '@/common/enums/ai-job-type.enum'
 import { AiJobService } from '../services/ai-job.service'
-import { isTenantAiAutomationReady } from '@/common/utils/tenant-ai-automation.util'
-import { normalizeTenantAiConfig } from '@/modules/system/tenant/utils/tenant-ai.util'
+import { isStoreAiAutomationReady } from '@/common/utils/store-ai-automation.util'
+import { normalizeStoreAiConfig } from '@/modules/system/store/utils/store-ai.util'
 
 @Injectable()
 export class AiAutomationScheduler {
@@ -21,8 +21,8 @@ export class AiAutomationScheduler {
   constructor(
     @InjectRepository(CartEntity)
     private readonly cartRepo: Repository<CartEntity>,
-    @InjectRepository(TenantEntity)
-    private readonly tenantRepo: Repository<TenantEntity>,
+    @InjectRepository(StoreEntity)
+    private readonly storeRepo: Repository<StoreEntity>,
     private readonly aiJobService: AiJobService,
   ) {}
 
@@ -41,20 +41,20 @@ export class AiAutomationScheduler {
       .getMany()
 
     for (const cart of carts) {
-      if (!cart.items?.length || !cart.tenantId) {
+      if (!cart.items?.length || !cart.storeId) {
         continue
       }
 
       try {
-        const tenant = await this.tenantRepo.findOne({ where: { id: cart.tenantId } })
-        const config = normalizeTenantAiConfig(tenant?.aiConfig)
+        const store = await this.storeRepo.findOne({ where: { id: cart.storeId } })
+        const config = normalizeStoreAiConfig(store?.aiConfig)
 
-        if (!isTenantAiAutomationReady(config) || !config.automation.abandonedCartDraft) {
+        if (!isStoreAiAutomationReady(config) || !config.automation.abandonedCartDraft) {
           continue
         }
 
         const duplicate = await this.aiJobService.hasRecentCartAbandonedAutomation(
-          cart.tenantId,
+          cart.storeId,
           cart.id,
           24,
         )
@@ -63,7 +63,7 @@ export class AiAutomationScheduler {
         }
 
         const event = this.toCartAbandonedEvent(cart)
-        await this.aiJobService.enqueueCartAbandonedAutomation(cart.tenantId, event)
+        await this.aiJobService.enqueueCartAbandonedAutomation(cart.storeId, event)
       } catch (error) {
         this.logger.warn(`Abandoned cart scan failed for cart ${cart.id}`, error)
       }
@@ -72,17 +72,17 @@ export class AiAutomationScheduler {
 
   @Cron('0 3 * * 0')
   async runWeeklyDemandForecasts(): Promise<void> {
-    const tenants = await this.tenantRepo.find({ select: { id: true, aiConfig: true } })
+    const stores = await this.storeRepo.find({ select: { id: true, aiConfig: true } })
 
-    for (const tenant of tenants) {
-      const config = normalizeTenantAiConfig(tenant.aiConfig)
-      if (!isTenantAiAutomationReady(config) || !config.automation.demandForecastEnabled) {
+    for (const store of stores) {
+      const config = normalizeStoreAiConfig(store.aiConfig)
+      if (!isStoreAiAutomationReady(config) || !config.automation.demandForecastEnabled) {
         continue
       }
 
       try {
         const duplicate = await this.aiJobService.hasRecentPayloadJob(
-          tenant.id,
+          store.id,
           AiJobType.DEMAND_FORECAST,
           'scheduled',
           'weekly',
@@ -92,14 +92,14 @@ export class AiAutomationScheduler {
           continue
         }
 
-        await this.aiJobService.enqueueDemandForecast(tenant.id)
+        await this.aiJobService.enqueueDemandForecast(store.id)
       } catch (error) {
-        this.logger.warn(`Demand forecast scheduling failed for tenant ${tenant.id}`, error)
+        this.logger.warn(`Demand forecast scheduling failed for store ${store.id}`, error)
       }
     }
   }
 
-  private toCartAbandonedEvent(cart: CartEntity): Omit<CartAbandonedEvent, 'tenantId'> {
+  private toCartAbandonedEvent(cart: CartEntity): Omit<CartAbandonedEvent, 'storeId'> {
     let totalAmount = 0
     let itemCount = 0
     const itemLines: string[] = []

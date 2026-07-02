@@ -26,14 +26,14 @@ export class PathaoService {
    * Leverages caching to minimize redundant setting lookups and token issuance.
    */
   private async getAuthenticatedClient(ctx: RequestContextDto) {
-    this.logger.log(`${this.getAuthenticatedClient.name} Called for tenant: ${ctx.tenantId}`)
-    const tenantId = ctx.tenantId
+    this.logger.log(`${this.getAuthenticatedClient.name} Called for store: ${ctx.storeId}`)
+    const storeId = ctx.storeId
 
     // 1. Fetch & Cache Credentials
     const creds = await this.cacheService.rememberCache(
       `pathao:creds`,
       async () => {
-        const settings = await this.settingsService.findByTenantSettings(ctx)
+        const settings = await this.settingsService.findByStoreSettings(ctx)
         const courier = settings?.pathaoCourier
 
         if (
@@ -58,7 +58,7 @@ export class PathaoService {
         }
       },
       600,
-      tenantId,
+      storeId,
     )
 
     // 2. Fetch & Cache Access Token
@@ -96,7 +96,7 @@ export class PathaoService {
         }
       },
       3600,
-      tenantId,
+      storeId,
     )
 
     return { baseURL: creds.baseURL, accessToken, storeId: creds.pathaoStoreId }
@@ -109,7 +109,7 @@ export class PathaoService {
     this.logger.log(`${this.createPathaoOrder.name} Service Called`)
     const { orderId } = createOrderDto
     const client = await this.getAuthenticatedClient(ctx)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const order: any = await this.orderService.findOneForCourier(orderId, ctx)
 
@@ -177,7 +177,7 @@ export class PathaoService {
   async getCities(ctx: RequestContextDto) {
     this.logger.log(`${this.getCities.name} Service Called`)
     const client = await this.getAuthenticatedClient(ctx)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `pathao:cities`
 
     return this.cacheService.rememberCache(
@@ -204,14 +204,14 @@ export class PathaoService {
         }
       },
       86400, // 24 hours
-      tenantId,
+      storeId,
     )
   }
 
   async getZones(cityId: number, ctx: RequestContextDto) {
     this.logger.log(`${this.getZones.name} Service Called`)
     const client = await this.getAuthenticatedClient(ctx)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `pathao:zones:${cityId}`
 
     return this.cacheService.rememberCache(
@@ -241,14 +241,14 @@ export class PathaoService {
         }
       },
       86400,
-      tenantId,
+      storeId,
     )
   }
 
   async getAreas(zoneId: number, ctx: RequestContextDto) {
     this.logger.log(`${this.getAreas.name} Service Called`)
     const client = await this.getAuthenticatedClient(ctx)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `pathao:areas:${zoneId}`
 
     return this.cacheService.rememberCache(
@@ -278,7 +278,7 @@ export class PathaoService {
         }
       },
       86400,
-      tenantId,
+      storeId,
     )
   }
 

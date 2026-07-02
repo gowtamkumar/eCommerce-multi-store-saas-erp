@@ -5,7 +5,7 @@ import ProductPageBanner from "@/features/product/shop/ProductPageBanner";
 import ProductsClientWrapper from "@/features/product/shop/ProductsClientWrapper";
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from "@/services/getSettings";
-import { getTenantId } from "@/services/tenant";
+import { getStoreId } from "@/services/store";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -87,9 +87,9 @@ export default async function Products({
 }) {
     const params = await searchParams;
     const categoryId = params.categoryId as string | undefined;
-    const tenantId = await getTenantId();
+    const storeId = await getStoreId();
 
-    if (!tenantId) {
+    if (!storeId) {
         return (
             <main className="min-h-screen flex items-center justify-center p-4">
                 <div className="text-center">

@@ -3,14 +3,14 @@ import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { DataSource } from 'typeorm'
 import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
 
 describe('Onboarding Module (e2e)', () => {
   let app: INestApplication
   let dataSource: DataSource
-  let createdTenantId: string | null = null
+  let createdStoreId: string | null = null
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -24,9 +24,9 @@ describe('Onboarding Module (e2e)', () => {
   })
 
   afterAll(async () => {
-    if (createdTenantId) {
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      await tenantRepo.delete(createdTenantId)
+    if (createdStoreId) {
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      await storeRepo.delete(createdStoreId)
     }
     if (app) {
       await app.close()
@@ -34,7 +34,7 @@ describe('Onboarding Module (e2e)', () => {
   })
 
   describe('POST /onboard', () => {
-    it('should successfully onboard a new tenant with localized configuration settings', async () => {
+    it('should successfully onboard a new store with localized configuration settings', async () => {
       const subdomain = `e2e-onboard-${Date.now()}`
       const payload = {
         storeName: 'Global Onboarding E2E Store',
@@ -56,16 +56,16 @@ describe('Onboarding Module (e2e)', () => {
       expect(response.body.success).toBe(true)
       expect(response.body.subdomain).toBe(subdomain)
 
-      // Query DB to verify tenant records
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      const tenant = await tenantRepo.findOne({ where: { subdomain } })
-      expect(tenant).toBeDefined()
-      expect(tenant.id).toBeDefined()
-      createdTenantId = tenant.id
+      // Query DB to verify store records
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      const store = await storeRepo.findOne({ where: { subdomain } })
+      expect(store).toBeDefined()
+      expect(store.id).toBeDefined()
+      createdStoreId = store.id
 
       // Verify site settings are correctly localized
       const settingsRepo = dataSource.getRepository(SiteSettingsEntity)
-      const settings = await settingsRepo.findOne({ where: { tenantId: tenant.id } })
+      const settings = await settingsRepo.findOne({ where: { storeId: store.id } })
       expect(settings).toBeDefined()
       expect(settings.currency).toBe('USD')
       expect(settings.currencySymbol).toBe('$')
@@ -77,7 +77,7 @@ describe('Onboarding Module (e2e)', () => {
 
       // Verify Chart of Accounts are seeded
       const accountRepo = dataSource.getRepository(AccountEntity)
-      const accounts = await accountRepo.find({ where: { tenantId: tenant.id } })
+      const accounts = await accountRepo.find({ where: { storeId: store.id } })
       expect(accounts.length).toBeGreaterThan(0)
     })
   })

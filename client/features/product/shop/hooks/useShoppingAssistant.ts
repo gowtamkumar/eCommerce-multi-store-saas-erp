@@ -18,25 +18,25 @@ export interface ShoppingAssistantReply {
   suggestLiveChatHandoff: boolean;
 }
 
-export function useShoppingAssistant(tenantId?: string, brandName?: string) {
+export function useShoppingAssistant(storeId?: string, brandName?: string) {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ShoppingAssistantMessage[]>([]);
 
   const checkAvailability = useCallback(async () => {
-    if (!tenantId) {
+    if (!storeId) {
       setAvailable(null);
       return;
     }
 
     try {
-      const res = await fetchAPI("/products/storefront-ai/status", { tenantId });
+      const res = await fetchAPI("/products/storefront-ai/status", { storeId });
       setAvailable(!!res.data?.shoppingAssistantAvailable);
     } catch (error) {
       console.error("Shopping assistant status check failed:", error);
       setAvailable(false);
     }
-  }, [tenantId]);
+  }, [storeId]);
 
   useEffect(() => {
     void checkAvailability();
@@ -44,13 +44,13 @@ export function useShoppingAssistant(tenantId?: string, brandName?: string) {
 
   const sendMessage = async (message: string): Promise<ShoppingAssistantReply | null> => {
     const trimmed = message.trim();
-    if (!trimmed || !tenantId) return null;
+    if (!trimmed || !storeId) return null;
 
     setLoading(true);
     try {
       const res = await fetchAPI("/products/storefront-ai/chat", {
         method: "POST",
-        tenantId,
+        storeId,
         body: JSON.stringify({
           message: trimmed,
           brandName: brandName || undefined,

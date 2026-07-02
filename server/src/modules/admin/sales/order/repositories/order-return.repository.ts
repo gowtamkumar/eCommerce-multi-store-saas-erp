@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -10,7 +10,7 @@ import { OrderReturnEntity } from '../entities/order-return.entity'
 import { ReturnType } from '@/common/enums/refund-method.enum'
 
 @Injectable()
-export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntity> {
+export class OrderReturnRepository extends BaseStoreRepository<OrderReturnEntity> {
   constructor(
     @InjectRepository(OrderReturnEntity)
     repo: Repository<OrderReturnEntity>,
@@ -27,7 +27,7 @@ export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntit
     const returnRequest = repo.create({
       ...dto,
       userId: ctx.userId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       status: ReturnStatus.PENDING,
     } as any) as unknown as OrderReturnEntity
     return await (repo.save(returnRequest) as Promise<OrderReturnEntity>)
@@ -38,7 +38,7 @@ export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntit
    * Optimized to only fetch necessary fields for the table view.
    */
   async findPaginated(
-    tenantId: string,
+    storeId: string,
     filterDto: FilterReturnDto,
   ): Promise<{ data: OrderReturnEntity[]; total: number }> {
     const { page, limit, search, status, orderId } = filterDto
@@ -50,7 +50,7 @@ export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntit
       .leftJoin('ret.user', 'user')
       .addSelect(['order.id', 'order.customerName', 'order.customerEmail', 'order.customerPhone'])
       .addSelect(['user.email'])
-      .where('ret.tenantId = :tenantId', { tenantId })
+      .where('ret.storeId = :storeId', { storeId })
 
     if (status) {
       queryBuilder.andWhere('ret.status = :status', { status })
@@ -82,9 +82,9 @@ export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntit
     return { data, total }
   }
 
-  async findByUserWithRelations(userId: string, tenantId: string): Promise<OrderReturnEntity[]> {
+  async findByUserWithRelations(userId: string, storeId: string): Promise<OrderReturnEntity[]> {
     return await this.repo.find({
-      where: { userId, tenantId },
+      where: { userId, storeId },
       order: { createdAt: 'DESC' },
       relations: {
         order: true,
@@ -92,9 +92,9 @@ export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntit
     })
   }
 
-  async findByIdWithRelations(id: string, tenantId: string): Promise<OrderReturnEntity | null> {
+  async findByIdWithRelations(id: string, storeId: string): Promise<OrderReturnEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         order: {
           items: {
@@ -107,9 +107,9 @@ export class OrderReturnRepository extends BaseTenantRepository<OrderReturnEntit
     })
   }
 
-  async findById(id: string, tenantId: string): Promise<OrderReturnEntity | null> {
+  async findById(id: string, storeId: string): Promise<OrderReturnEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 

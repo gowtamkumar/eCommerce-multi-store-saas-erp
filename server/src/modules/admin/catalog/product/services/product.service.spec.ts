@@ -5,13 +5,13 @@ import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/services/promotion.service'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreService } from '@/modules/system/store/store.service'
 import { BrandRepository } from '../../brand/brand.repository'
 import { ProductAttributeRepository } from '../repositories/attribute.repository'
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
-import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
+import { SuperAdminCrossStoreRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-store.repository'
 import { ProductService } from './product.service'
 
 describe('ProductService', () => {
@@ -54,7 +54,7 @@ describe('ProductService', () => {
           useValue: {},
         },
         {
-          provide: TenantService,
+          provide: StoreService,
           useValue: {},
         },
         {
@@ -74,7 +74,7 @@ describe('ProductService', () => {
           },
         },
         {
-          provide: SuperAdminCrossTenantRepository,
+          provide: SuperAdminCrossStoreRepository,
           useValue: {},
         },
         {

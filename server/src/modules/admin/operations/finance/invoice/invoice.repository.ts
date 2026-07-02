@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -7,7 +7,7 @@ import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
+export class InvoiceRepository extends BaseStoreRepository<InvoiceEntity> {
   constructor(
     @InjectRepository(InvoiceEntity)
     repo: Repository<InvoiceEntity>,
@@ -15,8 +15,8 @@ export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
     super(InvoiceEntity, repo)
 }
 
-  async checkInvoiceNumberExists(invoiceNumber: string, tenantId: string): Promise<boolean> {
-    const exists = await this.repo.findOne({ where: { invoiceNumber, tenantId } })
+  async checkInvoiceNumberExists(invoiceNumber: string, storeId: string): Promise<boolean> {
+    const exists = await this.repo.findOne({ where: { invoiceNumber, storeId } })
     return !!exists
   }
 
@@ -26,7 +26,7 @@ export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
   ): Promise<InvoiceEntity> {
     const invoice = this.repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as InvoiceEntity)
     return this.repo.save(invoice)
@@ -37,7 +37,7 @@ export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
    * Optimizes by selecting only necessary fields and reducing join depth.
    */
   async findAllWithRelations(
-    tenantId: string,
+    storeId: string,
     page: number = 1,
     limit: number = 20,
     search?: string,
@@ -47,7 +47,7 @@ export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
       .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.order', 'order')
       .leftJoinAndSelect('invoice.user', 'user')
-      .where('invoice.tenantId = :tenantId', { tenantId })
+      .where('invoice.storeId = :storeId', { storeId })
       .orderBy('invoice.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -66,9 +66,9 @@ export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
     return qb.getManyAndCount()
   }
 
-  async findByIdWithRelations(id: string, tenantId: string): Promise<InvoiceEntity | null> {
+  async findByIdWithRelations(id: string, storeId: string): Promise<InvoiceEntity | null> {
     return this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         order: {
           items: {
@@ -80,8 +80,8 @@ export class InvoiceRepository extends BaseTenantRepository<InvoiceEntity> {
     })
   }
 
-  async findByOrderId(orderId: string, tenantId: string): Promise<InvoiceEntity | null> {
-    return this.repo.findOne({ where: { orderId, tenantId } })
+  async findByOrderId(orderId: string, storeId: string): Promise<InvoiceEntity | null> {
+    return this.repo.findOne({ where: { orderId, storeId } })
   }
 
   async updateAndSave(

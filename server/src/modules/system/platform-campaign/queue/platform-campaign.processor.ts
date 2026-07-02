@@ -65,7 +65,7 @@ export class PlatformCampaignProcessor extends WorkerHost {
     this.logger.log(`Starting platform campaign: ${campaign.name} (${campaignId})`)
 
     const audience = await this.audienceService.getAudience({
-      targetTenants: campaign.targetTenants,
+      targetStores: campaign.targetStores,
       targetSubscribers: campaign.targetSubscribers,
       targetUsers: campaign.targetUsers,
       channel: campaign.type,
@@ -176,7 +176,7 @@ export class PlatformCampaignProcessor extends WorkerHost {
           to: recipient.email,
           subject: message.subject,
           html,
-          tenantId: '', // Send from platform SMTP gateway
+          storeId: '', // Send from platform SMTP gateway
         })
         success = true
       } else if (campaign.type === CampaignType.SMS && recipient.phone) {

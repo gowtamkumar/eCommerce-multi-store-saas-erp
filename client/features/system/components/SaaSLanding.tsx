@@ -61,7 +61,7 @@ export default function SaaSLanding() {
 
 
   const features = settings?.features || [
-    { icon: 'Globe', title: 'Multi-Tenant', description: 'Run separate stores for different brands or regions with isolated data.' },
+    { icon: 'Globe', title: 'Multi-Store', description: 'Run separate stores for different brands or regions with isolated data.' },
     { icon: 'Zap', title: 'Instant Deployment', description: 'New stores are live in seconds with their own subdomain automatically.' },
     { icon: 'Shield', title: 'Secure Payments', description: 'Pre-integrated with SSLCommerz and more for secure transactions.' },
     { icon: 'BarChart3', title: 'Global Analytics', description: 'Monitor sales and customer behavior across all your stores.' },

@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { PayrollBatchStatus } from '@/common/enums/hrm/hrm-enums'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,7 +6,7 @@ import { Not, Repository } from 'typeorm'
 import { PayrollBatchEntity, PayrollSlipEntity } from '../entities/payroll.entity'
 
 @Injectable()
-export class HrmPayrollRepository extends BaseTenantRepository<PayrollBatchEntity> {
+export class HrmPayrollRepository extends BaseStoreRepository<PayrollBatchEntity> {
   constructor(
     @InjectRepository(PayrollBatchEntity)
     public readonly payrollBatchRepo: Repository<PayrollBatchEntity>,
@@ -17,36 +17,36 @@ export class HrmPayrollRepository extends BaseTenantRepository<PayrollBatchEntit
   }
 
   async findActivePayrollBatchForPeriod(
-    tenantId: string,
+    storeId: string,
     period: string,
   ): Promise<PayrollBatchEntity | null> {
     return this.payrollBatchRepo.findOne({
       where: {
-        tenantId,
+        storeId,
         period,
         status: Not(PayrollBatchStatus.CANCELLED),
       },
     })
   }
 
-  async findAllPayrollBatches(tenantId: string): Promise<PayrollBatchEntity[]> {
+  async findAllPayrollBatches(storeId: string): Promise<PayrollBatchEntity[]> {
     return this.payrollBatchRepo.find({
-      where: { tenantId },
+      where: { storeId },
       order: { createdAt: 'DESC' },
     })
   }
 
-  async findPayrollBatchById(id: string, tenantId: string): Promise<PayrollBatchEntity | null> {
-    return this.payrollBatchRepo.findOne({ where: { id, tenantId } })
+  async findPayrollBatchById(id: string, storeId: string): Promise<PayrollBatchEntity | null> {
+    return this.payrollBatchRepo.findOne({ where: { id, storeId } })
   }
 
   async updatePayrollBatch(id: string, data: Partial<PayrollBatchEntity>): Promise<void> {
     await this.payrollBatchRepo.update(id, data)
   }
 
-  async findPayrollSlipsByBatch(batchId: string, tenantId: string): Promise<PayrollSlipEntity[]> {
+  async findPayrollSlipsByBatch(batchId: string, storeId: string): Promise<PayrollSlipEntity[]> {
     return this.payrollSlipRepo.find({
-      where: { batchId, tenantId },
+      where: { batchId, storeId },
       relations: {
         employee: {
           user: true,

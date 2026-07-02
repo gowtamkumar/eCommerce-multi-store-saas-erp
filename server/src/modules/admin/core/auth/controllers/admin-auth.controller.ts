@@ -45,7 +45,7 @@ export class AdminAuthController {
 
       const authPayload = await this.authService.login(
         loginCredentialDto,
-        ctx.tenantId,
+        ctx.storeId,
         ipStr,
         userAgent,
       )
@@ -94,11 +94,11 @@ export class AdminAuthController {
       let features: string[] = []
       if (user.role === UserRole.SUPER_ADMIN) {
         features = ['*']
-      } else if (user.tenantId) {
-        const tenant = await this.authService
+      } else if (user.storeId) {
+        const store = await this.authService
           .getUserForImpersonation(user.id)
-          .then((u) => u?.tenant)
-        features = tenant?.subscriptionPlan?.features || []
+          .then((u) => u?.store)
+        features = store?.subscriptionPlan?.features || []
       }
 
       // 4. Generate user tokens

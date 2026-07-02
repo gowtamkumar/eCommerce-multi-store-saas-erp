@@ -38,7 +38,7 @@ export class UserResponseDto {
   status: UserStatus
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   @IsDate()

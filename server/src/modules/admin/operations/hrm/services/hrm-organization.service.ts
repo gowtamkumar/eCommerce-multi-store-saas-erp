@@ -20,8 +20,8 @@ export class HrmOrganizationService {
 
   // --- Department CRUD ---
   async createDepartment(data: CreateDepartmentDto, ctx: RequestContextDto) {
-    this.logger.log(`Creating department "${data.name}" for tenant ${ctx.tenantId}`)
-    const res = await this.hrmRepo.createDepartment({ ...data, tenantId: ctx.tenantId })
+    this.logger.log(`Creating department "${data.name}" for store ${ctx.storeId}`)
+    const res = await this.hrmRepo.createDepartment({ ...data, storeId: ctx.storeId })
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
       entity: 'Department',
@@ -32,15 +32,15 @@ export class HrmOrganizationService {
   }
 
   async findAllDepartments(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllDepartments(ctx.tenantId)
+    return this.hrmRepo.findAllDepartments(ctx.storeId)
   }
 
   async updateDepartment(id: string, data: UpdateDepartmentDto, ctx: RequestContextDto) {
-    this.logger.log(`Updating department ${id} for tenant ${ctx.tenantId}`)
-    const old = await this.hrmRepo.findDepartmentById(id, ctx.tenantId)
+    this.logger.log(`Updating department ${id} for store ${ctx.storeId}`)
+    const old = await this.hrmRepo.findDepartmentById(id, ctx.storeId)
     if (!old) throw new NotFoundException('Department not found')
     await this.hrmRepo.updateDepartment(id, data)
-    const updated = await this.hrmRepo.findDepartmentById(id, ctx.tenantId)
+    const updated = await this.hrmRepo.findDepartmentById(id, ctx.storeId)
     await this.auditLogService.log(ctx, {
       action: 'UPDATE',
       entity: 'Department',
@@ -52,8 +52,8 @@ export class HrmOrganizationService {
   }
 
   async deleteDepartment(id: string, ctx: RequestContextDto) {
-    this.logger.log(`Deleting department ${id} for tenant ${ctx.tenantId}`)
-    const dept = await this.hrmRepo.findDepartmentById(id, ctx.tenantId)
+    this.logger.log(`Deleting department ${id} for store ${ctx.storeId}`)
+    const dept = await this.hrmRepo.findDepartmentById(id, ctx.storeId)
     if (!dept) throw new NotFoundException('Department not found')
     await this.hrmRepo.deleteDepartment(id)
     await this.auditLogService.log(ctx, {
@@ -67,8 +67,8 @@ export class HrmOrganizationService {
 
   // --- Designation CRUD ---
   async createDesignation(data: CreateDesignationDto, ctx: RequestContextDto) {
-    this.logger.log(`Creating designation "${data.name}" for tenant ${ctx.tenantId}`)
-    const res = await this.hrmRepo.createDesignation({ ...data, tenantId: ctx.tenantId })
+    this.logger.log(`Creating designation "${data.name}" for store ${ctx.storeId}`)
+    const res = await this.hrmRepo.createDesignation({ ...data, storeId: ctx.storeId })
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
       entity: 'Designation',
@@ -79,15 +79,15 @@ export class HrmOrganizationService {
   }
 
   async findAllDesignations(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllDesignations(ctx.tenantId)
+    return this.hrmRepo.findAllDesignations(ctx.storeId)
   }
 
   async updateDesignation(id: string, data: UpdateDesignationDto, ctx: RequestContextDto) {
-    this.logger.log(`Updating designation ${id} for tenant ${ctx.tenantId}`)
-    const old = await this.hrmRepo.findDesignationById(id, ctx.tenantId)
+    this.logger.log(`Updating designation ${id} for store ${ctx.storeId}`)
+    const old = await this.hrmRepo.findDesignationById(id, ctx.storeId)
     if (!old) throw new NotFoundException('Designation not found')
     await this.hrmRepo.updateDesignation(id, data)
-    const updated = await this.hrmRepo.findDesignationById(id, ctx.tenantId)
+    const updated = await this.hrmRepo.findDesignationById(id, ctx.storeId)
     await this.auditLogService.log(ctx, {
       action: 'UPDATE',
       entity: 'Designation',
@@ -99,8 +99,8 @@ export class HrmOrganizationService {
   }
 
   async deleteDesignation(id: string, ctx: RequestContextDto) {
-    this.logger.log(`Deleting designation ${id} for tenant ${ctx.tenantId}`)
-    const des = await this.hrmRepo.findDesignationById(id, ctx.tenantId)
+    this.logger.log(`Deleting designation ${id} for store ${ctx.storeId}`)
+    const des = await this.hrmRepo.findDesignationById(id, ctx.storeId)
     if (!des) throw new NotFoundException('Designation not found')
     await this.hrmRepo.deleteDesignation(id)
     await this.auditLogService.log(ctx, {

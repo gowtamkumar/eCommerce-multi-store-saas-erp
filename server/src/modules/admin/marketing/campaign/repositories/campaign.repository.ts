@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { CampaignEntity } from '../entities/campaign.entity'
 import { CampaignStatus } from '../enums/campaign-status.enum'
 
 @Injectable()
-export class CampaignRepository extends BaseTenantRepository<CampaignEntity> {
+export class CampaignRepository extends BaseStoreRepository<CampaignEntity> {
   constructor(
     @InjectRepository(CampaignEntity)
     repo: Repository<CampaignEntity>,
@@ -45,9 +45,9 @@ export class CampaignRepository extends BaseTenantRepository<CampaignEntity> {
     return this.repo.save(campaign)
   }
 
-  async findAllByTenant(tenantId: string): Promise<CampaignEntity[]> {
+  async findAllByStore(storeId: string): Promise<CampaignEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         messages: true,
       },
@@ -55,9 +55,9 @@ export class CampaignRepository extends BaseTenantRepository<CampaignEntity> {
     })
   }
 
-  async findById(id: string, tenantId?: string): Promise<CampaignEntity | null> {
+  async findById(id: string, storeId?: string): Promise<CampaignEntity | null> {
     const where: any = { id }
-    if (tenantId) where.tenantId = tenantId
+    if (storeId) where.storeId = storeId
     return this.repo.findOne({
       where,
       relations: {
@@ -66,9 +66,9 @@ export class CampaignRepository extends BaseTenantRepository<CampaignEntity> {
     })
   }
 
-  async findByIdRaw(id: string, tenantId?: string): Promise<CampaignEntity | null> {
+  async findByIdRaw(id: string, storeId?: string): Promise<CampaignEntity | null> {
     const where: any = { id }
-    if (tenantId) where.tenantId = tenantId
+    if (storeId) where.storeId = storeId
     return this.repo.findOne({ where })
   }
 

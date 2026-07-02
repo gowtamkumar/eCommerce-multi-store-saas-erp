@@ -7,7 +7,7 @@ export class GeneratePriceBookRationaleDto {
   @MaxLength(4000)
   priceBookSummary: string
 
-  @ApiPropertyOptional({ description: 'Other tenant price books for comparison' })
+  @ApiPropertyOptional({ description: 'Other store price books for comparison' })
   @IsOptional()
   @IsString()
   @MaxLength(3000)

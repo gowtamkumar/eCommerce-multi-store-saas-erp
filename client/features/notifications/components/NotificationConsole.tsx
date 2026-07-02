@@ -39,9 +39,9 @@ interface NotificationConsoleProps {
 export const getMappedLink = (link?: string | null) => {
   if (!link || typeof link !== 'string' || link.trim() === '') return null;
   let targetLink = link.trim();
-  if (targetLink.startsWith('/admin/system/tenants/')) {
-    const tenantId = targetLink.split('/').pop();
-    return `/system/tenants/${tenantId}/analytics`;
+  if (targetLink.startsWith('/admin/system/stores/')) {
+    const storeId = targetLink.split('/').pop();
+    return `/system/stores/${storeId}/analytics`;
   }
   if (targetLink.startsWith('/admin/system/billing/')) {
     return '/system/billing';
@@ -49,11 +49,11 @@ export const getMappedLink = (link?: string | null) => {
   if (targetLink.startsWith('/admin/settings/billing')) {
     return '/system/billing';
   }
-  if (targetLink.startsWith('/system/tenants/') && !targetLink.endsWith('/analytics')) {
+  if (targetLink.startsWith('/system/stores/') && !targetLink.endsWith('/analytics')) {
     const parts = targetLink.split('/');
-    const tenantId = parts[3];
-    if (tenantId) {
-      return `/system/tenants/${tenantId}/analytics`;
+    const storeId = parts[3];
+    if (storeId) {
+      return `/system/stores/${storeId}/analytics`;
     }
   }
   return targetLink;
@@ -84,7 +84,7 @@ export default function NotificationConsole({
     handleNotificationClick,
   } = useNotifications({ isSystem });
 
-  const [tenants, setTenants] = React.useState<any[]>([]);
+  const [stores, setStores] = React.useState<any[]>([]);
   const [showBroadcastModal, setShowBroadcastModal] = React.useState(false);
   const [broadcasting, setBroadcasting] = React.useState(false);
 
@@ -97,15 +97,15 @@ export default function NotificationConsole({
 
   React.useEffect(() => {
     if (isSystem) {
-      async function loadTenants() {
+      async function loadStores() {
         try {
-          const res = await fetchSuperAdminAPI('/super-admin/tenants');
-          setTenants(res.data || []);
+          const res = await fetchSuperAdminAPI('/super-admin/stores');
+          setStores(res.data || []);
         } catch (error) {
-          console.error('Failed to load tenants list:', error);
+          console.error('Failed to load stores list:', error);
         }
       }
-      loadTenants();
+      loadStores();
     }
   }, [isSystem]);
 
@@ -117,7 +117,7 @@ export default function NotificationConsole({
     }
     setBroadcasting(true);
     try {
-      const headers = { 'x-tenant-id': '' };
+      const headers = { 'x-store-id': '' };
       await fetchAPI('/infra/notifications/broadcast', {
         method: 'POST',
         headers,
@@ -126,7 +126,7 @@ export default function NotificationConsole({
           message: broadcastMessage,
           type: broadcastType,
           link: broadcastLink,
-          tenantId: broadcastTarget,
+          storeId: broadcastTarget,
         }),
       });
       toast.success('Broadcast notification dispatched successfully!');
@@ -450,10 +450,10 @@ export default function NotificationConsole({
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   >
                     <option value="global">Global Platform Alert (Super Admins Only)</option>
-                    <option value="all">Broadcast to All Tenant Stores (Bulk)</option>
-                    {tenants.map((t) => (
+                    <option value="all">Broadcast to All Store Stores (Bulk)</option>
+                    {stores.map((t) => (
                       <option key={t.id} value={t.id}>
-                        Single Tenant: {t.name} ({t.subdomain || 'no-subdomain'})
+                        Single Store: {t.name} ({t.subdomain || 'no-subdomain'})
                       </option>
                     ))}
                   </select>

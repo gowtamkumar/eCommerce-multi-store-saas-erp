@@ -3,7 +3,7 @@
 **Document Version:** 2.0.0
 **Status:** Approved for Engineering
 **Last Updated:** May 24, 2026
-**Scope:** Authoritative schema reference for the entire multi-tenant ERP. Every table that exists in `server/src/modules/**/entities/*.entity.ts` is documented here. The diagrams are layered — start with §3 (Master ERD) then drill into the per-domain ERDs in §5.
+**Scope:** Authoritative schema reference for the entire multi-store ERP. Every table that exists in `server/src/modules/**/entities/*.entity.ts` is documented here. The diagrams are layered — start with §3 (Master ERD) then drill into the per-domain ERDs in §5.
 
 > Cross-references: [HLD](erp_master_system_design.md) · [LLD](erp_low_level_system_design.md) · [Dataflow](erp_master_dataflow.md) (which tables each module writes, with row-level examples).
 
@@ -19,7 +19,7 @@
 3. [Master ERD (Cross-Domain)](#3-master-erd-cross-domain)
 4. [Table Inventory by Domain](#4-table-inventory-by-domain)
 5. [Per-Domain ERDs](#5-per-domain-erds)
-   - 5.1 [System & Tenant](#51-system--tenant-erd)
+   - 5.1 [System & Store](#51-system--store-erd)
    - 5.2 [Identity & RBAC](#52-identity--rbac-erd)
    - 5.3 [Catalog & Pricing](#53-catalog--pricing-erd)
    - 5.4 [Sales: Orders · Returns · Payments · Cart](#54-sales-orders--returns--payments--cart-erd)
@@ -35,7 +35,7 @@
 
 **Part III — Schemas**
 6. [Schema Definitions per Domain](#6-schema-definitions-per-domain)
-   - 6.1 [System & Tenant Tables](#61-system--tenant-tables)
+   - 6.1 [System & Store Tables](#61-system--store-tables)
    - 6.2 [Identity & RBAC Tables](#62-identity--rbac-tables)
    - 6.3 [Organization Tables](#63-organization-tables)
    - 6.4 [Catalog & Pricing Tables](#64-catalog--pricing-tables)
@@ -51,7 +51,7 @@
 
 **Part IV — Rules**
 7. [Append-Only Ledger Tables — Special Rules](#7-append-only-ledger-tables--special-rules)
-8. [Multi-Tenant FK Invariants](#8-multi-tenant-fk-invariants)
+8. [Multi-Store FK Invariants](#8-multi-store-fk-invariants)
 9. [Indexes & Constraints (Authoritative List)](#9-indexes--constraints-authoritative-list)
 10. [Soft Delete & Retention Strategy](#10-soft-delete--retention-strategy)
 11. [Partitioning Candidates](#11-partitioning-candidates)
@@ -69,7 +69,7 @@ The database is governed by **four non-negotiable principles**, each backed by a
 
 | # | Principle | Enforcement |
 | --- | --- | --- |
-| 1 | **Strict multi-tenant isolation** (logical shared-database model) | Every business table has a `tenant_id uuid NOT NULL` column; every query starts with `WHERE tenant_id = $1`; every multi-column index begins with `tenant_id`; every unique business key (sku, code, slug, email) is unique **per tenant**, not globally. |
+| 1 | **Strict multi-store isolation** (logical shared-database model) | Every business table has a `store_id uuid NOT NULL` column; every query starts with `WHERE store_id = $1`; every multi-column index begins with `store_id`; every unique business key (sku, code, slug, email) is unique **per store**, not globally. |
 | 2 | **Ledger-based truth for money & stock** | Stock and money balances are derived by `SUM()` over append-only ledger tables (`inventory_ledger`, `ledger_entries`, `ar_ledger`, `supplier_ap_ledger`, `wallet_ledger`, `loyalty_ledger`). Cached/snapshot fields (e.g., `accounts.balance`, `users.loyalty_points_balance`) are recomputed from ledgers, never edited directly. |
 | 3 | **Financial immutability (GAAP)** | `journal_entries` and `ledger_entries` enforce immutability at the ORM layer via `@BeforeUpdate()` / `@BeforeRemove()` hooks that throw. To correct, post a reversing journal (`isReversal = true`, `reversedJournalEntryId` set). |
 | 4 | **Decoupled domain ownership** | Tables in domain A reference tables in domain B by `uuid` FK only. Cross-domain writes go through service-layer interfaces, never via shared repositories. |
@@ -97,7 +97,7 @@ Two additional supporting principles:
 | Concept | Type / Name |
 | --- | --- |
 | Primary key | `id uuid PRIMARY KEY DEFAULT gen_random_uuid()` (UUIDv7 at app layer) |
-| Tenant scope | `tenant_id uuid NOT NULL` (FK → `tenants.id ON DELETE CASCADE`) |
+| Store scope | `store_id uuid NOT NULL` (FK → `stores.id ON DELETE CASCADE`) |
 | Foreign keys | `{entity}_id uuid` (e.g., `customer_id`, `warehouse_id`, `journal_entry_id`) |
 | Timestamps | `created_at`, `updated_at`, `deleted_at` — all `timestamptz` |
 | Money columns | `decimal(10,2)` for prices, `decimal(15,2)` for journal lines, `decimal(12,2)` for stock qty/cost |
@@ -119,18 +119,18 @@ abstract class BaseEntity {
   @Column({ name: 'user_id', nullable: true }) userId?: string | null  // who created
 }
 
-// BaseTenantEntity (used when tenant_id is part of the abstract base)
-abstract class BaseTenantEntity extends BaseEntity {
-  @Column() tenantId: string
+// BaseStoreEntity (used when store_id is part of the abstract base)
+abstract class BaseStoreEntity extends BaseEntity {
+  @Column() storeId: string
 }
 ```
 
-Most entities extend `BaseEntity` and add their own `tenant_id` column with explicit FK. A small number extend `BaseTenantEntity`.
+Most entities extend `BaseEntity` and add their own `store_id` column with explicit FK. A small number extend `BaseStoreEntity`.
 
 ### 2.4 Index naming
 
 - Indexes prefixed with `IDX_` for non-unique, `UQ_` for unique. (TypeORM auto-generates IDs; we accept the auto-generated names.)
-- Multi-column indexes always have `tenant_id` first.
+- Multi-column indexes always have `store_id` first.
 
 ### 2.5 Enum values
 
@@ -139,7 +139,7 @@ Most entities extend `BaseEntity` and add their own `tenant_id` column with expl
 
 ### 2.6 Currency & money
 
-- All money columns store amounts in the row's `currency` (default `BDT` for tenant base). For multi-currency rows we additionally store `fx_rate` snapshotted to the tenant's base currency.
+- All money columns store amounts in the row's `currency` (default `BDT` for store base). For multi-currency rows we additionally store `fx_rate` snapshotted to the store's base currency.
 - Avoid floats. All decimals.
 
 ---
@@ -152,16 +152,16 @@ Most entities extend `BaseEntity` and add their own `tenant_id` column with expl
 
 ```mermaid
 erDiagram
-  TENANT ||--o{ BRANCH                : "owns"
-  TENANT ||--o{ WAREHOUSE             : "owns"
-  TENANT ||--o{ USER                  : "owns"
-  TENANT ||--o{ ROLE                  : "owns"
-  TENANT ||--o{ PRODUCT               : "owns"
-  TENANT ||--o{ SUPPLIER              : "owns"
-  TENANT ||--o{ ORDER                 : "owns"
-  TENANT ||--o{ ACCOUNT               : "owns"
-  TENANT ||--o{ EMPLOYEE              : "owns"
-  TENANT ||--o{ AUDIT_LOG             : "owns"
+  STORE ||--o{ BRANCH                : "owns"
+  STORE ||--o{ WAREHOUSE             : "owns"
+  STORE ||--o{ USER                  : "owns"
+  STORE ||--o{ ROLE                  : "owns"
+  STORE ||--o{ PRODUCT               : "owns"
+  STORE ||--o{ SUPPLIER              : "owns"
+  STORE ||--o{ ORDER                 : "owns"
+  STORE ||--o{ ACCOUNT               : "owns"
+  STORE ||--o{ EMPLOYEE              : "owns"
+  STORE ||--o{ AUDIT_LOG             : "owns"
 
 
   BRANCH ||--o{ WAREHOUSE             : "may host"
@@ -222,7 +222,7 @@ erDiagram
   CAMPAIGN ||--o{ CAMPAIGN_MESSAGE    : "messages"
   CAMPAIGN ||--o{ CAMPAIGN_LOG        : "deliveries"
 
-  ACCOUNTING_OUTBOX }o--|| TENANT     : "pending events"
+  ACCOUNTING_OUTBOX }o--|| STORE     : "pending events"
 ```
 
 The master ERD shows the top-level relationships. For column-level detail use §5 (per-domain ERDs) and §6 (schema definitions).
@@ -235,7 +235,7 @@ There are **100 tables** in the system, grouped into **13 domains**.
 
 | # | Domain | Tables | Count |
 | --- | --- | --- | ---: |
-| 1 | **System & Tenant** | `tenants`, `platform_settings`, `subscription_plans`, `subscription_invoices`, `tenant_traffic` | 5 |
+| 1 | **System & Store** | `stores`, `platform_settings`, `subscription_plans`, `subscription_invoices`, `store_traffic` | 5 |
 | 2 | **Identity & RBAC** | `users`, `sessions`, `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `user_permission_overrides`, `staff_invitations` | 8 |
 | 3 | **Organization** | `branches`, `warehouses`, `warehouse_bins` | 3 |
 | 4 | **Catalog** | `products`, `product_variants`, `product_attributes`, `brands`, `categories`, `price_books`, `product_prices`, `reviews` | 8 |
@@ -250,17 +250,17 @@ There are **100 tables** in the system, grouped into **13 domains**.
 | 13 | **Content & Infra** | `pages`, `faqs`, `site_settings`, `audit_logs`, `system_notifications`, `files`, `devices`, `chat_conversations`, `chat_messages` | 9 |
 |  | **TOTAL** |  | **105** |
 
-Note: `platform_settings`, `tenant_traffic` are platform-level (not tenant-scoped). All others carry `tenant_id`.
+Note: `platform_settings`, `store_traffic` are platform-level (not store-scoped). All others carry `store_id`.
 
 ---
 
 ## 5. Per-Domain ERDs
 
-### 5.1 System & Tenant ERD
+### 5.1 System & Store ERD
 
 ```mermaid
 erDiagram
-  TENANT {
+  STORE {
     uuid id PK
     string store_name
     string subdomain UK
@@ -281,7 +281,7 @@ erDiagram
   }
   SUBSCRIPTION_INVOICE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     decimal amount
     enum status
     timestamptz due_at
@@ -291,16 +291,16 @@ erDiagram
     string key UK
     jsonb value
   }
-  TENANT_TRAFFIC {
+  STORE_TRAFFIC {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     int requests_count
     date day
   }
 
-  SUBSCRIPTION_PLAN ||--o{ TENANT             : "subscribed by"
-  TENANT ||--o{ SUBSCRIPTION_INVOICE          : "billed"
-  TENANT ||--o{ TENANT_TRAFFIC                : "metered"
+  SUBSCRIPTION_PLAN ||--o{ STORE             : "subscribed by"
+  STORE ||--o{ SUBSCRIPTION_INVOICE          : "billed"
+  STORE ||--o{ STORE_TRAFFIC                : "metered"
 ```
 
 ### 5.2 Identity & RBAC ERD
@@ -309,7 +309,7 @@ erDiagram
 erDiagram
   USER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string email
     string username
@@ -327,7 +327,7 @@ erDiagram
   }
   ROLE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     bool is_system_role
     uuid parent_role_id FK
@@ -349,7 +349,7 @@ erDiagram
     uuid id PK
     uuid user_id FK
     uuid role_id FK
-    uuid tenant_id FK
+    uuid store_id FK
     enum scope_type
     uuid scope_id
     timestamptz expires_at
@@ -371,7 +371,7 @@ erDiagram
   }
   STAFF_INVITATION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string email
     string token UK
     enum status
@@ -395,7 +395,7 @@ erDiagram
 erDiagram
   PRODUCT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string slug UK
     string sku
     string barcode
@@ -411,7 +411,7 @@ erDiagram
   }
   PRODUCT_VARIANT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     string sku
     string barcode
@@ -422,28 +422,28 @@ erDiagram
   }
   PRODUCT_ATTRIBUTE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     string name
     jsonb values
   }
   BRAND {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string slug
     string logo_url
   }
   CATEGORY {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid parent_id FK
     string name
     string slug
   }
   PRICE_BOOK {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string currency
     bool is_default
@@ -457,7 +457,7 @@ erDiagram
   }
   REVIEW {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     uuid user_id FK
     int rating
@@ -481,7 +481,7 @@ erDiagram
 erDiagram
   ORDER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     string customer_name
     string customer_email
@@ -502,7 +502,7 @@ erDiagram
   }
   ORDER_ITEM {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     uuid product_id FK
     uuid variant_id FK
@@ -515,7 +515,7 @@ erDiagram
   }
   ORDER_RETURN {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     enum status
     string reason
@@ -524,7 +524,7 @@ erDiagram
   }
   PAYMENT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     enum method
     decimal amount
@@ -534,7 +534,7 @@ erDiagram
   }
   CART {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     string session_id
   }
@@ -547,13 +547,13 @@ erDiagram
   }
   WISHLIST {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     uuid product_id FK
   }
   SHIPPING_ADDRESS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     string address
     string city
@@ -561,7 +561,7 @@ erDiagram
   }
   COUPON {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string code UK
     enum discount_type
     decimal amount
@@ -574,7 +574,7 @@ erDiagram
   }
   PROMOTION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     enum status
     jsonb rules
@@ -594,14 +594,14 @@ erDiagram
 erDiagram
   POS_REGISTER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid branch_id FK
     string name
     bool is_active
   }
   POS_SHIFT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid register_id FK
     uuid branch_id FK
     uuid user_id FK
@@ -618,7 +618,7 @@ erDiagram
   }
   POS_DRAWER_TRANSACTION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid shift_id FK
     enum type
     decimal amount
@@ -636,7 +636,7 @@ erDiagram
 erDiagram
   INVENTORY_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     uuid variant_id FK
     uuid branch_id FK
@@ -655,7 +655,7 @@ erDiagram
   }
   STOCK_RESERVATION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     uuid variant_id FK
     uuid warehouse_id FK
@@ -669,7 +669,7 @@ erDiagram
   }
   STOCK_TRANSFER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string transfer_number
     uuid source_warehouse_id FK
     uuid destination_warehouse_id FK
@@ -686,7 +686,7 @@ erDiagram
   }
   PRODUCT_BATCH {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     uuid variant_id FK
     string batch_number
@@ -707,7 +707,7 @@ erDiagram
 erDiagram
   SUPPLIER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string code
     string email
@@ -720,7 +720,7 @@ erDiagram
   }
   PURCHASE_REQUISITION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string pr_number
     enum status
     uuid requested_by FK
@@ -736,7 +736,7 @@ erDiagram
   }
   RFQ {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid pr_id FK
     string rfq_number
     enum status
@@ -744,7 +744,7 @@ erDiagram
   }
   QUOTATION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid rfq_id FK
     uuid supplier_id FK
     decimal total
@@ -752,7 +752,7 @@ erDiagram
   }
   PURCHASE_ORDER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string reference_number
     uuid supplier_id FK
     uuid pr_id FK
@@ -772,7 +772,7 @@ erDiagram
   }
   SUPPLIER_INVOICE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid supplier_id FK
     uuid po_id FK
     string invoice_number
@@ -794,7 +794,7 @@ erDiagram
   }
   SUPPLIER_PAYMENT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid supplier_id FK
     uuid invoice_id FK
     uuid po_id FK
@@ -804,7 +804,7 @@ erDiagram
   }
   SUPPLIER_AP_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid supplier_id FK
     enum reference_type
     string reference_id
@@ -814,7 +814,7 @@ erDiagram
   }
   DEBIT_NOTE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid supplier_id FK
     string note_number
     decimal amount
@@ -843,7 +843,7 @@ erDiagram
 erDiagram
   ACCOUNT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string code UK
     string name
     enum type
@@ -853,7 +853,7 @@ erDiagram
   }
   JOURNAL_ENTRY {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     timestamptz date
     enum type
     string description
@@ -865,7 +865,7 @@ erDiagram
   }
   LEDGER_ENTRY {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid journal_entry_id FK
     uuid account_id FK
     enum side
@@ -874,7 +874,7 @@ erDiagram
   }
   AR_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     enum type
     decimal amount
@@ -886,7 +886,7 @@ erDiagram
   }
   WALLET_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     enum type
     decimal amount
@@ -896,7 +896,7 @@ erDiagram
   }
   FISCAL_PERIOD {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     date start
     date end
@@ -904,7 +904,7 @@ erDiagram
   }
   TAX_RULE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     decimal rate
     string jurisdiction
@@ -912,13 +912,13 @@ erDiagram
   }
   DUNNING_RULE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     int trigger_days_overdue
     enum action
   }
   DUNNING_LOG {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     uuid rule_id FK
     timestamptz executed_at
@@ -926,7 +926,7 @@ erDiagram
   }
   ACCOUNTING_OUTBOX {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string event
     jsonb payload
     string status
@@ -934,7 +934,7 @@ erDiagram
   }
   EXPENSE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     decimal amount
     string description
     enum status
@@ -942,7 +942,7 @@ erDiagram
   }
   INVOICE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     string invoice_number
     decimal total
@@ -963,7 +963,7 @@ erDiagram
 erDiagram
   EMPLOYEE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     string employee_id UK
     uuid department_id FK
@@ -991,17 +991,17 @@ erDiagram
   }
   DEPARTMENT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
   }
   DESIGNATION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
   }
   SHIFT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     time start_time
     time end_time
@@ -1015,7 +1015,7 @@ erDiagram
   }
   ATTENDANCE_SESSION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid employee_id FK
     date date
     decimal hours_worked
@@ -1023,7 +1023,7 @@ erDiagram
   }
   ATTENDANCE_EVENT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid employee_id FK
     enum type
     timestamptz punch_time
@@ -1031,7 +1031,7 @@ erDiagram
   }
   LEAVE_QUOTA {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid employee_id FK
     string leave_type
     int total_days
@@ -1039,7 +1039,7 @@ erDiagram
   }
   LEAVE_REQUEST {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid employee_id FK
     date start_date
     date end_date
@@ -1048,7 +1048,7 @@ erDiagram
   }
   PAYROLL_BATCH {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string period
     decimal total_amount
@@ -1057,7 +1057,7 @@ erDiagram
   }
   PAYROLL_SLIP {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid batch_id FK
     uuid employee_id FK
     decimal basic_salary
@@ -1075,14 +1075,14 @@ erDiagram
   }
   JOB_POSTING {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string title
     string description
     enum status
   }
   APPLICANT {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid job_id FK
     string name
     string email
@@ -1091,7 +1091,7 @@ erDiagram
   }
   INTERVIEW {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid applicant_id FK
     timestamptz scheduled_at
     string outcome
@@ -1120,7 +1120,7 @@ erDiagram
 erDiagram
   USER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string membership_tier
     decimal credit_limit
     int loyalty_points_balance
@@ -1129,13 +1129,13 @@ erDiagram
   }
   SUBSCRIBER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string email UK
     bool is_active
   }
   LEAD {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string email
     enum status
@@ -1144,7 +1144,7 @@ erDiagram
   }
   AR_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     enum type
     decimal amount
@@ -1153,7 +1153,7 @@ erDiagram
   }
   WALLET_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     enum type
     decimal amount
@@ -1161,7 +1161,7 @@ erDiagram
   }
   LOYALTY_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     enum type
     int points
@@ -1169,14 +1169,14 @@ erDiagram
   }
   LOYALTY_CONFIG {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     decimal accrual_rate
     decimal redemption_rate
     bool is_active
   }
   LOYALTY_RULE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     jsonb condition
     jsonb effect
     bool is_active
@@ -1195,7 +1195,7 @@ erDiagram
 erDiagram
   CAMPAIGN {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     enum type
     enum status
@@ -1224,7 +1224,7 @@ erDiagram
   }
   PAGE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string slug
     string title
     jsonb blocks
@@ -1232,7 +1232,7 @@ erDiagram
   }
   FAQ {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     string question
     text answer
@@ -1240,7 +1240,7 @@ erDiagram
   }
   SITE_SETTINGS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     jsonb theme
     string logo_url
     jsonb social_links
@@ -1257,7 +1257,7 @@ erDiagram
 erDiagram
   GOODS_RECEIVED_NOTE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string grn_number UK
     uuid po_id FK
     uuid supplier_id FK
@@ -1281,7 +1281,7 @@ erDiagram
   }
   FULFILLMENT_TASK {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     uuid warehouse_id FK
     enum status
@@ -1308,7 +1308,7 @@ erDiagram
 erDiagram
   AUDIT_LOG {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid actor_id FK
     string actor_name
     string action
@@ -1323,7 +1323,7 @@ erDiagram
   }
   SYSTEM_NOTIFICATION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     string type
     string title
@@ -1333,7 +1333,7 @@ erDiagram
   }
   FILE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string url
     string mime
     int size_bytes
@@ -1341,7 +1341,7 @@ erDiagram
   }
   DEVICE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     string token UK
     string platform
@@ -1349,13 +1349,13 @@ erDiagram
   }
   CHAT_CONVERSATION {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     enum status
     timestamptz last_message_at
   }
   CHAT_MESSAGE {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid conversation_id FK
     uuid sender_user_id FK
     text body
@@ -1363,7 +1363,7 @@ erDiagram
   }
   ACCOUNTING_OUTBOX {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string event
     jsonb payload
     string status
@@ -1383,14 +1383,14 @@ erDiagram
 
 ## 6. Schema Definitions per Domain
 
-### 6.1 System & Tenant Tables
+### 6.1 System & Store Tables
 
-#### `tenants`
+#### `stores`
 | Column | Type | Constraint | Notes |
 | --- | --- | --- | --- |
 | `id` | uuid | PK | |
 | `store_name` | varchar | NOT NULL | |
-| `subdomain` | varchar | UNIQUE NOT NULL | Tenant resolution key |
+| `subdomain` | varchar | UNIQUE NOT NULL | Store resolution key |
 | `custom_domain` | varchar | UNIQUE NULL | Optional vanity domain |
 | `custom_domain_status` | enum | DEFAULT 'PENDING' | `PENDING` / `VERIFIED` / `FAILED` |
 | `custom_domain_verified_at` | timestamptz | NULL | |
@@ -1401,7 +1401,7 @@ erDiagram
 | `subscription_status` | enum | DEFAULT 'ACTIVE' | |
 | `subscription_starts_at` | timestamptz | NULL | |
 | `subscription_ends_at` | timestamptz | NULL | |
-| `user_id` | uuid | FK → `users.id` NULL | Tenant owner (set after first admin signs up) |
+| `user_id` | uuid | FK → `users.id` NULL | Store owner (set after first admin signs up) |
 
 
 #### `platform_settings` (platform-level)
@@ -1429,7 +1429,7 @@ erDiagram
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `plan_id` | uuid FK |
 | `amount` | decimal(10,2) |
 | `currency` | varchar(10) |
@@ -1437,11 +1437,11 @@ erDiagram
 | `due_at` | timestamptz |
 | `paid_at` | timestamptz NULL |
 
-#### `tenant_traffic` (platform-level analytics)
+#### `store_traffic` (platform-level analytics)
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `day` | date |
 | `requests_count` | int |
 | `errors_count` | int |
@@ -1456,7 +1456,7 @@ erDiagram
 | Column | Type | Constraint | Notes |
 | --- | --- | --- | --- |
 | `id` | uuid | PK | |
-| `tenant_id` | uuid | FK → `tenants.id` ON DELETE CASCADE NULL | Null for SUPER_ADMIN |
+| `store_id` | uuid | FK → `stores.id` ON DELETE CASCADE NULL | Null for SUPER_ADMIN |
 | `name` | varchar | NOT NULL | |
 | `email` | varchar | NULL | |
 | `username` | varchar | NOT NULL | |
@@ -1485,13 +1485,13 @@ erDiagram
 | `tax_id`, `company_name`, `customer_code` | varchar | NULL | B2B customers |
 
 Indexes:
-- `UQ(email, tenant_id)`, `UQ(username, tenant_id)`, `IDX(tenant_id)`, `IDX(branch_id)`, `IDX(warehouse_id)`, `IDX(referral_code) WHERE referral_code IS NOT NULL`.
+- `UQ(email, store_id)`, `UQ(username, store_id)`, `IDX(store_id)`, `IDX(branch_id)`, `IDX(warehouse_id)`, `IDX(referral_code) WHERE referral_code IS NOT NULL`.
 
 #### `sessions`
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid NULL |
+| `store_id` | uuid NULL |
 | `user_id` | uuid FK |
 | `refresh_token_hash` | varchar |
 | `ip` | varchar(45) |
@@ -1509,9 +1509,9 @@ Indexes:
 | `is_system_role` | bool DEFAULT false |
 | `parent_role_id` | uuid FK → `roles.id` NULL — for permission inheritance |
 | `scope_type` | enum DEFAULT 'GLOBAL' (`GLOBAL`/`BRANCH`/`WAREHOUSE`) |
-| `tenant_id` | uuid FK NULL — system roles have NULL |
+| `store_id` | uuid FK NULL — system roles have NULL |
 
-Indexes: `UQ(name, tenant_id)`.
+Indexes: `UQ(name, store_id)`.
 
 #### `permissions` (platform-seeded)
 | Column | Type |
@@ -1537,14 +1537,14 @@ Indexes: `UQ(name, tenant_id)`.
 | `id` | uuid PK |
 | `user_id` | uuid FK |
 | `role_id` | uuid FK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `scope_type` | enum DEFAULT 'GLOBAL' |
 | `scope_id` | uuid NULL — branch_id or warehouse_id |
 | `assigned_by` | uuid NULL |
 | `expires_at` | timestamptz NULL |
 | `assigned_at` | timestamptz |
 
-Indexes: `UQ(user_id, role_id, scope_id)`, `IDX(user_id, tenant_id)`.
+Indexes: `UQ(user_id, role_id, scope_id)`, `IDX(user_id, store_id)`.
 
 #### `user_permission_overrides`
 | Column | Type |
@@ -1554,7 +1554,7 @@ Indexes: `UQ(user_id, role_id, scope_id)`, `IDX(user_id, tenant_id)`.
 | `permission_id` | uuid FK |
 | `mode` | enum (`ALLOW`/`DENY`) |
 | `reason` | text NULL |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 
 Indexes: `UQ(user_id, permission_id)`.
 
@@ -1562,7 +1562,7 @@ Indexes: `UQ(user_id, permission_id)`.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `email` | varchar |
 | `role_id` | uuid FK |
 | `token` | varchar UNIQUE |
@@ -1578,7 +1578,7 @@ Indexes: `UQ(user_id, permission_id)`.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `name` | varchar |
 | `code` | varchar UNIQUE |
 | `address` | text NULL |
@@ -1587,13 +1587,13 @@ Indexes: `UQ(user_id, permission_id)`.
 | `is_active` | bool DEFAULT true |
 | `ip_whitelist` | text NULL |
 
-> ⚠ **Note:** `code` is globally unique in current code. Should be `(tenant_id, code)` unique — flagged in §13 as planned correction.
+> ⚠ **Note:** `code` is globally unique in current code. Should be `(store_id, code)` unique — flagged in §13 as planned correction.
 
 #### `warehouses`
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `branch_id` | uuid FK NULL — central warehouses have null |
 | `name` | varchar |
 | `code` | varchar UNIQUE |
@@ -1620,8 +1620,8 @@ Indexes: `UQ(warehouse_id, bin_code)`.
 | Column | Type | Notes |
 | --- | --- | --- |
 | `id` | uuid PK | |
-| `tenant_id` | uuid FK | |
-| `slug` | varchar UNIQUE | ⚠ globally unique today; should be tenant-scoped (see §13) |
+| `store_id` | uuid FK | |
+| `slug` | varchar UNIQUE | ⚠ globally unique today; should be store-scoped (see §13) |
 | `sku` | varchar(100) NULL | |
 | `barcode` | varchar(100) NULL | |
 | `product_type` | enum DEFAULT 'SIMPLE' (`SIMPLE`/`VARIABLE`/`BUNDLE`/`SERVICE`) | |
@@ -1643,13 +1643,13 @@ Indexes: `UQ(warehouse_id, bin_code)`.
 | `is_new`, `is_hot`, `is_sale` | bool DEFAULT false | |
 | `faq_source`, `faq_ids` | varchar, text[] | |
 
-Indexes: `IDX(slug)`, `IDX(tenant_id, status)`, `IDX(tenant_id, created_at)`, `IDX(category_id)`, `IDX(brand_id)`, `IDX(tenant_id)`.
+Indexes: `IDX(slug)`, `IDX(store_id, status)`, `IDX(store_id, created_at)`, `IDX(category_id)`, `IDX(brand_id)`, `IDX(store_id)`.
 
 #### `product_variants`
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid |
+| `store_id` | uuid |
 | `product_id` | uuid FK ON DELETE CASCADE |
 | `sku` | varchar(255) |
 | `barcode` | varchar(100) NULL |
@@ -1661,7 +1661,7 @@ Indexes: `IDX(slug)`, `IDX(tenant_id, status)`, `IDX(tenant_id, created_at)`, `I
 | `images` | text[] |
 | `combination` | jsonb — e.g. `{"Color":"Red","Size":"XL"}` |
 
-Indexes: `UQ(sku, tenant_id)`, `IDX(product_id)`, `IDX(tenant_id)`.
+Indexes: `UQ(sku, store_id)`, `IDX(product_id)`, `IDX(store_id)`.
 
 #### `product_attributes`
 Same-product attribute schema (e.g., `Color`, `Size`) with allowed values stored as JSONB.
@@ -1670,7 +1670,7 @@ Same-product attribute schema (e.g., `Color`, `Size`) with allowed values stored
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `name` | varchar |
 | `slug` | varchar |
 | `logo_url` | varchar NULL |
@@ -1680,7 +1680,7 @@ Same-product attribute schema (e.g., `Color`, `Size`) with allowed values stored
 Hierarchical: `parent_id` self-FK, `slug`, `path` (LTREE / dotted-path text).
 
 #### `price_books`
-Per-tenant named price books with currency.
+Per-store named price books with currency.
 
 #### `product_prices` (price book line items)
 Tier pricing — `(price_book_id, variant_id, min_quantity)` triple key for tier resolution.
@@ -1696,7 +1696,7 @@ Customer reviews on products with moderation status.
 | Column | Type | Notes |
 | --- | --- | --- |
 | `id` | uuid PK | |
-| `tenant_id` | uuid FK ON DELETE CASCADE | |
+| `store_id` | uuid FK ON DELETE CASCADE | |
 | `user_id` | uuid FK NULL | Customer (nullable for guest checkouts) |
 | `customer_name`, `customer_email`, `customer_phone` | varchar | Snapshot |
 | `address` | text | Snapshot of shipping address |
@@ -1720,14 +1720,14 @@ Customer reviews on products with moderation status.
 | `offline_sale_id` | uuid UNIQUE NULL | POS idempotency key |
 | `payments` | jsonb NULL | Multi-payment snapshot |
 
-Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `UQ(offline_sale_id)` (implicit from UNIQUE).
+Indexes: `IDX(store_id, created_at)`, `IDX(store_id, status)`, `UQ(offline_sale_id)` (implicit from UNIQUE).
 
 #### `order_items`
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
 | `order_id` | uuid FK ON DELETE CASCADE |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `product_id` | uuid FK |
 | `variant_id` | uuid FK NULL |
 | `snapshot` | jsonb — full product snapshot at sale time |
@@ -1741,7 +1741,7 @@ Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `UQ(offline_sal
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `order_id` | uuid FK |
 | `status` | enum (`PENDING`/`APPROVED`/`REJECTED`/`REFUNDED`) |
 | `reason` | text |
@@ -1752,7 +1752,7 @@ Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `UQ(offline_sal
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `order_id` | uuid FK ON DELETE CASCADE |
 | `transaction_id` | varchar(255) — gateway ref |
 | `amount` | decimal(10,2) |
@@ -1761,13 +1761,13 @@ Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `UQ(offline_sal
 | `status` | enum DEFAULT 'PENDING' |
 | `gateway_response` | jsonb NULL |
 
-Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, status, created_at)`, `IDX(transaction_id)`.
+Indexes: `IDX(store_id, created_at)`, `IDX(store_id, status, created_at)`, `IDX(transaction_id)`.
 
 #### `coupons`
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `code` | varchar(50) |
 | `description` | varchar(255) NULL |
 | `discount_type` | enum DEFAULT 'PERCENTAGE' (`PERCENTAGE`/`FIXED`/`FREE_SHIPPING`) |
@@ -1778,7 +1778,7 @@ Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, status, created_at)`, `ID
 | `used_count` | int DEFAULT 0 |
 | `is_active` | bool DEFAULT true |
 
-Indexes: `UQ(tenant_id, code)`, `IDX(tenant_id, is_active, expiry_date)`.
+Indexes: `UQ(store_id, code)`, `IDX(store_id, is_active, expiry_date)`.
 
 #### `promotions`
 Server-side automatic promotion engine; `rules` JSONB schema described in LLD §26.4.
@@ -1787,7 +1787,7 @@ Server-side automatic promotion engine; `rules` JSONB schema described in LLD §
 Persistent session/user carts.
 
 #### `wishlists`
-Customer wishlists. Unique on `(user_id, product_id, tenant_id)`.
+Customer wishlists. Unique on `(user_id, product_id, store_id)`.
 
 #### `shipping_addresses`
 Customer's saved addresses; `is_default` flag.
@@ -1796,7 +1796,7 @@ Customer's saved addresses; `is_default` flag.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `branch_id` | uuid FK |
 | `name` | varchar |
 | `is_active` | bool DEFAULT true |
@@ -1805,7 +1805,7 @@ Customer's saved addresses; `is_default` flag.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `register_id` | uuid FK |
 | `branch_id` | uuid FK NULL |
 | `user_id` | uuid FK |
@@ -1820,13 +1820,13 @@ Customer's saved addresses; `is_default` flag.
 | `cash_in`, `cash_out` | decimal(12,2) DEFAULT 0 |
 | `remarks` | text NULL |
 
-Recommended (not yet in code): partial unique index `UQ(tenant_id, user_id) WHERE status='OPEN'` to enforce one-open-shift invariant.
+Recommended (not yet in code): partial unique index `UQ(store_id, user_id) WHERE status='OPEN'` to enforce one-open-shift invariant.
 
 #### `pos_drawer_transactions`
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `shift_id` | uuid FK ON DELETE CASCADE |
 | `type` | enum (`CASH_IN`/`CASH_OUT`/`PAYOUT`/`DROP`) |
 | `amount` | decimal(12,2) |
@@ -1841,7 +1841,7 @@ Recommended (not yet in code): partial unique index `UQ(tenant_id, user_id) WHER
 | Column | Type | Notes |
 | --- | --- | --- |
 | `id` | uuid PK | |
-| `tenant_id` | uuid FK | |
+| `store_id` | uuid FK | |
 | `product_id` | uuid FK ON DELETE CASCADE | |
 | `variant_id` | uuid FK NULL | |
 | `branch_id` | uuid FK NULL | reporting dimension |
@@ -1860,7 +1860,7 @@ Recommended (not yet in code): partial unique index `UQ(tenant_id, user_id) WHER
 | `batch_id` | uuid FK NULL | |
 | `remarks` | text NULL | |
 
-Indexes: `IDX(tenant_id, created_at)`, `IDX(product_id, warehouse_id, created_at)`, `IDX(product_id)`, `IDX(variant_id)`, `IDX(branch_id)`, `IDX(warehouse_id)`, `IDX(batch_id)`, `IDX(type)`.
+Indexes: `IDX(store_id, created_at)`, `IDX(product_id, warehouse_id, created_at)`, `IDX(product_id)`, `IDX(variant_id)`, `IDX(branch_id)`, `IDX(warehouse_id)`, `IDX(batch_id)`, `IDX(type)`.
 
 **Invariants:** never UPDATE or DELETE. Corrections are new rows (`ADJUSTMENT_IN` / `ADJUSTMENT_OUT`) tied to an approval record.
 
@@ -1868,7 +1868,7 @@ Indexes: `IDX(tenant_id, created_at)`, `IDX(product_id, warehouse_id, created_at
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `product_id` | uuid FK |
 | `variant_id` | uuid FK NULL |
 | `warehouse_id` | uuid FK NULL |
@@ -1882,7 +1882,7 @@ Indexes: `IDX(tenant_id, created_at)`, `IDX(product_id, warehouse_id, created_at
 | `released_at` | timestamptz NULL |
 | `notes` | text NULL |
 
-Indexes: `UQ(tenant_id, order_id, product_id, variant_id)`, `IDX(tenant_id, status)`, `IDX(product_id, variant_id, tenant_id, status)`, `IDX(expires_at)`.
+Indexes: `UQ(store_id, order_id, product_id, variant_id)`, `IDX(store_id, status)`, `IDX(product_id, variant_id, store_id, status)`, `IDX(expires_at)`.
 
 #### `stock_transfers`, `stock_transfer_items`
 Multi-step movement document; lifecycle `DRAFT → APPROVED → IN_TRANSIT → RECEIVED` (or `CANCELED`). Each transition can write `inventory_ledger` rows (`TRANSFER_OUT` at ship, `TRANSFER_IN` at receive).
@@ -1898,7 +1898,7 @@ For pharmaceutical / perishable products with batch + expiry tracking. FEFO cons
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `name` | varchar |
 | `contact_name`, `contact_person` | varchar NULL |
 | `email`, `phone` | varchar NULL |
@@ -1913,7 +1913,7 @@ For pharmaceutical / perishable products with batch + expiry tracking. FEFO cons
 | `status` | varchar DEFAULT 'ACTIVE' |
 | `performance` | jsonb NULL — `{onTimeDeliveryRate, fulfillmentRate, qualityScore}` |
 
-Indexes: `IDX(tenant_id, name)`, `IDX(email)`.
+Indexes: `IDX(store_id, name)`, `IDX(email)`.
 
 #### `supplier_documents`
 Attached supplier documents (contracts, tax certificates) with `file_id` link.
@@ -1922,7 +1922,7 @@ Attached supplier documents (contracts, tax certificates) with `file_id` link.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `supplier_id` | uuid FK |
 | `reference_type` | enum (`PO_ACCRUAL`/`GRN`/`INVOICE`/`PAYMENT`/`DEBIT_NOTE`/`OPENING`/`ADJUSTMENT`) |
 | `reference_id` | uuid NULL |
@@ -1941,7 +1941,7 @@ RFQ sent to multiple suppliers; quotations come back, one is awarded.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `reference_number` | varchar(255) |
 | `supplier_id` | uuid FK |
 | `pr_id` | uuid NULL |
@@ -1951,7 +1951,7 @@ RFQ sent to multiple suppliers; quotations come back, one is awarded.
 | `paid_amount` | decimal(10,2) DEFAULT 0 |
 | `delivery_date` | date NULL |
 
-Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `IDX(supplier_id)`, `IDX(reference_number)`, `IDX(status)`, `IDX(payment_status)`.
+Indexes: `IDX(store_id, created_at)`, `IDX(store_id, status)`, `IDX(supplier_id)`, `IDX(reference_number)`, `IDX(status)`, `IDX(payment_status)`.
 
 #### `purchase_order_items`
 Lines of a PO with `qty_ordered`, `unit_cost`, `qty_received` (running count).
@@ -1973,7 +1973,7 @@ Returns to suppliers / credit memos. Reduces AP.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `grn_number` | varchar(50) UNIQUE |
 | `po_id` | uuid FK |
 | `supplier_id` | uuid FK |
@@ -1984,7 +1984,7 @@ Returns to suppliers / credit memos. Reduces AP.
 | `status` | enum DEFAULT 'DRAFT' (`DRAFT`/`PENDING`/`VERIFIED`/`REJECTED`) |
 | `notes` | text NULL |
 
-Indexes: `IDX(tenant_id, status)`, `IDX(po_id)`, `IDX(supplier_id)`.
+Indexes: `IDX(store_id, status)`, `IDX(po_id)`, `IDX(supplier_id)`.
 
 #### `goods_received_note_items`
 GRN lines with `qty_received`, `qty_rejected`, `unit_cost`, optional `batch_no` + `expiry_date`.
@@ -1993,7 +1993,7 @@ GRN lines with `qty_received`, `qty_rejected`, `unit_cost`, optional `batch_no` 
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `order_id` | uuid FK |
 | `warehouse_id` | uuid FK |
 | `status` | enum (`PENDING`/`PICKING`/`PICKED`/`PACKING`/`PACKED`/`SHIPPED`/`COMPLETED`/`CANCELED`) |
@@ -2011,7 +2011,7 @@ Per-line link `(fulfillment_task_id, order_item_id, qty)`. Supports split shipme
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `code` | varchar(50) |
 | `name` | varchar(255) |
 | `type` | enum (`ASSET`/`LIABILITY`/`EQUITY`/`REVENUE`/`EXPENSE`) |
@@ -2021,13 +2021,13 @@ Per-line link `(fulfillment_task_id, order_item_id, qty)`. Supports split shipme
 | `balance` | decimal(15,2) DEFAULT 0 — cached, recomputed from ledger |
 | `description` | text NULL |
 
-Indexes: `UQ(tenant_id, code)`.
+Indexes: `UQ(store_id, code)`.
 
 #### `journal_entries` (immutable — see §7)
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `date` | timestamptz DEFAULT now() |
 | `type` | enum (`SALE`/`PURCHASE`/`PAYMENT`/`PAYROLL`/`EXPENSE`/`ADJUSTMENT`/`REVERSAL`/`MANUAL`) |
 | `description` | varchar(255) |
@@ -2036,7 +2036,7 @@ Indexes: `UQ(tenant_id, code)`.
 | `is_reversal` | bool DEFAULT false |
 | `reversed_journal_entry_id` | uuid FK NULL |
 
-Indexes: `IDX(tenant_id, date)`.
+Indexes: `IDX(store_id, date)`.
 
 **Invariants:** `@BeforeUpdate`/`@BeforeRemove` throw at ORM. To revert, post a new journal with `is_reversal=true`.
 
@@ -2044,14 +2044,14 @@ Indexes: `IDX(tenant_id, date)`.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `journal_entry_id` | uuid FK ON DELETE CASCADE |
 | `account_id` | uuid FK |
 | `side` | enum (`DEBIT`/`CREDIT`) |
 | `amount` | decimal(15,2) |
 | `balance_after` | decimal(15,2) — running balance per account |
 
-Indexes: `IDX(tenant_id, account_id)`.
+Indexes: `IDX(store_id, account_id)`.
 
 #### `ar_ledger` (append-only)
 Per-customer AR transactions. Columns: `type` (INVOICE/PAYMENT/CREDIT_NOTE/ADJUSTMENT/WRITE_OFF), `amount` (±), `balance_after`, `currency`, `due_date`, `reference_type`, `reference_id`, `created_by`.
@@ -2063,7 +2063,7 @@ Per-customer store credit ledger. `type` (CREDIT/DEBIT/EXPIRY/REFUND), signed `a
 Bookkeeping windows: `name` (e.g., `2026-Q1`), `start`, `end`, `status` (`OPEN`/`CLOSED`). Postings to closed periods are rejected.
 
 #### `tax_rules`
-Tenant-defined tax rates and jurisdictions. Used by `TaxService.computeForOrder`.
+Store-defined tax rates and jurisdictions. Used by `TaxService.computeForOrder`.
 
 #### `dunning_rules`, `dunning_logs`
 Automated AR reminders. Rules trigger based on days overdue; logs record each action taken per customer.
@@ -2071,7 +2071,7 @@ Automated AR reminders. Rules trigger based on days overdue; logs record each ac
 #### `accounting_outbox`
 Specialized outbox for accounting events. Columns: `event` (e.g., `OrderPaid`), `payload` jsonb, `status` (`PENDING`/`PROCESSED`/`FAILED`), `attempts`, `error`, `processed_at`.
 
-Indexes: `IDX(status, created_at)`, `IDX(tenant_id, status)`.
+Indexes: `IDX(status, created_at)`, `IDX(store_id, status)`.
 
 #### `expenses`
 General business expenses (rent, utilities). Approval workflow + journal posting on approve.
@@ -2087,7 +2087,7 @@ Sales invoices linked to orders (especially B2B credit sales). Tracks `paid_amou
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `user_id` | uuid FK NULL — links to a portal-login user (OneToOne) |
 | `employee_id` | varchar UNIQUE NULL — human-readable HR ID |
 | `department_id`, `designation_id`, `branch_id`, `manager_id` | uuid FK |
@@ -2122,7 +2122,7 @@ Leave entitlements + approval workflow.
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `name` | varchar — e.g. `May 2026 Payroll` |
 | `period` | varchar — e.g. `2026-05` |
 | `total_amount` | decimal(15,2) DEFAULT 0 |
@@ -2150,8 +2150,8 @@ Email newsletter subscribers (may or may not be `users`).
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
-| `email` | varchar UNIQUE per tenant |
+| `store_id` | uuid FK |
+| `email` | varchar UNIQUE per store |
 | `is_active` | bool DEFAULT true |
 | `source` | varchar NULL — `STOREFRONT_FOOTER`/`POPUP`/`MANUAL` |
 
@@ -2159,7 +2159,7 @@ Email newsletter subscribers (may or may not be `users`).
 Pre-customer sales pipeline. Status workflow `NEW → CONTACTED → QUALIFIED → WON / LOST`.
 
 #### `loyalty_configs`
-Tenant-wide loyalty program config: accrual rate, redemption rate, expiry months.
+Store-wide loyalty program config: accrual rate, redemption rate, expiry months.
 
 #### `loyalty_rules`
 Conditional rule engine for bonus points (signup bonus, birthday, milestone).
@@ -2168,7 +2168,7 @@ Conditional rule engine for bonus points (signup bonus, birthday, milestone).
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `customer_id` | uuid FK |
 | `type` | enum (`EARN`/`REDEEM`/`EXPIRY`/`ADJUSTMENT`/`REFERRAL_BONUS`) |
 | `points` | int (signed) |
@@ -2188,7 +2188,7 @@ See §6.9 (Finance) — `ar_ledger` and `wallet_ledger` are also CRM-facing as p
 | Column | Type |
 | --- | --- |
 | `id` | uuid PK |
-| `tenant_id` | uuid FK |
+| `store_id` | uuid FK |
 | `name` | varchar |
 | `type` | enum (`EMAIL`/`SMS`/`PUSH`/`IN_APP`) |
 | `status` | enum (`DRAFT`/`SCHEDULED`/`DISPATCHING`/`COMPLETED`/`FAILED`/`CANCELED`) |
@@ -2196,7 +2196,7 @@ See §6.9 (Finance) — `ar_ledger` and `wallet_ledger` are also CRM-facing as p
 | `total_audience`, `sent_count`, `failed_count` | int DEFAULT 0 |
 | `target_users`, `target_subscribers`, `target_leads` | bool |
 
-Indexes: `IDX(tenant_id, status)`, `IDX(tenant_id, schedule_time)`.
+Indexes: `IDX(store_id, status)`, `IDX(store_id, schedule_time)`.
 
 #### `campaign_messages`
 Templated message bodies (subject, body, template id).
@@ -2205,13 +2205,13 @@ Templated message bodies (subject, body, template id).
 Per-recipient delivery log. One row per user × campaign × channel.
 
 #### `pages`
-Page-builder pages: `slug` (unique per tenant), `title`, `blocks` (jsonb), `status` (`DRAFT`/`PUBLISHED`).
+Page-builder pages: `slug` (unique per store), `title`, `blocks` (jsonb), `status` (`DRAFT`/`PUBLISHED`).
 
 #### `faqs`
 Optionally linked to a product for product-specific FAQs.
 
 #### `site_settings`
-Tenant-wide storefront config: theme, logo, social links, SEO defaults, payment methods enabled, shipping zones.
+Store-wide storefront config: theme, logo, social links, SEO defaults, payment methods enabled, shipping zones.
 
 ---
 
@@ -2220,7 +2220,7 @@ Tenant-wide storefront config: theme, logo, social links, SEO defaults, payment 
 #### `audit_logs`
 Append-only. Columns: `actor_id`, `actor_name` (denormalized), `action`, `entity`, `entity_id`, `old_value` jsonb, `new_value` jsonb, `branch_id`, `warehouse_id`, `ip_address`, `user_agent`.
 
-Indexes: `IDX(tenant_id, created_at)`, `IDX(tenant_id, entity, entity_id)`, `IDX(tenant_id, actor_id)`, `IDX(tenant_id, branch_id)`, `IDX(tenant_id, warehouse_id)`.
+Indexes: `IDX(store_id, created_at)`, `IDX(store_id, entity, entity_id)`, `IDX(store_id, actor_id)`, `IDX(store_id, branch_id)`, `IDX(store_id, warehouse_id)`.
 
 Partitioned by month (planned — see §11).
 
@@ -2231,10 +2231,10 @@ In-app notifications for users. `is_read`, `read_at`, type, payload jsonb.
 S3-uploaded files with `url`, `mime`, `size_bytes`, `uploader_user_id`. Owning entity references files by `file_id` or `url`.
 
 #### `devices`
-Mobile / web push devices. Unique on `(tenant_id, token)`.
+Mobile / web push devices. Unique on `(store_id, token)`.
 
 #### `chat_conversations`, `chat_messages`
-Tenant support chat. Conversation has status (`OPEN`/`CLOSED`); messages stored with sender + body.
+Store support chat. Conversation has status (`OPEN`/`CLOSED`); messages stored with sender + body.
 
 #### `accounting_outbox`
 See §6.9.
@@ -2249,12 +2249,12 @@ The following tables are **strictly append-only**. UPDATE and DELETE are forbidd
 
 | Table | Purpose | Aggregation |
 | --- | --- | --- |
-| `inventory_ledger` | Stock movements | `SUM(quantity)` by `(tenant_id, product_id, variant_id, warehouse_id)` |
-| `journal_entries` + `ledger_entries` | Double-entry accounting | `SUM(amount * side_sign)` by `(tenant_id, account_id)` per fiscal period |
-| `ar_ledger` | Customer AR | `SUM(amount)` by `(tenant_id, customer_id)` |
-| `supplier_ap_ledger` | Supplier AP | `SUM(debit - credit)` by `(tenant_id, supplier_id)` |
-| `wallet_ledger` | Customer store credit | `SUM(amount)` by `(tenant_id, customer_id)` |
-| `loyalty_ledger` | Customer loyalty points | `SUM(points)` by `(tenant_id, customer_id)` |
+| `inventory_ledger` | Stock movements | `SUM(quantity)` by `(store_id, product_id, variant_id, warehouse_id)` |
+| `journal_entries` + `ledger_entries` | Double-entry accounting | `SUM(amount * side_sign)` by `(store_id, account_id)` per fiscal period |
+| `ar_ledger` | Customer AR | `SUM(amount)` by `(store_id, customer_id)` |
+| `supplier_ap_ledger` | Supplier AP | `SUM(debit - credit)` by `(store_id, supplier_id)` |
+| `wallet_ledger` | Customer store credit | `SUM(amount)` by `(store_id, customer_id)` |
+| `loyalty_ledger` | Customer loyalty points | `SUM(points)` by `(store_id, customer_id)` |
 | `audit_logs` | Mutation audit trail | n/a |
 | `attendance_events` | Raw punch log | aggregated into `attendance_sessions` |
 | `accounting_outbox` | Event dispatcher | status changes only — payload immutable |
@@ -2276,20 +2276,20 @@ The following tables are **strictly append-only**. UPDATE and DELETE are forbidd
 
 ---
 
-## 8. Multi-Tenant FK Invariants
+## 8. Multi-Store FK Invariants
 
-For any FK between two tenant-scoped tables, the referenced row **must** belong to the same tenant. This is checked at three layers:
+For any FK between two store-scoped tables, the referenced row **must** belong to the same store. This is checked at three layers:
 
-1. **Repository layer** — every `findOne`, `findMany`, `save` includes `tenant_id` filter.
-2. **Service layer** — when joining child to parent, both rows are validated to share `tenant_id` before commit.
+1. **Repository layer** — every `findOne`, `findMany`, `save` includes `store_id` filter.
+2. **Service layer** — when joining child to parent, both rows are validated to share `store_id` before commit.
 3. **Database layer (recommended)** — `CHECK` constraints enforce this for the highest-risk relationships. Example:
 
 ```sql
 ALTER TABLE warehouses
-  ADD CONSTRAINT warehouses_branch_same_tenant
+  ADD CONSTRAINT warehouses_branch_same_store
   CHECK (
     branch_id IS NULL OR
-    branch_id IN (SELECT id FROM branches WHERE tenant_id = warehouses.tenant_id)
+    branch_id IN (SELECT id FROM branches WHERE store_id = warehouses.store_id)
   );
 ```
 
@@ -2297,70 +2297,70 @@ Not all FK pairs have this CHECK today — see §13 for a backlog of additions.
 
 ### 8.1 Composite FK pattern (planned)
 
-For maximum safety, business tables can include both the child key AND `tenant_id` in the FK so that the database enforces tenant consistency directly:
+For maximum safety, business tables can include both the child key AND `store_id` in the FK so that the database enforces store consistency directly:
 
 ```sql
 ALTER TABLE order_items
-  ADD CONSTRAINT order_items_order_same_tenant
-  FOREIGN KEY (order_id, tenant_id) REFERENCES orders(id, tenant_id);
+  ADD CONSTRAINT order_items_order_same_store
+  FOREIGN KEY (order_id, store_id) REFERENCES orders(id, store_id);
 ```
 
-This requires a `UNIQUE(id, tenant_id)` on the parent. Track in §13 — large refactor.
+This requires a `UNIQUE(id, store_id)` on the parent. Track in §13 — large refactor.
 
 ---
 
 ## 9. Indexes & Constraints (Authoritative List)
 
-### 9.1 Multi-tenant lookup indexes (always lead with `tenant_id`)
+### 9.1 Multi-store lookup indexes (always lead with `store_id`)
 
 | Table | Index |
 | --- | --- |
-| `users` | `UQ(email, tenant_id)`, `UQ(username, tenant_id)`, `IDX(tenant_id)`, `IDX(branch_id)`, `IDX(warehouse_id)` |
-| `products` | `IDX(tenant_id, status)`, `IDX(tenant_id, created_at)`, `IDX(slug)`, `IDX(brand_id)`, `IDX(category_id)` |
-| `product_variants` | `UQ(sku, tenant_id)`, `IDX(product_id)`, `IDX(tenant_id)` |
-| `orders` | `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `UQ(offline_sale_id)` |
-| `payments` | `IDX(tenant_id, created_at)`, `IDX(tenant_id, status, created_at)`, `IDX(transaction_id)` |
-| `coupons` | `UQ(tenant_id, code)`, `IDX(tenant_id, is_active, expiry_date)` |
-| `inventory_ledger` | `IDX(tenant_id, created_at)`, `IDX(product_id, warehouse_id, created_at)`, `IDX(variant_id)`, `IDX(batch_id)`, `IDX(type)` |
-| `stock_reservations` | `UQ(tenant_id, order_id, product_id, variant_id)`, `IDX(tenant_id, status)`, `IDX(product_id, variant_id, tenant_id, status)`, `IDX(expires_at)` |
-| `stock_transfers` | `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `IDX(transfer_number)` |
-| `purchase_orders` | `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `IDX(reference_number)`, `IDX(supplier_id)` |
-| `goods_received_notes` | `UQ(grn_number)`, `IDX(tenant_id, status)`, `IDX(po_id)`, `IDX(supplier_id)` |
-| `suppliers` | `IDX(tenant_id, name)`, `IDX(email)` |
-| `supplier_ap_ledger` | `IDX(tenant_id, supplier_id)` |
-| `accounts` | `UQ(tenant_id, code)` |
-| `journal_entries` | `IDX(tenant_id, date)` |
-| `ledger_entries` | `IDX(tenant_id, account_id)` |
-| `ar_ledger` | `IDX(tenant_id, customer_id)`, `IDX(tenant_id, created_at)` |
-| `wallet_ledger` | `IDX(tenant_id, customer_id)`, `IDX(tenant_id, created_at)` |
-| `loyalty_ledger` | `IDX(tenant_id, customer_id)`, `IDX(tenant_id, created_at)` |
-| `audit_logs` | `IDX(tenant_id, created_at)`, `IDX(tenant_id, entity, entity_id)`, `IDX(tenant_id, actor_id)` |
-| `accounting_outbox` | `IDX(status, created_at)`, `IDX(tenant_id, status)` |
-| `pos_shifts` | `IDX(tenant_id)`, `IDX(branch_id)`, `IDX(register_id)` |
-| `roles` | `UQ(name, tenant_id)` |
-| `user_role_assignments` | `UQ(user_id, role_id, scope_id)`, `IDX(user_id, tenant_id)` |
-| `campaigns` | `IDX(tenant_id, status)`, `IDX(tenant_id, schedule_time)` |
-| `coupons` | `UQ(tenant_id, code)` |
-| `devices` | `UQ(tenant_id, token)` |
-| `wishlists` | `UQ(user_id, product_id, tenant_id)` |
-| `pages` | `UQ(slug, tenant_id)` |
-| `leads` | `IDX(tenant_id, created_at)`, `IDX(tenant_id, status, created_at)` |
+| `users` | `UQ(email, store_id)`, `UQ(username, store_id)`, `IDX(store_id)`, `IDX(branch_id)`, `IDX(warehouse_id)` |
+| `products` | `IDX(store_id, status)`, `IDX(store_id, created_at)`, `IDX(slug)`, `IDX(brand_id)`, `IDX(category_id)` |
+| `product_variants` | `UQ(sku, store_id)`, `IDX(product_id)`, `IDX(store_id)` |
+| `orders` | `IDX(store_id, created_at)`, `IDX(store_id, status)`, `UQ(offline_sale_id)` |
+| `payments` | `IDX(store_id, created_at)`, `IDX(store_id, status, created_at)`, `IDX(transaction_id)` |
+| `coupons` | `UQ(store_id, code)`, `IDX(store_id, is_active, expiry_date)` |
+| `inventory_ledger` | `IDX(store_id, created_at)`, `IDX(product_id, warehouse_id, created_at)`, `IDX(variant_id)`, `IDX(batch_id)`, `IDX(type)` |
+| `stock_reservations` | `UQ(store_id, order_id, product_id, variant_id)`, `IDX(store_id, status)`, `IDX(product_id, variant_id, store_id, status)`, `IDX(expires_at)` |
+| `stock_transfers` | `IDX(store_id, created_at)`, `IDX(store_id, status)`, `IDX(transfer_number)` |
+| `purchase_orders` | `IDX(store_id, created_at)`, `IDX(store_id, status)`, `IDX(reference_number)`, `IDX(supplier_id)` |
+| `goods_received_notes` | `UQ(grn_number)`, `IDX(store_id, status)`, `IDX(po_id)`, `IDX(supplier_id)` |
+| `suppliers` | `IDX(store_id, name)`, `IDX(email)` |
+| `supplier_ap_ledger` | `IDX(store_id, supplier_id)` |
+| `accounts` | `UQ(store_id, code)` |
+| `journal_entries` | `IDX(store_id, date)` |
+| `ledger_entries` | `IDX(store_id, account_id)` |
+| `ar_ledger` | `IDX(store_id, customer_id)`, `IDX(store_id, created_at)` |
+| `wallet_ledger` | `IDX(store_id, customer_id)`, `IDX(store_id, created_at)` |
+| `loyalty_ledger` | `IDX(store_id, customer_id)`, `IDX(store_id, created_at)` |
+| `audit_logs` | `IDX(store_id, created_at)`, `IDX(store_id, entity, entity_id)`, `IDX(store_id, actor_id)` |
+| `accounting_outbox` | `IDX(status, created_at)`, `IDX(store_id, status)` |
+| `pos_shifts` | `IDX(store_id)`, `IDX(branch_id)`, `IDX(register_id)` |
+| `roles` | `UQ(name, store_id)` |
+| `user_role_assignments` | `UQ(user_id, role_id, scope_id)`, `IDX(user_id, store_id)` |
+| `campaigns` | `IDX(store_id, status)`, `IDX(store_id, schedule_time)` |
+| `coupons` | `UQ(store_id, code)` |
+| `devices` | `UQ(store_id, token)` |
+| `wishlists` | `UQ(user_id, product_id, store_id)` |
+| `pages` | `UQ(slug, store_id)` |
+| `leads` | `IDX(store_id, created_at)`, `IDX(store_id, status, created_at)` |
 
 ### 9.2 Critical unique constraints (business correctness)
 
 | Constraint | Why |
 | --- | --- |
-| `UQ(tenant_id, slug)` on `products` (planned — currently global) | Tenant isolation for product URLs |
-| `UQ(sku, tenant_id)` on `product_variants` | SKU uniqueness per tenant |
-| `UQ(tenant_id, code)` on `coupons` | Coupon code lookup |
-| `UQ(tenant_id, code)` on `accounts` | Chart of accounts uniqueness |
-| `UQ(tenant_id, offline_sale_id)` on `orders` (currently global UNIQUE on `offline_sale_id`) | POS sync idempotency |
+| `UQ(store_id, slug)` on `products` (planned — currently global) | Store isolation for product URLs |
+| `UQ(sku, store_id)` on `product_variants` | SKU uniqueness per store |
+| `UQ(store_id, code)` on `coupons` | Coupon code lookup |
+| `UQ(store_id, code)` on `accounts` | Chart of accounts uniqueness |
+| `UQ(store_id, offline_sale_id)` on `orders` (currently global UNIQUE on `offline_sale_id`) | POS sync idempotency |
 | `UQ(grn_number)` on `goods_received_notes` | Document numbering |
-| `UQ(name, tenant_id)` on `roles` | Role name uniqueness per tenant |
+| `UQ(name, store_id)` on `roles` | Role name uniqueness per store |
 | `UQ(user_id, role_id, scope_id)` on `user_role_assignments` | No duplicate assignments |
-| `UQ(tenant_id, order_id, product_id, variant_id)` on `stock_reservations` | One reservation row per order line |
-| **Planned:** Partial `UQ(tenant_id, user_id) WHERE status='OPEN'` on `pos_shifts` | One open shift per cashier (see §13) |
-| **Planned:** `UQ(tenant_id, code)` on `branches` and `warehouses` (currently global UNIQUE on `code`) | Tenant-scoped codes (see §13) |
+| `UQ(store_id, order_id, product_id, variant_id)` on `stock_reservations` | One reservation row per order line |
+| **Planned:** Partial `UQ(store_id, user_id) WHERE status='OPEN'` on `pos_shifts` | One open shift per cashier (see §13) |
+| **Planned:** `UQ(store_id, code)` on `branches` and `warehouses` (currently global UNIQUE on `code`) | Store-scoped codes (see §13) |
 
 ### 9.3 Recommended PostgreSQL extensions
 
@@ -2406,12 +2406,12 @@ These tables grow without bound and benefit from time-based partitioning:
 | Table | Partition by | Strategy |
 | --- | --- | --- |
 | `audit_logs` | `created_at` monthly | Drop partitions > 7 years |
-| `inventory_ledger` | `tenant_id` (list) or `created_at` (monthly) | Latter is simpler |
+| `inventory_ledger` | `store_id` (list) or `created_at` (monthly) | Latter is simpler |
 | `ledger_entries` | `created_at` by fiscal year | Aligns with closed periods |
 | `system_notifications` | `created_at` monthly | Drop > 90 days |
 | `accounting_outbox` | `status` (list: PENDING vs others) | Keeps hot path tiny |
 | `attendance_events` | `created_at` monthly | High write volume |
-| `tenant_traffic` | `day` monthly | |
+| `store_traffic` | `day` monthly | |
 | `campaign_logs` | `created_at` monthly | |
 
 Implementation note: PostgreSQL native partitioning requires the partition key to be part of every unique index. Plan migrations carefully.
@@ -2464,22 +2464,22 @@ These tables do not exist yet but are anticipated by the system design. They are
 
 | Item | Current | Correct |
 | --- | --- | --- |
-| `products.slug` uniqueness | Global UNIQUE | `UNIQUE(tenant_id, slug)` |
-| `branches.code` uniqueness | Global UNIQUE | `UNIQUE(tenant_id, code)` |
-| `warehouses.code` uniqueness | Global UNIQUE | `UNIQUE(tenant_id, code)` |
-| `orders.offline_sale_id` uniqueness | Global UNIQUE | `UNIQUE(tenant_id, offline_sale_id)` |
-| `pos_shifts` one-open-shift | Not enforced in DB | Partial `UQ(tenant_id, user_id) WHERE status='OPEN'` |
+| `products.slug` uniqueness | Global UNIQUE | `UNIQUE(store_id, slug)` |
+| `branches.code` uniqueness | Global UNIQUE | `UNIQUE(store_id, code)` |
+| `warehouses.code` uniqueness | Global UNIQUE | `UNIQUE(store_id, code)` |
+| `orders.offline_sale_id` uniqueness | Global UNIQUE | `UNIQUE(store_id, offline_sale_id)` |
+| `pos_shifts` one-open-shift | Not enforced in DB | Partial `UQ(store_id, user_id) WHERE status='OPEN'` |
 | Database-level immutability triggers | Only ORM hooks | Add `BEFORE UPDATE/DELETE` triggers on `journal_entries`, `ledger_entries`, all `*_ledger` tables |
-| Multi-tenant FK CHECK constraints | Application-only | Add CHECK constraints for high-risk FKs (warehouse→branch, order_items→orders, etc.) |
-| Composite FK with `tenant_id` | Single-column FKs | Adopt `(id, tenant_id)` composite FKs on the highest-traffic tables |
+| Multi-store FK CHECK constraints | Application-only | Add CHECK constraints for high-risk FKs (warehouse→branch, order_items→orders, etc.) |
+| Composite FK with `store_id` | Single-column FKs | Adopt `(id, store_id)` composite FKs on the highest-traffic tables |
 
 ### 13.3 Index gaps (to add)
 
 | Table | Missing index | Reason |
 | --- | --- | --- |
 | `pos_shifts` | Partial unique on open shift per user | invariant enforcement |
-| `inventory_ledger` | `(tenant_id, product_id, variant_id, warehouse_id, created_at)` | hot stock-on-hand query |
-| `payments` | `(tenant_id, order_id)` | order-payment join |
+| `inventory_ledger` | `(store_id, product_id, variant_id, warehouse_id, created_at)` | hot stock-on-hand query |
+| `payments` | `(store_id, order_id)` | order-payment join |
 | `audit_logs` | Brin on `created_at` | partition pruning |
 
 ---
@@ -2489,10 +2489,10 @@ These tables do not exist yet but are anticipated by the system design. They are
 Every PR that adds, renames, or removes a table MUST tick all of these before merging:
 
 - [ ] **Entity file** added/updated under `server/src/modules/.../entities/`. Class name ends in `Entity`. Table name is plural snake_case.
-- [ ] Extends `BaseEntity` (or `BaseTenantEntity`) so timestamps and soft-delete come for free.
-- [ ] `tenant_id` column present on every tenant-scoped table. FK to `tenants.id ON DELETE CASCADE`.
-- [ ] Every multi-column index leads with `tenant_id`.
-- [ ] Unique business keys are unique **per tenant** (SKU, slug, code, email, etc.).
+- [ ] Extends `BaseEntity` (or `BaseStoreEntity`) so timestamps and soft-delete come for free.
+- [ ] `store_id` column present on every store-scoped table. FK to `stores.id ON DELETE CASCADE`.
+- [ ] Every multi-column index leads with `store_id`.
+- [ ] Unique business keys are unique **per store** (SKU, slug, code, email, etc.).
 - [ ] Money columns use `decimal`. No floats.
 - [ ] Status enums explicit: enum name in DB, default to initial state, listed in [LLD §10.2](erp_low_level_system_design.md#102-canonical-error-codes) error code map.
 - [ ] Append-only? If yes: add `@BeforeUpdate`/`@BeforeRemove` hooks AND open a follow-up to add DB triggers.
@@ -2504,7 +2504,7 @@ Every PR that adds, renames, or removes a table MUST tick all of these before me
   - [ ] Index added to §9.1 / §9.2.
   - [ ] If append-only: row in §7.
 - [ ] **LLD** updated: §11 module catalog row touched, §29 etc. updated if entities owned changed.
-- [ ] Integration test added: tenant-isolation test (`user from tenant A cannot read tenant B`) covers the new table.
+- [ ] Integration test added: store-isolation test (`user from store A cannot read store B`) covers the new table.
 
 PRs that do not pass this checklist MUST be rejected.
 

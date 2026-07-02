@@ -28,21 +28,21 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
   // Filters State
   const [selectedRole, setSelectedRole] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [selectedTenantId, setSelectedTenantId] = useState('ALL');
-  const [tenantsList, setTenantsList] = useState<any[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState('ALL');
+  const [storesList, setStoresList] = useState<any[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load tenants on mount
+  // Load stores on mount
   useEffect(() => {
-    const loadTenants = async () => {
+    const loadStores = async () => {
       try {
-        const res = await fetchSuperAdminAPI('/super-admin/tenants');
-        if (res.success) setTenantsList(res.data || []);
+        const res = await fetchSuperAdminAPI('/super-admin/stores');
+        if (res.success) setStoresList(res.data || []);
       } catch (e) {
-        console.error('Error loading tenants:', e);
+        console.error('Error loading stores:', e);
       }
     };
-    loadTenants();
+    loadStores();
   }, []);
 
   // Debounce search term
@@ -63,7 +63,7 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
       if (q) endpoint += `&q=${q}`;
       if (selectedRole !== 'ALL') endpoint += `&role=${selectedRole}`;
       if (selectedStatus !== 'ALL') endpoint += `&status=${selectedStatus}`;
-      if (selectedTenantId !== 'ALL') endpoint += `&tenantId=${selectedTenantId}`;
+      if (selectedStoreId !== 'ALL') endpoint += `&storeId=${selectedStoreId}`;
       
       const res = await fetchSuperAdminAPI(endpoint);
 
@@ -76,12 +76,12 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
     } finally {
       setIsLoading(false);
     }
-  }, [pagination.limit, selectedRole, selectedStatus, selectedTenantId]);
+  }, [pagination.limit, selectedRole, selectedStatus, selectedStoreId]);
 
-  // Refetch when search, role, status, or tenant changes
+  // Refetch when search, role, status, or store changes
   useEffect(() => {
     fetchUsers(1, debouncedSearch);
-  }, [debouncedSearch, selectedRole, selectedStatus, selectedTenantId, fetchUsers]);
+  }, [debouncedSearch, selectedRole, selectedStatus, selectedStoreId, fetchUsers]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -178,12 +178,12 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
       key: 'partition',
       header: 'Partition Association',
       className: 'px-6 py-4',
-      cell: (user) => user.tenantId ? (
+      cell: (user) => user.storeId ? (
         <div className="flex items-center gap-2 text-slate-900 dark:text-white text-sm">
           <Store className="w-4 h-4 text-indigo-400" />
-          <span className="font-semibold">{user.tenantId.storeName}</span>
+          <span className="font-semibold">{user.storeId.storeName}</span>
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded">
-            {user.tenantId.subdomain}
+            {user.storeId.subdomain}
           </span>
         </div>
       ) : (
@@ -337,16 +337,16 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
                 </select>
               </div>
 
-              {/* Tenant Dropdown */}
+              {/* Store Dropdown */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Store Partition</label>
                 <select
-                  value={selectedTenantId}
-                  onChange={(e) => { setSelectedTenantId(e.target.value); handlePageChange(1); }}
+                  value={selectedStoreId}
+                  onChange={(e) => { setSelectedStoreId(e.target.value); handlePageChange(1); }}
                   className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px] max-w-[280px]"
                 >
                   <option value="ALL">All Stores (Global)</option>
-                  {tenantsList.map((t) => (
+                  {storesList.map((t) => (
                     <option key={t.id} value={t.id}>{t.storeName} ({t.subdomain})</option>
                   ))}
                 </select>
@@ -355,7 +355,7 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
               {/* Clear filters */}
               <div className="flex items-end">
                 <button
-                  onClick={() => { setSelectedRole('ALL'); setSelectedStatus('ALL'); setSelectedTenantId('ALL'); setSearchTerm(''); }}
+                  onClick={() => { setSelectedRole('ALL'); setSelectedStatus('ALL'); setSelectedStoreId('ALL'); setSearchTerm(''); }}
                   className="px-4 py-2 text-xs font-semibold text-rose-600 border border-rose-200 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
                 >
                   Clear All

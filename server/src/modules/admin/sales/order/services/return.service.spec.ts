@@ -20,7 +20,7 @@ describe('ReturnService', () => {
   let mockCacheService: any
 
   const mockCtx: RequestContextDto = {
-    tenantId: 'test-tenant',
+    storeId: 'test-store',
     user: { id: 'user-1', username: 'testuser', role: 'admin' },
   } as any
 
@@ -115,7 +115,7 @@ describe('ReturnService', () => {
 
       expect(mockReturnRepository.findByIdWithRelations).toHaveBeenCalledWith(
         'return-123',
-        'test-tenant',
+        'test-store',
       )
       expect(mockReturnRepository.updateStatus).toHaveBeenCalledWith(
         expect.objectContaining({ refundMethod: RefundMethod.CASH }),
@@ -134,7 +134,7 @@ describe('ReturnService', () => {
         },
         { removeOnComplete: true },
       )
-      expect(mockCacheService.delCacheByPattern).toHaveBeenCalledWith('returns:all*', 'test-tenant')
+      expect(mockCacheService.delCacheByPattern).toHaveBeenCalledWith('returns:all*', 'test-store')
       expect(result.status).toBe(ReturnStatus.REFUNDED)
     })
   })

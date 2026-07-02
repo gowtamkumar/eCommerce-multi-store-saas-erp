@@ -35,11 +35,11 @@ export class PushService {
 
   async registerDevice(dto: RegisterDeviceDto, ctx: RequestContextDto): Promise<void> {
     const { token, platform, userAgent } = dto
-    const { tenantId, userId } = ctx
+    const { storeId, userId } = ctx
 
-    // Since token is unique per tenant, try to find existing
+    // Since token is unique per store, try to find existing
     let device = await this.deviceRepository.findOne({
-      where: { tenantId, token },
+      where: { storeId, token },
     })
 
     if (device) {
@@ -51,7 +51,7 @@ export class PushService {
     } else {
       device = this.deviceRepository.create({
         token,
-        tenantId,
+        storeId,
         userId: userId || null,
         platform: platform || 'web',
         userAgent,
@@ -61,14 +61,14 @@ export class PushService {
   }
 
   async unregisterDevice(dto: UnregisterDeviceDto, ctx: RequestContextDto): Promise<void> {
-    const { tenantId } = ctx
-    await this.deviceRepository.delete({ tenantId, token: dto.token })
+    const { storeId } = ctx
+    await this.deviceRepository.delete({ storeId, token: dto.token })
   }
 
   async sendPushNotification(
     token: string,
     payload: { title: string; body: string; imageUrl?: string; url?: string },
-    tenantId: string,
+    storeId: string,
   ): Promise<{ success: boolean; messageId?: string }> {
     if (!this.isConfigured) {
       this.logger.warn('Push notifications are not configured.')
@@ -87,23 +87,23 @@ export class PushService {
       const result = await webPush.sendNotification(subscriptionInfo, data)
       return { success: true, messageId: result.headers['location'] }
     } catch (error: any) {
-      this.logger.error(`[PUSH ERROR] Failed to send push to tenant ${tenantId}`, error.stack)
+      this.logger.error(`[PUSH ERROR] Failed to send push to store ${storeId}`, error.stack)
       if (error.statusCode === 410 || error.statusCode === 404) {
         // Subscription is no longer valid, delete it
-        this.logger.log(`Removing invalid push token for tenant ${tenantId}`)
-        await this.deviceRepository.delete({ tenantId, token })
+        this.logger.log(`Removing invalid push token for store ${storeId}`)
+        await this.deviceRepository.delete({ storeId, token })
       }
       return { success: false }
     }
   }
 
-  async sendToUser(userId: string, payload: any, tenantId: string): Promise<void> {
+  async sendToUser(userId: string, payload: any, storeId: string): Promise<void> {
     const devices = await this.deviceRepository.find({
-      where: { userId, tenantId },
+      where: { userId, storeId },
     })
 
     for (const device of devices) {
-      await this.sendPushNotification(device.token, payload, tenantId)
+      await this.sendPushNotification(device.token, payload, storeId)
     }
   }
 }

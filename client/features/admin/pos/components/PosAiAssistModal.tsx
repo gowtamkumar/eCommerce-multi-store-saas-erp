@@ -191,7 +191,7 @@ export default function PosAiAssistModal({
                   <AlertCircle className="w-10 h-10 text-amber-500" />
                   <h4 className="font-black text-slate-800 dark:text-white text-sm">AI Assist Not Configured</h4>
                   <p className="text-xs text-slate-450 max-w-xs">
-                    Please configure your tenant AI settings and API key under Settings → AI before using the assistant.
+                    Please configure your store AI settings and API key under Settings → AI before using the assistant.
                   </p>
                 </div>
               ) : (

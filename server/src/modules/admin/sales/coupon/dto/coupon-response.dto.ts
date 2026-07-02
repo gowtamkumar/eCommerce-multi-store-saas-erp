@@ -36,7 +36,7 @@ export class CouponResponseDto {
   isActive: boolean
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

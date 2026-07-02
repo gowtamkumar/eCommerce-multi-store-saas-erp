@@ -78,7 +78,7 @@ describe('AccountingForexService', () => {
       return Promise.resolve([])
     })
 
-    const ctx = { tenantId: 'tenant-1' } as any
+    const ctx = { storeId: 'store-1' } as any
     const data = {
       type: JournalType.SALES,
       description: 'Standard Sale in base currency',
@@ -129,7 +129,7 @@ describe('AccountingForexService', () => {
       return Promise.resolve([])
     })
 
-    const ctx = { tenantId: 'tenant-1' } as any
+    const ctx = { storeId: 'store-1' } as any
     const data = {
       type: JournalType.SALES,
       description: 'Forex Discrepancy Sale',

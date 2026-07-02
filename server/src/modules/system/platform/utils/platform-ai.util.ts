@@ -1,12 +1,12 @@
 import {
   AI_PROVIDER_PRESETS,
   AiProviderType,
-} from '@/common/types/tenant-ai-config.types'
+} from '@/common/types/store-ai-config.types'
 import {
   DEFAULT_PLATFORM_AI_CONFIG,
   PlatformAiConfig,
 } from '@/common/types/platform-ai-config.types'
-import { API_KEY_UNCHANGED, maskApiKey } from '@/modules/system/tenant/utils/tenant-ai.util'
+import { API_KEY_UNCHANGED, maskApiKey } from '@/modules/system/store/utils/store-ai.util'
 
 export { API_KEY_UNCHANGED }
 

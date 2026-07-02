@@ -10,14 +10,14 @@ import {
 } from 'typeorm'
 
 @Entity('ai_jobs')
-@Index(['tenantId', 'status'])
-@Index(['tenantId', 'createdAt'])
+@Index(['storeId', 'status'])
+@Index(['storeId', 'createdAt'])
 export class AiJobEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
-  tenantId: string
+  @Column({ name: 'store_id', type: 'uuid' })
+  storeId: string
 
   @Column({ type: 'varchar', length: 64 })
   type: AiJobType

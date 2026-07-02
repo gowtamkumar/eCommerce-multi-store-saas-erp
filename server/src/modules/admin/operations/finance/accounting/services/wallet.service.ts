@@ -17,9 +17,9 @@ export class WalletService {
     private readonly accountingService: AccountingService,
   ) {}
 
-  private async getTenantBaseCurrency(tenantId: string, em?: EntityManager): Promise<string> {
+  private async getStoreBaseCurrency(storeId: string, em?: EntityManager): Promise<string> {
     const repo = em ? em.getRepository(SiteSettingsEntity) : this.dataSource.getRepository(SiteSettingsEntity)
-    const settings = await repo.findOne({ where: { tenantId } })
+    const settings = await repo.findOne({ where: { storeId } })
     return (settings?.currency || 'USD').toUpperCase()
   }
 
@@ -29,7 +29,7 @@ export class WalletService {
    */
   async getAvailableBalance(
     customerId: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<number> {
     const em = manager || this.dataSource.manager
@@ -37,7 +37,7 @@ export class WalletService {
       .createQueryBuilder(WalletLedgerEntity, 'w')
       .select('SUM(w.amount)', 'total')
       .where('w.customer_id = :customerId', { customerId })
-      .andWhere('w.tenant_id = :tenantId', { tenantId })
+      .andWhere('w.store_id = :storeId', { storeId })
       .getRawOne()
 
     return Math.max(0, Number(result?.total || 0))
@@ -61,7 +61,7 @@ export class WalletService {
     manager?: EntityManager,
   ): Promise<WalletLedgerEntity> {
     const em = manager || this.dataSource.manager
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const amount = Math.abs(Number(data.amount))
 
     if (amount <= 0) {
@@ -72,9 +72,9 @@ export class WalletService {
     const customer = await em
       .createQueryBuilder(UserEntity, 'u')
       .setLock('pessimistic_write')
-      .where('u.id = :customerId AND u.tenantId = :tenantId', {
+      .where('u.id = :customerId AND u.storeId = :storeId', {
         customerId: data.customerId,
-        tenantId,
+        storeId,
       })
       .getOne()
 
@@ -82,9 +82,9 @@ export class WalletService {
       throw new NotFoundException(`Customer with ID ${data.customerId} not found`)
     }
 
-    const currentBalance = await this.getAvailableBalance(data.customerId, tenantId, em)
+    const currentBalance = await this.getAvailableBalance(data.customerId, storeId, em)
 
-    const baseCurrency = await this.getTenantBaseCurrency(tenantId, em)
+    const baseCurrency = await this.getStoreBaseCurrency(storeId, em)
 
     const entry = em.create(WalletLedgerEntity, {
       customerId: data.customerId,
@@ -95,7 +95,7 @@ export class WalletService {
       referenceType: data.referenceType || null,
       referenceId: data.referenceId || null,
       note: data.note || null,
-      tenantId,
+      storeId,
       createdBy: data.createdBy || ctx.userId || null,
     })
 
@@ -141,7 +141,7 @@ export class WalletService {
     manager?: EntityManager,
   ): Promise<WalletLedgerEntity> {
     const em = manager || this.dataSource.manager
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const amount = Math.abs(Number(data.amount))
 
     if (amount <= 0) {
@@ -152,9 +152,9 @@ export class WalletService {
     const customer = await em
       .createQueryBuilder(UserEntity, 'u')
       .setLock('pessimistic_write')
-      .where('u.id = :customerId AND u.tenantId = :tenantId', {
+      .where('u.id = :customerId AND u.storeId = :storeId', {
         customerId: data.customerId,
-        tenantId,
+        storeId,
       })
       .getOne()
 
@@ -162,7 +162,7 @@ export class WalletService {
       throw new NotFoundException(`Customer with ID ${data.customerId} not found`)
     }
 
-    const currentBalance = await this.getAvailableBalance(data.customerId, tenantId, em)
+    const currentBalance = await this.getAvailableBalance(data.customerId, storeId, em)
 
     if (currentBalance < amount) {
       throw new BadRequestException(
@@ -170,7 +170,7 @@ export class WalletService {
       )
     }
 
-    const baseCurrency = await this.getTenantBaseCurrency(tenantId, em)
+    const baseCurrency = await this.getStoreBaseCurrency(storeId, em)
 
     const entry = em.create(WalletLedgerEntity, {
       customerId: data.customerId,
@@ -181,7 +181,7 @@ export class WalletService {
       referenceType: data.referenceType || null,
       referenceId: data.referenceId || null,
       note: data.note || null,
-      tenantId,
+      storeId,
       createdBy: ctx.userId || null,
     })
 
@@ -217,10 +217,10 @@ export class WalletService {
    */
   async getCustomerWalletHistory(
     customerId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<WalletLedgerEntity[]> {
     return this.dataSource.manager.find(WalletLedgerEntity, {
-      where: { customerId, tenantId },
+      where: { customerId, storeId },
       order: { createdAt: 'DESC', id: 'DESC' },
     })
   }
@@ -230,11 +230,11 @@ export class WalletService {
    */
   async getCustomerWalletSummary(
     customerId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<{ balance: number; history: WalletLedgerEntity[] }> {
     const [balance, history] = await Promise.all([
-      this.getAvailableBalance(customerId, tenantId),
-      this.getCustomerWalletHistory(customerId, tenantId),
+      this.getAvailableBalance(customerId, storeId),
+      this.getCustomerWalletHistory(customerId, storeId),
     ])
     return { balance, history }
   }

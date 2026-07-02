@@ -18,7 +18,7 @@ export class AiCrmAssistantService {
   ) {}
 
   async generateLeadFollowUp(
-    tenantId: string,
+    storeId: string,
     dto: GenerateLeadFollowUpDto,
   ): Promise<LeadFollowUpResultDto> {
     const intent = dto.intent || 'follow_up'
@@ -47,7 +47,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -68,7 +68,7 @@ Return exactly this JSON shape:
   }
 
   async generateCustomerProfile(
-    tenantId: string,
+    storeId: string,
     dto: GenerateCustomerProfileDto,
   ): Promise<CustomerProfileResultDto> {
     const prompt = `Analyze this customer profile for a support and CRM team as JSON only (no markdown fences).
@@ -92,7 +92,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -112,7 +112,7 @@ Return exactly this JSON shape:
   }
 
   async generateReviewAssist(
-    tenantId: string,
+    storeId: string,
     dto: GenerateReviewAssistDto,
   ): Promise<ReviewAssistResultDto> {
     const prompt = `Moderate a product review and draft a public store reply as JSON only (no markdown fences).
@@ -134,7 +134,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -156,7 +156,7 @@ Return exactly this JSON shape:
   }
 
   async generateAbandonedCartMessage(
-    tenantId: string,
+    storeId: string,
     dto: GenerateAbandonedCartMessageDto,
   ): Promise<AbandonedCartMessageResultDto> {
     const templateLabels: Record<string, string> = {
@@ -187,7 +187,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

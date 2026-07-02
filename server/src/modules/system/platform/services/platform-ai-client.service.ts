@@ -1,4 +1,4 @@
-import { AiProviderType } from '@/common/types/tenant-ai-config.types'
+import { AiProviderType } from '@/common/types/store-ai-config.types'
 import { PlatformSettingsService } from '../platform-settings.service'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'

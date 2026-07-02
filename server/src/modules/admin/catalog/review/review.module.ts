@@ -5,11 +5,11 @@ import { ReviewRepository } from './repositories/review.repository'
 import { ReviewController } from './controllers/review.controller'
 import { ReviewService } from './services/review.service'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ReviewEntity]), TenantModule, NotificationModule],
+  imports: [TypeOrmModule.forFeature([ReviewEntity]), StoreModule, NotificationModule],
   controllers: [ReviewController],
   providers: [ReviewService, ReviewRepository],
   exports: [ReviewService, ReviewRepository],

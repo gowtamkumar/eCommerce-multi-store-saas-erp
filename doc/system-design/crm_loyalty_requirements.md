@@ -1,7 +1,7 @@
 # CRM & Loyalty Module — Requirements & Implementation Plan
 
 > Status in current project: **Mostly missing**
-> Source repo: `eCommerce-multi-tenant-saas`
+> Source repo: `eCommerce-multi-store-saas`
 > Author note: this document defines what must be added to bring the project from a basic "customer list + subscribers + leads" surface to a real ERP-grade CRM, customer loyalty, wallet/credit, segmentation, and AR system.
 > Date: 2026-05-20
 
@@ -56,7 +56,7 @@ Extend `UserEntity` (for `role = USER`) with ERP-grade customer fields:
 
 | Field | Type | Purpose |
 | :--- | :--- | :--- |
-| `customerCode` | varchar, unique per tenant | Human-friendly ID (e.g. `CUST-000123`) |
+| `customerCode` | varchar, unique per store | Human-friendly ID (e.g. `CUST-000123`) |
 | `customerType` | enum | `RETAIL`, `WHOLESALE`, `VIP`, `B2B`, `GOVERNMENT` |
 | `preferredBranchId` | uuid | Home branch for branch managers |
 | `priceBookId` | uuid | Custom pricing tier |
@@ -109,7 +109,7 @@ Two ledger model: **points ledger** and **redemption rules**.
 
 #### 3.3.1 Earning rules
 
-- Per spend (e.g. 1 point per $1, configurable per tenant/currency)
+- Per spend (e.g. 1 point per $1, configurable per store/currency)
 - Per product/category multiplier (2x on electronics)
 - Per segment multiplier (3x for VIP)
 - Bonus events: sign-up, birthday, first order, referral success, review submitted
@@ -136,7 +136,7 @@ Immutable ledger with running balance per customer:
 
 ```
 loyalty_ledger (
-  id, tenantId, customerId,
+  id, storeId, customerId,
   type ENUM('EARN','REDEEM','EXPIRE','ADJUST','REVERSE'),
   points INT,         -- signed
   balanceAfter INT,
@@ -159,7 +159,7 @@ A customer can hold **store credit** (refundable balance) and a **gift wallet** 
 
 ```
 wallet_ledger (
-  id, tenantId, customerId,
+  id, storeId, customerId,
   walletType ENUM('STORE_CREDIT','GIFT','REFUND'),
   amount DECIMAL,     -- signed
   balanceAfter DECIMAL,
@@ -174,7 +174,7 @@ wallet_ledger (
 Operations:
 
 - **Top up** (manual or from promo)
-- **Refund to wallet** (faster than card refund; configurable per tenant)
+- **Refund to wallet** (faster than card refund; configurable per store)
 - **Pay with wallet at checkout** (full or partial)
 - **Expire** (configurable)
 - **Transfer between wallet types** (admin only, with audit)
@@ -210,7 +210,7 @@ Every credit sale creates an AR record. Every customer payment reduces it.
 
 ```
 ar_ledger (
-  id, tenantId, customerId,
+  id, storeId, customerId,
   type ENUM('INVOICE','PAYMENT','CREDIT_NOTE','WRITE_OFF','ADJUSTMENT','REFUND'),
   amount DECIMAL,       -- signed (debit positive for invoice, credit negative for payment)
   balanceAfter DECIMAL,
@@ -232,7 +232,7 @@ ar_ledger (
 
 Aging must:
 
-- Be generated per customer and per tenant.
+- Be generated per customer and per store.
 - Be exportable (CSV/PDF).
 - Trigger automatic notifications at configurable intervals (dunning).
 - Auto-set `creditHold = true` when threshold crossed.
@@ -259,7 +259,7 @@ All journal postings must go through the existing `AccountingService.createJourn
 
 ```
 referrals (
-  id, tenantId, referrerUserId, refereeUserId,
+  id, storeId, referrerUserId, refereeUserId,
   status ENUM('PENDING','QUALIFIED','REWARDED','EXPIRED','CANCELLED'),
   referralCode,
   qualifyingOrderId,
@@ -333,14 +333,14 @@ Implementation: use existing campaign engine + BullMQ scheduled jobs.
 
 ## 4. Non-Functional Requirements
 
-- **Multi-tenant safe** — every CRM read/write must scope by `tenantId`.
+- **Multi-store safe** — every CRM read/write must scope by `storeId`.
 - **Branch-aware** — segment / report endpoints respect branch-scoped staff.
 - **Auditable** — points, wallet, AR, and credit limit changes always emit `AuditLog`.
 - **Idempotent** — wallet/AR/points postings must accept an idempotency key.
 - **Concurrency-safe** — wallet/AR balance updates must use row locks or optimistic versioning.
-- **Performant** — segment evaluation runs as async job for large tenants; cache RFM scores.
+- **Performant** — segment evaluation runs as async job for large stores; cache RFM scores.
 - **GDPR compliant** — export, delete, anonymize, consent versioning.
-- **Currency-aware** — wallet, AR, loyalty value must store currency; multi-currency tenants need FX snapshots.
+- **Currency-aware** — wallet, AR, loyalty value must store currency; multi-currency stores need FX snapshots.
 
 ---
 
@@ -353,7 +353,7 @@ Implementation: use existing campaign engine + BullMQ scheduled jobs.
 | `customer_segments` | Segment definition (static/dynamic). |
 | `customer_segment_rules` | JSON DSL or per-rule rows. |
 | `customer_segment_members` | Materialized membership (refreshed by job). |
-| `loyalty_programs` | Per-tenant loyalty config. |
+| `loyalty_programs` | Per-store loyalty config. |
 | `loyalty_tiers` | Tier definitions and benefits. |
 | `loyalty_rules` | Earning/redeeming rules. |
 | `loyalty_ledger` | Immutable points ledger. |
@@ -529,7 +529,7 @@ All "approve/adjust" permissions must require audit log entry with reason.
 | Stale segment membership | Schedule incremental refresh + on-event invalidation. |
 | Marketing to opted-out users | Centralized consent filter in `AudienceService`. |
 | GDPR delete loses audit trail | Anonymize fields but keep ledger entries with hashed reference. |
-| Massive segment evaluation on big tenants | Run as queue job with progress; cache results. |
+| Massive segment evaluation on big stores | Run as queue job with progress; cache results. |
 
 ---
 
@@ -585,7 +585,7 @@ The module is "ERP-ready" when:
 - AR aging report matches sum of `ar_ledger` per customer.
 - Loyalty outstanding liability matches sum of unredeemed/unexpired points × point value.
 - Every wallet, points, AR, and credit-limit mutation is visible in the audit log with actor, reason, and timestamps.
-- Every endpoint enforces tenant scope and feature gating.
+- Every endpoint enforces store scope and feature gating.
 - All cross-module events are idempotent.
 
 ---

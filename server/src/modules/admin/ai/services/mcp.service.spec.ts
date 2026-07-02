@@ -18,7 +18,7 @@ describe('MCP Authentication and Service', () => {
   const mockJwtSecret = 'test-secret-key-12345'
   const mockUser = {
     id: 'user-uuid-123',
-    tenantId: 'tenant-uuid-456',
+    storeId: 'store-uuid-456',
     email: 'test@example.com',
   }
 
@@ -93,7 +93,7 @@ describe('MCP Authentication and Service', () => {
         ...mockUser,
         sessionId: 'session-uuid-789',
       })
-      expect(mockRequest.tenantId).toBe(mockUser.tenantId)
+      expect(mockRequest.storeId).toBe(mockUser.storeId)
     })
 
     it('should throw UnauthorizedException if token is missing', async () => {

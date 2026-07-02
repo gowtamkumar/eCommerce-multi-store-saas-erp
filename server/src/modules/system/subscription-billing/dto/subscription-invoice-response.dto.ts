@@ -9,7 +9,7 @@ export class SubscriptionInvoiceResponseDto {
   invoiceNumber: string
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   subscriptionPlanId: string

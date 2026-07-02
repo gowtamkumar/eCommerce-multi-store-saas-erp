@@ -1,6 +1,6 @@
 /**
- * Core features are part of every tenant's account regardless of subscription
- * plan. They cover account/self-management capabilities that a tenant must
+ * Core features are part of every store's account regardless of subscription
+ * plan. They cover account/self-management capabilities that a store must
  * always be able to use (managing their own team, roles, settings, and viewing
  * their audit trail). These are never plan-gated.
  *

@@ -166,7 +166,7 @@ export function classifyPayrollDays(params: {
 }
 
 /**
- * Progressive income tax from tenant-configured brackets.
+ * Progressive income tax from store-configured brackets.
  * Falls back to a sensible default two-bracket schedule when none configured.
  */
 export function computeIncomeTax(grossSalary: number, brackets: TaxBracketEntity[]): number {

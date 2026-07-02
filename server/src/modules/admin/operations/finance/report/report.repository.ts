@@ -6,29 +6,29 @@ import { DataSource } from 'typeorm'
 export class ReportRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async getDashboardStats(tenantId: string, startDate: Date) {
+  async getDashboardStats(storeId: string, startDate: Date) {
     const query = `
       SELECT
-        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE tenant_id = $1 AND status = 'completed') as "totalSales",
-        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE tenant_id = $1 AND status = 'completed' AND created_at >= $2) as "periodSales",
-        (SELECT COUNT(*) FROM orders WHERE tenant_id = $1 AND created_at >= $2) as "periodOrders",
-        (SELECT COUNT(*) FROM orders WHERE tenant_id = $1 AND status = $3) as "activeOrders",
-        (SELECT COUNT(*) FROM products WHERE tenant_id = $1) as "totalProducts",
-        (SELECT COUNT(*) FROM pages WHERE tenant_id = $1) as "totalPages",
+        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE store_id = $1 AND status = 'completed') as "totalSales",
+        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE store_id = $1 AND status = 'completed' AND created_at >= $2) as "periodSales",
+        (SELECT COUNT(*) FROM orders WHERE store_id = $1 AND created_at >= $2) as "periodOrders",
+        (SELECT COUNT(*) FROM orders WHERE store_id = $1 AND status = $3) as "activeOrders",
+        (SELECT COUNT(*) FROM products WHERE store_id = $1) as "totalProducts",
+        (SELECT COUNT(*) FROM pages WHERE store_id = $1) as "totalPages",
         (SELECT COUNT(*) FROM products p 
          LEFT JOIN product_variants v ON v.product_id = p.id
-         WHERE p.tenant_id = $1 AND (
+         WHERE p.store_id = $1 AND (
            (v.id IS NOT NULL AND (SELECT COALESCE(SUM(quantity), 0) FROM inventory_ledger WHERE variant_id = v.id) <= COALESCE(v.low_stock_threshold, 5)) OR
            (v.id IS NULL AND (SELECT COALESCE(SUM(quantity), 0) FROM inventory_ledger WHERE product_id = p.id AND variant_id IS NULL) <= COALESCE(p.low_stock_threshold, 5))
          )) as "lowStockCount",
-        (SELECT COUNT(*) FROM users WHERE tenant_id = $1) as "totalUsers",
-        (SELECT COUNT(*) FROM suppliers WHERE tenant_id = $1) as "totalSuppliers",
-        (SELECT COUNT(*) FROM purchase_orders WHERE tenant_id = $1) as "totalPurchaseOrders",
-        (SELECT COALESCE(SUM(total_amount - COALESCE(paid_amount, 0)), 0) FROM purchase_orders WHERE tenant_id = $1 AND status != 'cancelled') as "totalAmountDue",
+        (SELECT COUNT(*) FROM users WHERE store_id = $1) as "totalUsers",
+        (SELECT COUNT(*) FROM suppliers WHERE store_id = $1) as "totalSuppliers",
+        (SELECT COUNT(*) FROM purchase_orders WHERE store_id = $1) as "totalPurchaseOrders",
+        (SELECT COALESCE(SUM(total_amount - COALESCE(paid_amount, 0)), 0) FROM purchase_orders WHERE store_id = $1 AND status != 'cancelled') as "totalAmountDue",
         0 as "pendingFulfillment",
         0 as "pickingFulfillment"
     `
-    const result = await this.dataSource.query(query, [tenantId, startDate, OrderStatus.PENDING])
+    const result = await this.dataSource.query(query, [storeId, startDate, OrderStatus.PENDING])
     return result[0]
   }
 
@@ -39,7 +39,7 @@ export class ReportRepository {
    *  - month → 30 daily buckets
    * Each row is `{ date, sales, granularity }` so the service can format labels.
    */
-  async getSalesChartData(tenantId: string, period: string = 'month') {
+  async getSalesChartData(storeId: string, period: string = 'month') {
     if (period === 'day') {
       const query = `
         WITH hours AS (
@@ -56,12 +56,12 @@ export class ReportRepository {
         FROM hours h
         LEFT JOIN payments p
           ON date_trunc('hour', p.created_at) = h.bucket
-          AND p.tenant_id = $1
+          AND p.store_id = $1
           AND p.status = 'completed'
         GROUP BY h.bucket
         ORDER BY h.bucket ASC
       `
-      return this.dataSource.query(query, [tenantId])
+      return this.dataSource.query(query, [storeId])
     }
 
     const days = period === 'week' ? 7 : 30
@@ -75,26 +75,26 @@ export class ReportRepository {
         COALESCE(SUM(p.amount), 0) as sales,
         'day' as granularity
       FROM days d
-      LEFT JOIN payments p ON p.created_at::date = d.day_date AND p.tenant_id = $1 AND p.status = 'completed'
+      LEFT JOIN payments p ON p.created_at::date = d.day_date AND p.store_id = $1 AND p.status = 'completed'
       GROUP BY d.day_date
       ORDER BY d.day_date ASC
     `
-    return this.dataSource.query(query, [tenantId, days])
+    return this.dataSource.query(query, [storeId, days])
   }
 
   /** Sum of completed payment amounts within an inclusive date range. */
-  async getSalesSumInRange(tenantId: string, startDate: Date, endDate: Date): Promise<number> {
+  async getSalesSumInRange(storeId: string, startDate: Date, endDate: Date): Promise<number> {
     const result = await this.dataSource.query(
       `SELECT COALESCE(SUM(amount), 0) as sales
        FROM payments
-       WHERE tenant_id = $1 AND status = 'completed' AND created_at >= $2 AND created_at < $3`,
-      [tenantId, startDate, endDate],
+       WHERE store_id = $1 AND status = 'completed' AND created_at >= $2 AND created_at < $3`,
+      [storeId, startDate, endDate],
     )
     return parseFloat(result[0]?.sales ?? 0)
   }
 
   /** Most recent customer orders for the dashboard activity feed. */
-  async getRecentOrders(tenantId: string, limit: number = 5) {
+  async getRecentOrders(storeId: string, limit: number = 5) {
     const query = `
       SELECT
         o.id,
@@ -105,21 +105,21 @@ export class ReportRepository {
         o.currency,
         o.created_at as "createdAt"
       FROM orders o
-      WHERE o.tenant_id = $1
+      WHERE o.store_id = $1
       ORDER BY o.created_at DESC
       LIMIT $2
     `
-    return this.dataSource.query(query, [tenantId, limit])
+    return this.dataSource.query(query, [storeId, limit])
   }
 
-  async getMonthlyGrowth(tenantId: string) {
+  async getMonthlyGrowth(storeId: string) {
     const query = `
       WITH monthly_sales AS (
         SELECT 
           date_trunc('month', created_at) as month,
           SUM(amount) as sales
         FROM payments
-        WHERE tenant_id = $1 AND status = 'completed'
+        WHERE store_id = $1 AND status = 'completed'
           AND created_at >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month'
         GROUP BY 1
       )
@@ -129,10 +129,10 @@ export class ReportRepository {
       FROM monthly_sales
       ORDER BY month DESC
     `
-    return this.dataSource.query(query, [tenantId])
+    return this.dataSource.query(query, [storeId])
   }
 
-  async getLowStockProducts(tenantId: string, limit: number = 10) {
+  async getLowStockProducts(storeId: string, limit: number = 10) {
     const query = `
       SELECT 
         p.id,
@@ -154,9 +154,9 @@ export class ReportRepository {
         FROM inventory_ledger il
         WHERE il.product_id = p.id
           AND ((il.variant_id IS NULL AND v.id IS NULL) OR (il.variant_id = v.id))
-          AND il.tenant_id = $1
+          AND il.store_id = $1
       ) stock ON true
-      WHERE p.tenant_id = $1
+      WHERE p.store_id = $1
         AND (
           (v.id IS NOT NULL AND stock.current_stock <= COALESCE(v.low_stock_threshold, 5))
           OR
@@ -164,22 +164,22 @@ export class ReportRepository {
         )
       LIMIT $2
     `
-    return this.dataSource.query(query, [tenantId, limit])
+    return this.dataSource.query(query, [storeId, limit])
   }
 
-  async getGlobalCounts(tenantId: string) {
+  async getGlobalCounts(storeId: string) {
     const query = `
       SELECT
-        (SELECT COUNT(*) FROM users WHERE tenant_id = $1) as users,
-        (SELECT COUNT(*) FROM products WHERE tenant_id = $1) as products,
-        (SELECT COUNT(*) FROM orders WHERE tenant_id = $1) as orders,
-        (SELECT COUNT(*) FROM pages WHERE tenant_id = $1) as pages
+        (SELECT COUNT(*) FROM users WHERE store_id = $1) as users,
+        (SELECT COUNT(*) FROM products WHERE store_id = $1) as products,
+        (SELECT COUNT(*) FROM orders WHERE store_id = $1) as orders,
+        (SELECT COUNT(*) FROM pages WHERE store_id = $1) as pages
     `
-    const result = await this.dataSource.query(query, [tenantId])
+    const result = await this.dataSource.query(query, [storeId])
     return result[0]
   }
 
-  async getRecentPurchaseOrders(tenantId: string, limit: number = 5) {
+  async getRecentPurchaseOrders(storeId: string, limit: number = 5) {
     const query = `
       SELECT 
         po.id,
@@ -191,14 +191,14 @@ export class ReportRepository {
         s.name as "supplierName"
       FROM purchase_orders po
       LEFT JOIN suppliers s ON s.id = po.supplier_id
-      WHERE po.tenant_id = $1
+      WHERE po.store_id = $1
       ORDER BY po.created_at DESC
       LIMIT $2
     `
-    return this.dataSource.query(query, [tenantId, limit])
+    return this.dataSource.query(query, [storeId, limit])
   }
 
-  async getTopProducts(tenantId: string, startDate: Date, limit: number = 5) {
+  async getTopProducts(storeId: string, startDate: Date, limit: number = 5) {
     const query = `
       SELECT
         oi.product_id as id,
@@ -209,18 +209,18 @@ export class ReportRepository {
       FROM order_items oi
       INNER JOIN orders o ON o.id = oi.order_id
       LEFT JOIN products p ON p.id = oi.product_id
-      WHERE oi.tenant_id = $1
-        AND o.tenant_id = $1
+      WHERE oi.store_id = $1
+        AND o.store_id = $1
         AND o.created_at >= $2
         AND o.status != $3
       GROUP BY oi.product_id, p.name, p.images, oi.snapshot
       ORDER BY revenue DESC
       LIMIT $4
     `
-    return this.dataSource.query(query, [tenantId, startDate, OrderStatus.CANCELLED, limit])
+    return this.dataSource.query(query, [storeId, startDate, OrderStatus.CANCELLED, limit])
   }
 
-  async getTopCustomers(tenantId: string, startDate: Date, limit: number = 5) {
+  async getTopCustomers(storeId: string, startDate: Date, limit: number = 5) {
     const query = `
       SELECT
         COALESCE(NULLIF(customer_email, ''), customer_phone, customer_name) as id,
@@ -229,30 +229,30 @@ export class ReportRepository {
         COUNT(*) as "orderCount",
         COALESCE(SUM(total_amount), 0) as revenue
       FROM orders
-      WHERE tenant_id = $1
+      WHERE store_id = $1
         AND created_at >= $2
         AND status != $3
       GROUP BY COALESCE(NULLIF(customer_email, ''), customer_phone, customer_name)
       ORDER BY revenue DESC
       LIMIT $4
     `
-    return this.dataSource.query(query, [tenantId, startDate, OrderStatus.CANCELLED, limit])
+    return this.dataSource.query(query, [storeId, startDate, OrderStatus.CANCELLED, limit])
   }
 
-  async getOrderCountInRange(tenantId: string, startDate: Date, endDate: Date): Promise<number> {
+  async getOrderCountInRange(storeId: string, startDate: Date, endDate: Date): Promise<number> {
     const result = await this.dataSource.query(
-      `SELECT COUNT(*) as count FROM orders WHERE tenant_id = $1 AND created_at >= $2 AND created_at <= $3`,
-      [tenantId, startDate, endDate],
+      `SELECT COUNT(*) as count FROM orders WHERE store_id = $1 AND created_at >= $2 AND created_at <= $3`,
+      [storeId, startDate, endDate],
     )
     return +result[0]?.count || 0
   }
 
-  async getCogsInRange(tenantId: string, startDate: Date, endDate: Date): Promise<number> {
+  async getCogsInRange(storeId: string, startDate: Date, endDate: Date): Promise<number> {
     const result = await this.dataSource.query(
       `SELECT COALESCE(SUM(cogs_amount), 0) as "totalCogs" 
        FROM inventory_ledger 
-       WHERE tenant_id = $1 AND created_at >= $2 AND created_at <= $3`,
-      [tenantId, startDate, endDate],
+       WHERE store_id = $1 AND created_at >= $2 AND created_at <= $3`,
+      [storeId, startDate, endDate],
     )
     return +result[0]?.totalCogs || 0
   }

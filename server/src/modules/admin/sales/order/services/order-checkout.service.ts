@@ -48,11 +48,11 @@ export class OrderCheckoutService {
     ctx: RequestContextDto,
   ): Promise<{ message: string; success: boolean; order: OrderEntity }> {
     this.logger.log(`${this.createOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const result = await this.dataSource.transaction(async (manager) => {
       // 1. Initial Data Fetching
-      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
+      const settings = await manager.findOne(SiteSettingsEntity, { where: { storeId } })
       const orderCurrency = createOrderDto.currency || settings?.currency || 'USD'
 
       // Validate payment method / currency compatibility
@@ -79,7 +79,7 @@ export class OrderCheckoutService {
 
       const targetUserId = createOrderDto.userId || ctx.userId
       const user = targetUserId
-        ? await manager.findOne(UserEntity, { where: { id: targetUserId, tenantId } })
+        ? await manager.findOne(UserEntity, { where: { id: targetUserId, storeId } })
         : null
       // 2. Address Resolution
       let resolvedAddress = createOrderDto.address
@@ -172,7 +172,7 @@ export class OrderCheckoutService {
         paymentStatus: PaymentStatus.PENDING,
         orderNotes: createOrderDto.orderNotes,
         userId: ctx.userId || user?.id,
-        tenantId,
+        storeId,
         deliveryZone: createOrderDto.shippingZone,
       })
 
@@ -212,7 +212,7 @@ export class OrderCheckoutService {
         }
         const currentOutstanding = await this.arService.getCustomerOutstandingBalance(
           user.id,
-          tenantId,
+          storeId,
           manager,
         )
         const orderTotal = Number(order.totalAmount)
@@ -232,7 +232,7 @@ export class OrderCheckoutService {
         const walletUserId = ctx.userId || user?.id
         const availableBalance = await this.walletService.getAvailableBalance(
           walletUserId,
-          tenantId,
+          storeId,
           manager,
         )
         if (availableBalance > 0) {
@@ -354,17 +354,17 @@ export class OrderCheckoutService {
       }
 
       await Promise.all([
-        this.cacheService.delCache('orders:overview', tenantId),
-        this.cacheService.delCacheByPattern('analytics*', tenantId),
-        this.cacheService.delCacheByPattern('dashboard*', tenantId),
-        this.cacheService.delCacheByPattern('pnl*', tenantId),
-        this.cacheService.delCacheByPattern('cashflow*', tenantId),
-        this.cacheService.delCacheByPattern('finance:summary*', tenantId),
-        this.cacheService.delCacheByPattern('ledger:customer*', tenantId),
+        this.cacheService.delCache('orders:overview', storeId),
+        this.cacheService.delCacheByPattern('analytics*', storeId),
+        this.cacheService.delCacheByPattern('dashboard*', storeId),
+        this.cacheService.delCacheByPattern('pnl*', storeId),
+        this.cacheService.delCacheByPattern('cashflow*', storeId),
+        this.cacheService.delCacheByPattern('finance:summary*', storeId),
+        this.cacheService.delCacheByPattern('ledger:customer*', storeId),
       ])
 
       const finalOrder = await manager.findOne(OrderEntity, {
-        where: { id: savedOrder.id, tenantId },
+        where: { id: savedOrder.id, storeId },
         relations: {
           items: {
             product: true,
@@ -399,7 +399,7 @@ export class OrderCheckoutService {
           'send-order-notification',
           {
             orderId: result.order.id,
-            tenantId,
+            storeId,
           },
           { removeOnComplete: true },
         )
@@ -416,7 +416,7 @@ export class OrderCheckoutService {
               link: `/account/orders/${result.order.id}`,
               userId: result.order.userId,
             },
-            tenantId,
+            storeId,
           )
         } catch (notifyErr: any) {
           this.logger.error(`Failed to send customer order confirmation: ${notifyErr.message}`)

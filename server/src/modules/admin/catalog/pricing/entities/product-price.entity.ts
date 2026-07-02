@@ -1,13 +1,13 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { PriceBookEntity } from './price-book.entity'
 
 @Entity('product_prices')
-@Index(['tenantId', 'priceBookId', 'productId'])
-@Index(['tenantId', 'priceBookId', 'variantId'])
+@Index(['storeId', 'priceBookId', 'productId'])
+@Index(['storeId', 'priceBookId', 'variantId'])
 export class ProductPriceEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'price_book_id' })
   priceBookId: string
@@ -36,11 +36,11 @@ export class ProductPriceEntity extends BaseEntity {
   @Column({ type: 'int', name: 'min_quantity', default: 1 })
   minQuantity: number
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
+  @Column({ type: 'uuid', name: 'store_id' })
   @Index()
-  tenantId: string
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

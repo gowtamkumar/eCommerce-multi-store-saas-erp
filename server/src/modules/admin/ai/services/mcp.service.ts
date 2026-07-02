@@ -37,7 +37,7 @@ export class McpService {
     const transport = new SSEServerTransport(`/ai/mcp/messages?token=${encodeURIComponent(token)}`, res)
     const sessionId = transport.sessionId
 
-    this.logger.log(`Establishing MCP SSE session ${sessionId} for user ${ctx.userId} (tenant: ${ctx.tenantId})`)
+    this.logger.log(`Establishing MCP SSE session ${sessionId} for user ${ctx.userId} (store: ${ctx.storeId})`)
 
     // Create a dedicated server instance for this connection
     const server = new Server(
@@ -143,7 +143,7 @@ export class McpService {
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params
       const targetTool = snakeToCamel(name)
-      this.logger.log(`Session tool call triggered: ${name} mapped to ${targetTool} (tenant: ${ctx.tenantId})`)
+      this.logger.log(`Session tool call triggered: ${name} mapped to ${targetTool} (store: ${ctx.storeId})`)
 
       try {
         const result = await this.adminCopilotToolService.execute(

@@ -3,7 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import PromotionDetails from '@/features/promotion/shop/PromotionDetails';
 import { getSiteSettings } from '@/services/getSettings';
 import { getPromotionBySlug } from '@/services/promotion';
-import { getTenantId } from '@/services/tenant';
+import { getStoreId } from '@/services/store';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -34,9 +34,9 @@ async function getData(slug: string) {
 
 export default async function PromotionSlugRoutePage({ params }: { params: { slug: string } }) {
     const { slug } = await params;
-    const tenantId = await getTenantId();
+    const storeId = await getStoreId();
 
-    if (!tenantId) {
+    if (!storeId) {
         return (
             <main className="min-h-screen flex items-center justify-center p-4">
                 <div className="text-center">

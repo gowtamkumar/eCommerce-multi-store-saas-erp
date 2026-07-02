@@ -36,7 +36,7 @@ The RAG architecture utilizes a **hybrid search** strategy (lexical SQL `ILIKE` 
                                  ▼
                     ┌────────────────────────┐
                     │     LLM Generation     │
-                    │     (Tenant BYOK)      │
+                    │     (Store BYOK)      │
                     └────────────────────────┘
 ```
 
@@ -100,13 +100,13 @@ FAQ embeddings are computed asynchronously to avoid blocking the admin save acti
 
 ---
 
-## 4. Multi-Tenant Security & Isolation
+## 4. Multi-Store Security & Isolation
 
-### 4.1 Tenant Gating & Isolation
-1. **Row-level isolation**: Every query in the embedding tables **MUST** contain the `tenant_id` filter:
+### 4.1 Store Gating & Isolation
+1. **Row-level isolation**: Every query in the embedding tables **MUST** contain the `store_id` filter:
    ```sql
    SELECT * FROM product_embeddings 
-   WHERE tenant_id = :tenantId 
+   WHERE store_id = :storeId 
    ORDER BY embedding <=> :queryVector LIMIT 5;
    ```
 2. **Subscription Gate**: Embedding syncs and storefront search APIs are protected by the `@RequireFeature('ai')` subscription gate.

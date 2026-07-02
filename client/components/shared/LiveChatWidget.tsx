@@ -44,7 +44,7 @@ const LiveChatWidget = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const aiMessagesEndRef = useRef<HTMLDivElement>(null);
 
-  const tenantId = settings?.tenantId || null;
+  const storeId = settings?.storeId || null;
   const customerId = session?.user?.id || null;
 
   // AI Assistant hook integration
@@ -55,7 +55,7 @@ const LiveChatWidget = () => {
     messages: aiMessages,
     sendMessage: sendAiMessage,
     resetConversation: resetAiConversation,
-  } = useShoppingAssistant(tenantId || undefined, settings?.brandName);
+  } = useShoppingAssistant(storeId || undefined, settings?.brandName);
 
   const [aiInput, setAiInput] = useState("");
   const [suggestedFollowUps, setSuggestedFollowUps] = useState<string[]>([]);
@@ -99,7 +99,7 @@ const LiveChatWidget = () => {
 
   // Load chat history
   useEffect(() => {
-    if (!visitorId || !tenantId) return;
+    if (!visitorId || !storeId) return;
 
     const loadHistory = async () => {
       try {
@@ -120,7 +120,7 @@ const LiveChatWidget = () => {
     };
 
     loadHistory();
-  }, [visitorId, tenantId, customerId]);
+  }, [visitorId, storeId, customerId]);
 
   const isOpenRef = useRef(false);
   const activeTabRef = useRef<"ai" | "human">("ai");
@@ -159,13 +159,13 @@ const LiveChatWidget = () => {
 
   // Socket Connection setup for Live Chat
   useEffect(() => {
-    if (!visitorId || !tenantId || !conversationId) return;
+    if (!visitorId || !storeId || !conversationId) return;
 
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3900";
     const socketInstance = io(`${wsUrl}/chat`, {
       query: {
         visitorId,
-        tenantId,
+        storeId,
       },
       transports: ["websocket"],
     });
@@ -195,19 +195,19 @@ const LiveChatWidget = () => {
     return () => {
       socketInstance.disconnect();
     };
-  }, [visitorId, tenantId, conversationId]);
+  }, [visitorId, storeId, conversationId]);
 
   // Clear unread count when switching to human tab while open
   useEffect(() => {
     if (isOpen && activeTab === "human") {
       setUnreadCount(0);
       const markAsRead = async () => {
-        if (conversationId && tenantId) {
+        if (conversationId && storeId) {
           try {
             await fetchAPI(`/chat/conversations/${conversationId}/read/visitor`, {
               method: "POST",
               headers: {
-                "x-tenant-id": tenantId,
+                "x-store-id": storeId,
               },
             });
           } catch (e) {
@@ -217,7 +217,7 @@ const LiveChatWidget = () => {
       };
       markAsRead();
     }
-  }, [activeTab, isOpen, conversationId, tenantId]);
+  }, [activeTab, isOpen, conversationId, storeId]);
 
   // Toggle open state
   const handleOpenToggle = async () => {
@@ -226,12 +226,12 @@ const LiveChatWidget = () => {
 
     if (nextState && activeTab === "human") {
       setUnreadCount(0);
-      if (conversationId && tenantId) {
+      if (conversationId && storeId) {
         try {
           await fetchAPI(`/chat/conversations/${conversationId}/read/visitor`, {
             method: "POST",
             headers: {
-              "x-tenant-id": tenantId,
+              "x-store-id": storeId,
             },
           });
         } catch (e) {

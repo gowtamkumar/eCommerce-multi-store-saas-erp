@@ -10,7 +10,7 @@ Located at: `server/src/modules/admin/operations/logistics/inventory-transaction
 
 ### 1.1 Database Entities
 *   **`InventoryLedgerEntity` (`entities/inventory-ledger.entity.ts`):**
-    The central append-only log of stock changes. Stores `variantId`, `warehouseId`, `binId`, `quantity` (positive for receipts, negative for depletion), `type` (PURCHASE, SALE, TRANSFER, ADJUSTMENT), and snapshot `balanceAfter`. Scoped by `tenantId`.
+    The central append-only log of stock changes. Stores `variantId`, `warehouseId`, `binId`, `quantity` (positive for receipts, negative for depletion), `type` (PURCHASE, SALE, TRANSFER, ADJUSTMENT), and snapshot `balanceAfter`. Scoped by `storeId`.
 *   **`ProductBatchEntity` (`entities/product-batch.entity.ts`):**
     Implements expiration tracking (FEFO) and manufacturing lots. Columns: `batchNumber`, `manufacturedDate`, `expiryDate`.
 

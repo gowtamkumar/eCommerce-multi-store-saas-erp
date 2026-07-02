@@ -51,19 +51,19 @@ export class CacheService {
     })
   }
 
-  private buildKey(key: string, tenantId?: string) {
+  private buildKey(key: string, storeId?: string) {
     this.logger.log(`${this.buildKey.name} Service Called`)
-    return tenantId ? `${CACHE_PREFIX}:tenant:${tenantId}:${key}` : `${CACHE_PREFIX}:${key}`
+    return storeId ? `${CACHE_PREFIX}:store:${storeId}:${key}` : `${CACHE_PREFIX}:${key}`
   }
 
-  async getCache<T>(key: string, tenantId?: string): Promise<T | null> {
+  async getCache<T>(key: string, storeId?: string): Promise<T | null> {
     this.logger.log(`${this.getCache.name} Service Called`)
     if (this.isExcluded(key)) {
       this.logger.warn(`[CACHE] GET blocked for strictly excluded real-time key: ${key}`)
       return null
     }
     try {
-      const fullKey = this.buildKey(key, tenantId)
+      const fullKey = this.buildKey(key, storeId)
       return await this.cacheRepository.get<T>(fullKey)
     } catch (error: any) {
       this.logger.error(`[CACHE] GET error for key ${key}:`, error.message)
@@ -71,14 +71,14 @@ export class CacheService {
     }
   }
 
-  async setCache(key: string, value: any, ttl?: number, tenantId?: string) {
+  async setCache(key: string, value: any, ttl?: number, storeId?: string) {
     this.logger.log(`${this.setCache.name} Service Called`)
     if (this.isExcluded(key)) {
       this.logger.warn(`[CACHE] SET blocked for strictly excluded real-time key: ${key}`)
       return
     }
     try {
-      const fullKey = this.buildKey(key, tenantId)
+      const fullKey = this.buildKey(key, storeId)
       const targetTtl = ttl !== undefined ? ttl : Number(process.env.CACHE_TTL) || 300
       const ttlMs = targetTtl * 1000 // Convert seconds to milliseconds for cache-manager-redis-yet
       await this.cacheRepository.set(fullKey, value, ttlMs)
@@ -87,21 +87,21 @@ export class CacheService {
     }
   }
 
-  async delCache(key: string, tenantId?: string) {
+  async delCache(key: string, storeId?: string) {
     this.logger.log(`${this.delCache.name} Service Called`)
     try {
-      const fullKey = this.buildKey(key, tenantId)
+      const fullKey = this.buildKey(key, storeId)
       await this.cacheRepository.del(fullKey)
     } catch (error: any) {
       this.logger.error(`[CACHE] DELETE error for key ${key}:`, error.message)
     }
   }
 
-  async delCacheByPattern(pattern: string, tenantId?: string) {
+  async delCacheByPattern(pattern: string, storeId?: string) {
     this.logger.log(`${this.delCacheByPattern.name} Service Called`)
     try {
-      const fullPattern = tenantId
-        ? `${CACHE_PREFIX}:tenant:${tenantId}:${pattern}`
+      const fullPattern = storeId
+        ? `${CACHE_PREFIX}:store:${storeId}:${pattern}`
         : `${CACHE_PREFIX}:${pattern}`
       await this.cacheRepository.delByPattern(fullPattern)
     } catch (error: any) {
@@ -118,20 +118,20 @@ export class CacheService {
     }
   }
 
-  async clearTenantCache(tenantId: string) {
-    this.logger.log(`${this.clearTenantCache.name} Service Called for tenant: ${tenantId}`)
+  async clearStoreCache(storeId: string) {
+    this.logger.log(`${this.clearStoreCache.name} Service Called for store: ${storeId}`)
     try {
-      // 1. Clear standard tenant-scoped data cache (pages, catalogs, settings)
-      const dataPattern = `${CACHE_PREFIX}:tenant:${tenantId}:*`
+      // 1. Clear standard store-scoped data cache (pages, catalogs, settings)
+      const dataPattern = `${CACHE_PREFIX}:store:${storeId}:*`
       await this.cacheRepository.delByPattern(dataPattern)
 
-      // 2. Clear tenant-scoped user permissions manifest cache
-      const manifestPattern = `${CACHE_PREFIX}:rbac:manifest:${tenantId}:*`
+      // 2. Clear store-scoped user permissions manifest cache
+      const manifestPattern = `${CACHE_PREFIX}:rbac:manifest:${storeId}:*`
       await this.cacheRepository.delByPattern(manifestPattern)
 
-      this.logger.log(`[CACHE] Successfully cleared cache for tenant: ${tenantId}`)
+      this.logger.log(`[CACHE] Successfully cleared cache for store: ${storeId}`)
     } catch (error: any) {
-      this.logger.error(`[CACHE] CLEAR_TENANT error for tenant ${tenantId}:`, error.message)
+      this.logger.error(`[CACHE] CLEAR_STORE error for store ${storeId}:`, error.message)
       throw error
     }
   }
@@ -164,21 +164,21 @@ export class CacheService {
     key: string,
     fetcher: () => Promise<T>,
     ttl?: number,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<T> {
     this.logger.log(`${this.rememberCache.name} Service Called`)
     if (this.isExcluded(key)) {
       this.logger.warn(`[CACHE] REMEMBER bypassed for strictly excluded real-time key: ${key}`)
       return await fetcher()
     }
-    const cached = await this.getCache<T>(key, tenantId)
+    const cached = await this.getCache<T>(key, storeId)
     // Use an explicit null/undefined check so legitimately falsy cached values
     // (0, false, '', empty arrays/objects) are served from cache instead of
     // being recomputed on every request.
     if (cached !== null && cached !== undefined) return cached
 
     const fresh = await fetcher()
-    await this.setCache(key, fresh, ttl, tenantId)
+    await this.setCache(key, fresh, ttl, storeId)
     return fresh
   }
 }

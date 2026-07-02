@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,7 +6,7 @@ import { EntityManager, Repository } from 'typeorm'
 import { SupplierPaymentEntity } from '../entities/supplier-payment.entity'
 
 @Injectable()
-export class SupplierPaymentRepository extends BaseTenantRepository<SupplierPaymentEntity> {
+export class SupplierPaymentRepository extends BaseStoreRepository<SupplierPaymentEntity> {
   constructor(
     @InjectRepository(SupplierPaymentEntity)
     repo: Repository<SupplierPaymentEntity>,
@@ -26,22 +26,22 @@ export class SupplierPaymentRepository extends BaseTenantRepository<SupplierPaym
     const repo = this.getRepo(manager)
     const payment = repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as SupplierPaymentEntity)
     return repo.save(payment)
   }
 
-  async findAllBySupplier(supplierId: string, tenantId: string): Promise<SupplierPaymentEntity[]> {
+  async findAllBySupplier(supplierId: string, storeId: string): Promise<SupplierPaymentEntity[]> {
     return this.repo.find({
-      where: { supplierId, tenantId },
+      where: { supplierId, storeId },
       order: { paymentDate: 'DESC' },
     })
   }
 
-  async findAllPayments(tenantId: string): Promise<SupplierPaymentEntity[]> {
+  async findAllPayments(storeId: string): Promise<SupplierPaymentEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         supplier: true,
         purchaseOrder: true,

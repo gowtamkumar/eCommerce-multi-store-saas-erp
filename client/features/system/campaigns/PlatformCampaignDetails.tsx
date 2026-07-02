@@ -239,9 +239,9 @@ export default function PlatformCampaignDetails({ campaign: initialCampaign, onC
                                 </h3>
                                 <div className="space-y-3">
                                     {[
-                                        { label: 'Registered Store Owners', active: currentCampaign.targetTenants },
+                                        { label: 'Registered Store Owners', active: currentCampaign.targetStores },
                                         { label: 'Platform Subscribers', active: currentCampaign.targetSubscribers },
-                                        { label: 'All Tenant Users', active: currentCampaign.targetUsers },
+                                        { label: 'All Store Users', active: currentCampaign.targetUsers },
                                     ].map((target, i) => (
                                         <div key={i} className={`flex items-center justify-between p-3 rounded-xl border ${target.active ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-600' : 'bg-slate-50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800 text-slate-400 opacity-50'}`}>
                                             <span className="text-xs font-bold">{target.label}</span>

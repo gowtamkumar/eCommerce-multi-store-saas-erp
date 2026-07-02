@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
-import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 import { PlatformSettingsRepository } from '@/modules/system/platform/platform-settings.repository'
 import { ConfigService } from '@nestjs/config'
 import { MailService } from './mail.service'
@@ -31,11 +31,11 @@ describe('MailService', () => {
         return ''
       }),
     }
-    const mockTenantRepo = {
+    const mockStoreRepo = {
       findByIdWithRelations: jest.fn(),
     }
     const mockSettingsService = {
-      findByTenantSettings: jest.fn(),
+      findByStoreSettings: jest.fn(),
     }
     const mockCacheService = {
       rememberCache: jest.fn((key, fn) => fn()),
@@ -52,8 +52,8 @@ describe('MailService', () => {
           useValue: mockConfigService,
         },
         {
-          provide: TenantRepository,
-          useValue: mockTenantRepo,
+          provide: StoreRepository,
+          useValue: mockStoreRepo,
         },
         {
           provide: SettingsService,
@@ -81,36 +81,36 @@ describe('MailService', () => {
   })
 
   describe('sendVerificationEmail', () => {
-    it('should use tenant SMTP config if available', async () => {
+    it('should use store SMTP config if available', async () => {
       const mockSettings = {
         smtp: {
-          host: 'smtp.tenant.com',
+          host: 'smtp.store.com',
           port: 465,
-          user: 'tenant-user',
-          pass: 'tenant-pass',
-          from: 'tenant@tenant.com',
+          user: 'store-user',
+          pass: 'store-pass',
+          from: 'store@store.com',
         },
       }
-      settingsService.findByTenantSettings.mockResolvedValue(mockSettings as any)
+      settingsService.findByStoreSettings.mockResolvedValue(mockSettings as any)
 
-      await service.sendVerificationEmail('user@example.com', 'token-123', 'tenant-1')
+      await service.sendVerificationEmail('user@example.com', 'token-123', 'store-1')
 
-      expect(settingsService.findByTenantSettings).toHaveBeenCalledWith({ tenantId: 'tenant-1' })
+      expect(settingsService.findByStoreSettings).toHaveBeenCalledWith({ storeId: 'store-1' })
       expect(nodemailer.createTransport).toHaveBeenCalledWith(
         expect.objectContaining({
-          host: 'smtp.tenant.com',
+          host: 'smtp.store.com',
           port: 465,
           secure: true,
           auth: {
-            user: 'tenant-user',
-            pass: 'tenant-pass',
+            user: 'store-user',
+            pass: 'store-pass',
           },
         }),
       )
     })
 
-    it('should fall back to platform settings SMTP config if tenant SMTP is not available', async () => {
-      settingsService.findByTenantSettings.mockResolvedValue(null as any)
+    it('should fall back to platform settings SMTP config if store SMTP is not available', async () => {
+      settingsService.findByStoreSettings.mockResolvedValue(null as any)
       const mockPlatformSettings = {
         smtp: {
           host: 'smtp.platform.com',
@@ -122,7 +122,7 @@ describe('MailService', () => {
       }
       platformRepo.findSettings.mockResolvedValue(mockPlatformSettings as any)
 
-      await service.sendVerificationEmail('user@example.com', 'token-123', 'tenant-1')
+      await service.sendVerificationEmail('user@example.com', 'token-123', 'store-1')
 
       expect(platformRepo.findSettings).toHaveBeenCalled()
       expect(nodemailer.createTransport).toHaveBeenCalledWith(
@@ -138,8 +138,8 @@ describe('MailService', () => {
       )
     })
 
-    it('should fall back to env SMTP config if both tenant and platform SMTP are not available', async () => {
-      settingsService.findByTenantSettings.mockResolvedValue(null as any)
+    it('should fall back to env SMTP config if both store and platform SMTP are not available', async () => {
+      settingsService.findByStoreSettings.mockResolvedValue(null as any)
       platformRepo.findSettings.mockResolvedValue(null as any)
       configService.get.mockImplementation((key, defaultValue) => {
         if (key === 'SMTP_HOST') return 'smtp.env.com'
@@ -149,7 +149,7 @@ describe('MailService', () => {
         return ''
       })
 
-      const mockTenantRepo = {
+      const mockStoreRepo = {
         findByIdWithRelations: jest.fn().mockResolvedValue(null),
       }
 
@@ -161,8 +161,8 @@ describe('MailService', () => {
             useValue: configService,
           },
           {
-            provide: TenantRepository,
-            useValue: mockTenantRepo,
+            provide: StoreRepository,
+            useValue: mockStoreRepo,
           },
           {
             provide: SettingsService,
@@ -180,7 +180,7 @@ describe('MailService', () => {
       }).compile()
 
       const newService = module.get<MailService>(MailService)
-      await newService.sendVerificationEmail('user@example.com', 'token-123', 'tenant-1')
+      await newService.sendVerificationEmail('user@example.com', 'token-123', 'store-1')
 
       expect(nodemailer.createTransport).toHaveBeenCalledWith(
         expect.objectContaining({

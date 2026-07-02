@@ -1,13 +1,13 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('system_notifications')
-@Index(['tenantId', 'userId'])
+@Index(['storeId', 'userId'])
 export class NotificationEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
-  tenantId: string | null
+  @Column({ type: 'uuid', name: 'store_id', nullable: true })
+  storeId: string | null
 
   @Column({ type: 'varchar', length: 255 })
   title: string
@@ -28,7 +28,7 @@ export class NotificationEntity extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity | null
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity | null
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity | null
 }

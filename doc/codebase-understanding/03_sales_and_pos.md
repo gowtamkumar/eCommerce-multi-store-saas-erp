@@ -63,7 +63,7 @@ server/src/modules/admin/sales/
 | `courierStatus` | VARCHAR (nullable) | Latest courier webhook status |
 | `deliveryZone` | VARCHAR (nullable) | Delivery zone label |
 | `orderNotes` | TEXT (nullable) | Customer/admin notes |
-| `tenantId` | UUID FK | Strict tenant isolation |
+| `storeId` | UUID FK | Strict store isolation |
 
 > **Key Design:** `offlineSaleId` maps to the POS terminal's `clientSaleId`. The UNIQUE constraint ensures a POS sale synced multiple times is processed exactly once (idempotency).
 
@@ -93,7 +93,7 @@ server/src/modules/admin/sales/
 | `expectedClosingBalance` | DECIMAL(12,2) | System-computed expected cash |
 | `difference` | DECIMAL(12,2, nullable) | `closingBalance - expectedClosingBalance` (variance) |
 | `remarks` | TEXT (nullable) | Cashier notes on variance |
-| `tenantId` | UUID FK | Strict tenant isolation |
+| `storeId` | UUID FK | Strict store isolation |
 
 > **Reconciliation Formula:** `expectedClosingBalance = openingBalance + cashSales + cashIn - cashOut`
 
@@ -117,7 +117,7 @@ server/src/modules/admin/sales/
 | `reservedAt` | TIMESTAMPTZ | When reservation was created |
 | `releasedAt` | TIMESTAMPTZ (nullable) | When stock was returned to available |
 | `notes` | TEXT (nullable) | Reason or context |
-| `tenantId` | UUID FK | Strict tenant isolation |
+| `storeId` | UUID FK | Strict store isolation |
 
 > **Available-to-Promise (ATP) formula:**
 > ```
@@ -125,7 +125,7 @@ server/src/modules/admin/sales/
 >                                WHERE status = 'ACTIVE'
 > ```
 
-**Unique Constraint:** `(tenantId, orderId, productId, variantId)` — prevents duplicate reservations for the same order line.
+**Unique Constraint:** `(storeId, orderId, productId, variantId)` — prevents duplicate reservations for the same order line.
 
 ---
 

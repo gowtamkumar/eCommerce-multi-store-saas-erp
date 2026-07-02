@@ -1,16 +1,16 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('hrm_tax_brackets')
-@Index(['tenantId', 'fiscalYear'])
+@Index(['storeId', 'fiscalYear'])
 export class TaxBracketEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'int', name: 'fiscal_year' })
   fiscalYear: number

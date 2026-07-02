@@ -21,7 +21,7 @@ export class InvoiceResponseDto {
   status: InvoiceStatus
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

@@ -34,21 +34,21 @@ export class CourierWebhookController {
 
   /**
    * Verifies the HMAC-SHA256 signature against the raw request body using the
-   * tenant-configured webhook secret. Uses timing-safe comparison.
+   * store-configured webhook secret. Uses timing-safe comparison.
    *
-   * If no secret is configured for a tenant we LOG a warning and accept the
-   * payload (backward-compatible — tenants opt in by saving a secret in
+   * If no secret is configured for a store we LOG a warning and accept the
+   * payload (backward-compatible — stores opt in by saving a secret in
    * settings). Once a secret is configured every subsequent request MUST be
    * signed correctly.
    */
   private async verifySignature(
     req: Request,
     headerSignature: string | undefined,
-    tenantId: string,
+    storeId: string,
     secretPath: 'pathao' | 'steadfast',
   ): Promise<void> {
-    const ctx = { tenantId } as RequestContextDto
-    const settings = await this.settingsService.findByTenantSettings(ctx)
+    const ctx = { storeId } as RequestContextDto
+    const settings = await this.settingsService.findByStoreSettings(ctx)
     const secret =
       secretPath === 'pathao'
         ? settings?.pathaoCourier?.webhookSecret
@@ -56,7 +56,7 @@ export class CourierWebhookController {
 
     if (!secret) {
       this.logger.warn(
-        `[Webhook ${secretPath}] No webhook secret configured for tenant ${tenantId} — accepting unsigned payload. Configure 'webhookSecret' in tenant settings to enforce verification.`,
+        `[Webhook ${secretPath}] No webhook secret configured for store ${storeId} — accepting unsigned payload. Configure 'webhookSecret' in store settings to enforce verification.`,
       )
       return
     }
@@ -103,7 +103,7 @@ export class CourierWebhookController {
       return { success: false, message: 'Invalid payload' }
     }
 
-    // Find order BEFORE verification so we know which tenant's secret to use.
+    // Find order BEFORE verification so we know which store's secret to use.
     let order = tracking_code ? await this.orderService.findOrderByTrackingId(tracking_code) : null
     if (!order && invoice) {
       order = await this.orderService.findOrderByInvoiceCode(invoice)
@@ -115,7 +115,7 @@ export class CourierWebhookController {
       throw new NotFoundException('Order not found')
     }
 
-    await this.verifySignature(req, signature, order.tenantId, 'steadfast')
+    await this.verifySignature(req, signature, order.storeId, 'steadfast')
 
     // Map Steadfast status to ERP OrderStatus
     let targetStatus: OrderStatus = order.status
@@ -140,7 +140,7 @@ export class CourierWebhookController {
     }
 
     const ctx: RequestContextDto = {
-      tenantId: order.tenantId,
+      storeId: order.storeId,
       userId: null as any,
       user: { id: 'SYSTEM', username: 'SYSTEM_WEBHOOK', role: 'system' } as any,
       branchId: null as any,
@@ -188,7 +188,7 @@ export class CourierWebhookController {
       throw new NotFoundException('Order not found')
     }
 
-    await this.verifySignature(req, signature, order.tenantId, 'pathao')
+    await this.verifySignature(req, signature, order.storeId, 'pathao')
 
     let targetStatus: OrderStatus = order.status
     let targetPaymentStatus: PaymentStatus = order.paymentStatus
@@ -212,7 +212,7 @@ export class CourierWebhookController {
     }
 
     const ctx: RequestContextDto = {
-      tenantId: order.tenantId,
+      storeId: order.storeId,
       userId: null as any,
       user: { id: 'SYSTEM', username: 'SYSTEM_WEBHOOK', role: 'system' } as any,
       branchId: null as any,

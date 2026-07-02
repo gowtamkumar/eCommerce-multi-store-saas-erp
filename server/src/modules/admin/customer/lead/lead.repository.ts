@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -6,7 +6,7 @@ import { Repository } from 'typeorm'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class LeadRepository extends BaseTenantRepository<LeadEntity> {
+export class LeadRepository extends BaseStoreRepository<LeadEntity> {
   constructor(
     @InjectRepository(LeadEntity)
     repo: Repository<LeadEntity>,
@@ -16,12 +16,12 @@ export class LeadRepository extends BaseTenantRepository<LeadEntity> {
 
   async findAllWithFilters(
     filterDto: any,
-    tenantId: string,
+    storeId: string,
   ): Promise<{ leads: LeadEntity[]; total: number }> {
     const { page = 1, limit = 10, q, status } = filterDto
     const query = this.repo
       .createQueryBuilder('lead')
-      .where('lead.tenantId = :tenantId', { tenantId })
+      .where('lead.storeId = :storeId', { storeId })
 
     if (status) {
       query.andWhere('lead.status = :status', { status })
@@ -40,14 +40,14 @@ export class LeadRepository extends BaseTenantRepository<LeadEntity> {
     return { leads, total }
   }
 
-  async findById(id: string, tenantId: string): Promise<LeadEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findById(id: string, storeId: string): Promise<LeadEntity | null> {
+    return this.repo.findOne({ where: { id, storeId } })
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<LeadEntity> {
     const lead = this.repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as LeadEntity)
     return this.repo.save(lead)

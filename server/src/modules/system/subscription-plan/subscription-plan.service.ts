@@ -55,11 +55,11 @@ export class SubscriptionPlanService {
     }
     const updated = await this.planRepository.updateAndSave(plan, updateDto)
     await this.cacheService.delCache('subscription:plans:active')
-    await this.cacheService.delCacheByPattern('tenant:*:subscription:*:current')
-    await this.cacheService.delCacheByPattern('tenant:id:*')
-    await this.cacheService.delCacheByPattern('tenant:subdomain:*')
-    await this.cacheService.delCacheByPattern('tenant:customdomain:*')
-    await this.cacheService.delCacheByPattern('tenant:all')
+    await this.cacheService.delCacheByPattern('store:*:subscription:*:current')
+    await this.cacheService.delCacheByPattern('store:id:*')
+    await this.cacheService.delCacheByPattern('store:subdomain:*')
+    await this.cacheService.delCacheByPattern('store:customdomain:*')
+    await this.cacheService.delCacheByPattern('store:all')
     return updated
   }
 
@@ -71,11 +71,11 @@ export class SubscriptionPlanService {
     }
     await this.planRepository.removePlan(plan)
     await this.cacheService.delCache('subscription:plans:active')
-    await this.cacheService.delCacheByPattern('tenant:*:subscription:*:current')
-    await this.cacheService.delCacheByPattern('tenant:id:*')
-    await this.cacheService.delCacheByPattern('tenant:subdomain:*')
-    await this.cacheService.delCacheByPattern('tenant:customdomain:*')
-    await this.cacheService.delCacheByPattern('tenant:all')
+    await this.cacheService.delCacheByPattern('store:*:subscription:*:current')
+    await this.cacheService.delCacheByPattern('store:id:*')
+    await this.cacheService.delCacheByPattern('store:subdomain:*')
+    await this.cacheService.delCacheByPattern('store:customdomain:*')
+    await this.cacheService.delCacheByPattern('store:all')
     return { success: true, message: 'Subscription plan deleted successfully' }
   }
 

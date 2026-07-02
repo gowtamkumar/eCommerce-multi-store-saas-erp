@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { JournalEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/journal-entry.entity'
 import { LedgerEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/ledger-entry.entity'
@@ -17,7 +17,7 @@ describe('Multi-Currency Accounting (e2e)', () => {
   let dataSource: DataSource
   let accountingService: AccountingService
   let currencyFeedService: CurrencyFeedService
-  let tenant: TenantEntity
+  let store: StoreEntity
   let ctx: RequestContextDto
 
   beforeAll(async () => {
@@ -32,28 +32,28 @@ describe('Multi-Currency Accounting (e2e)', () => {
     accountingService = app.get(AccountingService)
     currencyFeedService = app.get(CurrencyFeedService)
 
-    // Create a mock tenant for testing
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    // Create a mock store for testing
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'E2E Multi-Currency Store',
       subdomain: `e2e-multi-curr-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
 
     ctx = new RequestContextDto()
-    ctx.tenantId = tenant.id
+    ctx.storeId = store.id
     ctx.userId = '00000000-0000-0000-0000-000000000000'
 
-    // Initialize Chart of Accounts for this tenant
-    await accountingService.initializeTenantCOA(ctx)
+    // Initialize Chart of Accounts for this store
+    await accountingService.initializeStoreCOA(ctx)
 
     // Set up site settings base currency to USD
     const settingsRepo = dataSource.getRepository(SiteSettingsEntity)
     const settings = settingsRepo.create({
-      tenantId: tenant.id,
+      storeId: store.id,
       currency: 'USD',
       locale: 'en-US',
-      brandName: tenant.storeName,
+      brandName: store.storeName,
       removeBranding: false,
       probationDays: 90,
       documentExpiryAlertDays: 30,
@@ -62,9 +62,9 @@ describe('Multi-Currency Accounting (e2e)', () => {
   })
 
   afterAll(async () => {
-    if (tenant) {
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      await tenantRepo.delete(tenant.id)
+    if (store) {
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      await storeRepo.delete(store.id)
     }
     if (app) {
       await app.close()

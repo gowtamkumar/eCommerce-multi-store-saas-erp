@@ -6,39 +6,39 @@ This master playbook acts as your central validation matrix. Change `- [ ]` to `
 
 ## 📂 Verification Checklist & Criteria Mappings
 
-### 📦 Module 1: Platform Administration & Tenant Onboarding
-* **Testing Guide**: 🔗 [01_onboarding_system.md](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/doc/testing/01_onboarding_system.md)
+### 📦 Module 1: Platform Administration & Store Onboarding
+* **Testing Guide**: 🔗 [01_onboarding_system.md](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/doc/testing/01_onboarding_system.md)
 
-* [ ] **Feature 1.1: System Tenant Onboarding**
-  * *Verification*: Submit onboarding request via `POST /api/v1/system/tenants/onboard`.
-  * *Success State*: HTTP `201`. Row added to `tenants` table with `status = 'ACTIVE'`. Standard Chart of Accounts (COA) seeded in `accounts` table.
+* [ ] **Feature 1.1: System Store Onboarding**
+  * *Verification*: Submit onboarding request via `POST /api/v1/system/stores/onboard`.
+  * *Success State*: HTTP `201`. Row added to `stores` table with `status = 'ACTIVE'`. Standard Chart of Accounts (COA) seeded in `accounts` table.
   * *Failure Boundary*: HTTP `409` on duplicate subdomain. HTTP `400` on invalid plan UUID.
 
 * [ ] **Feature 1.2: Custom Domain Setup**
-  * *Verification*: Save custom domain link via `POST /api/v1/system/tenants/domain`.
-  * *Success State*: HTTP `200`. Tenant row `customDomain` populated; `customDomainStatus` = `'PENDING'`.
+  * *Verification*: Save custom domain link via `POST /api/v1/system/stores/domain`.
+  * *Success State*: HTTP `200`. Store row `customDomain` populated; `customDomainStatus` = `'PENDING'`.
 
 * [ ] **Feature 1.3: CNAME & DNS Validation**
-  * *Verification*: Trigger domain verification via `POST /api/v1/system/tenants/domain/verify`.
+  * *Verification*: Trigger domain verification via `POST /api/v1/system/stores/domain/verify`.
   * *Success State*: HTTP `200`. `customDomainStatus` transitions to `'VERIFIED'`. `customDomainVerifiedAt` gets timestamp. `sslEnabled = true`.
   * *Failure Boundary*: HTTP `422` or status remains `'FAILED'` if CNAME is not set up correctly.
 
 * [ ] **Feature 1.4: Subscription Plan Gating**
   * *Verification*: Restrict access to premium modules (e.g., HRM, AI) based on subscription plan tier.
-  * *Success State*: Controller returns `403 Forbidden` if the tenant's plan features list does not contain the required feature tag (handled by `SubscriptionGuard`).
+  * *Success State*: Controller returns `403 Forbidden` if the store's plan features list does not contain the required feature tag (handled by `SubscriptionGuard`).
 
 * [ ] **Feature 1.5: Subscription Expiry Enforcement**
-  * *Verification*: Simulate plan expiration by manually updating `subscriptionEndsAt` to a past timestamp in `tenants`.
+  * *Verification*: Simulate plan expiration by manually updating `subscriptionEndsAt` to a past timestamp in `stores`.
   * *Success State*: Admin Dashboard displays a full-screen expiration block. All non-public APIs return `403 Forbidden`.
 
 * [ ] **Feature 1.6: Super-Admin Metrics Dashboard**
   * *Verification*: Access platform metrics via `GET /api/system/metrics`.
-  * *Success State*: HTTP `200` returning system resource usage, total tenants count, and request traffic logs.
+  * *Success State*: HTTP `200` returning system resource usage, total stores count, and request traffic logs.
 
 ---
 
 ### 🔑 Module 2: Authentication, Security & RBAC
-* **Testing Guide**: 🔗 [02_auth_rbac_system.md](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/doc/testing/02_auth_rbac_system.md)
+* **Testing Guide**: 🔗 [02_auth_rbac_system.md](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/doc/testing/02_auth_rbac_system.md)
 
 * [ ] **Feature 2.1: User Login & JWT Issuance**
   * *Verification*: Submit credentials via `POST /api/v1/admin/login`.
@@ -80,7 +80,7 @@ This master playbook acts as your central validation matrix. Change `- [ ]` to `
 
 * [ ] **Feature 3.1: Branch Configuration**
   * *Verification*: Create a branch via `POST /api/v1/organization/branches`.
-  * *Success State*: HTTP `201`. Row added to `branches` table with the active `tenantId`.
+  * *Success State*: HTTP `201`. Row added to `branches` table with the active `storeId`.
 
 * [ ] **Feature 3.2: Warehouse & Bin Setup**
   * *Verification*: Create warehouse and bin codes via `POST /api/v1/organization/warehouses` and `/bins`.

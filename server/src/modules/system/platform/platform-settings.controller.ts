@@ -116,7 +116,7 @@ export class PlatformSettingsController {
       to: body.email,
       subject: 'Platform SMTP Gateway Test',
       html: `<p>If you are receiving this message, your Platform SMTP Gateway configuration works correctly!</p>`,
-      tenantId: '',
+      storeId: '',
     })
     return { success: true, message: 'Test email dispatched successfully' }
   }

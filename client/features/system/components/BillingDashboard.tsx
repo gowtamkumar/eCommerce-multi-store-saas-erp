@@ -41,7 +41,7 @@ interface Invoice {
     billingCycle: string;
     billingDate: string;
     transactionId?: string;
-    tenant?: {
+    store?: {
         id: string;
         storeName: string;
         subdomain: string;
@@ -51,7 +51,7 @@ interface Invoice {
     };
 }
 
-interface ChurnedTenant {
+interface ChurnedStore {
     id: string;
     storeName: string;
     subdomain: string;
@@ -71,7 +71,7 @@ export default function BillingDashboard() {
         totalInvoices: 0
     });
     const [revenueData, setRevenueData] = useState<any[]>([]);
-    const [churnedTenants, setChurnedTenants] = useState<ChurnedTenant[]>([]);
+    const [churnedStores, setChurnedStores] = useState<ChurnedStore[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
 
     // Pagination & Filter States
@@ -106,7 +106,7 @@ export default function BillingDashboard() {
 
             if (overviewRes?.success) setOverview(overviewRes.data);
             if (revenueRes?.success) setRevenueData(revenueRes.data || []);
-            if (churnRes?.success) setChurnedTenants(churnRes.data || []);
+            if (churnRes?.success) setChurnedStores(churnRes.data || []);
         } catch (e) {
             console.error('Error fetching billing stats:', e);
             toast.error('Failed to load billing metrics');
@@ -201,9 +201,9 @@ export default function BillingDashboard() {
             cell: (invoice) => (
                 <div className="flex flex-col">
                     <span className="font-semibold text-slate-900 dark:text-white">
-                        {invoice.tenant?.storeName || 'Unknown Store'}
+                        {invoice.store?.storeName || 'Unknown Store'}
                     </span>
-                    <span className="text-xs text-slate-400">{invoice.tenant?.subdomain || 'no-subdomain'}</span>
+                    <span className="text-xs text-slate-400">{invoice.store?.subdomain || 'no-subdomain'}</span>
                 </div>
             ),
         },
@@ -243,9 +243,9 @@ export default function BillingDashboard() {
             header: '',
             headerClassName: 'text-right',
             className: 'px-6 py-4.5 text-right',
-            cell: (invoice) => invoice.tenant?.id ? (
+            cell: (invoice) => invoice.store?.id ? (
                 <a
-                    href={`/system/tenants/${invoice.tenant.id}/analytics`}
+                    href={`/system/stores/${invoice.store.id}/analytics`}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-xs text-indigo-500 hover:text-indigo-600 transition-all shadow-sm"
                 >
                     Merchant <ArrowUpRight className="w-3 h-3" />
@@ -403,8 +403,8 @@ export default function BillingDashboard() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-4 max-h-[260px] pr-2">
-                        {churnedTenants.length > 0 ? (
-                            churnedTenants.map((merchant) => (
+                        {churnedStores.length > 0 ? (
+                            churnedStores.map((merchant) => (
                                 <div key={merchant.id} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100/50 dark:border-slate-700/30 hover:border-slate-200 dark:hover:border-slate-600 transition-all">
                                     <div>
                                         <h4 className="text-sm font-bold text-slate-800 dark:text-white leading-tight">{merchant.storeName}</h4>
@@ -437,7 +437,7 @@ export default function BillingDashboard() {
                 <div className="p-6 border-b border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">Invoices Registry</h2>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">Historical cross-tenant invoices</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1.5">Historical cross-store invoices</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">

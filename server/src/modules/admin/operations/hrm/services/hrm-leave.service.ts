@@ -35,7 +35,7 @@ export class HrmLeaveService {
     data: { leaveType: LeaveType; startDate: string; endDate: string; reason: string },
     ctx: RequestContextDto,
   ) {
-    await this.employeeService.validateEmployeeInTenant(employeeId, ctx.tenantId)
+    await this.employeeService.validateEmployeeInStore(employeeId, ctx.storeId)
 
     const startDate = new Date(data.startDate)
     const endDate = new Date(data.endDate)
@@ -43,10 +43,10 @@ export class HrmLeaveService {
       throw new BadRequestException('End date must be on or after start date')
     }
 
-    const holidays = await this.hrmRepo.findHolidaysInRange(ctx.tenantId, startDate, endDate)
+    const holidays = await this.hrmRepo.findHolidaysInRange(ctx.storeId, startDate, endDate)
     const holidayDateSet = buildHolidayDateSet(holidays)
 
-    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, startDate, ctx.tenantId)
+    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, startDate, ctx.storeId)
     const workingDays = resolveWorkingDays(assignment)
 
     const totalDays = countWorkingDaysInRange(startDate, endDate, workingDays, holidayDateSet)
@@ -58,7 +58,7 @@ export class HrmLeaveService {
       employeeId,
       startDate,
       endDate,
-      ctx.tenantId,
+      ctx.storeId,
     )
     if (overlapping.length > 0) {
       throw new ConflictException(
@@ -69,7 +69,7 @@ export class HrmLeaveService {
     const quotas = await this.hrmRepo.findLeaveQuota(
       employeeId,
       startDate.getFullYear(),
-      ctx.tenantId,
+      ctx.storeId,
     )
     const quota = quotas.find((q) => q.leaveType === data.leaveType)
     if (!quota) {
@@ -85,14 +85,14 @@ export class HrmLeaveService {
       leaveType: data.leaveType,
       reason: data.reason,
       employeeId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       startDate,
       endDate,
       totalDays,
     })
 
     try {
-      const employee = await this.hrmRepo.findEmployeeById(employeeId, ctx.tenantId)
+      const employee = await this.hrmRepo.findEmployeeById(employeeId, ctx.storeId)
       const empName = employee?.user?.name || employee?.user?.username || 'An employee'
       await this.notificationService.createNotification(
         {
@@ -102,7 +102,7 @@ export class HrmLeaveService {
           link: '/admin/hrm/leaves',
           userId: null,
         },
-        ctx.tenantId,
+        ctx.storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger leave request notification: ${e.message}`)
@@ -123,9 +123,9 @@ export class HrmLeaveService {
     managerNote: string,
     ctx: RequestContextDto,
   ) {
-    await this.employeeService.validateEmployeeInTenant(approvedById, ctx.tenantId)
+    await this.employeeService.validateEmployeeInStore(approvedById, ctx.storeId)
 
-    const request = await this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
+    const request = await this.hrmRepo.findLeaveRequestById(requestId, ctx.storeId)
     if (!request) throw new NotFoundException('Leave request not found')
     if (request.status !== LeaveStatus.PENDING) {
       throw new BadRequestException(`Leave request is already ${request.status}`)
@@ -144,14 +144,14 @@ export class HrmLeaveService {
         .update('leave_quotas')
         .set({ usedDays: () => `"used_days" + ${request.totalDays}` })
         .where('employee_id = :employeeId', { employeeId: request.employeeId })
-        .andWhere('tenant_id = :tenantId', { tenantId: ctx.tenantId })
+        .andWhere('store_id = :storeId', { storeId: ctx.storeId })
         .andWhere('leave_type = :leaveType', { leaveType: request.leaveType })
         .andWhere('year = :year', { year })
         .andWhere(`"used_days" + ${request.totalDays} <= "total_days"`)
         .execute()
 
       if (quotaResult.affected === 0) {
-        const quota = await this.hrmRepo.findLeaveQuota(request.employeeId, year, ctx.tenantId)
+        const quota = await this.hrmRepo.findLeaveQuota(request.employeeId, year, ctx.storeId)
         const match = quota.find((q) => q.leaveType === request.leaveType)
         if (!match) {
           throw new BadRequestException(`Leave quota is not configured for ${request.leaveType} leave.`)
@@ -163,7 +163,7 @@ export class HrmLeaveService {
     })
 
     try {
-      const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.tenantId)
+      const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.storeId)
       if (employee?.userId) {
         await this.notificationService.createNotification(
           {
@@ -173,7 +173,7 @@ export class HrmLeaveService {
             link: '/admin/profile',
             userId: employee.userId,
           },
-          ctx.tenantId,
+          ctx.storeId,
         )
       }
     } catch (e: any) {
@@ -187,7 +187,7 @@ export class HrmLeaveService {
       newValue: { status: LeaveStatus.APPROVED },
     })
 
-    return this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
+    return this.hrmRepo.findLeaveRequestById(requestId, ctx.storeId)
   }
 
   async rejectLeave(
@@ -196,9 +196,9 @@ export class HrmLeaveService {
     managerNote: string,
     ctx: RequestContextDto,
   ) {
-    await this.employeeService.validateEmployeeInTenant(rejectedById, ctx.tenantId)
+    await this.employeeService.validateEmployeeInStore(rejectedById, ctx.storeId)
 
-    const request = await this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
+    const request = await this.hrmRepo.findLeaveRequestById(requestId, ctx.storeId)
     if (!request) throw new NotFoundException('Leave request not found')
     if (request.status !== LeaveStatus.PENDING) {
       throw new BadRequestException(`Leave request is already ${request.status}`)
@@ -211,7 +211,7 @@ export class HrmLeaveService {
     })
 
     try {
-      const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.tenantId)
+      const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.storeId)
       if (employee?.userId) {
         await this.notificationService.createNotification(
           {
@@ -221,7 +221,7 @@ export class HrmLeaveService {
             link: '/admin/profile',
             userId: employee.userId,
           },
-          ctx.tenantId,
+          ctx.storeId,
         )
       }
     } catch (e: any) {
@@ -234,7 +234,7 @@ export class HrmLeaveService {
       entityId: requestId,
       newValue: { status: LeaveStatus.REJECTED },
     })
-    return this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
+    return this.hrmRepo.findLeaveRequestById(requestId, ctx.storeId)
   }
 
   async findAllLeaveRequests(
@@ -248,7 +248,7 @@ export class HrmLeaveService {
       to?: string
     },
   ) {
-    return this.hrmRepo.findAllLeaveRequests(ctx.tenantId, {
+    return this.hrmRepo.findAllLeaveRequests(ctx.storeId, {
       ...options,
       from: options?.from ? new Date(options.from) : undefined,
       to: options?.to ? new Date(options.to) : undefined,
@@ -257,12 +257,12 @@ export class HrmLeaveService {
 
   async initializeDefaultLeaveQuotas(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
     year: number,
     em?: EntityManager,
   ) {
     const repo = em ? em.getRepository(LeaveQuotaEntity) : this.hrmRepo.leaveQuotaRepo
-    const existing = await repo.find({ where: { employeeId, tenantId, year } })
+    const existing = await repo.find({ where: { employeeId, storeId, year } })
     if (existing.length > 0) return
 
     const defaults = [
@@ -277,7 +277,7 @@ export class HrmLeaveService {
       await repo.save(
         repo.create({
           employeeId,
-          tenantId,
+          storeId,
           leaveType: d.leaveType,
           totalDays: d.totalDays,
           usedDays: 0,

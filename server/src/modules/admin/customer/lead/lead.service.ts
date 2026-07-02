@@ -18,7 +18,7 @@ export class LeadService {
 
   async createLead(dto: CreateLeadDto, ctx: RequestContextDto): Promise<LeadEntity> {
     this.logger.log(`${this.createLead.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const lead = await this.leadRepository.createAndSave(dto, ctx)
 
     // Trigger New Lead Notification
@@ -31,13 +31,13 @@ export class LeadService {
           link: `/admin/leads`,
           userId: null as any, // Send to all admins
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger new lead notification: ${e.message}`)
     }
 
-    await this.cache.delCacheByPattern('leads:list*', tenantId)
+    await this.cache.delCacheByPattern('leads:list*', storeId)
     return lead
   }
 
@@ -46,26 +46,26 @@ export class LeadService {
     ctx: RequestContextDto,
   ): Promise<{ leads: LeadEntity[]; total: number }> {
     this.logger.log(`${this.findAllLeads.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 10, q = '', status = 'all' } = filterDto
     const cacheKey = `leads:list:p${page}:l${limit}:q${q}:s${status}`
 
     return this.cache.rememberCache(
       cacheKey,
-      () => this.leadRepository.findAllWithFilters(filterDto, tenantId),
+      () => this.leadRepository.findAllWithFilters(filterDto, storeId),
       300, // 5 min
-      tenantId,
+      storeId,
     )
   }
 
   async updateLead(id: string, dto: UpdateLeadDto, ctx: RequestContextDto): Promise<LeadEntity> {
     this.logger.log(`${this.updateLead.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const lead = await this.leadRepository.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const lead = await this.leadRepository.findById(id, storeId)
     if (!lead) throw new NotFoundException('Lead not found')
 
     const updated = await this.leadRepository.updateAndSave(lead, dto)
-    await this.cache.delCacheByPattern('leads:list*', tenantId)
+    await this.cache.delCacheByPattern('leads:list*', storeId)
     return updated
   }
 }

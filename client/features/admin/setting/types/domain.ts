@@ -1,6 +1,6 @@
 export type DomainStatus = "active" | "pending" | "failed" | "inactive" | string;
 
-export interface TenantDomain {
+export interface StoreDomain {
   id: string;
   hostname: string;
   isPrimary: boolean;
@@ -10,11 +10,11 @@ export interface TenantDomain {
   createdAt?: string | Date | null;
 }
 
-export interface TenantInfo {
+export interface StoreInfo {
   id: string;
   storeName: string;
   subdomain: string;
-  domains?: TenantDomain[];
+  domains?: StoreDomain[];
   primaryCustomDomain?: string | null;
   sslEnabled?: boolean;
   createdAt?: string | Date;

@@ -25,9 +25,9 @@ export class SupplierService {
 
   async createSupplier(dto: CreateSupplierDto, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.createSupplier.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const result = await this.repository.createAndSave(dto, ctx)
-    await this.cacheService.delCacheByPattern(`suppliers:list*`, tenantId)
+    await this.cacheService.delCacheByPattern(`suppliers:list*`, storeId)
     return result
   }
 
@@ -42,19 +42,19 @@ export class SupplierService {
     totalPages: number
   }> {
     this.logger.log(`${this.findAllSuppliers.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `suppliers:list:p${page}:l${limit}:q${search || ''}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.repository.findAllByTenant(tenantId, page, limit, search)
+        const [items, total] = await this.repository.findAllByStore(storeId, page, limit, search)
 
         // Bulk-resolve outstanding balances in a single query (avoids N+1).
         const balances = await this.apLedgerRepository.getBalances(
           items.map((item) => item.id),
-          tenantId,
+          storeId,
         )
         for (const item of items) {
           item.outstandingBalance = balances.get(item.id) ?? 0
@@ -69,42 +69,42 @@ export class SupplierService {
         }
       },
       300,
-      tenantId,
+      storeId,
     )
   }
 
   async findAllSuppliersRaw(ctx: RequestContextDto): Promise<SupplierEntity[]> {
     this.logger.log(`${this.findAllSuppliersRaw.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `suppliers:list:raw`
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items] = await this.repository.findAllByTenant(tenantId, 1, 9999)
+        const [items] = await this.repository.findAllByStore(storeId, 1, 9999)
         return items
       },
       300,
-      tenantId,
+      storeId,
     )
   }
 
   async findOneSupplier(id: string, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.findOneSupplier.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `suppliers:id:${id}`
 
     const supplier = await this.cacheService.rememberCache(
       cacheKey,
-      () => this.repository.findByIdAndTenant(id, tenantId),
+      () => this.repository.findByIdAndStore(id, storeId),
       600,
-      tenantId,
+      storeId,
     )
 
     if (!supplier) {
       throw new NotFoundException('Supplier not found')
     }
 
-    supplier.outstandingBalance = await this.apLedgerRepository.getBalance(id, tenantId)
+    supplier.outstandingBalance = await this.apLedgerRepository.getBalance(id, storeId)
     return supplier
   }
 
@@ -114,28 +114,28 @@ export class SupplierService {
     ctx: RequestContextDto,
   ): Promise<SupplierEntity> {
     this.logger.log(`${this.updateSupplier.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const supplier = await this.findOneSupplier(id, ctx)
     const result = await this.repository.updateAndSave(supplier, dto)
-    await this.cacheService.delCacheByPattern(`suppliers:list*`, tenantId)
-    await this.cacheService.delCache(`suppliers:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`suppliers:list*`, storeId)
+    await this.cacheService.delCache(`suppliers:id:${id}`, storeId)
     return result
   }
 
   async removeSupplier(id: string, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.removeSupplier.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const supplier = await this.findOneSupplier(id, ctx)
     const result = await this.repository.removeSupplier(supplier)
-    await this.cacheService.delCacheByPattern(`suppliers:list*`, tenantId)
-    await this.cacheService.delCache(`suppliers:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`suppliers:list*`, storeId)
+    await this.cacheService.delCache(`suppliers:id:${id}`, storeId)
     return result
   }
 
   async getLedger(supplierId: string, ctx: RequestContextDto, paginationDto: PaginationDto) {
     const { page = 1, limit = 20 } = paginationDto
     const [items, total] = await this.apLedgerBaseRepo.findAndCount({
-      where: { supplierId, tenantId: ctx.tenantId },
+      where: { supplierId, storeId: ctx.storeId },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,

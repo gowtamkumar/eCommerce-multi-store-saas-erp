@@ -32,7 +32,7 @@ export class FileResponseDto {
   size: number
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

@@ -8,15 +8,15 @@ This document provides a verified, field-accurate breakdown of the core system i
 
 ```
 server/src/modules/system/
-├── tenant/                           # Tenant configuration & lifecycle
+├── store/                           # Store configuration & lifecycle
 │   ├── entities/
-│   │   ├── tenant.entity.ts          # Core tenant record
-│   │   └── tenant-feature.entity.ts  # Per-tenant feature flag overrides
-│   ├── tenant.service.ts             # Onboarding, domain verification, billing lifecycle
-│   ├── tenant.repository.ts          # Scoped DB access
-│   ├── tenant.controller.ts          # Admin-level tenant management endpoints
-│   ├── public-tenant.controller.ts   # Public guest store lookup by subdomain
-│   └── tenant.module.ts
+│   │   ├── store.entity.ts          # Core store record
+│   │   └── store-feature.entity.ts  # Per-store feature flag overrides
+│   ├── store.service.ts             # Onboarding, domain verification, billing lifecycle
+│   ├── store.repository.ts          # Scoped DB access
+│   ├── store.controller.ts          # Admin-level store management endpoints
+│   ├── public-store.controller.ts   # Public guest store lookup by subdomain
+│   └── store.module.ts
 ├── organization/                     # Branch & Warehouse hierarchy
 │   ├── entities/
 │   │   ├── branch.entity.ts
@@ -38,39 +38,39 @@ server/src/modules/system/
 
 ---
 
-## 1. Tenant Domain (`tenant/entities/tenant.entity.ts`)
+## 1. Store Domain (`store/entities/store.entity.ts`)
 
 > **Verified from source**
 
 | Field | Type | Notes |
 | :--- | :--- | :--- |
-| `storeName` | VARCHAR | Name of the tenant store |
+| `storeName` | VARCHAR | Name of the store store |
 | `subdomain` | VARCHAR (UNIQUE) | e.g. `mystore.platform.com` |
 | `customDomain` | VARCHAR (UNIQUE, nullable) | Custom domain mapping |
 | `customDomainStatus` | ENUM `CustomDomainStatus` | PENDING, VERIFIED, FAILED |
 | `customDomainVerifiedAt` | TIMESTAMPTZ (nullable) | When DNS was confirmed |
 | `sslEnabled` | BOOLEAN (default false) | SSL certificate status |
-| `status` | ENUM `TenantStatus` | ACTIVE, SUSPENDED, DELETED |
+| `status` | ENUM `StoreStatus` | ACTIVE, SUSPENDED, DELETED |
 | `subscriptionPlanId` | UUID FK → `SubscriptionPlanEntity` | Active plan |
 | `subscriptionBillingCycle` | ENUM `SubscriptionBillingCycle` | MONTHLY, YEARLY |
 | `subscriptionStatus` | ENUM `SubscriptionStatus` | ACTIVE, TRIAL, EXPIRED, CANCELLED |
 | `subscriptionStartsAt` | TIMESTAMPTZ | Plan start date |
 | `subscriptionEndsAt` | TIMESTAMPTZ | Plan expiry date |
-| `userId` | UUID FK → `UserEntity` | Tenant owner/admin user |
+| `userId` | UUID FK → `UserEntity` | Store owner/admin user |
 
 > **Computed property:** `get isExpired()` returns `true` when `new Date() > subscriptionEndsAt`
 
 ### Key Services
-- **`TenantService`:** Handles tenant registration, plan changes, custom domain DNS verification, and subscription state transitions.
-- **`PublicTenantController`:** Guest-accessible endpoint to look up store theme and settings by subdomain (used by the Next.js storefront SSR).
+- **`StoreService`:** Handles store registration, plan changes, custom domain DNS verification, and subscription state transitions.
+- **`PublicStoreController`:** Guest-accessible endpoint to look up store theme and settings by subdomain (used by the Next.js storefront SSR).
 
 ### API Endpoints
 | Method | Path | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/system/tenants` | List all tenants (Super-admin) |
-| `POST` | `/api/system/tenants/onboard` | Register a new tenant |
-| `POST` | `/api/system/tenants/domain` | Request custom domain verification |
-| `GET` | `/api/public/tenant/:subdomain` | Guest lookup for store config |
+| `GET` | `/api/system/stores` | List all stores (Super-admin) |
+| `POST` | `/api/system/stores/onboard` | Register a new store |
+| `POST` | `/api/system/stores/domain` | Request custom domain verification |
+| `GET` | `/api/public/store/:subdomain` | Guest lookup for store config |
 
 ---
 
@@ -83,7 +83,7 @@ Represents a physical or logical business location.
 
 | Field | Type | Notes |
 | :--- | :--- | :--- |
-| `tenantId` | UUID FK | Strict tenant isolation |
+| `storeId` | UUID FK | Strict store isolation |
 | `name` | VARCHAR | Branch display name |
 | `address` | TEXT | Physical address |
 | `contactPhone` | VARCHAR (nullable) | Branch contact |
@@ -94,7 +94,7 @@ Defines a stock-holding location.
 
 | Field | Type | Notes |
 | :--- | :--- | :--- |
-| `tenantId` | UUID FK | Strict tenant isolation |
+| `storeId` | UUID FK | Strict store isolation |
 | `name` | VARCHAR | Warehouse label |
 | `address` | TEXT | Physical location |
 | `branchId` | UUID FK (nullable) | If null → central/shared warehouse |
@@ -120,7 +120,7 @@ Append-only immutable log of every system mutation.
 
 | Field | Type | Notes |
 | :--- | :--- | :--- |
-| `tenantId` | UUID | Tenant scope |
+| `storeId` | UUID | Store scope |
 | `userId` | UUID | Who performed the action |
 | `action` | VARCHAR | e.g. `order.create`, `stock.adjust` |
 | `resourceType` | VARCHAR | e.g. `ORDER`, `PRODUCT`, `EMPLOYEE` |
@@ -130,4 +130,4 @@ Append-only immutable log of every system mutation.
 
 ### Services
 - **`AuditLogService`:** Exposes `log(ctx, action, resource)` used by interceptors and high-risk service methods.
-- **`AuditLogController`:** Allows tenant admins and super-admins to search, filter by user/action/date, and export audit trails.
+- **`AuditLogController`:** Allows store admins and super-admins to search, filter by user/action/date, and export audit trails.

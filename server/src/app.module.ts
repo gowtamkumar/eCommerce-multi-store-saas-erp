@@ -2,12 +2,12 @@ import { GlobalExceptionFilter } from '@/common/exception/exception-filter'
 import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import { MaintenanceGuard } from '@/common/guards/maintenance.guard'
 import { PermissionsGuard } from '@/common/guards/permissions.guard'
-import { TenantIsolationGuard } from '@/common/guards/tenant-isolation.guard'
-import { TenantStatusGuard } from '@/common/guards/tenant-status.guard'
+import { StoreIsolationGuard } from '@/common/guards/store-isolation.guard'
+import { StoreStatusGuard } from '@/common/guards/store-status.guard'
 import { AuditLogInterceptor } from '@/common/interceptors/audit-log.interceptor'
 import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
-import { TenantContextMiddleware } from '@/common/middleware/tenant-context.middleware'
+import { StoreContextMiddleware } from '@/common/middleware/store-context.middleware'
 import { DatabaseModule } from '@/database/database.module'
 import { CatalogModule } from '@/modules/admin/catalog/catalog.module'
 import { ContentModule } from '@/modules/admin/content/content.module'
@@ -26,7 +26,7 @@ import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping
 import { StoreWalletModule } from '@/modules/store/wallet/store-wallet.module'
 import { WishlistModule } from '@/modules/store/wishlist/wishlist.module'
 import { SystemModule } from '@/modules/system/system.module'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { ScheduleModule } from '@nestjs/schedule'
@@ -46,8 +46,8 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     SettingsModule,
     CacheModule,
 
-    // Core & System Domains (TenantModule before AdminModule — AuthModule depends on it)
-    TenantModule,
+    // Core & System Domains (StoreModule before AdminModule — AuthModule depends on it)
+    StoreModule,
     AdminModule,
     SystemModule,
 
@@ -90,11 +90,11 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     },
     {
       provide: APP_GUARD,
-      useClass: TenantIsolationGuard,
+      useClass: StoreIsolationGuard,
     },
     {
       provide: APP_GUARD,
-      useClass: TenantStatusGuard,
+      useClass: StoreStatusGuard,
     },
     {
       provide: APP_GUARD,
@@ -121,13 +121,13 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(TenantContextMiddleware) //.exclude(...) → Skip Middleware for These Routes
+      .apply(StoreContextMiddleware) //.exclude(...) → Skip Middleware for These Routes
       .exclude(
         '/',
         '',
-        // 'tenant/lookup',
-        'tenants',
-        'tenants/*path',
+        // 'store/lookup',
+        'stores',
+        'stores/*path',
         'onboard',
         'admin/login',
         'auth/*path',

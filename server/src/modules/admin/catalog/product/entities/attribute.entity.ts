@@ -18,8 +18,8 @@ export class ProductAttributeEntity extends BaseEntity {
   @JoinColumn({ name: 'product_id' })
   product: ProductEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

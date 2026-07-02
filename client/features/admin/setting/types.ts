@@ -60,6 +60,6 @@ export type {
 
 export type {
     DomainStatus,
-    TenantDomain,
-    TenantInfo,
+    StoreDomain,
+    StoreInfo,
 } from "./types/domain";

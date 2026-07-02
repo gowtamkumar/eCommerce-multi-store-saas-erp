@@ -63,7 +63,7 @@ export default function PlatformTrafficChart({ traffic, days, trafficTrend }: Pl
       <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Platform Traffic</h2>
-          <p className="text-xs text-slate-500">Cross-tenant request volume — last {days} days</p>
+          <p className="text-xs text-slate-500">Cross-store request volume — last {days} days</p>
         </div>
         {trafficTrend && <TrendBadge trend={trafficTrend} />}
       </div>

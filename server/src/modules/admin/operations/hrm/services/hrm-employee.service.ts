@@ -24,34 +24,34 @@ export class HrmEmployeeService {
   ) {}
 
   async getDashboardStats(ctx: RequestContextDto) {
-    return this.hrmRepo.getStats(ctx.tenantId, ctx.branchId)
+    return this.hrmRepo.getStats(ctx.storeId, ctx.branchId)
   }
 
-  /** Ensure an employee record belongs to the current tenant. */
-  async validateEmployeeInTenant(
+  /** Ensure an employee record belongs to the current store. */
+  async validateEmployeeInStore(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<EmployeeEntity> {
-    const employee = await this.hrmRepo.findEmployeeById(employeeId, tenantId)
-    if (!employee) throw new NotFoundException(`Employee ${employeeId} not found in this tenant`)
+    const employee = await this.hrmRepo.findEmployeeById(employeeId, storeId)
+    if (!employee) throw new NotFoundException(`Employee ${employeeId} not found in this store`)
     return employee
   }
 
   // --- Employee CRUD ---
   async createEmployee(data: CreateEmployeeDto, ctx: RequestContextDto) {
-    this.logger.log(`Creating employee profile for user ${data.userId} in tenant ${ctx.tenantId}`)
+    this.logger.log(`Creating employee profile for user ${data.userId} in store ${ctx.storeId}`)
 
     if (data.managerId) {
-      await this.validateEmployeeInTenant(data.managerId, ctx.tenantId)
+      await this.validateEmployeeInStore(data.managerId, ctx.storeId)
     }
 
     const { personalDetails, documents, ...employeeData } = data
-    const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.tenantId)
+    const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.storeId)
 
     const employee = await this.hrmRepo.createEmployee({
       ...employeeData,
       employeeId: humanReadableId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       branchId: employeeData.branchId || ctx.branchId || null,
       joiningDate: new Date(data.joiningDate),
     })
@@ -60,7 +60,7 @@ export class HrmEmployeeService {
       await this.hrmRepo.personalDetailsRepo.save({
         ...personalDetails,
         employeeId: employee.id,
-        tenantId: ctx.tenantId,
+        storeId: ctx.storeId,
         dob: personalDetails.dob ? new Date(personalDetails.dob) : null,
       })
     }
@@ -70,14 +70,14 @@ export class HrmEmployeeService {
         await this.hrmRepo.documentRepo.save({
           ...doc,
           employeeId: employee.id,
-          tenantId: ctx.tenantId,
+          storeId: ctx.storeId,
           expiryDate: doc.expiryDate ? new Date(doc.expiryDate) : null,
         })
       }
     }
 
     const currentYear = new Date(data.joiningDate).getFullYear()
-    await this.initializeDefaultLeaveQuotas(employee.id, ctx.tenantId, currentYear)
+    await this.initializeDefaultLeaveQuotas(employee.id, ctx.storeId, currentYear)
 
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
@@ -98,17 +98,17 @@ export class HrmEmployeeService {
       q?: string
     },
   ) {
-    return this.hrmRepo.findAllEmployees(ctx.tenantId, ctx.branchId, options)
+    return this.hrmRepo.findAllEmployees(ctx.storeId, ctx.branchId, options)
   }
 
   async findOneEmployee(id: string, ctx: RequestContextDto) {
-    const employee = await this.hrmRepo.findEmployeeById(id, ctx.tenantId)
+    const employee = await this.hrmRepo.findEmployeeById(id, ctx.storeId)
     if (!employee) throw new NotFoundException('Employee not found')
     return employee
   }
 
   async updateEmployee(id: string, data: UpdateEmployeeDto, ctx: RequestContextDto) {
-    this.logger.log(`Updating employee ${id} for tenant ${ctx.tenantId}`)
+    this.logger.log(`Updating employee ${id} for store ${ctx.storeId}`)
     const oldEmployee = await this.findOneEmployee(id, ctx)
 
     const { personalDetails, documents, ...updateData } = data
@@ -116,7 +116,7 @@ export class HrmEmployeeService {
     if (data.exitDate) formattedUpdate.exitDate = new Date(data.exitDate)
 
     if (data.managerId) {
-      await this.validateEmployeeInTenant(data.managerId, ctx.tenantId)
+      await this.validateEmployeeInStore(data.managerId, ctx.storeId)
     }
 
     await this.hrmRepo.updateEmployee(id, formattedUpdate)
@@ -136,13 +136,13 @@ export class HrmEmployeeService {
         await this.hrmRepo.personalDetailsRepo.save({
           ...pdData,
           employeeId: id,
-          tenantId: ctx.tenantId,
+          storeId: ctx.storeId,
         })
       }
     }
 
     if (documents !== undefined) {
-      await this.syncEmployeeDocuments(id, documents, ctx.tenantId)
+      await this.syncEmployeeDocuments(id, documents, ctx.storeId)
     }
 
     const newEmployee = await this.findOneEmployee(id, ctx)
@@ -160,7 +160,7 @@ export class HrmEmployeeService {
   async getEmployeeDocuments(employeeId: string, ctx: RequestContextDto) {
     await this.findOneEmployee(employeeId, ctx)
     return this.hrmRepo.documentRepo.find({
-      where: { employeeId, tenantId: ctx.tenantId },
+      where: { employeeId, storeId: ctx.storeId },
       order: { createdAt: 'DESC' },
     })
   }
@@ -174,7 +174,7 @@ export class HrmEmployeeService {
 
     const doc = this.hrmRepo.documentRepo.create({
       employeeId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       documentType: data.documentType,
       fileUrl: data.fileUrl,
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
@@ -193,7 +193,7 @@ export class HrmEmployeeService {
 
   async deleteEmployeeDocument(docId: string, ctx: RequestContextDto) {
     const doc = await this.hrmRepo.documentRepo.findOne({
-      where: { id: docId, tenantId: ctx.tenantId },
+      where: { id: docId, storeId: ctx.storeId },
     })
     if (!doc) throw new NotFoundException('Document not found')
     await this.hrmRepo.documentRepo.softDelete(docId)
@@ -212,7 +212,7 @@ export class HrmEmployeeService {
       this.hrmRepo.holidayRepo.create({
         ...data,
         date: new Date(data.date),
-        tenantId: ctx.tenantId,
+        storeId: ctx.storeId,
         branchId: data.branchId ?? null,
       }),
     )
@@ -228,7 +228,7 @@ export class HrmEmployeeService {
   async findAllHolidays(ctx: RequestContextDto, year?: number) {
     const qb = this.hrmRepo.holidayRepo
       .createQueryBuilder('h')
-      .where('h.tenantId = :tenantId', { tenantId: ctx.tenantId })
+      .where('h.storeId = :storeId', { storeId: ctx.storeId })
       .orderBy('h.date', 'ASC')
     if (year) qb.andWhere('h.year = :year', { year })
     return qb.getMany()
@@ -236,7 +236,7 @@ export class HrmEmployeeService {
 
   async updateHoliday(id: string, data: UpdateHolidayDto, ctx: RequestContextDto) {
     const holiday = await this.hrmRepo.holidayRepo.findOne({
-      where: { id, tenantId: ctx.tenantId },
+      where: { id, storeId: ctx.storeId },
     })
     if (!holiday) throw new NotFoundException('Holiday not found')
     const update: Record<string, unknown> = {}
@@ -246,12 +246,12 @@ export class HrmEmployeeService {
     if (data.branchId !== undefined) update.branchId = data.branchId
     if (data.date) update.date = new Date(data.date)
     await this.hrmRepo.holidayRepo.update(id, update)
-    return this.hrmRepo.holidayRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    return this.hrmRepo.holidayRepo.findOne({ where: { id, storeId: ctx.storeId } })
   }
 
   async deleteHoliday(id: string, ctx: RequestContextDto) {
     const holiday = await this.hrmRepo.holidayRepo.findOne({
-      where: { id, tenantId: ctx.tenantId },
+      where: { id, storeId: ctx.storeId },
     })
     if (!holiday) throw new NotFoundException('Holiday not found')
     await this.hrmRepo.holidayRepo.softDelete(id)
@@ -267,7 +267,7 @@ export class HrmEmployeeService {
   // --- Tax Bracket Management ---
   async createTaxBracket(data: CreateTaxBracketDto, ctx: RequestContextDto) {
     const bracket = await this.hrmRepo.taxBracketRepo.save(
-      this.hrmRepo.taxBracketRepo.create({ ...data, tenantId: ctx.tenantId }),
+      this.hrmRepo.taxBracketRepo.create({ ...data, storeId: ctx.storeId }),
     )
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
@@ -281,7 +281,7 @@ export class HrmEmployeeService {
   async findAllTaxBrackets(ctx: RequestContextDto, fiscalYear?: number) {
     const qb = this.hrmRepo.taxBracketRepo
       .createQueryBuilder('tb')
-      .where('tb.tenantId = :tenantId', { tenantId: ctx.tenantId })
+      .where('tb.storeId = :storeId', { storeId: ctx.storeId })
       .orderBy('tb.fiscalYear', 'DESC')
       .addOrderBy('tb.sortOrder', 'ASC')
       .addOrderBy('tb.minAmount', 'ASC')
@@ -291,7 +291,7 @@ export class HrmEmployeeService {
 
   async deleteTaxBracket(id: string, ctx: RequestContextDto) {
     const bracket = await this.hrmRepo.taxBracketRepo.findOne({
-      where: { id, tenantId: ctx.tenantId },
+      where: { id, storeId: ctx.storeId },
     })
     if (!bracket) throw new NotFoundException('Tax bracket not found')
     await this.hrmRepo.taxBracketRepo.softDelete(id)
@@ -300,27 +300,27 @@ export class HrmEmployeeService {
 
   async seedDemoData(ctx: RequestContextDto) {
     assertProductionSafe('Demo data seeding')
-    this.logger.log(`Seeding demo HRM data for tenant ${ctx.tenantId}`)
+    this.logger.log(`Seeding demo HRM data for store ${ctx.storeId}`)
 
     // 1. Departments & Designations
     const itDept = await this.hrmRepo.createDepartment({
       name: 'IT & Engineering',
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     const salesDept = await this.hrmRepo.createDepartment({
       name: 'Sales & Marketing',
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
 
     const devDes = await this.hrmRepo.createDesignation({
       name: 'Senior Developer',
       departmentId: itDept.id,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     const mgrDes = await this.hrmRepo.createDesignation({
       name: 'Sales Manager',
       departmentId: salesDept.id,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
 
     // 2. Shifts
@@ -329,7 +329,7 @@ export class HrmEmployeeService {
       startTime: '09:00:00',
       endTime: '18:00:00',
       graceMinutes: 15,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
 
     const nightShift = await this.hrmRepo.createShift({
@@ -338,11 +338,11 @@ export class HrmEmployeeService {
       endTime: '06:00:00',
       isNightShift: true,
       graceMinutes: 30,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
 
     // 3. Find some existing entities to link
-    const employeesResult = await this.hrmRepo.findEmployeesAll(ctx.tenantId)
+    const employeesResult = await this.hrmRepo.findEmployeesAll(ctx.storeId)
     if (employeesResult.length === 0)
       return { message: 'Please create at least one employee first to link demo data.' }
 
@@ -353,7 +353,7 @@ export class HrmEmployeeService {
       employeeId: emp.id,
       shiftId: dayShift.id,
       effectiveFrom: new Date('2026-01-01'),
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
 
     // 5. Attendance Logs (Last 5 days)
@@ -376,7 +376,7 @@ export class HrmEmployeeService {
         checkOut,
         workHours,
         lateMinutes: checkIn.getMinutes() > 15 ? checkIn.getMinutes() - 15 : 0,
-        tenantId: ctx.tenantId,
+        storeId: ctx.storeId,
       })
     }
 
@@ -389,7 +389,7 @@ export class HrmEmployeeService {
       totalDays: 5,
       reason: 'Summer Vacation with family',
       status: 'PENDING' as any,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
 
     return { success: true, message: 'Demo data seeded successfully' }
@@ -402,9 +402,9 @@ export class HrmEmployeeService {
   private async syncEmployeeDocuments(
     employeeId: string,
     incoming: { id?: string; documentType: string; fileUrl: string; expiryDate?: string }[],
-    tenantId: string,
+    storeId: string,
   ) {
-    const existing = await this.hrmRepo.documentRepo.find({ where: { employeeId, tenantId } })
+    const existing = await this.hrmRepo.documentRepo.find({ where: { employeeId, storeId } })
     const incomingIds = new Set(incoming.filter((d) => d.id).map((d) => d.id!))
 
     for (const doc of existing) {
@@ -425,7 +425,7 @@ export class HrmEmployeeService {
         await this.hrmRepo.documentRepo.save({
           ...payload,
           employeeId,
-          tenantId,
+          storeId,
         })
       }
     }
@@ -433,10 +433,10 @@ export class HrmEmployeeService {
 
   async initializeDefaultLeaveQuotas(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
     year: number,
   ) {
-    const existing = await this.hrmRepo.leaveQuotaRepo.find({ where: { employeeId, tenantId, year } })
+    const existing = await this.hrmRepo.leaveQuotaRepo.find({ where: { employeeId, storeId, year } })
     if (existing.length > 0) return
 
     const defaults = [
@@ -451,7 +451,7 @@ export class HrmEmployeeService {
       await this.hrmRepo.leaveQuotaRepo.save(
         this.hrmRepo.leaveQuotaRepo.create({
           employeeId,
-          tenantId,
+          storeId,
           leaveType: d.leaveType,
           totalDays: d.totalDays,
           usedDays: 0,

@@ -35,14 +35,14 @@ export class StaffInvitationService {
   async inviteStaff(
     dto: InviteStaffDto,
     ctx: RequestContextDto,
-    checkExistingUser: (email: string, tenantId: string) => Promise<any>,
+    checkExistingUser: (email: string, storeId: string) => Promise<any>,
   ): Promise<{ message: string; invitation: StaffInvitationEntity }> {
     this.logger.log(`${this.inviteStaff.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const invitedBy = ctx.userId
 
-    // Tenant staff can never be invited as a platform super admin, and only an
-    // admin/super-admin may invite another tenant ADMIN. This prevents
+    // Store staff can never be invited as a platform super admin, and only an
+    // admin/super-admin may invite another store ADMIN. This prevents
     // privilege escalation through the invitation flow.
     if (dto.role === UserRole.SUPER_ADMIN) {
       throw new BadRequestException('The super admin role cannot be assigned.')
@@ -54,12 +54,12 @@ export class StaffInvitationService {
       throw new BadRequestException('Only an administrator can invite an admin.')
     }
 
-    const existingUser = await checkExistingUser(dto.email, tenantId)
+    const existingUser = await checkExistingUser(dto.email, storeId)
     if (existingUser) {
       throw new BadRequestException('A user with this email already exists in your team.')
     }
 
-    await this.invitationRepo.expireOldInvitations(dto.email, tenantId)
+    await this.invitationRepo.expireOldInvitations(dto.email, storeId)
 
     const token = crypto.randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
@@ -79,8 +79,8 @@ export class StaffInvitationService {
       ctx,
     )
 
-    this.mailService.sendStaffInvitationEmail(dto.email, token, dto.role, tenantId)
-    await this.cacheService.delCache('team:members', tenantId)
+    this.mailService.sendStaffInvitationEmail(dto.email, token, dto.role, storeId)
+    await this.cacheService.delCache('team:members', storeId)
 
     return {
       message: `Invitation sent to ${dto.email}`,
@@ -90,8 +90,8 @@ export class StaffInvitationService {
 
   async getInvitations(ctx: RequestContextDto): Promise<StaffInvitationEntity[]> {
     this.logger.log(`${this.getInvitations.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const invitations = await this.invitationRepo.findAllByTenant(tenantId)
+    const storeId = ctx.storeId
+    const invitations = await this.invitationRepo.findAllByStore(storeId)
     return invitations.map((inv) => sanitizeInvitation(inv) as StaffInvitationEntity)
   }
 
@@ -100,8 +100,8 @@ export class StaffInvitationService {
     ctx: RequestContextDto,
   ): Promise<StaffInvitationEntity> {
     this.logger.log(`${this.revokeInvitation.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const invitation = await this.invitationRepo.findByIdAndTenant(invitationId, tenantId)
+    const storeId = ctx.storeId
+    const invitation = await this.invitationRepo.findByIdAndStore(invitationId, storeId)
     if (!invitation) throw new NotFoundException('Invitation not found.')
     if (invitation.status !== InvitationStatus.Pending)
       throw new BadRequestException('Only pending invitations can be revoked.')
@@ -109,13 +109,13 @@ export class StaffInvitationService {
     const result = await this.invitationRepo.updateAndSave(invitation, {
       status: InvitationStatus.Expired,
     })
-    await this.cacheService.delCache('team:members', tenantId)
+    await this.cacheService.delCache('team:members', storeId)
     return sanitizeInvitation(result) as StaffInvitationEntity
   }
 
-  async findPendingByTenant(ctx: RequestContextDto): Promise<StaffInvitationEntity[]> {
-    const tenantId = ctx.tenantId
-    const invitations = await this.invitationRepo.findPendingByTenant(tenantId)
+  async findPendingByStore(ctx: RequestContextDto): Promise<StaffInvitationEntity[]> {
+    const storeId = ctx.storeId
+    const invitations = await this.invitationRepo.findPendingByStore(storeId)
     return invitations.map((inv) => sanitizeInvitation(inv) as StaffInvitationEntity)
   }
 
@@ -133,7 +133,7 @@ export class StaffInvitationService {
     }
 
     // Check if user already exists
-    const existingUser = await this.userRepo.findByEmail(invitation.email, invitation.tenantId)
+    const existingUser = await this.userRepo.findByEmail(invitation.email, invitation.storeId)
     if (existingUser) throw new BadRequestException('A user with this email already exists.')
 
     const hashedPassword = await bcrypt.hash(password, 10)
@@ -151,7 +151,7 @@ export class StaffInvitationService {
         branchId: invitation.branchId || null,
         warehouseId: invitation.warehouseId || null,
       },
-      { tenantId: invitation.tenantId, userId: 'system' } as RequestContextDto,
+      { storeId: invitation.storeId, userId: 'system' } as RequestContextDto,
     )
 
     // Create dynamic user role assignment if a dynamic role ID is linked to the invitation
@@ -165,7 +165,7 @@ export class StaffInvitationService {
       const assignment = this.assignmentRepo.create({
         userId: user.id,
         roleId: invitation.roleId,
-        tenantId: invitation.tenantId,
+        storeId: invitation.storeId,
         scopeType,
         scopeId: invitation.branchId || invitation.warehouseId || null,
         assignedBy: invitation.invitedBy || 'system',
@@ -174,7 +174,7 @@ export class StaffInvitationService {
     }
 
     await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Accepted })
-    await this.cacheService.delCache('team:members', invitation.tenantId)
+    await this.cacheService.delCache('team:members', invitation.storeId)
 
     // Trigger Notification for Admin
     try {
@@ -186,7 +186,7 @@ export class StaffInvitationService {
           link: '/admin/settings/team',
           userId: null as any, // Send to all admins
         },
-        invitation.tenantId,
+        invitation.storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger invitation acceptance notification: ${e.message}`)

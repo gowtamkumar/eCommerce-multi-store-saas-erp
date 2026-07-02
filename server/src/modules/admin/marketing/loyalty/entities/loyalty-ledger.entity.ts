@@ -1,14 +1,14 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { LoyaltyTransactionType } from '@/common/enums/loyalty-transaction-type.enum'
 
 @Entity('loyalty_ledger')
-@Index(['tenantId', 'customerId'])
-@Index(['tenantId', 'createdAt'])
+@Index(['storeId', 'customerId'])
+@Index(['storeId', 'createdAt'])
 // Aging support — point expiry sweeper joins on these
-@Index(['tenantId', 'expiresAt'])
+@Index(['storeId', 'expiresAt'])
 export class LoyaltyLedgerEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'customer_id' })
   customerId: string
@@ -35,12 +35,12 @@ export class LoyaltyLedgerEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   note: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'created_by', nullable: true })
   createdBy: string

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { ArLedgerEntity } from '@/modules/admin/operations/finance/accounting/entities/ar-ledger.entity'
 import { DunningRuleEntity } from '@/modules/admin/operations/finance/accounting/entities/dunning-rule.entity'
@@ -29,7 +29,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
   let dataSource: DataSource
   let dunningService: DunningService
   let loyaltyService: LoyaltyService
-  let tenant: TenantEntity
+  let store: StoreEntity
   let ctx: RequestContextDto
   let customer: UserEntity
 
@@ -49,16 +49,16 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
     const mailService = app.get(MailService)
     jest.spyOn(mailService, 'sendGenericEmail').mockResolvedValue(undefined as any)
 
-    // Create a mock tenant for testing
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    // Create a mock store for testing
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'E2E Test CRM Store',
       subdomain: `e2e-test-crm-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
 
     ctx = new RequestContextDto()
-    ctx.tenantId = tenant.id
+    ctx.storeId = store.id
     ctx.userId = '00000000-0000-0000-0000-000000000000'
 
     // Create a customer user
@@ -71,7 +71,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       email: 'b2b-customer@example.com',
       role: UserRole.USER,
       status: UserStatus.ACTIVE,
-      tenantId: tenant.id,
+      storeId: store.id,
       membershipTier: 'SILVER',
       creditLimit: 5000.0,
       creditHold: false,
@@ -82,7 +82,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
   })
 
   afterAll(async () => {
-    if (tenant) {
+    if (store) {
       const tables = [
         'loyalty_ledger',
         'loyalty_rules',
@@ -98,13 +98,13 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       ]
       for (const table of tables) {
         try {
-          await dataSource.query(`DELETE FROM "${table}" WHERE "tenant_id" = $1`, [tenant.id])
+          await dataSource.query(`DELETE FROM "${table}" WHERE "store_id" = $1`, [store.id])
         } catch (e) {
           // Ignore
         }
       }
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      await tenantRepo.delete(tenant.id)
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      await storeRepo.delete(store.id)
     }
     if (app) {
       await app.close()
@@ -118,7 +118,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       // 1. Create a Dunning rule (30 days overdue, EMAIL_AND_HOLD action)
       const dunningRuleRepo = dataSource.getRepository(DunningRuleEntity)
       dunningRule = dunningRuleRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         dunningLevel: 1,
         daysOverdue: 30,
         action: 'EMAIL_AND_HOLD',
@@ -139,7 +139,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       invoiceDate.setDate(invoiceDate.getDate() - 35)
 
       const overdueInvoice = arLedgerRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         customerId: customer.id,
         type: ArTransactionType.INVOICE,
         amount: 800.0,
@@ -165,7 +165,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
 
       // 5. Verify dunning log is created
       const logs = await dunningLogRepo.find({
-        where: { tenantId: tenant.id, customerId: customer.id },
+        where: { storeId: store.id, customerId: customer.id },
         relations: ['dunningRule'],
       })
       expect(logs.length).toBe(1)
@@ -197,7 +197,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       const matchedCat = categoryRepo.create({
         name: 'Matched Promo Category',
         slug: `promo-cat-${Date.now()}`,
-        tenantId: tenant.id,
+        storeId: store.id,
       })
       await categoryRepo.save(matchedCat)
       categoryId = matchedCat.id
@@ -205,7 +205,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       const unmatchedCat = categoryRepo.create({
         name: 'Normal Category',
         slug: `norm-cat-${Date.now()}`,
-        tenantId: tenant.id,
+        storeId: store.id,
       })
       await categoryRepo.save(unmatchedCat)
 
@@ -218,7 +218,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         images: [],
         status: ProductStatus.ACTIVE,
         taxRate: 0,
-        tenantId: tenant.id,
+        storeId: store.id,
         categoryId: matchedCat.id,
       })
       await productRepo.save(matchedProduct)
@@ -231,13 +231,13 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         images: [],
         status: ProductStatus.ACTIVE,
         taxRate: 0,
-        tenantId: tenant.id,
+        storeId: store.id,
         categoryId: unmatchedCat.id, // Different category
       })
       await productRepo.save(unmatchedProduct)
 
       // Update Loyalty Config
-      const config = await loyaltyService.getOrCreateConfig(tenant.id)
+      const config = await loyaltyService.getOrCreateConfig(store.id)
       config.isEnabled = true
       config.pointsPerCurrencySpent = 1.0
       config.silverMultiplier = 1.5
@@ -248,7 +248,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
 
       // 1. Category multiplier: 2.0x for categoryId
       const catRule = ruleRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         name: 'Category Promo',
         type: 'CATEGORY_MULTIPLIER',
         value: 2.0,
@@ -259,7 +259,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
 
       // 2. Weekend multiplier: 3.0x
       const weekendRule = ruleRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         name: 'Weekend Triple Points',
         type: 'WEEKEND_MULTIPLIER',
         value: 3.0,
@@ -269,7 +269,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
 
       // 3. Min spend bonus: 100 points for spending >= 200
       const minSpendRule = ruleRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         name: 'Big Spend Bonus',
         type: 'MIN_SPEND_BONUS',
         value: 100.0,
@@ -294,7 +294,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       const orderDate = new Date('2026-05-23T12:00:00Z')
 
       const order = orderRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         userId: customer.id,
         customerName: customer.name,
         customerEmail: customer.email,
@@ -306,7 +306,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       await orderRepo.save(order)
 
       const item1 = orderItemRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         orderId: order.id,
         productId: matchedProduct.id,
         product: matchedProduct,
@@ -316,7 +316,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       })
 
       const item2 = orderItemRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         orderId: order.id,
         productId: unmatchedProduct.id,
         product: unmatchedProduct,
@@ -349,7 +349,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
 
       // Check loyalty ledger entry
       const ledgerEntries = await loyaltyLedgerRepo.find({
-        where: { tenantId: tenant.id, customerId: customer.id },
+        where: { storeId: store.id, customerId: customer.id },
       })
       expect(ledgerEntries.length).toBe(1)
       expect(ledgerEntries[0].points).toBe(1675)

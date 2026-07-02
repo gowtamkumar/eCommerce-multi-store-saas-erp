@@ -1,13 +1,13 @@
-import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { CustomDomainStatus } from '@/common/enums/store/custom-domain-status'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { buildAllowedBillingOrigins, resolveSafeBillingUrl } from './billing-origin.util'
 
-function tenantFixture(overrides: Partial<TenantEntity> = {}): TenantEntity {
+function storeFixture(overrides: Partial<StoreEntity> = {}): StoreEntity {
   return {
     subdomain: 'acme',
     domains: [],
     ...overrides,
-  } as TenantEntity
+  } as StoreEntity
 }
 
 describe('buildAllowedBillingOrigins', () => {
@@ -19,9 +19,9 @@ describe('buildAllowedBillingOrigins', () => {
     expect(origins.has('https://app.omnicart.com')).toBe(true)
   })
 
-  it('includes tenant subdomain on platform host', () => {
-    const tenant = tenantFixture({ subdomain: 'acme' })
-    const origins = buildAllowedBillingOrigins(tenant, {
+  it('includes store subdomain on platform host', () => {
+    const store = storeFixture({ subdomain: 'acme' })
+    const origins = buildAllowedBillingOrigins(store, {
       frontendUrl: 'https://app.omnicart.com',
       platformHost: 'omnicart.com',
       nodeEnv: 'production',
@@ -30,7 +30,7 @@ describe('buildAllowedBillingOrigins', () => {
   })
 
   it('only includes custom domain when ACTIVE', () => {
-    const tenant = tenantFixture({
+    const store = storeFixture({
       domains: [
         {
           hostname: 'shop.example.com',
@@ -38,13 +38,13 @@ describe('buildAllowedBillingOrigins', () => {
         } as any,
       ],
     })
-    const origins = buildAllowedBillingOrigins(tenant, {
+    const origins = buildAllowedBillingOrigins(store, {
       frontendUrl: 'https://app.omnicart.com',
       nodeEnv: 'production',
     })
     expect(origins.has('https://shop.example.com')).toBe(false)
 
-    const activeTenant = tenantFixture({
+    const activeStore = storeFixture({
       domains: [
         {
           hostname: 'shop.example.com',
@@ -52,7 +52,7 @@ describe('buildAllowedBillingOrigins', () => {
         } as any,
       ],
     })
-    const origins2 = buildAllowedBillingOrigins(activeTenant, {
+    const origins2 = buildAllowedBillingOrigins(activeStore, {
       frontendUrl: 'https://app.omnicart.com',
       nodeEnv: 'production',
     })

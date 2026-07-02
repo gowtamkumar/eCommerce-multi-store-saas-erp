@@ -12,7 +12,7 @@ import { PaymentController } from './controllers/payment.controller'
 import { PaymentService } from './services/payment.service'
 
 import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
   imports: [
@@ -22,7 +22,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
     forwardRef(() => InvoiceModule),
     MailModule,
     NotificationModule,
-    TenantModule,
+    StoreModule,
     AuditLogModule,
   ],
   controllers: [PaymentController, PaymentActionController],

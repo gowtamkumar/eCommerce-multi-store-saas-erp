@@ -27,9 +27,9 @@ export class InvoiceService {
     ctx: RequestContextDto,
   ): Promise<InvoiceEntity> {
     this.logger.log(`${this.createInvoice.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const order = await this.orderRepo.findOrderById(createInvoiceDto.orderId, tenantId)
+    const order = await this.orderRepo.findOrderById(createInvoiceDto.orderId, storeId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -47,7 +47,7 @@ export class InvoiceService {
         attempts++
         const random = Math.floor(1000 + Math.random() * 9000)
         invoiceNumber = `INV-${year}${month}-${random}`
-        exists = await this.invoiceRepository.checkInvoiceNumberExists(invoiceNumber, tenantId)
+        exists = await this.invoiceRepository.checkInvoiceNumberExists(invoiceNumber, storeId)
       }
     }
 
@@ -55,7 +55,7 @@ export class InvoiceService {
       {
         ...createInvoiceDto,
         invoiceNumber,
-        tenantId,
+        storeId,
         issueDate: createInvoiceDto.issueDate ? new Date(createInvoiceDto.issueDate) : new Date(),
         dueDate: createInvoiceDto.dueDate ? new Date(createInvoiceDto.dueDate) : undefined,
         status: createInvoiceDto.status || InvoiceStatus.PENDING,
@@ -85,7 +85,7 @@ export class InvoiceService {
       this.logger.error(`Failed to enqueue GL for invoice ${invoice.id}: ${glErr.message}`)
     }
 
-    await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
+    await this.cacheService.delCacheByPattern(`invoices:list*`, storeId)
     return invoice
   }
 
@@ -101,7 +101,7 @@ export class InvoiceService {
     totalPages: number
   }> {
     this.logger.log(`${this.findAllInvoices.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `invoices:list:p${page}:l${limit}:q${search || ''}:s${status || ''}`
 
@@ -109,7 +109,7 @@ export class InvoiceService {
       cacheKey,
       async () => {
         const [items, total] = await this.invoiceRepository.findAllWithRelations(
-          tenantId,
+          storeId,
           page,
           limit,
           search,
@@ -124,20 +124,20 @@ export class InvoiceService {
         }
       },
       300,
-      tenantId,
+      storeId,
     )
   }
 
   async findOneInvoice(id: string, ctx: RequestContextDto): Promise<InvoiceEntity> {
     this.logger.log(`${this.findOneInvoice.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `invoices:id:${id}`
 
     const invoice = await this.cacheService.rememberCache(
       cacheKey,
-      () => this.invoiceRepository.findByIdWithRelations(id, tenantId),
+      () => this.invoiceRepository.findByIdWithRelations(id, storeId),
       600,
-      tenantId,
+      storeId,
     )
 
     if (!invoice) {
@@ -153,7 +153,7 @@ export class InvoiceService {
     ctx: RequestContextDto,
   ): Promise<InvoiceEntity> {
     this.logger.log(`${this.updateInvoice.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const invoice = await this.findOneInvoice(id, ctx)
 
     const updateData: any = { ...updateInvoiceDto }
@@ -165,14 +165,14 @@ export class InvoiceService {
     }
 
     const updatedInvoice = await this.invoiceRepository.updateAndSave(invoice, updateData)
-    await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
-    await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`invoices:list*`, storeId)
+    await this.cacheService.delCache(`invoices:id:${id}`, storeId)
     return updatedInvoice
   }
 
   async removeInvoice(id: string, ctx: RequestContextDto): Promise<InvoiceEntity> {
     this.logger.log(`${this.removeInvoice.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const invoice = await this.findOneInvoice(id, ctx)
     const removedInvoice = await this.invoiceRepository.removeInvoice(invoice)
 
@@ -198,8 +198,8 @@ export class InvoiceService {
       this.logger.error(`Failed to enqueue void GL for invoice ${invoice.id}: ${glErr.message}`)
     }
 
-    await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
-    await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`invoices:list*`, storeId)
+    await this.cacheService.delCache(`invoices:id:${id}`, storeId)
     return removedInvoice
   }
 
@@ -209,12 +209,12 @@ export class InvoiceService {
     ctx: RequestContextDto,
   ): Promise<void> {
     this.logger.log(`${this.updateInvoiceStatusByOrderId.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const invoice = await this.invoiceRepository.findByOrderId(orderId, tenantId)
+    const storeId = ctx.storeId
+    const invoice = await this.invoiceRepository.findByOrderId(orderId, storeId)
     if (invoice) {
       await this.invoiceRepository.updateAndSave(invoice, { status })
-      await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
-      await this.cacheService.delCache(`invoices:id:${invoice.id}`, tenantId)
+      await this.cacheService.delCacheByPattern(`invoices:list*`, storeId)
+      await this.cacheService.delCache(`invoices:id:${invoice.id}`, storeId)
     }
   }
 }

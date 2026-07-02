@@ -78,10 +78,10 @@ export default function GlobalSetting() {
     // Cache clearing states for Super Admin
     const [clearing, setClearing] = useState(false);
     const [clearingAll, setClearingAll] = useState(false);
-    const [selectedTenantId, setSelectedTenantId] = useState('');
-    const [tenantsList, setTenantsList] = useState<any[]>([]);
+    const [selectedStoreId, setSelectedStoreId] = useState('');
+    const [storesList, setStoresList] = useState<any[]>([]);
     const [showGlobalConfirm, setShowGlobalConfirm] = useState(false);
-    const [showTenantConfirm, setShowTenantConfirm] = useState(false);
+    const [showStoreConfirm, setShowStoreConfirm] = useState(false);
 
     useEffect(() => {
         const tabParam = params?.tab;
@@ -111,16 +111,16 @@ export default function GlobalSetting() {
 
     useEffect(() => {
         if (activeTab === 'system') {
-            async function loadTenants() {
+            async function loadStores() {
                 try {
-                    const res = await fetchSuperAdminAPI('/super-admin/tenants');
-                    setTenantsList(res.data || []);
+                    const res = await fetchSuperAdminAPI('/super-admin/stores');
+                    setStoresList(res.data || []);
                 } catch (error) {
-                    console.error('Failed to load tenants:', error);
-                    toast.error('Failed to load tenants list');
+                    console.error('Failed to load stores:', error);
+                    toast.error('Failed to load stores list');
                 }
             }
-            loadTenants();
+            loadStores();
         }
     }, [activeTab]);
 
@@ -140,22 +140,22 @@ export default function GlobalSetting() {
         }
     };
 
-    const handleClearTenantCache = async () => {
-        if (!selectedTenantId) return;
+    const handleClearStoreCache = async () => {
+        if (!selectedStoreId) return;
 
-        const tenant = tenantsList.find(t => t.id === selectedTenantId);
-        const tenantName = tenant ? `${tenant.name} (${tenant.subdomain})` : 'selected tenant';
+        const store = storesList.find(t => t.id === selectedStoreId);
+        const storeName = store ? `${store.name} (${store.subdomain})` : 'selected store';
 
         setClearing(true);
         try {
-            await fetchSuperAdminAPI(`/super-admin/cache/clear-all?tenantId=${selectedTenantId}`, {
+            await fetchSuperAdminAPI(`/super-admin/cache/clear-all?storeId=${selectedStoreId}`, {
                 method: "POST",
             });
-            toast.success(`Cache for ${tenantName} cleared successfully!`);
-            setShowTenantConfirm(false);
+            toast.success(`Cache for ${storeName} cleared successfully!`);
+            setShowStoreConfirm(false);
         } catch (error: any) {
-            console.error("Failed to clear tenant cache", error);
-            toast.error(error.message || "Failed to clear tenant cache");
+            console.error("Failed to clear store cache", error);
+            toast.error(error.message || "Failed to clear store cache");
         } finally {
             setClearing(false);
         }
@@ -722,7 +722,7 @@ export default function GlobalSetting() {
                                     value={settings.seo?.metaDescription || ''}
                                     onChange={(e) => setSettings({ ...settings, seo: { ...(settings.seo || {}), metaDescription: e.target.value } })}
                                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-32"
-                                    placeholder="e.g. The ultimate multi-tenant eCommerce platform..."
+                                    placeholder="e.g. The ultimate multi-store eCommerce platform..."
                                 />
                             </div>
                             <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
@@ -751,7 +751,7 @@ export default function GlobalSetting() {
                                     <Mail className="w-5 h-5 text-indigo-600" />
                                     Platform SMTP Gateway Settings
                                 </h3>
-                                <p className="text-xs text-slate-500 mt-1">Configure the global platform-wide SMTP server settings. If a tenant has not configured their custom SMTP, the system will use this gateway as a fallback.</p>
+                                <p className="text-xs text-slate-500 mt-1">Configure the global platform-wide SMTP server settings. If a store has not configured their custom SMTP, the system will use this gateway as a fallback.</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -869,7 +869,7 @@ export default function GlobalSetting() {
                                     <MessageSquare className="w-5 h-5 text-indigo-600" />
                                     Platform SMS Gateway Settings
                                 </h3>
-                                <p className="text-xs text-slate-500 mt-1">Configure the global platform-wide SMS gateway. If a tenant has not configured custom SMS credentials, this gateway will be used to send system SMS alerts (like OTP, verification, order notifications).</p>
+                                <p className="text-xs text-slate-500 mt-1">Configure the global platform-wide SMS gateway. If a store has not configured custom SMS credentials, this gateway will be used to send system SMS alerts (like OTP, verification, order notifications).</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -953,7 +953,7 @@ export default function GlobalSetting() {
                                     Redis Cache Management
                                 </h4>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                                    Clearing the cache evicts temporary entries stored in Redis. You can clear the entire global system cache or specify a single tenant store.
+                                    Clearing the cache evicts temporary entries stored in Redis. You can clear the entire global system cache or specify a single store store.
                                 </p>
                             </div>
 
@@ -1003,7 +1003,7 @@ export default function GlobalSetting() {
                                     <div>
                                         <h5 className="text-base font-bold text-slate-900 dark:text-white mb-2">Global System Cache</h5>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-                                            Clears all cached data across all tenants (categories, products, settings, plans).
+                                            Clears all cached data across all stores (categories, products, settings, plans).
                                             This should be done during system updates or global changes.
                                         </p>
                                     </div>
@@ -1018,24 +1018,24 @@ export default function GlobalSetting() {
                                     </button>
                                 </div>
 
-                                {/* Clear Tenant Cache Card */}
+                                {/* Clear Store Cache Card */}
                                 <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
                                     <div>
-                                        <h5 className="text-base font-bold text-slate-900 dark:text-white mb-2">Tenant Store Cache</h5>
+                                        <h5 className="text-base font-bold text-slate-900 dark:text-white mb-2">Store Store Cache</h5>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-                                            Clears only the cached files, static content, and permission manifests for the selected tenant's store.
+                                            Clears only the cached files, static content, and permission manifests for the selected store's store.
                                         </p>
                                         <div className="mb-6">
-                                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Select Tenant</label>
+                                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Select Store</label>
                                             <select
-                                                value={selectedTenantId}
-                                                onChange={(e) => setSelectedTenantId(e.target.value)}
+                                                value={selectedStoreId}
+                                                onChange={(e) => setSelectedStoreId(e.target.value)}
                                                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-all"
                                             >
-                                                <option value="">-- Choose a Store / Tenant --</option>
-                                                {tenantsList.map((tenant: any) => (
-                                                    <option key={tenant.id} value={tenant.id}>
-                                                        {tenant.name} ({tenant.subdomain || 'no-subdomain'})
+                                                <option value="">-- Choose a Store / Store --</option>
+                                                {storesList.map((store: any) => (
+                                                    <option key={store.id} value={store.id}>
+                                                        {store.name} ({store.subdomain || 'no-subdomain'})
                                                     </option>
                                                 ))}
                                             </select>
@@ -1043,12 +1043,12 @@ export default function GlobalSetting() {
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={() => setShowTenantConfirm(true)}
-                                        disabled={clearing || !selectedTenantId}
+                                        onClick={() => setShowStoreConfirm(true)}
+                                        disabled={clearing || !selectedStoreId}
                                         className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-indigo-600 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 font-bold rounded-xl transition-all disabled:opacity-40"
                                     >
                                         <Trash2 className="w-5 h-5" />
-                                        <span>Clear Tenant Cache</span>
+                                        <span>Clear Store Cache</span>
                                     </button>
                                 </div>
                             </div>
@@ -1092,7 +1092,7 @@ export default function GlobalSetting() {
                                 </h4>
                             </div>
                             <div className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                                Are you sure you want to clear the entire system cache across ALL tenants? Performance may temporarily degrade globally.
+                                Are you sure you want to clear the entire system cache across ALL stores? Performance may temporarily degrade globally.
                             </div>
                             <div className="flex items-center justify-end gap-3 pt-2">
                                 <button
@@ -1127,15 +1127,15 @@ export default function GlobalSetting() {
                 )}
             </AnimatePresence>
 
-            {/* Tenant Cache Confirmation Modal */}
+            {/* Store Cache Confirmation Modal */}
             <AnimatePresence>
-                {showTenantConfirm && (
+                {showStoreConfirm && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={() => !clearing && setShowTenantConfirm(false)}
+                            onClick={() => !clearing && setShowStoreConfirm(false)}
                             className="absolute inset-0 bg-slate-955/40 dark:bg-slate-955/60 backdrop-blur-sm"
                         />
                         <motion.div
@@ -1148,7 +1148,7 @@ export default function GlobalSetting() {
                             <button
                                 type="button"
                                 disabled={clearing}
-                                onClick={() => setShowTenantConfirm(false)}
+                                onClick={() => setShowStoreConfirm(false)}
                                 className="absolute right-4 top-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors disabled:opacity-50"
                             >
                                 <X className="w-5 h-5" />
@@ -1162,13 +1162,13 @@ export default function GlobalSetting() {
                                 </h4>
                             </div>
                             <div className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                                Are you sure you want to clear the store cache for the selected tenant? Performance may be temporarily affected while the store's cache is rebuilt.
+                                Are you sure you want to clear the store cache for the selected store? Performance may be temporarily affected while the store's cache is rebuilt.
                             </div>
                             <div className="flex items-center justify-end gap-3 pt-2">
                                 <button
                                     type="button"
                                     disabled={clearing}
-                                    onClick={() => setShowTenantConfirm(false)}
+                                    onClick={() => setShowStoreConfirm(false)}
                                     className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-800 rounded-2xl transition-all disabled:opacity-50"
                                 >
                                     Cancel
@@ -1176,7 +1176,7 @@ export default function GlobalSetting() {
                                 <button
                                     type="button"
                                     disabled={clearing}
-                                    onClick={handleClearTenantCache}
+                                    onClick={handleClearStoreCache}
                                     className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-2xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-700/30 transition-all disabled:opacity-50"
                                 >
                                     {clearing ? (
@@ -1187,7 +1187,7 @@ export default function GlobalSetting() {
                                     ) : (
                                         <>
                                             <Trash2 className="w-4 h-4" />
-                                            <span>Clear Tenant Cache</span>
+                                            <span>Clear Store Cache</span>
                                         </>
                                     )}
                                 </button>

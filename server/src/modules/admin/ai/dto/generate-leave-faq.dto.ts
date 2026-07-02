@@ -34,7 +34,7 @@ export class GenerateLeaveFaqDto {
   audience?: string
 
   @ApiPropertyOptional({
-    description: 'Company / tenant name to personalise the FAQ heading',
+    description: 'Company / store name to personalise the FAQ heading',
     example: 'Acme Retail',
   })
   @IsOptional()

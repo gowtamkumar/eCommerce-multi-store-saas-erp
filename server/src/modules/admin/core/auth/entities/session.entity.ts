@@ -12,7 +12,7 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('sessions')
 @Index(['userId'])
-@Index(['tenantId'])
+@Index(['storeId'])
 @Index(['expiresAt'])
 export class SessionEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -25,8 +25,8 @@ export class SessionEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id', nullable: true })
+  storeId: string
 
   @Column({ name: 'user_agent', type: 'text', nullable: true })
   userAgent: string

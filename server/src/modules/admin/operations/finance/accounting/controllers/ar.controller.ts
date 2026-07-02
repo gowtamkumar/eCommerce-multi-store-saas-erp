@@ -40,7 +40,7 @@ export class ArController {
     @Param('customerId') customerId: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {
-    const data = await this.arService.getCustomerLedger(customerId, ctx.tenantId)
+    const data = await this.arService.getCustomerLedger(customerId, ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -79,7 +79,7 @@ export class ArController {
   async getDunningRules(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {
-    const data = await this.dunningService.findAllRules(ctx.tenantId)
+    const data = await this.dunningService.findAllRules(ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -95,7 +95,7 @@ export class ArController {
     @Body() body: any,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.dunningService.createRule(body, ctx.tenantId)
+    const data = await this.dunningService.createRule(body, ctx.storeId)
     return {
       success: true,
       statusCode: 201,
@@ -112,7 +112,7 @@ export class ArController {
     @Body() body: any,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.dunningService.updateRule(id, body, ctx.tenantId)
+    const data = await this.dunningService.updateRule(id, body, ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -128,7 +128,7 @@ export class ArController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    await this.dunningService.deleteRule(id, ctx.tenantId)
+    await this.dunningService.deleteRule(id, ctx.storeId)
     return {
       success: true,
       statusCode: 200,
@@ -144,7 +144,7 @@ export class ArController {
   async getDunningLogs(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {
-    const data = await this.dunningService.findAllLogs(ctx.tenantId)
+    const data = await this.dunningService.findAllLogs(ctx.storeId)
     return {
       success: true,
       statusCode: 200,

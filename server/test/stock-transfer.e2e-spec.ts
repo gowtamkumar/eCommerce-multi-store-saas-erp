@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductStatus } from '@/common/enums/product-status.enum'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
@@ -23,7 +23,7 @@ describe('Stock Transfer Document Flow (e2e)', () => {
   let stockTransferService: StockTransferService
   let inventoryLedgerService: InventoryLedgerService
   let accountingService: AccountingService
-  let tenant: TenantEntity
+  let store: StoreEntity
   let ctx: RequestContextDto
   let product: ProductEntity
   let sourceWarehouse: WarehouseEntity
@@ -42,20 +42,20 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     inventoryLedgerService = app.get(InventoryLedgerService)
     accountingService = app.get(AccountingService)
 
-    // 1. Create mock tenant
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    // 1. Create mock store
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'E2E Stock Transfer Store',
       subdomain: `e2e-stock-transfer-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
 
     ctx = new RequestContextDto()
-    ctx.tenantId = tenant.id
+    ctx.storeId = store.id
     ctx.userId = '00000000-0000-0000-0000-000000000000'
 
     // 2. Initialize COA for accounting integrations
-    await accountingService.initializeTenantCOA(ctx)
+    await accountingService.initializeStoreCOA(ctx)
 
     // 3. Create a mock user
     const userRepo = dataSource.getRepository(UserEntity)
@@ -64,7 +64,7 @@ describe('Stock Transfer Document Flow (e2e)', () => {
       name: 'E2E Logistics Manager',
       username: `logisticsmgr-${Date.now()}`,
       password: 'password',
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     await userRepo.save(user)
 
@@ -78,7 +78,7 @@ describe('Stock Transfer Document Flow (e2e)', () => {
       images: [],
       status: ProductStatus.ACTIVE,
       taxRate: 0,
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     await productRepo.save(product)
 
@@ -87,18 +87,18 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     sourceWarehouse = warehouseRepo.create({
       name: 'E2E Source Warehouse',
       code: `SRC-${Date.now()}`,
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     destinationWarehouse = warehouseRepo.create({
       name: 'E2E Destination Warehouse',
       code: `DST-${Date.now()}`,
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     await warehouseRepo.save([sourceWarehouse, destinationWarehouse])
   })
 
   afterAll(async () => {
-    if (tenant) {
+    if (store) {
       const tables = [
         'stock_transfer_items',
         'stock_transfers',
@@ -112,13 +112,13 @@ describe('Stock Transfer Document Flow (e2e)', () => {
       ]
       for (const table of tables) {
         try {
-          await dataSource.query(`DELETE FROM "${table}" WHERE "tenant_id" = $1`, [tenant.id])
+          await dataSource.query(`DELETE FROM "${table}" WHERE "store_id" = $1`, [store.id])
         } catch (e) {
           // Ignore tables that might fail
         }
       }
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      await tenantRepo.delete(tenant.id)
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      await storeRepo.delete(store.id)
     }
     if (app) {
       await app.close()
@@ -146,13 +146,13 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     let srcStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     let dstStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       destinationWarehouse.id,
     )
     expect(srcStock).toBe(25)
@@ -184,7 +184,7 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     srcStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     expect(srcStock).toBe(25)
@@ -197,7 +197,7 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     srcStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     expect(srcStock).toBe(25)
@@ -210,13 +210,13 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     srcStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     dstStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       destinationWarehouse.id,
     )
     expect(srcStock).toBe(15) // 25 - 10
@@ -243,13 +243,13 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     srcStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     dstStock = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       destinationWarehouse.id,
     )
     expect(srcStock).toBe(15) // Stays at 15
@@ -263,7 +263,7 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     let srcStockBefore = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     expect(srcStockBefore).toBe(15)
@@ -289,7 +289,7 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     let srcStockInTransit = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     expect(srcStockInTransit).toBe(10) // 15 - 5
@@ -302,13 +302,13 @@ describe('Stock Transfer Document Flow (e2e)', () => {
     let srcStockAfter = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       sourceWarehouse.id,
     )
     let dstStockAfter = await inventoryLedgerService.getLiveStock(
       product.id,
       null,
-      tenant.id,
+      store.id,
       destinationWarehouse.id,
     )
     expect(srcStockAfter).toBe(15) // Restored back to 15!

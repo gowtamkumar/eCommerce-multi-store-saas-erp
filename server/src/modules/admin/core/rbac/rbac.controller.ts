@@ -39,7 +39,7 @@ export class RbacController {
   async getRoles(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<RoleEntity[]>> {
-    const roles = await this.roleService.getAllRoles(ctx.tenantId)
+    const roles = await this.roleService.getAllRoles(ctx.storeId)
     return { success: true, statusCode: 200, message: 'Roles retrieved successfully', data: roles }
   }
 
@@ -51,7 +51,7 @@ export class RbacController {
     @Body() body: CreateRoleDto,
   ): Promise<BaseApiSuccessResponse<RoleEntity>> {
     const actorName = req.user?.name || 'Unknown'
-    const role = await this.roleService.createRole(ctx.tenantId, ctx.userId, actorName, body)
+    const role = await this.roleService.createRole(ctx.storeId, ctx.userId, actorName, body)
     return { success: true, statusCode: 201, message: 'Role created successfully', data: role }
   }
 
@@ -64,7 +64,7 @@ export class RbacController {
     @Body() body: UpdateRoleDto,
   ): Promise<BaseApiSuccessResponse<RoleEntity>> {
     const actorName = req.user?.name || 'Unknown'
-    const role = await this.roleService.updateRole(id, ctx.tenantId, ctx.userId, actorName, body)
+    const role = await this.roleService.updateRole(id, ctx.storeId, ctx.userId, actorName, body)
     return { success: true, statusCode: 200, message: 'Role updated successfully', data: role }
   }
 
@@ -76,7 +76,7 @@ export class RbacController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     const actorName = req.user?.name || 'Unknown'
-    await this.roleService.deleteRole(id, ctx.tenantId, ctx.userId, actorName)
+    await this.roleService.deleteRole(id, ctx.storeId, ctx.userId, actorName)
     return { success: true, statusCode: 200, message: 'Role deleted successfully', data: null }
   }
 
@@ -115,7 +115,7 @@ export class RbacController {
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<UserRoleAssignmentEntity[]>> {
-    const roles = await this.assignmentService.getUserRoles(userId, ctx.tenantId)
+    const roles = await this.assignmentService.getUserRoles(userId, ctx.storeId)
     return { success: true, statusCode: 200, message: 'User roles retrieved', data: roles }
   }
 
@@ -130,7 +130,7 @@ export class RbacController {
     const actorName = req.user?.name || 'Unknown'
     const assignment = await this.assignmentService.assignRoleToUser(
       userId,
-      ctx.tenantId,
+      ctx.storeId,
       ctx.userId,
       actorName,
       body,
@@ -153,7 +153,7 @@ export class RbacController {
     const actorName = req.user?.name || 'Unknown'
     await this.assignmentService.revokeRoleFromUser(
       assignmentId,
-      ctx.tenantId,
+      ctx.storeId,
       ctx.userId,
       actorName,
     )
@@ -173,7 +173,7 @@ export class RbacController {
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<UserPermissionOverrideEntity[]>> {
-    const overrides = await this.overrideService.getActiveOverrides(userId, ctx.tenantId)
+    const overrides = await this.overrideService.getActiveOverrides(userId, ctx.storeId)
     return { success: true, statusCode: 200, message: 'User overrides retrieved', data: overrides }
   }
 
@@ -189,7 +189,7 @@ export class RbacController {
     const dto = { ...body, expiresAt: body.expiresAt ? new Date(body.expiresAt) : null }
     const override = await this.overrideService.addOverride(
       userId,
-      ctx.tenantId,
+      ctx.storeId,
       ctx.userId,
       actorName,
       dto as any,
@@ -210,7 +210,7 @@ export class RbacController {
     @Param('overrideId') overrideId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     const actorName = req.user?.name || 'Unknown'
-    await this.overrideService.removeOverride(overrideId, ctx.tenantId, ctx.userId, actorName)
+    await this.overrideService.removeOverride(overrideId, ctx.storeId, ctx.userId, actorName)
     return { success: true, statusCode: 200, message: 'Override removed successfully', data: null }
   }
 
@@ -224,7 +224,7 @@ export class RbacController {
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<PermissionManifest>> {
-    const manifest = await this.resolutionService.resolvePermissionsManifest(userId, ctx.tenantId)
+    const manifest = await this.resolutionService.resolvePermissionsManifest(userId, ctx.storeId)
     return {
       success: true,
       statusCode: 200,

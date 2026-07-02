@@ -15,7 +15,7 @@ function Breadcrumbs() {
   const routeNames: Record<string, string> = {
     system: 'Dashboard',
     billing: 'Billing & Revenue',
-    tenants: 'Stores',
+    stores: 'Stores',
     create: 'Provision Store',
     users: 'Users',
     health: 'Platform Health',

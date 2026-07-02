@@ -1,25 +1,25 @@
 # Database Design & Entity Relationship Diagrams (ERD)
 
-This document contains the unified Master ERD and per-domain database diagrams for the Enterprise Multi-Tenant SaaS ERP. Use these diagrams to trace table relations, foreign keys, and indices during manual QA database audits.
+This document contains the unified Master ERD and per-domain database diagrams for the Enterprise Multi-Store SaaS ERP. Use these diagrams to trace table relations, foreign keys, and indices during manual QA database audits.
 
 ---
 
 ## 1. Master ERD (Cross-Domain Relationships)
 
-This bird's-eye view shows how the major business aggregates link together across tenant boundaries.
+This bird's-eye view shows how the major business aggregates link together across store boundaries.
 
 ```mermaid
 erDiagram
-  TENANTS ||--o{ BRANCHES                : "owns"
-  TENANTS ||--o{ WAREHOUSES             : "owns"
-  TENANTS ||--o{ USERS                  : "owns"
-  TENANTS ||--o{ ROLES                  : "owns"
-  TENANTS ||--o{ PRODUCTS               : "owns"
-  TENANTS ||--o{ SUPPLIERS              : "owns"
-  TENANTS ||--o{ ORDERS                 : "owns"
-  TENANTS ||--o{ ACCOUNTS               : "owns"
-  TENANTS ||--o{ EMPLOYEES              : "owns"
-  TENANTS ||--o{ AUDIT_LOGS             : "owns"
+  STORES ||--o{ BRANCHES                : "owns"
+  STORES ||--o{ WAREHOUSES             : "owns"
+  STORES ||--o{ USERS                  : "owns"
+  STORES ||--o{ ROLES                  : "owns"
+  STORES ||--o{ PRODUCTS               : "owns"
+  STORES ||--o{ SUPPLIERS              : "owns"
+  STORES ||--o{ ORDERS                 : "owns"
+  STORES ||--o{ ACCOUNTS               : "owns"
+  STORES ||--o{ EMPLOYEES              : "owns"
+  STORES ||--o{ AUDIT_LOGS             : "owns"
 
   BRANCHES ||--o{ WAREHOUSES             : "hosts"
   WAREHOUSES ||--o{ WAREHOUSE_BINS      : "contains"
@@ -71,12 +71,12 @@ erDiagram
 
 ---
 
-### 2.1 System & Tenant Schema
-Manages new tenant provisioning, custom domain configurations, and SaaS subscription billing schedules.
+### 2.1 System & Store Schema
+Manages new store provisioning, custom domain configurations, and SaaS subscription billing schedules.
 
 ```mermaid
 erDiagram
-  TENANTS {
+  STORES {
     uuid id PK
     string store_name
     string subdomain UK
@@ -97,7 +97,7 @@ erDiagram
   }
   SUBSCRIPTION_INVOICES {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     decimal amount
     enum status
     timestamptz due_at
@@ -107,28 +107,28 @@ erDiagram
     string key UK
     jsonb value
   }
-  TENANT_TRAFFIC {
+  STORE_TRAFFIC {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     int requests_count
     date day
   }
 
-  SUBSCRIPTION_PLANS ||--o{ TENANTS             : "subscribed by"
-  TENANTS ||--o{ SUBSCRIPTION_INVOICES          : "billed"
-  TENANTS ||--o{ TENANT_TRAFFIC                : "metered"
+  SUBSCRIPTION_PLANS ||--o{ STORES             : "subscribed by"
+  STORES ||--o{ SUBSCRIPTION_INVOICES          : "billed"
+  STORES ||--o{ STORE_TRAFFIC                : "metered"
 ```
 
 ---
 
 ### 2.2 Identity & Role-Based Access Control (RBAC)
-Governs authentication, active sessions, and multi-tenant user permission structures.
+Governs authentication, active sessions, and multi-store user permission structures.
 
 ```mermaid
 erDiagram
   USERS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string email
     string username
@@ -144,7 +144,7 @@ erDiagram
   }
   ROLES {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     bool is_system_role
     uuid parent_role_id FK
@@ -165,7 +165,7 @@ erDiagram
     uuid id PK
     uuid user_id FK
     uuid role_id FK
-    uuid tenant_id FK
+    uuid store_id FK
     enum scope_type
     uuid scope_id
   }
@@ -185,7 +185,7 @@ erDiagram
   }
   STAFF_INVITATIONS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string email
     string token UK
     enum status
@@ -211,7 +211,7 @@ Defines variant-level configurations, pricing rules across price books, and bran
 erDiagram
   PRODUCTS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string slug UK
     string sku
     string barcode
@@ -222,7 +222,7 @@ erDiagram
   }
   PRODUCT_VARIANTS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     string sku
     string barcode
@@ -232,27 +232,27 @@ erDiagram
   }
   PRODUCT_ATTRIBUTES {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     string name
     jsonb values
   }
   BRANDS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string slug
   }
   CATEGORIES {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid parent_id FK
     string name
     string slug
   }
   PRICE_BOOKS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string name
     string currency
     bool is_default
@@ -283,7 +283,7 @@ Captures customer sales transactions, POS split payment details, and returns pro
 erDiagram
   ORDERS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid user_id FK
     string customer_name
     string customer_email
@@ -302,7 +302,7 @@ erDiagram
   }
   ORDER_ITEMS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     uuid product_id FK
     uuid variant_id FK
@@ -315,7 +315,7 @@ erDiagram
   }
   ORDER_RETURNS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     enum status
     string reason
@@ -323,7 +323,7 @@ erDiagram
   }
   PAYMENTS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid order_id FK
     enum method
     decimal amount
@@ -345,7 +345,7 @@ Tracks append-only physical inventory movements, bin structures, lot details, an
 erDiagram
   INVENTORY_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     uuid variant_id FK
     uuid branch_id FK
@@ -361,7 +361,7 @@ erDiagram
   }
   STOCK_RESERVATIONS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     uuid variant_id FK
     uuid warehouse_id FK
@@ -374,7 +374,7 @@ erDiagram
   }
   STOCK_TRANSFERS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string transfer_number
     uuid source_warehouse_id FK
     uuid destination_warehouse_id FK
@@ -391,7 +391,7 @@ erDiagram
   }
   PRODUCT_BATCHES {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid product_id FK
     uuid variant_id FK
     string batch_number
@@ -412,7 +412,7 @@ Implements GAAP compliant financial accounting entries, wallets, and Accounts Re
 erDiagram
   ACCOUNTS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string account_code
     string account_name
     enum account_type
@@ -420,7 +420,7 @@ erDiagram
   }
   JOURNAL_ENTRIES {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     timestamptz entry_date
     string description
     string reference_type
@@ -430,7 +430,7 @@ erDiagram
   }
   LEDGER_ENTRIES {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid journal_entry_id FK
     uuid account_id FK
     decimal debit_amount
@@ -438,7 +438,7 @@ erDiagram
   }
   AR_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     decimal debit_amount
     decimal credit_amount
@@ -447,7 +447,7 @@ erDiagram
   }
   WALLET_LEDGER {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     uuid customer_id FK
     decimal credit_amount
     decimal debit_amount
@@ -456,7 +456,7 @@ erDiagram
   }
   FISCAL_PERIODS {
     uuid id PK
-    uuid tenant_id FK
+    uuid store_id FK
     string period_name
     date start_date
     date end_date

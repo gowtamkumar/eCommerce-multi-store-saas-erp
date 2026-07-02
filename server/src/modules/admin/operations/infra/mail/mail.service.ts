@@ -2,7 +2,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
-import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 import { PlatformSettingsRepository } from '@/modules/system/platform/platform-settings.repository'
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -12,11 +12,11 @@ import * as nodemailer from 'nodemailer'
 export class MailService implements OnModuleDestroy {
   private transporter: nodemailer.Transporter
   private readonly logger = new Logger(MailService.name)
-  private readonly tenantTransporters = new Map<string, { transporter: nodemailer.Transporter; hash: string }>()
+  private readonly storeTransporters = new Map<string, { transporter: nodemailer.Transporter; hash: string }>()
 
   constructor(
     private configService: ConfigService,
-    private tenantRepo: TenantRepository,
+    private storeRepo: StoreRepository,
     private settingsService: SettingsService,
     private cacheService: CacheService,
     private platformSettingsRepository: PlatformSettingsRepository,
@@ -33,32 +33,32 @@ export class MailService implements OnModuleDestroy {
   }
 
   onModuleDestroy() {
-    this.logger.log('Closing all cached tenant SMTP transporter pools...')
-    for (const { transporter } of this.tenantTransporters.values()) {
+    this.logger.log('Closing all cached store SMTP transporter pools...')
+    for (const { transporter } of this.storeTransporters.values()) {
       try {
         transporter.close()
       } catch (e: any) {
         this.logger.error(`Failed to close SMTP transporter pool during shutdown: ${e.message}`)
       }
     }
-    this.tenantTransporters.clear()
+    this.storeTransporters.clear()
   }
 
-  private async getTransporter(tenantId: string) {
+  private async getTransporter(storeId: string) {
     this.logger.log(`${this.getTransporter.name} Service Called`)
 
-    // 1. Try Tenant SMTP Settings if tenantId is provided
-    if (tenantId) {
+    // 1. Try Store SMTP Settings if storeId is provided
+    if (storeId) {
       try {
-        const settings = await this.settingsService.findByTenantSettings({
-          tenantId,
+        const settings = await this.settingsService.findByStoreSettings({
+          storeId,
         } as RequestContextDto)
 
         if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
           const port = Number(settings.smtp.port) || 587
-          const configHash = `tenant:${settings.smtp.host}:${port}:${settings.smtp.user}:${settings.smtp.pass}:${settings.smtp.from}`
+          const configHash = `store:${settings.smtp.host}:${port}:${settings.smtp.user}:${settings.smtp.pass}:${settings.smtp.from}`
 
-          const cached = this.tenantTransporters.get(tenantId)
+          const cached = this.storeTransporters.get(storeId)
           if (cached && cached.hash === configHash) {
             return { transporter: cached.transporter, from: settings.smtp.from || settings.smtp.user }
           }
@@ -71,7 +71,7 @@ export class MailService implements OnModuleDestroy {
             }
           }
 
-          const tenantTransporter = nodemailer.createTransport({
+          const storeTransporter = nodemailer.createTransport({
             host: settings.smtp.host,
             port: port,
             secure: port === 465, // force true for port 465 to avoid socket close errors
@@ -81,11 +81,11 @@ export class MailService implements OnModuleDestroy {
             },
           })
 
-          this.tenantTransporters.set(tenantId, { transporter: tenantTransporter, hash: configHash })
-          return { transporter: tenantTransporter, from: settings.smtp.from || settings.smtp.user }
+          this.storeTransporters.set(storeId, { transporter: storeTransporter, hash: configHash })
+          return { transporter: storeTransporter, from: settings.smtp.from || settings.smtp.user }
         }
       } catch (err: any) {
-        this.logger.error(`Failed to load tenant settings: ${err.message}. Falling back to platform SMTP.`)
+        this.logger.error(`Failed to load store settings: ${err.message}. Falling back to platform SMTP.`)
       }
     }
 
@@ -97,7 +97,7 @@ export class MailService implements OnModuleDestroy {
         const port = Number(smtp.port) || 587
         const configHash = `platform:${smtp.host}:${port}:${smtp.user}:${smtp.pass}:${smtp.from}`
 
-        const cached = this.tenantTransporters.get('platform')
+        const cached = this.storeTransporters.get('platform')
         if (cached && cached.hash === configHash) {
           return { transporter: cached.transporter, from: smtp.from || smtp.user }
         }
@@ -120,7 +120,7 @@ export class MailService implements OnModuleDestroy {
           },
         })
 
-        this.tenantTransporters.set('platform', { transporter: platformTransporter, hash: configHash })
+        this.storeTransporters.set('platform', { transporter: platformTransporter, hash: configHash })
         return { transporter: platformTransporter, from: smtp.from || smtp.user }
       }
     } catch (err: any) {
@@ -134,12 +134,12 @@ export class MailService implements OnModuleDestroy {
     }
   }
 
-  async sendVerificationEmail(email: string, token: string, tenantId: string) {
+  async sendVerificationEmail(email: string, token: string, storeId: string) {
     this.logger.log(`${this.sendVerificationEmail.name} Service Called`)
-    const baseUrl = await this.getTenantBaseUrl(tenantId)
+    const baseUrl = await this.getStoreBaseUrl(storeId)
     const verificationLink = `${baseUrl}/verify-email?token=${token}`
 
-    const { transporter, from } = await this.getTransporter(tenantId)
+    const { transporter, from } = await this.getTransporter(storeId)
 
     const mailOptions = {
       from: from,
@@ -161,12 +161,12 @@ export class MailService implements OnModuleDestroy {
     }
   }
 
-  async sendResetPasswordEmail(email: string, token: string, tenantId: string) {
+  async sendResetPasswordEmail(email: string, token: string, storeId: string) {
     this.logger.log(`${this.sendResetPasswordEmail.name} Service Called`)
-    const baseUrl = await this.getTenantBaseUrl(tenantId)
+    const baseUrl = await this.getStoreBaseUrl(storeId)
     const resetLink = `${baseUrl}/reset-password?token=${token}`
 
-    const { transporter, from } = await this.getTransporter(tenantId)
+    const { transporter, from } = await this.getTransporter(storeId)
 
     const mailOptions = {
       from: from,
@@ -190,12 +190,12 @@ export class MailService implements OnModuleDestroy {
     }
   }
 
-  async sendStaffInvitationEmail(email: string, token: string, role: string, tenantId: string) {
+  async sendStaffInvitationEmail(email: string, token: string, role: string, storeId: string) {
     this.logger.log(`${this.sendStaffInvitationEmail.name} Service Called`)
-    const baseUrl = await this.getTenantBaseUrl(tenantId)
+    const baseUrl = await this.getStoreBaseUrl(storeId)
     const invitationLink = `${baseUrl}/accept-invitation?token=${token}`
 
-    const { transporter, from } = await this.getTransporter(tenantId)
+    const { transporter, from } = await this.getTransporter(storeId)
 
     const mailOptions = {
       from: from,
@@ -223,19 +223,19 @@ export class MailService implements OnModuleDestroy {
     }
   }
 
-  private async getTenantBaseUrl(tenantId: string): Promise<string> {
-    this.logger.log(`${this.getTenantBaseUrl.name} Service Called for tenant: ${tenantId}`)
+  private async getStoreBaseUrl(storeId: string): Promise<string> {
+    this.logger.log(`${this.getStoreBaseUrl.name} Service Called for store: ${storeId}`)
     const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000')
 
-    if (!tenantId) return appUrl
+    if (!storeId) return appUrl
 
     return this.cacheService.rememberCache(
-      `tenant:${tenantId}:baseurl`,
+      `store:${storeId}:baseurl`,
       async () => {
-        const tenant = await this.tenantRepo.findByIdWithRelations(tenantId)
-        if (!tenant) return appUrl
+        const store = await this.storeRepo.findByIdWithRelations(storeId)
+        if (!store) return appUrl
 
-        const customDomain = tenant.primaryCustomDomain
+        const customDomain = store.primaryCustomDomain
         if (customDomain) {
           const protocol = appUrl.startsWith('https') ? 'https' : 'http'
           return `${protocol}://${customDomain}`
@@ -243,7 +243,7 @@ export class MailService implements OnModuleDestroy {
 
         try {
           const url = new URL(appUrl)
-          url.hostname = `${tenant.subdomain}.${url.hostname}`
+          url.hostname = `${store.subdomain}.${url.hostname}`
           // Remove trailing slash if present
           return url.toString().replace(/\/$/, '')
         } catch (e) {
@@ -251,21 +251,21 @@ export class MailService implements OnModuleDestroy {
         }
       },
       3600, // 1 hour
-      tenantId,
+      storeId,
     )
   }
 
-  async sendNewOrderNotification(order: OrderEntity, tenantId: string) {
+  async sendNewOrderNotification(order: OrderEntity, storeId: string) {
     this.logger.log(`${this.sendNewOrderNotification.name} Service Called for order: ${order.id}`)
-    const settings = await this.settingsService.findByTenantSettings({
-      tenantId,
+    const settings = await this.settingsService.findByStoreSettings({
+      storeId,
     } as RequestContextDto)
     if (!settings || !settings.contactEmail) {
-      this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`)
+      this.logger.warn(`No contact email configured for store ${storeId}. Skipping notification.`)
       return
     }
 
-    const { transporter, from } = await this.getTransporter(tenantId)
+    const { transporter, from } = await this.getTransporter(storeId)
 
     // Prepare item list for email
     const itemsHtml =
@@ -347,7 +347,7 @@ export class MailService implements OnModuleDestroy {
   }
 
   async sendLowStockAlertEmail(
-    tenantId: string,
+    storeId: string,
     productName: string,
     skuText: string,
     currentStock: number,
@@ -356,15 +356,15 @@ export class MailService implements OnModuleDestroy {
   ) {
     this.logger.log(`${this.sendLowStockAlertEmail.name} Service Called`)
     try {
-      const settings = await this.settingsService.findByTenantSettings({
-        tenantId,
+      const settings = await this.settingsService.findByStoreSettings({
+        storeId,
       } as RequestContextDto)
       if (!settings || !settings.contactEmail) {
-        this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping low stock email alert.`)
+        this.logger.warn(`No contact email configured for store ${storeId}. Skipping low stock email alert.`)
         return
       }
 
-      const { transporter, from } = await this.getTransporter(tenantId)
+      const { transporter, from } = await this.getTransporter(storeId)
       const subject = isOutOfStock
         ? `🚨 CRITICAL ALERT: Product Out of Stock - ${productName}${skuText}`
         : `⚠️ WARNING: Low Stock Alert - ${productName}${skuText}`
@@ -406,11 +406,11 @@ export class MailService implements OnModuleDestroy {
     to: string
     subject: string
     html: string
-    tenantId: string
+    storeId: string
     attachments?: { filename: string; content: any }[]
   }) {
     this.logger.log(`${this.sendGenericEmail.name} Service Called for ${options.to}`)
-    const { transporter, from } = await this.getTransporter(options.tenantId)
+    const { transporter, from } = await this.getTransporter(options.storeId)
 
     const mailOptions = {
       from: from,

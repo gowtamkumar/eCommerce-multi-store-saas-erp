@@ -1,7 +1,7 @@
 # Team Management & HRM Architecture
 
 **Author:** Senior Engineering Team
-**Context:** Multi-tenant, multi-branch ERP SaaS.
+**Context:** Multi-store, multi-branch ERP SaaS.
 **Objective:** Define the relationship between system authentication (Users) and operational payroll (Employees), and detail how physical branch access is granted and strictly enforced.
 
 ---

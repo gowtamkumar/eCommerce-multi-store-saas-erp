@@ -62,7 +62,7 @@ export class AuditLogController {
 
   /**
    * GET /audit-logs
-   * Paginated & filtered list of audit logs for the tenant.
+   * Paginated & filtered list of audit logs for the store.
    */
   @Get()
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)

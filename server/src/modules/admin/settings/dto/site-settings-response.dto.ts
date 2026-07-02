@@ -103,7 +103,7 @@ export class SiteSettingsResponseDto {
   branding: any
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   createdAt: Date

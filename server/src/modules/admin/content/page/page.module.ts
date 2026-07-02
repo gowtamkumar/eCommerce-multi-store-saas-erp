@@ -14,15 +14,15 @@ import { PageEntity } from './entities/page.entity'
 import { PageRevisionEntity } from './entities/page-revision.entity'
 import { PageReusableBlockEntity } from './entities/page-reusable-block.entity'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
-import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
+import { StoreModule } from '@/modules/system/store/store.module'
+import { SuperAdminCrossStoreRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-store.repository'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PageEntity, PageRevisionEntity, PageReusableBlockEntity]),
     ProductModule,
     FaqModule,
-    TenantModule,
+    StoreModule,
   ],
   controllers: [PageReusableBlockController, StorePageController, PageController],
   providers: [
@@ -31,7 +31,7 @@ import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/re
     PageRepository,
     PageRevisionRepository,
     PageReusableBlockRepository,
-    SuperAdminCrossTenantRepository,
+    SuperAdminCrossStoreRepository,
   ],
   exports: [
     PageService,

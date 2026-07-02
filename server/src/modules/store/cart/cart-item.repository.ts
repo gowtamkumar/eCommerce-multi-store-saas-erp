@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { CartItemEntity } from './entities/cart-item.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class CartItemRepository extends BaseTenantRepository<CartItemEntity> {
+export class CartItemRepository extends BaseStoreRepository<CartItemEntity> {
   constructor(
     @InjectRepository(CartItemEntity)
     repo: Repository<CartItemEntity>,
@@ -14,9 +14,9 @@ export class CartItemRepository extends BaseTenantRepository<CartItemEntity> {
     super(CartItemEntity, repo)
 }
 
-  async findByIdWithCart(id: string, tenantId: string): Promise<CartItemEntity | null> {
+  async findByIdWithCart(id: string, storeId: string): Promise<CartItemEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         cart: true,
       },
@@ -27,17 +27,17 @@ export class CartItemRepository extends BaseTenantRepository<CartItemEntity> {
     cartId: string,
     productId: string,
     variantId: string | null,
-    tenantId: string,
+    storeId: string,
   ): Promise<CartItemEntity | null> {
     return await this.repo.findOne({
-      where: { cartId, productId, variantId, tenantId },
+      where: { cartId, productId, variantId, storeId },
     })
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<CartItemEntity> {
     const cartItem = this.repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     } as any) as unknown as CartItemEntity
     return await (this.repo.save(cartItem) as Promise<CartItemEntity>)
   }

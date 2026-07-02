@@ -21,7 +21,7 @@ export class EasyPostService {
   ) {}
 
   private async getCredentials(ctx: RequestContextDto) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `easypost:creds`
 
     return this.cacheService.rememberCache(
@@ -36,7 +36,7 @@ export class EasyPostService {
         let originCountry = 'US'
 
         try {
-          const settings = await this.settingsService.findByTenantSettings(ctx)
+          const settings = await this.settingsService.findByStoreSettings(ctx)
           if (settings?.shippingConfig) {
             if (settings.shippingConfig.easyPostApiKey) {
               apiKey = settings.shippingConfig.easyPostApiKey
@@ -59,7 +59,7 @@ export class EasyPostService {
         return { apiKey, mode, originAddress, originCity, originState, originPostalCode, originCountry }
       },
       600, // 10 minutes cache
-      tenantId,
+      storeId,
     )
   }
 
@@ -422,7 +422,7 @@ Declaration Statement:
 I hereby certify that the information on this commercial invoice is true
 and correct, and that the contents of this shipment are as declared.
 
-Signed by Exporter: Authorized representative of ${order.tenantId.substring(0, 8)}
+Signed by Exporter: Authorized representative of ${order.storeId.substring(0, 8)}
 `
   }
 }

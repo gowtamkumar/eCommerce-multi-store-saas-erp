@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { StaffInvitationService } from '@/modules/admin/core/user/services/staff-invitation.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { StoreService } from '@/modules/system/store/store.service'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { SessionEntity } from '../entities/session.entity'
@@ -33,7 +33,7 @@ describe('AuthService', () => {
           useValue: {},
         },
         {
-          provide: TenantService,
+          provide: StoreService,
           useValue: {},
         },
         {

@@ -5,7 +5,7 @@ This document defines the architectural patterns, request lifecycle, and data sc
 ---
 
 ## 1. Overview & Goals
-In this multi-tenant system, a catalog (products, variants, brands) is shared globally at the **Tenant** level, while operational transactions, financial entries, and human resources are scoped at the **Branch** level. 
+In this multi-store system, a catalog (products, variants, brands) is shared globally at the **Store** level, while operational transactions, financial entries, and human resources are scoped at the **Branch** level. 
 
 Instead of a complex, multi-warehouse stock-routing system, the active branch context implements logical **Data Scoping** ("Branch-by-data visibility"). Every operator or manager sees and interacts with data isolated to their authorized operating branch.
 
@@ -41,9 +41,9 @@ sequenceDiagram
     Note over Decorator: Binds headers & user payload to RequestContextDto
     Decorator-->>Controller: Inject ctx (ctx.branchId = branch_1234)
     Controller->>Service: findAllExpenses(ctx, options)
-    Service->>Repo: findAllPaginated(tenantId, { ..., branchId })
+    Service->>Repo: findAllPaginated(storeId, { ..., branchId })
     
-    Note over Repo: Constructs TypeORM QueryBuilder:<br/>WHERE tenant_id = tenantId<br/>AND branch_id = branchId
+    Note over Repo: Constructs TypeORM QueryBuilder:<br/>WHERE store_id = storeId<br/>AND branch_id = branchId
     Repo->>DB: execute query
     DB-->>Repo: return rows
     Repo-->>Service: return entities

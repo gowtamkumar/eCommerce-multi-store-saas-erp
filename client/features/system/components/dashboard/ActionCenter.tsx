@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, ChevronRight, Clock, CreditCard, XCircle } from 'lucide-react';
-import { ACTION_TONES, tenantStatusHref } from '../../lib/dashboard';
+import { ACTION_TONES, storeStatusHref } from '../../lib/dashboard';
 import type { ActionItem, BillingOverview, DashboardStats } from '../../types/dashboard.types';
 
 interface ActionCenterProps {
@@ -35,7 +35,7 @@ export default function ActionCenter({ stats, billing }: ActionCenterProps) {
         label: 'Suspended stores',
         detail: 'Merchants currently blocked',
         count: suspended,
-        href: tenantStatusHref('suspended'),
+        href: storeStatusHref('suspended'),
         tone: 'rose',
         icon: <XCircle className="w-4 h-4" />,
       });
@@ -46,7 +46,7 @@ export default function ActionCenter({ stats, billing }: ActionCenterProps) {
         label: 'Expired subscriptions',
         detail: 'Lapsed plans to win back',
         count: expired,
-        href: tenantStatusHref('expired'),
+        href: storeStatusHref('expired'),
         tone: 'amber',
         icon: <AlertTriangle className="w-4 h-4" />,
       });
@@ -57,7 +57,7 @@ export default function ActionCenter({ stats, billing }: ActionCenterProps) {
         label: 'Trials in progress',
         detail: 'Convert before they expire',
         count: trial,
-        href: tenantStatusHref('trial'),
+        href: storeStatusHref('trial'),
         tone: 'indigo',
         icon: <Clock className="w-4 h-4" />,
       });

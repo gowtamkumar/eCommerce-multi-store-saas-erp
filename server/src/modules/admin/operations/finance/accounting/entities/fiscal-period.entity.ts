@@ -7,7 +7,7 @@ export enum FiscalPeriodStatus {
 }
 
 @Entity('fiscal_periods')
-@Index(['tenantId', 'status'])
+@Index(['storeId', 'status'])
 export class FiscalPeriodEntity extends BaseEntity {
   @Column()
   name: string
@@ -25,7 +25,7 @@ export class FiscalPeriodEntity extends BaseEntity {
   })
   status: FiscalPeriodStatus
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
+  @Column({ type: 'uuid', name: 'store_id' })
   @Index()
-  tenantId: string
+  storeId: string
 }

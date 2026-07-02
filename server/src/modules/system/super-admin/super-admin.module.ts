@@ -5,29 +5,29 @@ import { PageModule } from '@/modules/admin/content/page/page.module'
 import { UserModule } from '@/modules/admin/core/user/user.module'
 import { AuthModule } from '@/modules/admin/core/auth/auth.module'
 import { OrderModule } from '@/modules/admin/sales/order/order.module'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.module'
 import { AddonCatalogModule } from '../addon-catalog/addon-catalog.module'
 import { PlatformModule } from '../platform/platform.module'
-import { SuperAdminTenantsController } from './controllers/super-admin-tenants.controller'
+import { SuperAdminStoresController } from './controllers/super-admin-stores.controller'
 import { SuperAdminUsersController } from './controllers/super-admin-users.controller'
 import { SuperAdminBillingController } from './controllers/super-admin-billing.controller'
 import { SuperAdminPlatformController } from './controllers/super-admin-platform.controller'
 import { SuperAdminAiController } from './controllers/super-admin-ai.controller'
 import { TrafficService } from './traffic.service'
 import { SuperAdminService } from './super-admin.service'
-import { SuperAdminCrossTenantRepository } from './repositories/super-admin-cross-tenant.repository'
+import { SuperAdminCrossStoreRepository } from './repositories/super-admin-cross-store.repository'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
+import { StoreTrafficEntity } from './entities/store-traffic.entity'
 import { TrafficRepository } from './traffic.repository'
 
 @Module({
   imports: [
     UserModule,
-    TenantModule,
+    StoreModule,
     MailModule,
     OrderModule,
     ProductModule,
@@ -37,10 +37,10 @@ import { TrafficRepository } from './traffic.repository'
     AuthModule,
     AuditLogModule,
     PlatformModule,
-    TypeOrmModule.forFeature([TenantTrafficEntity]),
+    TypeOrmModule.forFeature([StoreTrafficEntity]),
   ],
   controllers: [
-    SuperAdminTenantsController,
+    SuperAdminStoresController,
     SuperAdminUsersController,
     SuperAdminBillingController,
     SuperAdminPlatformController,
@@ -50,7 +50,7 @@ import { TrafficRepository } from './traffic.repository'
     TrafficService,
     TrafficRepository,
     SuperAdminService,
-    SuperAdminCrossTenantRepository,
+    SuperAdminCrossStoreRepository,
     {
       provide: APP_INTERCEPTOR,
       useClass: TrafficInterceptor,

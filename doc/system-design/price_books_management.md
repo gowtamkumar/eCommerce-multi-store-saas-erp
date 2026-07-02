@@ -1,6 +1,6 @@
 # Price Books & Volume Tier Pricing — System Design
 
-The **Price Books Management** module provides a multi-tenant, localized, and schedule-aware pricing engine. Instead of a single static price for every product, merchants can define custom pricing books scoped by currency, date range, volume brackets (tier pricing), and customer segment.
+The **Price Books Management** module provides a multi-store, localized, and schedule-aware pricing engine. Instead of a single static price for every product, merchants can define custom pricing books scoped by currency, date range, volume brackets (tier pricing), and customer segment.
 
 ---
 
@@ -16,7 +16,7 @@ A **Price Book** is a scoped pricing catalog containing set pricing rules or ove
 
 ## 2. Database Schema Design
 
-The system divides pricing data into two primary tables, secured via a tenant isolation layer (`tenant_id`).
+The system divides pricing data into two primary tables, secured via a store isolation layer (`store_id`).
 
 ### A. The `price_books` Table (`PriceBookEntity`)
 Holds the metadata, activation status, scheduling bounds, currency, and type for each book.
@@ -31,10 +31,10 @@ Holds the metadata, activation status, scheduling bounds, currency, and type for
 | `is_active`| `BOOLEAN` | Default `true` | Main toggle to activate or deactivate the price book. |
 | `valid_from`| `TIMESTAMPTZ`| Nullable | Date-range scheduling: book has no effect before this date. |
 | `valid_to` | `TIMESTAMPTZ`| Nullable | Date-range scheduling: book has no effect after this date. |
-| `tenant_id`| `UUID` | Not Null, Indexed | Enforces multi-tenant data boundaries. |
+| `store_id`| `UUID` | Not Null, Indexed | Enforces multi-store data boundaries. |
 
 > [!IMPORTANT]
-> **Composite Uniqueness Boundary**: The database enforces a composite unique constraint `@Unique('UQ_price_books_code_tenant', ['code', 'tenantId'])`. This permits multiple tenants to configure standard book codes (e.g., `RETAIL` or `WHOLESALE`) within their isolated workspaces without database conflicts.
+> **Composite Uniqueness Boundary**: The database enforces a composite unique constraint `@Unique('UQ_price_books_code_store', ['code', 'storeId'])`. This permits multiple stores to configure standard book codes (e.g., `RETAIL` or `WHOLESALE`) within their isolated workspaces without database conflicts.
 
 ---
 
@@ -49,11 +49,11 @@ Contains the quantity-based unit price overrides mapped to specific products or 
 | `variant_id` | `UUID` | Nullable, Foreign Key | If specified, overrides a specific product SKU/variant. If `null`, applies to base product. |
 | `min_quantity`| `INTEGER` | Default `1` | Minimum purchase count required to trigger this tier. |
 | `price` | `DECIMAL(12,2)`| Not Null | Override unit price for this quantity tier. |
-| `tenant_id` | `UUID` | Not Null | Tenant scoping indicator. |
+| `store_id` | `UUID` | Not Null | Store scoping indicator. |
 
 ```mermaid
 erDiagram
-    TENANTS ||--o{ PRICE_BOOKS : owns
+    STORES ||--o{ PRICE_BOOKS : owns
     PRICE_BOOKS ||--o{ PRODUCT_PRICES : contains
     PRICE_BOOKS {
         uuid id PK
@@ -64,7 +64,7 @@ erDiagram
         boolean is_active
         timestamp valid_from
         timestamp valid_to
-        uuid tenant_id FK
+        uuid store_id FK
     }
     PRODUCT_PRICES {
         uuid id PK
@@ -73,7 +73,7 @@ erDiagram
         uuid variant_id FK
         integer min_quantity
         decimal price
-        uuid tenant_id FK
+        uuid store_id FK
     }
 ```
 
@@ -102,7 +102,7 @@ The system distinguishes price books into four distinct types, each governed by 
 ### 1. `RETAIL` (Base Storefront pricing)
 - **Role**: Standard public storefront catalog.
 - **Precedence**: Default fallback when no other rules match.
-- **Validations**: A tenant is restricted to **exactly one active `RETAIL` price book per currency** at a time to prevent conflicting baseline prices.
+- **Validations**: A store is restricted to **exactly one active `RETAIL` price book per currency** at a time to prevent conflicting baseline prices.
 
 ### 2. `PROMOTIONAL` (Active campaign schedules)
 - **Role**: Time-bounded sale events (e.g. "Black Friday 2026").
@@ -123,7 +123,7 @@ The system distinguishes price books into four distinct types, each governed by 
 
 ## 4. Price Resolution Algorithm
 
-When a cart item is priced during checkout, the pricing engine runs the following hierarchy in [`pricing.service.ts`](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/admin/catalog/pricing/pricing.service.ts):
+When a cart item is priced during checkout, the pricing engine runs the following hierarchy in [`pricing.service.ts`](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/admin/catalog/pricing/pricing.service.ts):
 
 ### Step 1: Resolve the Price Book
 1. **Explicit Targeting**: If a non-null `priceBookCode` is passed, the engine queries the active database books for matching `code` and date schedules.

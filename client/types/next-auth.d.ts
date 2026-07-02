@@ -12,7 +12,7 @@ declare module "next-auth" {
     phone: string;
     image: string;
     role: UserRole;
-    tenantId: string;
+    storeId: string;
     accessToken?: string;
     refreshToken?: string;
     accessTokenExpires?: number;
@@ -29,7 +29,7 @@ declare module "next-auth" {
       phone: string;
       image: string;
       role: UserRole;
-      tenantId: string;
+      storeId: string;
       accessToken?: string;
       refreshToken?: string;
       accessTokenExpires?: number;
@@ -46,7 +46,7 @@ declare module "next-auth/jwt" {
     phone?: string;
     address?: string;
     image?: string;
-    tenantId?: string;
+    storeId?: string;
     accessToken?: string;
     refreshToken?: string;
     accessTokenExpires?: number;

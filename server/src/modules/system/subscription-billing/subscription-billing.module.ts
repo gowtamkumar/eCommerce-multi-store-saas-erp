@@ -7,19 +7,19 @@ import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
 import { SubscriptionBillingController } from './subscription-billing.controller'
 import { SubscriptionBillingService } from './subscription-billing.service'
 import { ConfigModule } from '@nestjs/config'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog.module'
 import { SubscriptionPlanModule } from '@/modules/system/subscription-plan/subscription-plan.module'
-import { TenantSubscriptionEntity } from '@/modules/system/tenant/entities/tenant-subscription.entity'
+import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-subscription.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SubscriptionInvoiceEntity, TenantSubscriptionEntity]),
+    TypeOrmModule.forFeature([SubscriptionInvoiceEntity, StoreSubscriptionEntity]),
     PaymentModule,
     ConfigModule,
     CacheModule,
-    TenantModule,
+    StoreModule,
     NotificationModule,
     AddonCatalogModule,
     SubscriptionPlanModule,

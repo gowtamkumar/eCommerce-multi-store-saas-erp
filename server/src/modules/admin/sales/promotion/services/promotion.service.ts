@@ -24,11 +24,11 @@ export class PromotionService {
     ctx: RequestContextDto,
   ): Promise<PromotionEntity> {
     this.logger.log(`${this.createPromotion.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const slug = createPromotionDto.slug || this.generateSlug(createPromotionDto.name)
 
     // Check if slug exists
-    const existing = await this.promotionRepository.findBySlug(slug, tenantId)
+    const existing = await this.promotionRepository.findBySlug(slug, storeId)
     if (existing) {
       // If auto-generated, append timestamp to make unique
       if (!createPromotionDto.slug) {
@@ -43,9 +43,9 @@ export class PromotionService {
     const saved = await this.promotionRepository.createAndSave(createPromotionDto, ctx)
     // Invalidate all affected cache keys
     await Promise.all([
-      this.cache.delCache('promotions:active', tenantId),
-      this.cache.delCacheByPattern('promotions:list*', tenantId),
-      this.cache.delCache('promotions:offers', tenantId),
+      this.cache.delCache('promotions:active', storeId),
+      this.cache.delCacheByPattern('promotions:list*', storeId),
+      this.cache.delCache('promotions:offers', storeId),
     ])
     return saved
   }
@@ -62,7 +62,7 @@ export class PromotionService {
     ctx: RequestContextDto,
   ): Promise<{ promotions: PromotionEntity[]; total: number }> {
     this.logger.log(`${this.findAllPromotions.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 10, search = '', isActive } = filterDto
     const cacheKey = `promotions:list:p${page}:l${limit}:q${search}:a${isActive ?? 'all'}`
 
@@ -71,36 +71,36 @@ export class PromotionService {
       async () => {
         const [promotions, total] = await this.promotionRepository.findAllWithFilters(
           filterDto,
-          tenantId,
+          storeId,
         )
         return { promotions, total }
       },
       300, // 5 min TTL
-      tenantId,
+      storeId,
     )
   }
 
   async findActivePromotions(ctx: RequestContextDto): Promise<PromotionEntity[]> {
     this.logger.log(`${this.findActivePromotions.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `promotions:active`
 
     return this.cache.rememberCache(
       cacheKey,
-      () => this.promotionRepository.findActivePromotions(tenantId, new Date()),
+      () => this.promotionRepository.findActivePromotions(storeId, new Date()),
       600, // 10 minutes
-      tenantId,
+      storeId,
     )
   }
 
   async findOne(id: string, ctx: RequestContextDto): Promise<PromotionEntity> {
     this.logger.log(`${this.findOne.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const promotion = await this.cache.rememberCache(
       `promotions:id:${id}`,
-      () => this.promotionRepository.findById(id, tenantId),
+      () => this.promotionRepository.findById(id, storeId),
       600,
-      tenantId,
+      storeId,
     )
     if (!promotion) throw new NotFoundException('Promotion not found')
     return promotion
@@ -108,12 +108,12 @@ export class PromotionService {
 
   async findOneBySlug(slug: string, ctx: RequestContextDto): Promise<PromotionEntity> {
     this.logger.log(`${this.findOneBySlug.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const promotion = await this.cache.rememberCache(
       `promotions:slug:${slug}`,
-      () => this.promotionRepository.findBySlug(slug, tenantId),
+      () => this.promotionRepository.findBySlug(slug, storeId),
       600,
-      tenantId,
+      storeId,
     )
     if (!promotion) throw new NotFoundException('Promotion not found')
     return promotion
@@ -125,14 +125,14 @@ export class PromotionService {
     ctx: RequestContextDto,
   ): Promise<PromotionEntity> {
     this.logger.log(`${this.updatePromotion.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const promotion = await this.findOne(id, ctx)
 
     // Slug renames need the same conflict check as `createPromotion`,
-    // otherwise the composite tenant-scoped unique index throws a raw
+    // otherwise the composite store-scoped unique index throws a raw
     // 23505 instead of a friendly 409.
     if (updatePromotionDto.slug && updatePromotionDto.slug !== promotion.slug) {
-      const slugTaken = await this.promotionRepository.findBySlug(updatePromotionDto.slug, tenantId)
+      const slugTaken = await this.promotionRepository.findBySlug(updatePromotionDto.slug, storeId)
       if (slugTaken && slugTaken.id !== id) {
         throw new ConflictException('Promotion with this slug already exists')
       }
@@ -141,11 +141,11 @@ export class PromotionService {
     const updated = await this.promotionRepository.updateAndSave(promotion, updatePromotionDto)
     // Invalidate all affected cache keys atomically
     await Promise.all([
-      this.cache.delCache('promotions:active', tenantId),
-      this.cache.delCacheByPattern('promotions:list*', tenantId),
-      this.cache.delCache('promotions:offers', tenantId),
-      this.cache.delCache(`promotions:id:${id}`, tenantId),
-      this.cache.delCache(`promotions:slug:${promotion.slug}`, tenantId),
+      this.cache.delCache('promotions:active', storeId),
+      this.cache.delCacheByPattern('promotions:list*', storeId),
+      this.cache.delCache('promotions:offers', storeId),
+      this.cache.delCache(`promotions:id:${id}`, storeId),
+      this.cache.delCache(`promotions:slug:${promotion.slug}`, storeId),
     ])
     return updated
   }
@@ -155,15 +155,15 @@ export class PromotionService {
     ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removePromotion.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const promotion = await this.findOne(id, ctx)
     await this.promotionRepository.removePromotion(promotion)
     await Promise.all([
-      this.cache.delCache('promotions:active', tenantId),
-      this.cache.delCacheByPattern('promotions:list*', tenantId),
-      this.cache.delCache('promotions:offers', tenantId),
-      this.cache.delCache(`promotions:id:${id}`, tenantId),
-      this.cache.delCache(`promotions:slug:${promotion.slug}`, tenantId),
+      this.cache.delCache('promotions:active', storeId),
+      this.cache.delCacheByPattern('promotions:list*', storeId),
+      this.cache.delCache('promotions:offers', storeId),
+      this.cache.delCache(`promotions:id:${id}`, storeId),
+      this.cache.delCache(`promotions:slug:${promotion.slug}`, storeId),
     ])
     return { success: true, message: 'Promotion deleted successfully' }
   }
@@ -209,13 +209,13 @@ export class PromotionService {
     ctx: RequestContextDto,
   ): Promise<{ promotions: PromotionEntity[]; offerGroups: any[] }> {
     this.logger.log(`${this.getOfferProducts.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     return this.cache.rememberCache(
       'promotions:offers',
       async () => {
         const now = new Date()
-        const promotions = await this.promotionRepository.findActivePromotions(tenantId, now)
-        this.logger.log(`Found ${promotions.length} active promotions for tenant: ${tenantId}`)
+        const promotions = await this.promotionRepository.findActivePromotions(storeId, now)
+        this.logger.log(`Found ${promotions.length} active promotions for store: ${storeId}`)
 
         if (!promotions.length) {
           return { promotions: [], offerGroups: [] }
@@ -225,7 +225,7 @@ export class PromotionService {
         const productResults = await Promise.all(
           promotions.map((promo) =>
             this.productRepository.findOfferProducts({
-              tenantId,
+              storeId,
               targetType: promo.targetType,
               targetId: promo.targetId,
               limit:
@@ -253,7 +253,7 @@ export class PromotionService {
         return { promotions, offerGroups }
       },
       900, // 15 minutes — invalidated on write; read-heavy endpoint
-      tenantId,
+      storeId,
     )
   }
 
@@ -262,7 +262,7 @@ export class PromotionService {
     ctx: RequestContextDto,
   ): Promise<{ promotion: PromotionEntity; products: any[] }> {
     this.logger.log(`${this.getOfferProductsBySlug.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const promotion = await this.findOneBySlug(slug, ctx)
 
     const now = new Date()
@@ -275,7 +275,7 @@ export class PromotionService {
       return { promotion, products: [] }
     }
 
-    const products = await this.getProductsForPromotion(promotion, tenantId)
+    const products = await this.getProductsForPromotion(promotion, storeId)
 
     // Use shared helper — no duplication
     const enrichedProducts = products.map((p) => this.enrichProductWithPromo(p, promotion))
@@ -283,9 +283,9 @@ export class PromotionService {
     return { promotion, products: enrichedProducts }
   }
 
-  private async getProductsForPromotion(promotion: PromotionEntity, tenantId: string) {
+  private async getProductsForPromotion(promotion: PromotionEntity, storeId: string) {
     return await this.productRepository.findOfferProducts({
-      tenantId,
+      storeId,
       targetType: promotion.targetType,
       targetId: promotion.targetId,
       limit:

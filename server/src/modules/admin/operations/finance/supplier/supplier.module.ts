@@ -6,7 +6,7 @@ import { SupplierController } from './supplier.controller'
 import { SupplierRepository } from './supplier.repository'
 import { SupplierService } from './supplier.service'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { PurchaseModule } from '../purchase/purchase.module'
 import { SupplierDocumentEntity } from './entities/supplier-document.entity'
 import { SupplierAPLedgerEntity } from './entities/supplier-ap-ledger.entity'
@@ -15,7 +15,7 @@ import { SupplierAPLedgerRepository } from './supplier-ap-ledger.repository'
 @Module({
   imports: [
     TypeOrmModule.forFeature([SupplierEntity, SupplierDocumentEntity, SupplierAPLedgerEntity]),
-    TenantModule,
+    StoreModule,
     PurchaseModule,
   ],
   controllers: [SupplierController, SupplierPortalController],

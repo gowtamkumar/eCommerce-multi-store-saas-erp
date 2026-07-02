@@ -1,6 +1,6 @@
 # Senior Engineering Guide: Subscription Plan Setup & Entitlements Engine
 
-This guide details the technical specifications, architectural flow, and database setup instructions for the **Decoupled Abstract Keys (Entitlements)** subscription engine implemented in our multi-tenant SaaS ERP.
+This guide details the technical specifications, architectural flow, and database setup instructions for the **Decoupled Abstract Keys (Entitlements)** subscription engine implemented in our multi-store SaaS ERP.
 
 ---
 
@@ -14,7 +14,7 @@ graph TD
     B -->|Resolves to Paths| C[/admin/pos]
     B -->|Resolves to Paths| D[/admin/pos-registers]
     E[HTTP Request: GET /admin/pos-registers] -->|SubscriptionGuard| F{Reverse Mapping Lookup}
-    F -->|Maps back to pos| G{Does Tenant have 'pos' entitlement?}
+    F -->|Maps back to pos| G{Does Store have 'pos' entitlement?}
     G -->|Yes| H[Allow Access]
     G -->|No| I[403 Forbidden]
 ```
@@ -54,7 +54,7 @@ The core model `SubscriptionPlanEntity` holds the system tier records, billing d
 
 ## 3. Translation Engine (`feature-mapping.ts`)
 
-Located at [feature-mapping.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/common/constants/feature-mapping.ts), the translation engine registers all ERP sub-routes and translates between route paths and abstract keys.
+Located at [feature-mapping.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/common/constants/feature-mapping.ts), the translation engine registers all ERP sub-routes and translates between route paths and abstract keys.
 
 > [!NOTE]
 > All nested sub-routes must be mapped to their parent feature to prevent route guards from raising unauthorized access errors when users visit child views.
@@ -154,7 +154,7 @@ export const FEATURE_TO_ROUTES_MAPPING: Record<string, string[]> = {
 
 ## 4. Backend Request Authentication (`SubscriptionGuard`)
 
-Every controller endpoint maps back to a specific capability gate using `@RequireFeature('route')`. The [SubscriptionGuard](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/common/guards/subscription.guard.ts) evaluates access dynamically against the tenant's plan features:
+Every controller endpoint maps back to a specific capability gate using `@RequireFeature('route')`. The [SubscriptionGuard](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/common/guards/subscription.guard.ts) evaluates access dynamically against the store's plan features:
 
 > [!TIP]
 > Super Admin accounts automatically bypass all guards.
@@ -163,8 +163,8 @@ Every controller endpoint maps back to a specific capability gate using `@Requir
 const featureSlug = requiredFeature;
 
 // Verify if plan has the feature
-const tenant = await this.tenantService.findOneTenants(tenantId);
-const planFeatures = tenant.subscriptionPlan?.features || [];
+const store = await this.storeService.findOneStores(storeId);
+const planFeatures = store.subscriptionPlan?.features || [];
 
 const hasPlanAccess = planFeatures.includes(featureSlug) || planFeatures.includes(requiredFeature);
 
@@ -180,14 +180,14 @@ if (!hasPlanAccess) {
 To avoid querying the Postgres database on every single page load or link hover, we use a hybrid token authentication strategy:
 
 1. **Pre-Compiled Session JWT**: During login, `auth.service.ts` expands abstract keys to their respective route lists via `expandFeatures(...)` and signs them into the user JWT payload.
-2. **Instant Local Sidebar Checks**: The [AdminLayout.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/admin/dashboard/components/AdminLayout.tsx) navigation filters items on the fly:
+2. **Instant Local Sidebar Checks**: The [AdminLayout.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/admin/dashboard/components/AdminLayout.tsx) navigation filters items on the fly:
    ```typescript
    if (item.feature) {
        return features.includes(item.feature);
    }
    ```
 3. **Menu Key Alignments**:
-   All features inside [routes.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/routes.ts) utilize abstract entitlement keys instead of route strings:
+   All features inside [routes.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/routes.ts) utilize abstract entitlement keys instead of route strings:
    * Navbar Menu -> `feature: "header"`
    * Footer Menu -> `feature: "footer"`
    * Point of Sale -> `feature: "pos"`

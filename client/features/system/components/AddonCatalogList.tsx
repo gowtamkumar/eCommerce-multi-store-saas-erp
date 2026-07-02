@@ -486,7 +486,7 @@ export default function AddonCatalogList({ initialAddons }: AddonCatalogListProp
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this addon? Tenants who have already purchased it will keep their boost.')) return;
+        if (!confirm('Delete this addon? Stores who have already purchased it will keep their boost.')) return;
         setLoadingId(id);
         try {
             const res = await fetchSuperAdminAPI(`/super-admin/addon-catalog/${id}`, { method: 'DELETE' });
@@ -526,7 +526,7 @@ export default function AddonCatalogList({ initialAddons }: AddonCatalogListProp
                             <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Addon Catalog</h1>
                         </div>
                         <p className="text-slate-500 dark:text-slate-400 font-medium">
-                            Define purchasable add-ons for tenants.&nbsp;
+                            Define purchasable add-ons for stores.&nbsp;
                             <span className="font-bold text-slate-700 dark:text-slate-300">{activeCount} active</span> of {addons.length} total.
                         </p>
                     </div>

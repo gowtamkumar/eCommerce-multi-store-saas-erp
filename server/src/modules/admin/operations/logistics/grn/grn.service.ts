@@ -27,7 +27,7 @@ export class GrnService {
 
   async createGrn(dto: CreateGrnDto, ctx: RequestContextDto): Promise<GoodsReceivedNoteEntity> {
     this.logger.log(`${this.createGrn.name} Service Called`)
-    const grnNumber = await this.repository.generateGrnNumber(ctx.tenantId)
+    const grnNumber = await this.repository.generateGrnNumber(ctx.storeId)
     return this.repository.createAndSave(dto, grnNumber, ctx)
   }
 
@@ -38,7 +38,7 @@ export class GrnService {
   ): Promise<GoodsReceivedNoteEntity> {
     this.logger.log(`${this.verifyGrn.name} Service Called`)
 
-    const grn = await this.repository.findById(id, ctx.tenantId)
+    const grn = await this.repository.findById(id, ctx.storeId)
 
     if (grn.status !== GrnStatus.DRAFT) {
       throw new BadRequestException(`GRN is already ${grn.status}`)
@@ -48,7 +48,7 @@ export class GrnService {
       grn.status = GrnStatus.REJECTED
       grn.notes = dto.notes || grn.notes
       const savedGrn = await this.repository.save(grn)
-      await this.notifyGrnStatus(savedGrn, ctx.tenantId, 'WARNING')
+      await this.notifyGrnStatus(savedGrn, ctx.storeId, 'WARNING')
       return savedGrn
     }
 
@@ -92,7 +92,7 @@ export class GrnService {
           await this.apLedgerRepository.createEntry(
             {
               supplierId: grn.supplierId,
-              tenantId: ctx.tenantId,
+              storeId: ctx.storeId,
               referenceType: SupplierAPReferenceType.GRN,
               referenceId: grn.id,
               credit: totalGrnCost,
@@ -104,7 +104,7 @@ export class GrnService {
 
         return savedGrn
       })
-      await this.notifyGrnStatus(savedGrn, ctx.tenantId, 'SUCCESS')
+      await this.notifyGrnStatus(savedGrn, ctx.storeId, 'SUCCESS')
       return savedGrn
     }
 
@@ -112,16 +112,16 @@ export class GrnService {
   }
 
   async findById(id: string, ctx: RequestContextDto): Promise<GoodsReceivedNoteEntity> {
-    return this.repository.findById(id, ctx.tenantId)
+    return this.repository.findById(id, ctx.storeId)
   }
 
   async findAll(ctx: RequestContextDto, paginationDto: PaginationDto, status?: GrnStatus) {
-    return this.repository.findAll(ctx.tenantId, paginationDto, status)
+    return this.repository.findAll(ctx.storeId, paginationDto, status)
   }
 
   private async notifyGrnStatus(
     grn: GoodsReceivedNoteEntity,
-    tenantId: string,
+    storeId: string,
     type: string,
   ): Promise<void> {
     try {
@@ -133,7 +133,7 @@ export class GrnService {
           link: `/admin/procurement/grn/${grn.id}`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger GRN notification: ${e.message}`)

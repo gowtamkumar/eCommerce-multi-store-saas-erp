@@ -19,16 +19,16 @@ export class DunningService {
 
   // --- Dunning Rules CRUD ---
 
-  async findAllRules(tenantId: string): Promise<DunningRuleEntity[]> {
+  async findAllRules(storeId: string): Promise<DunningRuleEntity[]> {
     return this.dataSource.manager.find(DunningRuleEntity, {
-      where: { tenantId },
+      where: { storeId },
       order: { dunningLevel: 'ASC' },
     })
   }
 
-  async findRuleById(id: string, tenantId: string): Promise<DunningRuleEntity> {
+  async findRuleById(id: string, storeId: string): Promise<DunningRuleEntity> {
     const rule = await this.dataSource.manager.findOne(DunningRuleEntity, {
-      where: { id, tenantId },
+      where: { id, storeId },
     })
     if (!rule) {
       throw new NotFoundException(`Dunning rule with ID ${id} not found`)
@@ -36,11 +36,11 @@ export class DunningService {
     return rule
   }
 
-  async createRule(data: Partial<DunningRuleEntity>, tenantId: string): Promise<DunningRuleEntity> {
+  async createRule(data: Partial<DunningRuleEntity>, storeId: string): Promise<DunningRuleEntity> {
     const em = this.dataSource.manager
     const rule = em.create(DunningRuleEntity, {
       ...data,
-      tenantId,
+      storeId,
     })
     return em.save(DunningRuleEntity, rule)
   }
@@ -48,25 +48,25 @@ export class DunningService {
   async updateRule(
     id: string,
     data: Partial<DunningRuleEntity>,
-    tenantId: string,
+    storeId: string,
   ): Promise<DunningRuleEntity> {
     const em = this.dataSource.manager
-    const rule = await this.findRuleById(id, tenantId)
+    const rule = await this.findRuleById(id, storeId)
     Object.assign(rule, data)
     return em.save(DunningRuleEntity, rule)
   }
 
-  async deleteRule(id: string, tenantId: string): Promise<void> {
+  async deleteRule(id: string, storeId: string): Promise<void> {
     const em = this.dataSource.manager
-    const rule = await this.findRuleById(id, tenantId)
+    const rule = await this.findRuleById(id, storeId)
     await em.softRemove(DunningRuleEntity, rule)
   }
 
   // --- Dunning Notice Logs ---
 
-  async findAllLogs(tenantId: string): Promise<DunningLogEntity[]> {
+  async findAllLogs(storeId: string): Promise<DunningLogEntity[]> {
     return this.dataSource.manager.find(DunningLogEntity, {
-      where: { tenantId },
+      where: { storeId },
       relations: {
         customer: true,
         dunningRule: true,
@@ -80,29 +80,29 @@ export class DunningService {
   async runDunningAudit(
     ctx: RequestContextDto,
   ): Promise<{ processed: number; logsCreated: number }> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const em = this.dataSource.manager
     const now = new Date()
 
-    // 1. Load active dunning rules for this tenant
+    // 1. Load active dunning rules for this store
     const activeRules = await em.find(DunningRuleEntity, {
-      where: { tenantId },
+      where: { storeId },
       order: { daysOverdue: 'DESC' }, // Highest days overdue first (most severe first)
     })
 
     if (activeRules.length === 0) {
-      this.logger.log(`No active dunning rules found for tenant ${tenantId}. Audit skipped.`)
+      this.logger.log(`No active dunning rules found for store ${storeId}. Audit skipped.`)
       return { processed: 0, logsCreated: 0 }
     }
 
-    // 2. Fetch all customers in this tenant
+    // 2. Fetch all customers in this store
     const customers = await em.find(UserEntity, {
-      where: { tenantId },
+      where: { storeId },
     })
 
     // Preload all AR entries to avoid N+1 queries
     const allEntries = await em.find(ArLedgerEntity, {
-      where: { tenantId },
+      where: { storeId },
       order: { createdAt: 'ASC', id: 'ASC' },
     })
 
@@ -191,7 +191,7 @@ export class DunningService {
       const duplicateLog = await em.findOne(DunningLogEntity, {
         where: {
           customerId: customer.id,
-          tenantId,
+          storeId,
           dunningRuleId: matchedRule.id,
         },
         order: { createdAt: 'DESC' },
@@ -221,7 +221,7 @@ export class DunningService {
             to: customer.email,
             subject: matchedRule.emailSubject,
             html: interpolatedBody,
-            tenantId,
+            storeId,
           })
         } catch (err) {
           this.logger.error(
@@ -241,7 +241,7 @@ export class DunningService {
 
       // 7. Write Log
       const dunningLog = em.create(DunningLogEntity, {
-        tenantId,
+        storeId,
         customerId: customer.id,
         dunningRuleId: matchedRule.id,
         actionTaken: action,

@@ -33,7 +33,7 @@ This module is mainly a procurement and finance reconciliation tool that:
 - `amount`: adjustment amount for the supplier credit.
 - `reason`: claim description or return memo.
 - `status`: `DRAFT`, `APPROVED`, `APPLIED`, `CANCELLED`.
-- `tenantId` → `TenantEntity`
+- `storeId` → `StoreEntity`
 - `createdById` → `UserEntity`
 
 ### Related Entities
@@ -89,7 +89,7 @@ flowchart LR
 
 1. The service logs "Creating Debit Note".
 2. Calls `DebitNoteRepository.createAndSave()`.
-3. Repository generates `DN-<year>-<sequence>` using tenant invoice count.
+3. Repository generates `DN-<year>-<sequence>` using store invoice count.
 4. Creates and saves the entity with status `DRAFT`.
 5. Cache key `dn:list` is invalidated.
 
@@ -121,7 +121,7 @@ flowchart LR
 
 1. Start a DB transaction.
 2. Set `dn.status = APPROVED` and save the debit note.
-3. Read the latest `SupplierAPLedgerEntity` entry for supplier and tenant with a pessimistic lock.
+3. Read the latest `SupplierAPLedgerEntity` entry for supplier and store with a pessimistic lock.
 4. Calculate `balanceAfter = previousBalance - amount`.
 5. Insert an AP ledger entry with type `ADJUSTMENT` and debit = amount.
 6. Post a financial journal entry:

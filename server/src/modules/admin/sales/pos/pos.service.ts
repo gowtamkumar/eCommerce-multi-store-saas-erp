@@ -65,12 +65,12 @@ export class PosService {
 
   async findAllRegisters(ctx: RequestContextDto): Promise<PosRegisterEntity[]> {
     this.logger.log(`${this.findAllRegisters.name} Service Called`)
-    return this.registerRepository.findAll(ctx.tenantId)
+    return this.registerRepository.findAll(ctx.storeId)
   }
 
   async findOneRegister(id: string, ctx: RequestContextDto): Promise<PosRegisterEntity> {
     this.logger.log(`${this.findOneRegister.name} Service Called`)
-    const register = await this.registerRepository.findOne(id, ctx.tenantId)
+    const register = await this.registerRepository.findOne(id, ctx.storeId)
     if (!register) {
       throw new NotFoundException(`POS Register terminal with ID ${id} not found`)
     }
@@ -95,7 +95,7 @@ export class PosService {
 
   async openShift(dto: OpenPosShiftDto, ctx: RequestContextDto): Promise<PosShiftEntity> {
     this.logger.log(`${this.openShift.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
 
     if (!userId) {
@@ -106,7 +106,7 @@ export class PosService {
     await this.findOneRegister(dto.registerId, ctx)
 
     // 2. Check if cashier already has an active open shift
-    const activeShift = await this.shiftRepository.findActiveShiftForUser(userId, tenantId)
+    const activeShift = await this.shiftRepository.findActiveShiftForUser(userId, storeId)
     if (activeShift) {
       throw new BadRequestException(
         `You already have an active open shift on terminal: ${activeShift.register?.name || 'Unknown'}. Please close it first.`,
@@ -129,13 +129,13 @@ export class PosService {
   async findActiveShift(ctx: RequestContextDto): Promise<PosShiftEntity> {
     this.logger.log(`${this.findActiveShift.name} Service Called`)
     const userId = ctx.userId
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     if (!userId) {
       throw new BadRequestException('Cashier identity required')
     }
 
-    const shift = await this.shiftRepository.findActiveShiftForUser(userId, tenantId)
+    const shift = await this.shiftRepository.findActiveShiftForUser(userId, storeId)
     if (!shift) {
       throw new NotFoundException('No active open shift found for the logged-in cashier')
     }
@@ -148,9 +148,9 @@ export class PosService {
     ctx: RequestContextDto,
   ): Promise<PosShiftEntity> {
     this.logger.log(`${this.closeShift.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const shift = await this.shiftRepository.findOne(id, tenantId)
+    const shift = await this.shiftRepository.findOne(id, storeId)
     if (!shift) {
       throw new NotFoundException(`Shift with ID ${id} not found`)
     }
@@ -186,10 +186,10 @@ export class PosService {
     ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string; data?: { orderId: string } }> {
     this.logger.log(`${this.syncPosSale.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // 1. Verify shift session is still open
-    const shift = await this.shiftRepository.findOne(dto.shiftId, tenantId)
+    const shift = await this.shiftRepository.findOne(dto.shiftId, storeId)
     if (!shift) {
       throw new NotFoundException(`POS Shift session with ID ${dto.shiftId} not found`)
     }
@@ -203,15 +203,15 @@ export class PosService {
     let isNewSale = false
     let jobData: any = null
     await this.dataSource.transaction(async (manager) => {
-      // 0. Resolve tenant currency from site settings (never hardcode)
-      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
-      const tenantCurrency = settings?.currency || 'USD'
+      // 0. Resolve store currency from site settings (never hardcode)
+      const settings = await manager.findOne(SiteSettingsEntity, { where: { storeId } })
+      const storeCurrency = settings?.currency || 'USD'
 
       // 1. Idempotency Check using offlineSaleId
       if (dto.offlineSaleId) {
         const orderRepo = manager.getRepository(OrderEntity)
         const existingOrder = await orderRepo.findOne({
-          where: { offlineSaleId: dto.offlineSaleId, tenantId },
+          where: { offlineSaleId: dto.offlineSaleId, storeId },
         })
         if (existingOrder) {
           // Transaction already processed, return success immediately
@@ -229,7 +229,7 @@ export class PosService {
       let customer: UserEntity = null
       if (dto.customerId) {
         customer = await manager.findOne(UserEntity, {
-          where: { id: dto.customerId, tenantId },
+          where: { id: dto.customerId, storeId },
         })
         if (customer) {
           customerName = customer.name || customerName
@@ -251,7 +251,7 @@ export class PosService {
         totalAmount: 0,
         shippingFee: dto.shippingFee || 0,
         deliveryZone: dto.deliveryZone || undefined,
-        currency: tenantCurrency, // Resolved from tenant SiteSettings — never hardcoded
+        currency: storeCurrency, // Resolved from store SiteSettings — never hardcoded
         currencyRate: 1,
         status: OrderStatus.COMPLETED,
         orderSource: OrderSource.POS,
@@ -260,7 +260,7 @@ export class PosService {
           dto.paymentMethod === PaymentMethod.ON_ACCOUNT
             ? PaymentStatus.PENDING
             : PaymentStatus.PAID,
-        tenantId,
+        storeId,
         userId: dto.customerId || undefined,
         appliedCoupon: dto.appliedCoupon || undefined,
         couponDiscountAmount: dto.couponDiscountAmount || 0,
@@ -281,7 +281,7 @@ export class PosService {
       const products =
         productIds.length > 0
           ? await manager.find(ProductEntity, {
-            where: { id: In(productIds), tenantId },
+            where: { id: In(productIds), storeId },
           })
           : []
       const productById = new Map(products.map((p) => [p.id, p]))
@@ -305,7 +305,7 @@ export class PosService {
           unitPrice: Number(item.price),
           totalAmount: itemTotal,
           taxAmount: itemTax,
-          tenantId,
+          storeId,
         })
         await orderItemRepo.save(orderItem)
 
@@ -313,7 +313,7 @@ export class PosService {
         let allocations: { batchId: string; quantity: number }[] = []
         try {
           allocations = await this.batchService.allocateFEFOStock(
-            tenantId,
+            storeId,
             item.productId,
             item.variantId || null,
             Number(item.quantity),
@@ -383,7 +383,7 @@ export class PosService {
       if (dto.useWalletBalance && dto.customerId && customer) {
         const availableBalance = await this.walletService.getAvailableBalance(
           dto.customerId,
-          tenantId,
+          storeId,
           manager,
         )
         if (availableBalance > 0) {
@@ -454,7 +454,7 @@ export class PosService {
         }
         const currentOutstanding = await this.arService.getCustomerOutstandingBalance(
           customer.id,
-          tenantId,
+          storeId,
           manager,
         )
         const limit = Number(customer.creditLimit || 0)
@@ -475,7 +475,7 @@ export class PosService {
             referenceType: 'ORDER',
             referenceId: savedOrder.id,
             dueDate,
-            currency: tenantCurrency,
+            currency: storeCurrency,
           },
           ctx,
           manager,
@@ -562,7 +562,7 @@ export class PosService {
           .createQueryBuilder()
           .update(CouponEntity)
           .set({ usedCount: () => 'used_count + 1' })
-          .where('tenantId = :tenantId', { tenantId })
+          .where('storeId = :storeId', { storeId })
           .andWhere('UPPER(code) = UPPER(:code)', { code: dto.appliedCoupon.trim() })
           .andWhere('(usageLimit IS NULL OR usedCount < usageLimit)')
           .execute()
@@ -600,7 +600,7 @@ export class PosService {
 
   async getShifts(ctx: RequestContextDto): Promise<PosShiftEntity[]> {
     this.logger.log(`${this.getShifts.name} Service Called`)
-    return this.shiftRepository.findAll(ctx.tenantId)
+    return this.shiftRepository.findAll(ctx.storeId)
   }
 
   // =========================================================================
@@ -613,9 +613,9 @@ export class PosService {
     ctx: RequestContextDto,
   ): Promise<PosDrawerTransactionEntity> {
     this.logger.log(`${this.createDrawerTransaction.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const shift = await this.shiftRepository.findOne(shiftId, tenantId)
+    const shift = await this.shiftRepository.findOne(shiftId, storeId)
     if (!shift) {
       throw new NotFoundException(`Shift with ID ${shiftId} not found`)
     }
@@ -662,6 +662,6 @@ export class PosService {
     ctx: RequestContextDto,
   ): Promise<PosDrawerTransactionEntity[]> {
     this.logger.log(`${this.getDrawerTransactionsForShift.name} Service Called`)
-    return this.drawerTransactionRepository.findAllForShift(shiftId, ctx.tenantId)
+    return this.drawerTransactionRepository.findAllForShift(shiftId, ctx.storeId)
   }
 }

@@ -8,7 +8,7 @@ import { buildPageJsonLd } from "@/features/admin/pages/lib/seo-score";
 import SaaSLanding from "@/features/system/components/SaaSLanding";
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from "@/services/getSettings";
-import { getTenantId } from "@/services/tenant";
+import { getStoreId } from "@/services/store";
 import { Suspense } from "react";
 
 // ISR: Regenerate the home page at most once every 60 seconds.
@@ -59,10 +59,10 @@ export async function generateMetadata() {
 }
 
 export default async function Home() {
-  const tenantId = await getTenantId(null, false);
+  const storeId = await getStoreId(null, false);
 
-  // If no tenant is resolved, show the SaaS landing page
-  if (!tenantId) {
+  // If no store is resolved, show the SaaS landing page
+  if (!storeId) {
     return <SaaSLanding />;
   }
 

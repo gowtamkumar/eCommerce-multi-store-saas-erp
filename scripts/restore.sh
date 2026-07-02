@@ -16,7 +16,7 @@
 # echo "✅ Restore Delivered: "$BACKUP_FILE""
 
 # Database and backup details
-DB_NAME="multi_tenant_ecommerce"
+DB_NAME="multi_store_ecommerce"
 BACKUP_FILE="/backups/backup_20260517_113542.sql"
 PG_USER="postgres"
 

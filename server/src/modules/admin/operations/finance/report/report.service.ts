@@ -32,12 +32,12 @@ export class ReportService {
 
   async getAnalytics(ctx: RequestContextDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getAnalytics.`)
-    const tenantId = ctx.tenantId
-    const cacheKey = `analytics` // CacheService handled tenantId prefixing
+    const storeId = ctx.storeId
+    const cacheKey = `analytics` // CacheService handled storeId prefixing
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const counts = await this.reportRepo.getGlobalCounts(tenantId)
+        const counts = await this.reportRepo.getGlobalCounts(storeId)
         return {
           counts: {
             users: parseInt(counts.users, 10),
@@ -49,13 +49,13 @@ export class ReportService {
         }
       },
       600, // 10 mins cache
-      tenantId,
+      storeId,
     )
   }
 
   async getDashboardReport(ctx: RequestContextDto, period: string = 'month') {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getDashboardReport.`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `dashboard:${period}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -95,18 +95,18 @@ export class ReportService {
           topProductsRaw,
           topCustomersRaw,
         ] = await Promise.all([
-          this.reportRepo.getDashboardStats(tenantId, startDate),
-          this.reportRepo.getSalesChartData(tenantId, period),
-          this.reportRepo.getMonthlyGrowth(tenantId),
-          this.reportRepo.getLowStockProducts(tenantId, 10),
+          this.reportRepo.getDashboardStats(storeId, startDate),
+          this.reportRepo.getSalesChartData(storeId, period),
+          this.reportRepo.getMonthlyGrowth(storeId),
+          this.reportRepo.getLowStockProducts(storeId, 10),
           this.productService.findAllProducts(ctx),
-          this.reportRepo.getRecentPurchaseOrders(tenantId, 5),
-          this.reportRepo.getRecentOrders(tenantId, 5),
-          this.reportRepo.getSalesSumInRange(tenantId, prevStartDate, startDate),
-          this.reportRepo.getCogsInRange(tenantId, startDate, now),
+          this.reportRepo.getRecentPurchaseOrders(storeId, 5),
+          this.reportRepo.getRecentOrders(storeId, 5),
+          this.reportRepo.getSalesSumInRange(storeId, prevStartDate, startDate),
+          this.reportRepo.getCogsInRange(storeId, startDate, now),
           this.expenseService.findAllExpensesRaw(ctx, startDate, now),
-          this.reportRepo.getTopProducts(tenantId, startDate, 5),
-          this.reportRepo.getTopCustomers(tenantId, startDate, 5),
+          this.reportRepo.getTopProducts(storeId, startDate, 5),
+          this.reportRepo.getTopCustomers(storeId, startDate, 5),
         ])
 
         const recentProducts = products.products || []
@@ -227,13 +227,13 @@ export class ReportService {
         }
       },
       600, // 10 mins cache
-      tenantId,
+      storeId,
     )
   }
 
   async getProfitLossReport(ctx: RequestContextDto, startDateStr?: string, endDateStr?: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfitLossReport.`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `pnl:${startDateStr || 'none'}:${endDateStr || 'none'}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -250,8 +250,8 @@ export class ReportService {
           this.paymentService.findAllPaymentsRaw(ctx),
           this.expenseService.findAllExpensesRaw(ctx),
           this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),
-          this.reportRepo.getOrderCountInRange(tenantId, startDate, endDate),
-          this.reportRepo.getCogsInRange(tenantId, startDate, endDate),
+          this.reportRepo.getOrderCountInRange(storeId, startDate, endDate),
+          this.reportRepo.getCogsInRange(storeId, startDate, endDate),
         ])) as [any, any, any, number, number]
 
         const paymentsData = payments || []
@@ -323,13 +323,13 @@ export class ReportService {
         }
       },
       600, // 10 mins cache
-      tenantId,
+      storeId,
     )
   }
 
   async getSupplierLedger(ctx: RequestContextDto, supplierId: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSupplierLedger.`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `ledger:supplier:${supplierId}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -395,13 +395,13 @@ export class ReportService {
         }
       },
       600, // 10 mins cache
-      tenantId,
+      storeId,
     )
   }
 
   async getCustomerLedger(ctx: RequestContextDto, customerId: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCustomerLedger.`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `ledger:customer:${customerId}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -471,13 +471,13 @@ export class ReportService {
         }
       },
       600, // 10 mins cache
-      tenantId,
+      storeId,
     )
   }
 
   async getCashFlow(ctx: RequestContextDto, period: string = 'last30days') {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCashFlow.`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `cashflow:${period}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -577,7 +577,7 @@ export class ReportService {
         }
       },
       600, // 10 mins cache
-      tenantId,
+      storeId,
     )
   }
 
@@ -590,7 +590,7 @@ export class ReportService {
     customerId?: string,
   ) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called exportReport.`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const startDate = startDateStr ? new Date(startDateStr) : new Date(0)
     const endDate = endDateStr ? new Date(endDateStr) : new Date()
     endDate.setHours(23, 59, 59, 999)
@@ -616,14 +616,14 @@ export class ReportService {
       }
       case 'expenses': {
         const filtered = await this.expenseService.findAllExpensesRaw(ctx, startDate, endDate)
-        csvContent = csvRow(['Date', 'Category', 'Description', 'Amount', 'Tenant ID'])
+        csvContent = csvRow(['Date', 'Category', 'Description', 'Amount', 'Store ID'])
         filtered.forEach((e: any) => {
           csvContent += csvRow([
             e.expenseDate,
             e.category,
             e.description || '',
             e.amount,
-            e.tenantId,
+            e.storeId,
           ])
         })
         break
@@ -747,7 +747,7 @@ export class ReportService {
 
   async getFinanceSummary(ctx: RequestContextDto, startDateStr?: string, endDateStr?: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `finance:summary:${startDateStr || 'none'}:${endDateStr || 'none'}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -864,7 +864,7 @@ export class ReportService {
         }
       },
       600, // 10 mins cache
-      tenantId,
+      storeId,
     )
   }
 }

@@ -13,7 +13,7 @@ export class AiUsageLogService {
 
   async record(params: RecordAiUsageParams): Promise<void> {
     await this.usageRepo.insert({
-      tenantId: params.tenantId,
+      storeId: params.storeId,
       endpoint: params.endpoint.slice(0, 128),
       operation: params.operation,
       model: params.model.slice(0, 128),
@@ -32,7 +32,7 @@ export class AiUsageLogService {
     }
   }
 
-  async getSummary(tenantId: string, days = 30): Promise<AiUsageSummaryDto> {
+  async getSummary(storeId: string, days = 30): Promise<AiUsageSummaryDto> {
     const safeDays = Math.min(Math.max(days, 1), 90)
     const since = new Date()
     since.setUTCDate(since.getUTCDate() - safeDays)
@@ -40,7 +40,7 @@ export class AiUsageLogService {
 
     const logs = await this.usageRepo
       .createQueryBuilder('log')
-      .where('log.tenant_id = :tenantId', { tenantId })
+      .where('log.store_id = :storeId', { storeId })
       .andWhere('log.created_at >= :since', { since })
       .orderBy('log.created_at', 'ASC')
       .getMany()

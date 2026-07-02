@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { JournalEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/journal-entry.entity'
 import { LedgerEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/ledger-entry.entity'
 import {
@@ -21,7 +21,7 @@ describe('Accounting Module (e2e)', () => {
   let dataSource: DataSource
   let accountingService: AccountingService
   let outboxService: AccountingOutboxService
-  let tenant: TenantEntity
+  let store: StoreEntity
   let ctx: RequestContextDto
 
   beforeAll(async () => {
@@ -36,26 +36,26 @@ describe('Accounting Module (e2e)', () => {
     accountingService = app.get(AccountingService)
     outboxService = app.get(AccountingOutboxService)
 
-    // Create a mock tenant for testing
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    // Create a mock store for testing
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'E2E Test Accounting Store',
       subdomain: `e2e-test-acc-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
 
     ctx = new RequestContextDto()
-    ctx.tenantId = tenant.id
+    ctx.storeId = store.id
     ctx.userId = '00000000-0000-0000-0000-000000000000'
 
-    // Initialize Chart of Accounts for this tenant
-    await accountingService.initializeTenantCOA(ctx)
+    // Initialize Chart of Accounts for this store
+    await accountingService.initializeStoreCOA(ctx)
   })
 
   afterAll(async () => {
-    if (tenant) {
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      await tenantRepo.delete(tenant.id)
+    if (store) {
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      await storeRepo.delete(store.id)
     }
     if (app) {
       await app.close()
@@ -175,7 +175,7 @@ describe('Accounting Module (e2e)', () => {
         startDate: new Date('2020-01-01T00:00:00Z'),
         endDate: new Date('2020-12-31T23:59:59Z'),
         status: FiscalPeriodStatus.CLOSED,
-        tenantId: tenant.id,
+        storeId: store.id,
       })
       await fiscalRepo.save(closedPeriod)
 
@@ -234,7 +234,7 @@ describe('Accounting Module (e2e)', () => {
       // 4. Verify corresponding Journal Entry is created
       const matchingJournal = await journalRepo.findOne({
         where: {
-          tenantId: tenant.id,
+          storeId: store.id,
           description: 'Outbox testing entry',
         },
       })

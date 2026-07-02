@@ -56,7 +56,7 @@ describe('CacheService Exclusions', () => {
     const allowedKeys = [
       'products:list:all',
       'categories:list',
-      'tenant:gowtam:settings',
+      'store:gowtam:settings',
       'brands:list',
       'analytics:revenue',
       'courier:pathao:token', // contains 'token' but not verification/email/auth
@@ -95,18 +95,18 @@ describe('CacheService Exclusions', () => {
 
       for (const key of allowedKeys) {
         // 1. GET
-        await service.getCache(key, 'tenant-1')
+        await service.getCache(key, 'store-1')
         expect(mockRepository.get).toHaveBeenCalled()
         mockRepository.get.mockClear()
 
         // 2. SET
-        await service.setCache(key, 'val', 300, 'tenant-1')
+        await service.setCache(key, 'val', 300, 'store-1')
         expect(mockRepository.set).toHaveBeenCalled()
         mockRepository.set.mockClear()
 
         // 3. REMEMBER
         const fetcher = jest.fn().mockResolvedValue('fresh')
-        const result = await service.rememberCache(key, fetcher, 300, 'tenant-1')
+        const result = await service.rememberCache(key, fetcher, 300, 'store-1')
         expect(result).toBe('fresh')
         expect(mockRepository.get).toHaveBeenCalled()
         expect(mockRepository.set).toHaveBeenCalled()

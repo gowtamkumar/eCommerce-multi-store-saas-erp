@@ -52,8 +52,8 @@ export class AuditLogInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest()
     const { method, ip, user, headers } = request
 
-    // Extract tenant ID, branch ID, and warehouse ID
-    const tenantId = request.tenantId || headers['x-tenant-id']
+    // Extract store ID, branch ID, and warehouse ID
+    const storeId = request.storeId || headers['x-store-id']
     const branchId = request.branchId || headers['x-branch-id'] || request.body?.branchId || null
     const warehouseId =
       request.warehouseId || headers['x-warehouse-id'] || request.body?.warehouseId || null
@@ -69,8 +69,8 @@ export class AuditLogInterceptor implements NestInterceptor {
     const emit = (oldValue: Record<string, any> | null): Observable<any> =>
       next.handle().pipe(
         tap(() => {
-          // Guard: no tenantId = nothing to audit
-          if (!tenantId) return
+          // Guard: no storeId = nothing to audit
+          if (!storeId) return
 
           const auditData = {
             userId: user?.id,
@@ -88,7 +88,7 @@ export class AuditLogInterceptor implements NestInterceptor {
           }
 
           const ctx = {
-            tenantId,
+            storeId,
             userId: user?.id,
             user,
             branchId,
@@ -118,7 +118,7 @@ export class AuditLogInterceptor implements NestInterceptor {
       return emit(null)
     }
 
-    return from(this.loadOldValue(auditOptions.entity, entityId, tenantId)).pipe(
+    return from(this.loadOldValue(auditOptions.entity, entityId, storeId)).pipe(
       switchMap((oldValue) => emit(oldValue)),
     )
   }
@@ -126,14 +126,14 @@ export class AuditLogInterceptor implements NestInterceptor {
   /**
    * Resolves the prior persisted state of an entity by its declared audit name and id.
    * The audit `entity` string (e.g. "Brand") is matched against the TypeORM entity
-   * class name (e.g. "BrandEntity"). Tenant scoping is applied when the entity carries
-   * a `tenantId` column. Returns null when the entity cannot be resolved or found, so
+   * class name (e.g. "BrandEntity"). Store scoping is applied when the entity carries
+   * a `storeId` column. Returns null when the entity cannot be resolved or found, so
    * audit logging degrades gracefully instead of throwing.
    */
   private async loadOldValue(
     entityName: string,
     id: string,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<Record<string, any> | null> {
     try {
       const metadata = this.dataSource.entityMetadatas.find(
@@ -142,9 +142,9 @@ export class AuditLogInterceptor implements NestInterceptor {
       if (!metadata) return null
 
       const where: Record<string, any> = { id }
-      const hasTenantColumn = metadata.columns.some((c) => c.propertyName === 'tenantId')
-      if (hasTenantColumn && tenantId) {
-        where.tenantId = tenantId
+      const hasStoreColumn = metadata.columns.some((c) => c.propertyName === 'storeId')
+      if (hasStoreColumn && storeId) {
+        where.storeId = storeId
       }
 
       const repo = this.dataSource.getRepository(metadata.target)

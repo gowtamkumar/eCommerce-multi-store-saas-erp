@@ -30,7 +30,7 @@ export interface UpdateRoleDto {
 }
 
 /**
- * Manages the lifecycle of roles within a tenant.
+ * Manages the lifecycle of roles within a store.
  * Enforces the rule that system roles (isSystemRole=true) cannot be modified or deleted.
  */
 @Injectable()
@@ -60,7 +60,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
   }
 
   /**
-   * Tenant "Super Admin" system roles are provisioned at signup with a snapshot of
+   * Store "Super Admin" system roles are provisioned at signup with a snapshot of
    * permissions. Keep them in sync when new platform permissions are introduced.
    */
   async syncSystemRolePermissions(): Promise<number> {
@@ -118,16 +118,16 @@ export class RoleManagementService implements OnApplicationBootstrap {
   }
 
   private async invalidateAllPermissionCaches(): Promise<void> {
-    await this.permissionResolutionService.invalidateTenantPermissionCaches()
+    await this.permissionResolutionService.invalidateStorePermissionCaches()
   }
 
   // ─────────────────────────────────────────────────────────────────
   // Role CRUD
   // ─────────────────────────────────────────────────────────────────
 
-  async getAllRoles(tenantId: string): Promise<RoleEntity[]> {
+  async getAllRoles(storeId: string): Promise<RoleEntity[]> {
     return this.roleRepo.find({
-      where: [{ tenantId }, { isSystemDefault: true }],
+      where: [{ storeId }, { isSystemDefault: true }],
       relations: {
         permissions: true,
       },
@@ -135,9 +135,9 @@ export class RoleManagementService implements OnApplicationBootstrap {
     })
   }
 
-  async getRoleById(roleId: string, tenantId: string): Promise<RoleEntity> {
+  async getRoleById(roleId: string, storeId: string): Promise<RoleEntity> {
     const role = await this.roleRepo.findOne({
-      where: { id: roleId, tenantId },
+      where: { id: roleId, storeId },
       relations: {
         permissions: true,
       },
@@ -147,12 +147,12 @@ export class RoleManagementService implements OnApplicationBootstrap {
   }
 
   async createRole(
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     dto: CreateRoleDto,
   ): Promise<RoleEntity> {
-    this.logger.log(`Creating role "${dto.name}" for tenant ${tenantId}`)
+    this.logger.log(`Creating role "${dto.name}" for store ${storeId}`)
 
     const permissions = dto.permissionCodes?.length
       ? await this.permissionRepo.find({ where: { code: In(dto.permissionCodes) } })
@@ -161,7 +161,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
     const role = this.roleRepo.create({
       name: dto.name,
       description: dto.description,
-      tenantId,
+      storeId,
       permissions,
       isSystemRole: false,
       isSystemDefault: false,
@@ -170,7 +170,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
     const saved = await this.roleRepo.save(role)
 
     await this.auditLogService.logRoleCreated(
-      tenantId,
+      storeId,
       actorId,
       actorName,
       saved.id,
@@ -183,12 +183,12 @@ export class RoleManagementService implements OnApplicationBootstrap {
 
   async updateRole(
     roleId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     dto: UpdateRoleDto,
   ): Promise<RoleEntity> {
-    const role = await this.getRoleById(roleId, tenantId)
+    const role = await this.getRoleById(roleId, storeId)
 
     if (role.isSystemRole) {
       throw new ForbiddenException('System roles cannot be modified.')
@@ -217,40 +217,40 @@ export class RoleManagementService implements OnApplicationBootstrap {
       permissions: saved.permissions?.map((p) => p.code) ?? [],
     }
 
-    await this.auditLogService.logRoleModified(tenantId, actorId, actorName, roleId, before, after)
+    await this.auditLogService.logRoleModified(storeId, actorId, actorName, roleId, before, after)
 
     // Invalidate permission cache for all users assigned to this role
-    await this.invalidateCacheForRoleUsers(roleId, tenantId)
+    await this.invalidateCacheForRoleUsers(roleId, storeId)
 
     return saved
   }
 
   async deleteRole(
     roleId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
   ): Promise<void> {
-    const role = await this.getRoleById(roleId, tenantId)
+    const role = await this.getRoleById(roleId, storeId)
 
     if (role.isSystemRole) {
       throw new ForbiddenException('System roles cannot be deleted.')
     }
 
-    await this.auditLogService.logRoleDeleted(tenantId, actorId, actorName, roleId, role.name)
-    await this.invalidateCacheForRoleUsers(roleId, tenantId)
+    await this.auditLogService.logRoleDeleted(storeId, actorId, actorName, roleId, role.name)
+    await this.invalidateCacheForRoleUsers(roleId, storeId)
     await this.roleRepo.remove(role)
   }
 
   async cloneRole(
     sourceRoleId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     newName: string,
   ): Promise<RoleEntity> {
-    const source = await this.getRoleById(sourceRoleId, tenantId)
-    return this.createRole(tenantId, actorId, actorName, {
+    const source = await this.getRoleById(sourceRoleId, storeId)
+    return this.createRole(storeId, actorId, actorName, {
       name: newName,
       description: `Cloned from: ${source.name}`,
       permissionCodes: source.permissions?.map((p) => p.code) ?? [],
@@ -263,24 +263,24 @@ export class RoleManagementService implements OnApplicationBootstrap {
 
   async assignPermissionsToRole(
     roleId: string,
-    tenantId: string,
+    storeId: string,
     actorId: string,
     actorName: string,
     permissionCodes: string[],
   ): Promise<RoleEntity> {
-    return this.updateRole(roleId, tenantId, actorId, actorName, { permissionCodes })
+    return this.updateRole(roleId, storeId, actorId, actorName, { permissionCodes })
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Tenant Bootstrap
+  // Store Bootstrap
   // ─────────────────────────────────────────────────────────────────
 
   /**
-   * Seed the Super Admin system role for a new tenant.
-   * Called during tenant creation. Gets ALL available permissions.
+   * Seed the Super Admin system role for a new store.
+   * Called during store creation. Gets ALL available permissions.
    * isSystemRole = true — immutable and non-deletable.
    */
-  async seedSuperAdminRole(tenantId: string, manager?: EntityManager): Promise<RoleEntity> {
+  async seedSuperAdminRole(storeId: string, manager?: EntityManager): Promise<RoleEntity> {
     const repo = getTransactionalRepo(RoleEntity, this.roleRepo, manager)
     const permRepo = getTransactionalRepo(PermissionEntity, this.permissionRepo, manager)
 
@@ -289,7 +289,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
     const superAdminRole = repo.create({
       name: 'Super Admin',
       description: 'Full access to all features and settings. Cannot be modified or deleted.',
-      tenantId,
+      storeId,
       isSystemRole: true,
       isSystemDefault: true,
       permissions: allPermissions,
@@ -299,10 +299,10 @@ export class RoleManagementService implements OnApplicationBootstrap {
   }
 
   /**
-   * Seed the 7 default roles for a new tenant.
-   * These are deletable/modifiable by the tenant admin (isSystemRole = false).
+   * Seed the 7 default roles for a new store.
+   * These are deletable/modifiable by the store admin (isSystemRole = false).
    */
-  async seedDefaultRoles(tenantId: string, manager?: EntityManager): Promise<RoleEntity[]> {
+  async seedDefaultRoles(storeId: string, manager?: EntityManager): Promise<RoleEntity[]> {
     const repo = getTransactionalRepo(RoleEntity, this.roleRepo, manager)
     const permRepo = getTransactionalRepo(PermissionEntity, this.permissionRepo, manager)
 
@@ -311,7 +311,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
     const savedRoles: RoleEntity[] = []
 
     for (const def of defaultRoleDefs) {
-      const existingRole = await repo.findOne({ where: { name: def.name, tenantId } })
+      const existingRole = await repo.findOne({ where: { name: def.name, storeId } })
       if (existingRole) {
         savedRoles.push(existingRole)
         continue
@@ -324,7 +324,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
       const role = repo.create({
         name: def.name,
         description: def.description,
-        tenantId,
+        storeId,
         isSystemRole: false,
         isSystemDefault: false,
         permissions,
@@ -344,9 +344,9 @@ export class RoleManagementService implements OnApplicationBootstrap {
    * When a role is modified or deleted, invalidate the cached manifests
    * of all users currently assigned to that role.
    */
-  private async invalidateCacheForRoleUsers(roleId: string, tenantId: string): Promise<void> {
+  private async invalidateCacheForRoleUsers(roleId: string, storeId: string): Promise<void> {
     const assignments = await this.assignmentRepo.find({
-      where: { roleId, tenantId },
+      where: { roleId, storeId },
       select: {
         userId: true,
       },
@@ -354,7 +354,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
 
     await Promise.all(
       assignments.map((a) =>
-        this.permissionResolutionService.invalidateUserPermissionCache(a.userId, tenantId),
+        this.permissionResolutionService.invalidateUserPermissionCache(a.userId, storeId),
       ),
     )
   }

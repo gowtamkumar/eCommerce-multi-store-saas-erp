@@ -3,7 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'type
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { DepartmentEntity } from './department.entity'
 import { DesignationEntity } from './designation.entity'
 import { EmployeePersonalDetailsEntity } from './employee-personal-details.entity'
@@ -29,12 +29,12 @@ export class EmployeeEntity extends BaseEntity {
   @OneToMany(() => PerformanceReviewEntity, (review) => review.employee)
   performanceReviews: PerformanceReviewEntity[]
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
   branchId: string

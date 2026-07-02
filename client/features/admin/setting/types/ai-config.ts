@@ -8,27 +8,27 @@ export type AiProviderId =
   | 'google'
   | 'custom'
 
-export interface TenantAiStorefrontConfigForm {
+export interface StoreAiStorefrontConfigForm {
   shoppingAssistantEnabled: boolean
   productQaEnabled: boolean
   semanticSearchEnabled: boolean
 }
 
-export interface TenantAiAutomationConfigForm {
+export interface StoreAiAutomationConfigForm {
   productSeoOnCreate: boolean
   bulkDescriptionOnImport: boolean
   abandonedCartDraft: boolean
   demandForecastEnabled: boolean
 }
 
-export interface TenantAiSensitiveConfigForm {
+export interface StoreAiSensitiveConfigForm {
   /** Allow AI for HRM module (leave, recruitment, payroll, performance). Default: true */
   hrmEnabled: boolean
   /** Allow AI for Finance module (AR, AP, tax, expense, ledger). Default: true */
   financeEnabled: boolean
 }
 
-export interface TenantAiConfigForm {
+export interface StoreAiConfigForm {
   enabled: boolean
   provider: AiProviderId
   apiKey: string
@@ -40,12 +40,12 @@ export interface TenantAiConfigForm {
   siteName: string
   maxTokens: number
   temperature: number
-  storefront: TenantAiStorefrontConfigForm
-  automation: TenantAiAutomationConfigForm
-  sensitive: TenantAiSensitiveConfigForm
+  storefront: StoreAiStorefrontConfigForm
+  automation: StoreAiAutomationConfigForm
+  sensitive: StoreAiSensitiveConfigForm
 }
 
-export interface TenantAiConfigResponse {
+export interface StoreAiConfigResponse {
   enabled: boolean
   provider: string
   hasApiKey: boolean
@@ -58,9 +58,9 @@ export interface TenantAiConfigResponse {
   siteName?: string
   maxTokens?: number
   temperature?: number
-  storefront?: TenantAiStorefrontConfigForm
-  automation?: TenantAiAutomationConfigForm
-  sensitive?: TenantAiSensitiveConfigForm
+  storefront?: StoreAiStorefrontConfigForm
+  automation?: StoreAiAutomationConfigForm
+  sensitive?: StoreAiSensitiveConfigForm
 }
 
 export interface StorefrontAiStatus {
@@ -92,7 +92,7 @@ export interface EmbeddingIndexStatus {
   }
 }
 
-export function getEmbeddingFormWarning(form: TenantAiConfigForm): string | null {
+export function getEmbeddingFormWarning(form: StoreAiConfigForm): string | null {
   if (!form.enabled || !form.storefront.semanticSearchEnabled) {
     return null
   }
@@ -108,20 +108,20 @@ export function getEmbeddingFormWarning(form: TenantAiConfigForm): string | null
   return null;
 }
 
-export const DEFAULT_STOREFRONT_AI_CONFIG: TenantAiStorefrontConfigForm = {
+export const DEFAULT_STOREFRONT_AI_CONFIG: StoreAiStorefrontConfigForm = {
   shoppingAssistantEnabled: true,
   productQaEnabled: true,
   semanticSearchEnabled: true,
 }
 
-export const DEFAULT_AUTOMATION_AI_CONFIG: TenantAiAutomationConfigForm = {
+export const DEFAULT_AUTOMATION_AI_CONFIG: StoreAiAutomationConfigForm = {
   productSeoOnCreate: false,
   bulkDescriptionOnImport: true,
   abandonedCartDraft: true,
   demandForecastEnabled: false,
 }
 
-export const DEFAULT_SENSITIVE_AI_CONFIG: TenantAiSensitiveConfigForm = {
+export const DEFAULT_SENSITIVE_AI_CONFIG: StoreAiSensitiveConfigForm = {
   hrmEnabled: true,
   financeEnabled: true,
 }
@@ -199,7 +199,7 @@ export const AI_PROVIDER_OPTIONS: Array<{
   },
 ]
 
-export const DEFAULT_AI_CONFIG_FORM: TenantAiConfigForm = {
+export const DEFAULT_AI_CONFIG_FORM: StoreAiConfigForm = {
   enabled: false,
   provider: 'openai',
   apiKey: '',

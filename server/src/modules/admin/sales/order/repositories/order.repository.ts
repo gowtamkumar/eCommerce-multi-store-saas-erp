@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,7 +7,7 @@ import { OrderEntity } from '../entities/order.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class OrderRepository extends BaseTenantRepository<OrderEntity> {
+export class OrderRepository extends BaseStoreRepository<OrderEntity> {
   constructor(
     @InjectRepository(OrderEntity)
     repo: Repository<OrderEntity>,
@@ -23,15 +23,15 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
     const repo = this.txRepo(manager)
     const order = repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as Partial<OrderEntity>)
     return repo.save(order)
   }
 
-  async findOrderById(id: string, tenantId: string): Promise<OrderEntity | null> {
+  async findOrderById(id: string, storeId: string): Promise<OrderEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         items: {
           product: true,
@@ -45,19 +45,19 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
 
   async findOrderByTransactionId(
     transactionId: string,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<OrderEntity | null> {
     return await this.repo.findOne({
-      where: { transactionId, ...(tenantId ? { tenantId } : {}) },
+      where: { transactionId, ...(storeId ? { storeId } : {}) },
     })
   }
 
   async findOrderByTrackingId(
     trackingId: string,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<OrderEntity | null> {
     return await this.repo.findOne({
-      where: { trackingId, ...(tenantId ? { tenantId } : {}) },
+      where: { trackingId, ...(storeId ? { storeId } : {}) },
       relations: {
         items: {
           product: true,
@@ -69,7 +69,7 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
 
   async findOrderByInvoiceCode(
     invoiceCode: string,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<OrderEntity | null> {
     const queryBuilder = this.repo
       .createQueryBuilder('order')
@@ -80,16 +80,16 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
         invoiceCode: invoiceCode.toUpperCase(),
       })
 
-    if (tenantId) {
-      queryBuilder.andWhere('order.tenantId = :tenantId', { tenantId })
+    if (storeId) {
+      queryBuilder.andWhere('order.storeId = :storeId', { storeId })
     }
 
     return await queryBuilder.getOne()
   }
 
-  async findOneForCourier(id: string, tenantId: string): Promise<OrderEntity | null> {
+  async findOneForCourier(id: string, storeId: string): Promise<OrderEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         items: {
           product: true,
@@ -99,8 +99,8 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
     })
   }
 
-  async countByTenant(tenantId: string): Promise<number> {
-    return await this.repo.count({ where: { tenantId } })
+  async countByStore(storeId: string): Promise<number> {
+    return await this.repo.count({ where: { storeId } })
   }
 
   async saveOrder(order: OrderEntity): Promise<OrderEntity> {
@@ -108,7 +108,7 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
   }
   async findAllOrders(
     filterDto: any,
-    tenantId: string,
+    storeId: string,
   ): Promise<{ orders: OrderEntity[]; total: number }> {
     // this.logger.log(`${this.findAllOrders.name} Service Called`)
     const { page, limit, search, status, orderSource, paymentStatus, sortBy, sortOrder } = filterDto
@@ -132,7 +132,7 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
     // line items each order has.
     const filterQb = this.repo
       .createQueryBuilder('order')
-      .where('order.tenantId = :tenantId', { tenantId })
+      .where('order.storeId = :storeId', { storeId })
 
     if (status) {
       filterQb.andWhere('order.status = :status', { status })
@@ -198,7 +198,7 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
 
   async findByUserIdPaginated(
     userId: string,
-    tenantId: string,
+    storeId: string,
     page: number = 1,
     limit: number = 10,
     search?: string,
@@ -213,7 +213,7 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
       .leftJoinAndSelect('order.returns', 'returns')
       .leftJoinAndSelect('order.shippingAddress', 'shippingAddress')
       .where('order.userId = :userId', { userId })
-      .andWhere('order.tenantId = :tenantId', { tenantId })
+      .andWhere('order.storeId = :storeId', { storeId })
 
     if (search) {
       queryBuilder.andWhere(
@@ -236,17 +236,17 @@ export class OrderRepository extends BaseTenantRepository<OrderEntity> {
     return { orders, total }
   }
 
-  async countByUserId(userId: string, tenantId: string): Promise<number> {
-    return this.repo.count({ where: { userId, tenantId } })
+  async countByUserId(userId: string, storeId: string): Promise<number> {
+    return this.repo.count({ where: { userId, storeId } })
   }
-  async orderOverview(tenantId?: string): Promise<{
+  async orderOverview(storeId?: string): Promise<{
     totalOrders: number
     pendingOrders: number
     completedOrders: number
     cancelledOrders: number
   }> {
     // this.logger.log(`${this.orderOverview.name} Service Called`)
-    const where = tenantId ? { tenantId } : {}
+    const where = storeId ? { storeId } : {}
     const totalOrders = await this.repo.count({ where })
     const pendingOrders = await this.repo.count({
       where: { ...where, status: OrderStatus.PENDING },

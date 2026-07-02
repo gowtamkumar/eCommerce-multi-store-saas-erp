@@ -1,4 +1,4 @@
-Boss 😎 good question — this is **exactly** the right time to design it properly, because a **multi-tenant eCommerce page builder** can make or break your SaaS.
+Boss 😎 good question — this is **exactly** the right time to design it properly, because a **multi-store eCommerce page builder** can make or break your SaaS.
 
 I’ll explain **A → Z**, practical, SaaS-ready, and scalable.
 
@@ -6,15 +6,15 @@ I’ll explain **A → Z**, practical, SaaS-ready, and scalable.
 
 ## 1️⃣ Big Picture: What is your Page Builder?
 
-For a **multi-tenant eCommerce SaaS**, the page builder should be:
+For a **multi-store eCommerce SaaS**, the page builder should be:
 
 - 🔹 **Section-based** (like Shopify, Dukaan, Wix)
-- 🔹 **Config-driven** (JSON stored per tenant)
+- 🔹 **Config-driven** (JSON stored per store)
 - 🔹 **Reusable components**
 - 🔹 **Theme-aware**
 - 🔹 **No-code / low-code for store owners**
 
-Each store (tenant) can:
+Each store (store) can:
 
 - Add / remove sections
 - Reorder sections
@@ -206,13 +206,13 @@ Each **section** should follow the same structure 👇
 
 ---
 
-## 5️⃣ Database Design (Multi-Tenant Friendly)
+## 5️⃣ Database Design (Multi-Store Friendly)
 
 ### 🔹 pages table
 
 ```sql
 id
-tenant_id
+store_id
 slug
 type   -- home, product, cms
 ```

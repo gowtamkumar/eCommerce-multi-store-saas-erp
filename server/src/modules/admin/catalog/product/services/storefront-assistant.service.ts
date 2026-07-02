@@ -2,7 +2,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ProductStatus } from '@/common/enums/product-status.enum'
 import { FaqStatus } from '@/common/enums/faq-status.enum'
 import { CategoryRepository } from '@/modules/admin/catalog/category/category.repository'
-import { TenantAiClientService } from '@/modules/admin/ai/services/tenant-ai-client.service'
+import { StoreAiClientService } from '@/modules/admin/ai/services/store-ai-client.service'
 import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ProductEntity } from '../entities/product.entity'
@@ -24,16 +24,16 @@ export class StorefrontAssistantService {
     private readonly productRepository: ProductRepository,
     private readonly faqRepository: FaqRepository,
     private readonly categoryRepository: CategoryRepository,
-    private readonly tenantAiClient: TenantAiClientService,
+    private readonly storeAiClient: StoreAiClientService,
     private readonly storefrontAiConfig: StorefrontAiConfigService,
     private readonly productEmbeddingService: ProductEmbeddingService,
   ) {}
 
-  async getStatus(tenantId: string): Promise<StorefrontAiStatusDto> {
+  async getStatus(storeId: string): Promise<StorefrontAiStatusDto> {
     const [providerReady, flags, semanticIndexed] = await Promise.all([
-      this.storefrontAiConfig.isProviderReady(tenantId),
-      this.storefrontAiConfig.getStorefrontFlags(tenantId),
-      this.productEmbeddingService.hasSemanticSearchIndex(tenantId),
+      this.storefrontAiConfig.isProviderReady(storeId),
+      this.storefrontAiConfig.getStorefrontFlags(storeId),
+      this.productEmbeddingService.hasSemanticSearchIndex(storeId),
     ])
 
     return {
@@ -48,22 +48,22 @@ export class StorefrontAssistantService {
     }
   }
 
-  async isShoppingAssistantAvailable(tenantId: string): Promise<boolean> {
-    const status = await this.getStatus(tenantId)
+  async isShoppingAssistantAvailable(storeId: string): Promise<boolean> {
+    const status = await this.getStatus(storeId)
     return status.shoppingAssistantAvailable
   }
 
   async chat(
-    tenantId: string,
+    storeId: string,
     dto: StorefrontAssistantChatDto,
     _ctx: RequestContextDto,
   ): Promise<StorefrontAssistantChatResultDto> {
-    if (!(await this.isShoppingAssistantAvailable(tenantId))) {
+    if (!(await this.isShoppingAssistantAvailable(storeId))) {
       throw new ServiceUnavailableException('Shopping assistant is not available for this store')
     }
 
     const message = dto.message.trim()
-    const ragContext = await this.buildRagContext(tenantId, message, dto.brandName)
+    const ragContext = await this.buildRagContext(storeId, message, dto.brandName)
     const history = (dto.conversationHistory || [])
       .filter((entry) => entry.content?.trim())
       .slice(-8)
@@ -110,7 +110,7 @@ Return exactly this JSON shape:
     messages.push({ role: 'user', content: prompt })
 
     try {
-      const result = await this.tenantAiClient.chatCompletion(tenantId, messages, {
+      const result = await this.storeAiClient.chatCompletion(storeId, messages, {
         temperature: 0.35,
         maxTokens: 900,
         usageContext: { endpoint: 'products/storefront-ai/chat' },
@@ -124,7 +124,7 @@ Return exactly this JSON shape:
       })
 
       const suggestLiveChatHandoff = !!parsed.suggestLiveChatHandoff
-      void this.productEmbeddingService.recordAssistantEvent(tenantId, 'chat', suggestLiveChatHandoff)
+      void this.productEmbeddingService.recordAssistantEvent(storeId, 'chat', suggestLiveChatHandoff)
 
       return {
         answer: parsed.answer,
@@ -135,23 +135,23 @@ Return exactly this JSON shape:
         suggestLiveChatHandoff,
       }
     } catch (error) {
-      this.logger.error(`Shopping assistant chat failed for tenant ${tenantId}`, error)
+      this.logger.error(`Shopping assistant chat failed for store ${storeId}`, error)
       throw error
     }
   }
 
   private async buildRagContext(
-    tenantId: string,
+    storeId: string,
     message: string,
     brandName?: string,
   ): Promise<string> {
     let matchedProducts: ProductEntity[] = []
-    const canUseHybrid = await this.productEmbeddingService.canUseHybridSearch(tenantId)
+    const canUseHybrid = await this.productEmbeddingService.canUseHybridSearch(storeId)
 
     if (canUseHybrid) {
       try {
         const matchedIds = await this.productEmbeddingService.hybridSearchProductIds(
-          tenantId,
+          storeId,
           { q: message, status: ProductStatus.ACTIVE },
           12,
         )
@@ -159,7 +159,7 @@ Return exactly this JSON shape:
           matchedProducts = await this.productRepository.findByIdsWithFilters(
             matchedIds,
             { status: ProductStatus.ACTIVE },
-            tenantId,
+            storeId,
           )
         }
       } catch (error) {
@@ -170,22 +170,22 @@ Return exactly this JSON shape:
     if (matchedProducts.length === 0) {
       const [keywordProducts] = await this.productRepository.findAllWithFilters(
         { page: 1, limit: 12, q: message, status: ProductStatus.ACTIVE },
-        tenantId,
+        storeId,
       )
       matchedProducts = keywordProducts
     }
 
     const [categories, globalFaqs, matchedFaqsResult, catalogProductsResult] =
       await Promise.all([
-        this.categoryRepository.findAllByTenant(tenantId),
-        this.faqRepository.findGlobal(tenantId),
+        this.categoryRepository.findAllByStore(storeId),
+        this.faqRepository.findGlobal(storeId),
         this.faqRepository.findAllWithFilters(
           { page: 1, limit: 10, q: message, status: FaqStatus.ACTIVE },
-          tenantId,
+          storeId,
         ),
         this.productRepository.findAllWithFilters(
           { page: 1, limit: 24, status: ProductStatus.ACTIVE, sort: 'newest' },
-          tenantId,
+          storeId,
         ),
       ])
 

@@ -35,15 +35,15 @@ export class ProductProcessor extends WorkerHost {
   }
 
   async handleCreatePO(data: any) {
-    const { tenantId, ...rest } = data
-    this.logger.log(`Creating Purchase Order for tenant ${tenantId}`)
+    const { storeId, ...rest } = data
+    this.logger.log(`Creating Purchase Order for store ${storeId}`)
 
-    const po = await this.purchaseOrderService.createPurchaseOrder(rest, tenantId)
+    const po = await this.purchaseOrderService.createPurchaseOrder(rest, storeId)
 
     await this.purchaseOrderService.updatePurchaseOrderStatus(
       po.id,
       { status: PurchaseOrderStatus.RECEIVED },
-      tenantId,
+      storeId,
     )
 
     this.logger.log(`PO ${po.id} Created and Received Successfully`)
@@ -58,13 +58,13 @@ export class ProductProcessor extends WorkerHost {
       referenceType,
       referenceId,
       supplierId,
-      tenantId,
+      storeId,
       unitCost,
       warehouseId,
       branchId,
     } = data
     this.logger.log(
-      `Updating stock for product ${productId} (variant: ${variantId || 'none'}) for tenant ${tenantId}`,
+      `Updating stock for product ${productId} (variant: ${variantId || 'none'}) for store ${storeId}`,
     )
 
     await this.inventoryService.createLedgerEntry(
@@ -80,7 +80,7 @@ export class ProductProcessor extends WorkerHost {
         warehouseId,
         branchId,
       },
-      { tenantId } as any,
+      { storeId } as any,
     )
 
     this.logger.log(`Stock Updated Successfully for product ${productId}`)

@@ -62,11 +62,11 @@ describe('AiProcurementAssistantService', () => {
   })
 
   it('should generate three-way match explanation', async () => {
-    const result = await service.generateThreeWayMatchExplainer('tenant-1', {
+    const result = await service.generateThreeWayMatchExplainer('store-1', {
       invoiceId: 'invoice-1',
     })
 
-    expect(supplierInvoiceService.findOneInvoice).toHaveBeenCalledWith('invoice-1', { tenantId: 'tenant-1' })
+    expect(supplierInvoiceService.findOneInvoice).toHaveBeenCalledWith('invoice-1', { storeId: 'store-1' })
     expect(baseService.complete).toHaveBeenCalled()
     expect(result.matchStatus).toBe('DISCREPANCY')
     expect(result.explanationText).toContain('Discrepancy found')

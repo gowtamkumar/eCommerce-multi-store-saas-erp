@@ -47,11 +47,11 @@ export class AudienceService {
    * Deduplicates members by email to prevent double-sending.
    */
   async getAudience(
-    tenantId: string,
+    storeId: string,
     options: AudienceOptions = { targetUsers: true },
   ): Promise<AudienceMember[]> {
     this.logger.log(
-      `Fetching audience for tenant: ${tenantId} with options: ${JSON.stringify(options)}`,
+      `Fetching audience for store: ${storeId} with options: ${JSON.stringify(options)}`,
     )
 
     const membersMap = new Map<string, AudienceMember>()
@@ -59,7 +59,7 @@ export class AudienceService {
     // 1. Fetch Users
     if (options.targetUsers !== false) {
       const users = await this.userRepository.find({
-        where: { tenantId, status: 'active' as any },
+        where: { storeId, status: 'active' as any },
         select: {
           id: true,
           email: true,
@@ -87,7 +87,7 @@ export class AudienceService {
     // 2. Fetch Subscribers
     if (options.targetSubscribers) {
       const subscribers = await this.subscriberRepository.find({
-        where: { tenantId, isActive: true },
+        where: { storeId, isActive: true },
         select: {
           id: true,
           email: true,
@@ -108,7 +108,7 @@ export class AudienceService {
     // 3. Fetch Leads
     if (options.targetLeads) {
       const leads = await this.leadRepository.find({
-        where: { tenantId },
+        where: { storeId },
         select: {
           id: true,
           email: true,

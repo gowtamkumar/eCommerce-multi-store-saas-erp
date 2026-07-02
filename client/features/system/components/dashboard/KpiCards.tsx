@@ -25,11 +25,11 @@ interface KpiCardsProps {
 export default function KpiCards({ stats, isRefreshing }: KpiCardsProps) {
   const cards = useMemo<KpiCard[]>(
     () => [
-      { label: 'Total Stores', value: stats.totalTenants, icon: Store, gradient: 'from-indigo-500 to-purple-600', trend: stats.trends?.tenants || null, link: '/system/tenants' },
+      { label: 'Total Stores', value: stats.totalStores, icon: Store, gradient: 'from-indigo-500 to-purple-600', trend: stats.trends?.stores || null, link: '/system/stores' },
       { label: 'Total Users', value: stats.totalUsers, icon: Users, gradient: 'from-emerald-500 to-teal-600', trend: stats.trends?.users || null, link: '/system/users' },
       { label: 'Total Orders', value: stats.totalOrders, icon: BarChart3, gradient: 'from-amber-500 to-orange-600', trend: stats.trends?.orders || null, link: '/system/billing' },
       { label: '24h Requests', value: stats.requestsLast24h, icon: Activity, gradient: 'from-blue-500 to-cyan-600', trend: stats.trends?.traffic || null, link: '/system/health' },
-      { label: 'Reviews', value: stats.totalReviews || 0, icon: Star, gradient: 'from-pink-500 to-rose-600', trend: stats.trends?.reviews || null, link: '/system/tenants' },
+      { label: 'Reviews', value: stats.totalReviews || 0, icon: Star, gradient: 'from-pink-500 to-rose-600', trend: stats.trends?.reviews || null, link: '/system/stores' },
     ],
     [stats],
   );

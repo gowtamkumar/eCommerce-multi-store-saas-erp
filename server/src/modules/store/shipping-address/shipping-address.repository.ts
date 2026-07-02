@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { ShippingAddressEntity } from './entities/shipping-address.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class ShippingAddressRepository extends BaseTenantRepository<ShippingAddressEntity> {
+export class ShippingAddressRepository extends BaseStoreRepository<ShippingAddressEntity> {
   constructor(
     @InjectRepository(ShippingAddressEntity)
     repo: Repository<ShippingAddressEntity>,
@@ -14,9 +14,9 @@ export class ShippingAddressRepository extends BaseTenantRepository<ShippingAddr
     super(ShippingAddressEntity, repo)
 }
 
-  async findAllByUserId(userId: string, tenantId: string): Promise<ShippingAddressEntity[]> {
+  async findAllByUserId(userId: string, storeId: string): Promise<ShippingAddressEntity[]> {
     return await this.repo.find({
-      where: { userId, tenantId },
+      where: { userId, storeId },
       order: { isDefault: 'DESC' },
     })
   }
@@ -24,17 +24,17 @@ export class ShippingAddressRepository extends BaseTenantRepository<ShippingAddr
   async findById(
     id: string,
     userId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<ShippingAddressEntity | null> {
-    return await this.repo.findOne({ where: { id, userId, tenantId } })
+    return await this.repo.findOne({ where: { id, userId, storeId } })
   }
 
-  async unsetDefaults(userId: string, tenantId: string): Promise<void> {
-    await this.repo.update({ userId, tenantId }, { isDefault: false })
+  async unsetDefaults(userId: string, storeId: string): Promise<void> {
+    await this.repo.update({ userId, storeId }, { isDefault: false })
   }
 
   async createAndSave(data: any, ctx: RequestContextDto): Promise<ShippingAddressEntity> {
-    const address = this.repo.create({ ...data, userId: ctx.userId, tenantId: ctx.tenantId }) as any
+    const address = this.repo.create({ ...data, userId: ctx.userId, storeId: ctx.storeId }) as any
     return await this.repo.save(address)
   }
 

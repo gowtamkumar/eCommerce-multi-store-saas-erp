@@ -21,7 +21,7 @@ export class CogsService {
     ctx: RequestContextDto,
     manager: EntityManager,
   ): Promise<number> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     let remainingToProcess = Math.abs(quantityToConsume)
     let totalCogs = 0
 
@@ -32,7 +32,7 @@ export class CogsService {
         productId,
         variantId: variantId || undefined,
         warehouseId,
-        tenantId,
+        storeId,
         remainingQuantity: MoreThan(0),
       },
       order: { createdAt: 'ASC' },

@@ -20,7 +20,7 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
     settings: SiteSettingsEntity,
     options: PaymentStrategyOptions,
   ): Promise<PaymentInitiationResult> {
-    const { callbackUrl, tenantId, frontendUrl } = options
+    const { callbackUrl, storeId, frontendUrl } = options
 
     const store_id = settings.payment?.sslCommerzStoreId
     const store_passwd = settings.payment?.sslCommerzStorePassword
@@ -28,7 +28,7 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
     const app_url = callbackUrl
 
     if (!store_id || !store_passwd) {
-      this.logger.error(`SSLCommerz configuration missing for tenant: ${tenantId}`)
+      this.logger.error(`SSLCommerz configuration missing for store: ${storeId}`)
       throw new BadRequestException('SSLCommerz gateway not configured properly')
     }
 
@@ -70,7 +70,7 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
       ship_postcode: 'N/A',
       ship_country: 'Bangladesh',
       value_a: frontendUrl || app_url,
-      value_b: tenantId,
+      value_b: storeId,
     }
 
     const apiUrl = is_live
@@ -129,7 +129,7 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
   /**
    * Server-to-server validation against SSLCommerz' validator API. The caller
    * is responsible for supplying the merchant credentials we initiated with
-   * (platform creds for subscriptions, tenant creds for order payments).
+   * (platform creds for subscriptions, store creds for order payments).
    * We additionally re-check tran_id, currency and amount against the values
    * we recorded at initiation — this is what makes the flow safe against a
    * forged `tran_id` arriving at our callback endpoints.
@@ -184,8 +184,8 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
 
     // Defence-in-depth: confirm the validator's tran_id, amount, and currency
     // match what we recorded at initiation. This prevents a successful
-    // small-amount transaction in one tenant being replayed against a larger
-    // invoice in another tenant.
+    // small-amount transaction in one store being replayed against a larger
+    // invoice in another store.
     const gatewayTranId = String(payload?.tran_id ?? '')
     if (gatewayTranId && gatewayTranId !== transactionId) {
       this.logger.warn(

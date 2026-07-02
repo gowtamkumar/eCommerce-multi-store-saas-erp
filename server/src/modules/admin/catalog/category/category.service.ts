@@ -20,52 +20,52 @@ export class CategoryService {
     ctx: RequestContextDto,
   ): Promise<CategoryEntity> {
     this.logger.log(`${this.createCategory.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const existing = await this.categoryRepo.findBySlug(createCategoryDto.slug, tenantId)
+    const storeId = ctx.storeId
+    const existing = await this.categoryRepo.findBySlug(createCategoryDto.slug, storeId)
 
     if (existing) {
       throw new ConflictException('Category with this slug already exists')
     }
 
     const result = await this.categoryRepo.createAndSave(createCategoryDto, ctx)
-    await this.cache.delCache(`categories:list`, tenantId)
-    await this.cache.delCache(`categories:stats`, tenantId)
+    await this.cache.delCache(`categories:list`, storeId)
+    await this.cache.delCache(`categories:stats`, storeId)
     return result
   }
 
   async findAllCategories(ctx: RequestContextDto): Promise<CategoryEntity[]> {
     this.logger.log(`${this.findAllCategories.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `categories:list`
 
-    // If the request does not contain a tenant (e.g., super‑admin UI), fall back to
-    // returning all categories across tenants. This prevents a TypeORM error caused
+    // If the request does not contain a store (e.g., super‑admin UI), fall back to
+    // returning all categories across stores. This prevents a TypeORM error caused
     // by querying with an undefined UUID.
     const fetchFn = async () => {
-      if (tenantId) {
-        return this.categoryRepo.findAllByTenant(tenantId)
+      if (storeId) {
+        return this.categoryRepo.findAllByStore(storeId)
       }
-      // No tenant – return all categories (ordered by name) without a tenant filter.
+      // No store – return all categories (ordered by name) without a store filter.
       return this.categoryRepo.findAll()
     }
 
-    return this.cache.rememberCache(cacheKey, fetchFn, 600, tenantId)
+    return this.cache.rememberCache(cacheKey, fetchFn, 600, storeId)
   }
 
   async findAllCategoriesWithStats(ctx: RequestContextDto) {
     this.logger.log(`${this.findAllCategoriesWithStats.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `categories:stats`
 
     const fetchFn = async () => {
-      if (tenantId) {
-        const results = await this.categoryRepo.findAllWithProductCounts(tenantId)
+      if (storeId) {
+        const results = await this.categoryRepo.findAllWithProductCounts(storeId)
         return results.map((r) => ({
           ...r,
           productCount: Number(r.productCount || 0),
         }))
       }
-      // No tenant – compute stats for all categories.
+      // No store – compute stats for all categories.
       const qb = await this.categoryRepo.getAllCategoriesQueryBuilder()
       const results = await qb
         .select([
@@ -93,13 +93,13 @@ export class CategoryService {
       }))
     }
 
-    return this.cache.rememberCache(cacheKey, fetchFn, 600, tenantId)
+    return this.cache.rememberCache(cacheKey, fetchFn, 600, storeId)
   }
 
   async findOneCategory(id: string, ctx: RequestContextDto): Promise<CategoryEntity> {
     this.logger.log(`${this.findOneCategory.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const category = await this.categoryRepo.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const category = await this.categoryRepo.findById(id, storeId)
 
     if (!category) {
       throw new NotFoundException('Category not found')
@@ -114,11 +114,11 @@ export class CategoryService {
     ctx: RequestContextDto,
   ): Promise<CategoryEntity> {
     this.logger.log(`${this.updateCategory.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const category = await this.findOneCategory(id, ctx)
 
     if (updateCategoryDto.slug && updateCategoryDto.slug !== category.slug) {
-      const existing = await this.categoryRepo.findBySlug(updateCategoryDto.slug, tenantId)
+      const existing = await this.categoryRepo.findBySlug(updateCategoryDto.slug, storeId)
 
       if (existing) {
         throw new ConflictException('Category with this slug already exists')
@@ -126,8 +126,8 @@ export class CategoryService {
     }
 
     const result = await this.categoryRepo.updateAndSave(category, updateCategoryDto)
-    await this.cache.delCache(`categories:list`, tenantId)
-    await this.cache.delCache(`categories:stats`, tenantId)
+    await this.cache.delCache(`categories:list`, storeId)
+    await this.cache.delCache(`categories:stats`, storeId)
     return result
   }
 
@@ -136,11 +136,11 @@ export class CategoryService {
     ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeCategory.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const category = await this.findOneCategory(id, ctx)
     await this.categoryRepo.removeCategory(category)
-    await this.cache.delCache(`categories:list`, tenantId)
-    await this.cache.delCache(`categories:stats`, tenantId)
+    await this.cache.delCache(`categories:list`, storeId)
+    await this.cache.delCache(`categories:stats`, storeId)
     return { success: true, message: 'Category deleted successfully' }
   }
 }

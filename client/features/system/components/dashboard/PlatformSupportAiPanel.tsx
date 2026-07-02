@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 export function PlatformSupportAiPanel() {
   const { configured } = usePlatformAiConfig();
   const [ticketText, setTicketText] = useState("");
-  const [tenantContext, setTenantContext] = useState("");
+  const [storeContext, setStoreContext] = useState("");
   const [storeName, setStoreName] = useState("");
   const [planName, setPlanName] = useState("");
   const [enabledFeatures, setEnabledFeatures] = useState("");
@@ -40,7 +40,7 @@ export function PlatformSupportAiPanel() {
         method: "POST",
         body: JSON.stringify({
           conversationText: ticketText,
-          tenantContext: tenantContext || undefined,
+          storeContext: storeContext || undefined,
         }),
       });
       if (res.data) {
@@ -90,7 +90,7 @@ export function PlatformSupportAiPanel() {
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Platform support AI</h2>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Draft ticket summaries and new-tenant onboarding hints for Super Admin support — human review required.
+          Draft ticket summaries and new-store onboarding hints for Super Admin support — human review required.
         </p>
       </div>
 
@@ -116,9 +116,9 @@ export function PlatformSupportAiPanel() {
               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
             />
             <input
-              value={tenantContext}
-              onChange={(e) => setTenantContext(e.target.value)}
-              placeholder="Tenant context (plan, status, subdomain — optional)"
+              value={storeContext}
+              onChange={(e) => setStoreContext(e.target.value)}
+              placeholder="Store context (plan, status, subdomain — optional)"
               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
             />
             <button

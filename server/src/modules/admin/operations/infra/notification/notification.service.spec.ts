@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { NotificationEntity } from './entities/notification.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { NotificationGateway } from './notification.gateway'
 import { NotificationService } from './notification.service'
 
@@ -40,7 +40,7 @@ describe('NotificationService', () => {
           },
         },
         {
-          provide: getRepositoryToken(TenantEntity),
+          provide: getRepositoryToken(StoreEntity),
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),

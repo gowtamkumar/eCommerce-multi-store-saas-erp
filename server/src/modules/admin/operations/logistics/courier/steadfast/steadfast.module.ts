@@ -6,10 +6,10 @@ import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module
 import { SteadfastController } from '@/modules/admin/operations/logistics/courier/steadfast/steadfast.controller'
 import { SteadfastService } from '@/modules/admin/operations/logistics/courier/steadfast/steadfast.service'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
-  imports: [HttpModule, SettingsModule, OrderModule, CacheModule, TenantModule],
+  imports: [HttpModule, SettingsModule, OrderModule, CacheModule, StoreModule],
   controllers: [SteadfastController],
   providers: [SteadfastService],
   exports: [SteadfastService],

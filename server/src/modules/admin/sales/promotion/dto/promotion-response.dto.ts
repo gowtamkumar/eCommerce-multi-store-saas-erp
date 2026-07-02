@@ -40,7 +40,7 @@ export class PromotionResponseDto {
   isActive: boolean
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

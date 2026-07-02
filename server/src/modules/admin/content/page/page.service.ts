@@ -9,7 +9,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
-import { SuperAdminCrossTenantRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-tenant.repository'
+import { SuperAdminCrossStoreRepository } from '@/modules/system/super-admin/repositories/super-admin-cross-store.repository'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageEntity } from './entities/page.entity'
 import { PageRevisionRepository } from './page-revision.repository'
@@ -28,7 +28,7 @@ export class PageService {
     private readonly pageRevisionRepository: PageRevisionRepository,
     private readonly faqService: FaqService,
     private readonly cache: CacheService,
-    private readonly crossTenantRepository: SuperAdminCrossTenantRepository,
+    private readonly crossStoreRepository: SuperAdminCrossStoreRepository,
   ) {}
 
   private prepareDto(
@@ -95,7 +95,7 @@ export class PageService {
     }
 
     const existing = await this.pageRepository.findBySlug(prepared.slug!, ctx)
-    if (existing) throw new ConflictException('Slug already exists for this tenant')
+    if (existing) throw new ConflictException('Slug already exists for this store')
 
     if (prepared.isHomePage) {
       await this.pageRepository.unsetHomePage(ctx)
@@ -133,12 +133,12 @@ export class PageService {
 
   async findBySlugPage(slug: string, ctx: RequestContextDto): Promise<PageEntity> {
     this.logger.log(`${this.findBySlugPage.name} Service Called`)
-    await this.runScheduledPublishingForTenant(ctx.tenantId)
+    await this.runScheduledPublishingForStore(ctx.storeId)
     const normalizedSlug = normalizePageSlug(slug, false)
     const cacheKey = `slug:${normalizedSlug}`
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
+    const cached = await this.cache.getCache<PageEntity>(cacheKey, storeId)
     if (cached) {
       if (cached.status !== PageStatus.PUBLISHED) throw new NotFoundException('Page not found')
       return cached
@@ -151,17 +151,17 @@ export class PageService {
     const enriched = await this.enrichPageWithFaqs(page, ctx)
     const result = JSON.parse(JSON.stringify(enriched))
 
-    await this.cache.setCache(cacheKey, result, this.CACHE_TTL, tenantId)
+    await this.cache.setCache(cacheKey, result, this.CACHE_TTL, storeId)
     return result
   }
 
   async findHomePage(ctx: RequestContextDto): Promise<PageEntity | null> {
     this.logger.log(`${this.findHomePage.name} Service Called`)
-    await this.runScheduledPublishingForTenant(ctx.tenantId)
+    await this.runScheduledPublishingForStore(ctx.storeId)
     const cacheKey = `home`
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
+    const cached = await this.cache.getCache<PageEntity>(cacheKey, storeId)
     if (cached) {
       if (cached.status !== PageStatus.PUBLISHED) return null
       return cached
@@ -173,7 +173,7 @@ export class PageService {
     const enriched = await this.enrichPageWithFaqs(page, ctx)
     const result = JSON.parse(JSON.stringify(enriched))
 
-    await this.cache.setCache(cacheKey, result, this.HOME_CACHE_TTL, tenantId)
+    await this.cache.setCache(cacheKey, result, this.HOME_CACHE_TTL, storeId)
     return result
   }
 
@@ -186,7 +186,7 @@ export class PageService {
     if (prepared.slug !== undefined && prepared.slug !== page.slug) {
       const existing = await this.pageRepository.findBySlug(prepared.slug, ctx)
       if (existing && existing.id !== page.id) {
-        throw new ConflictException('Slug already exists for this tenant')
+        throw new ConflictException('Slug already exists for this store')
       }
       await this.invalidatePageCache(ctx, oldSlug)
     }
@@ -267,20 +267,20 @@ export class PageService {
   }
 
   /**
-   * Lazy scheduler: every time a tenant's storefront is touched we check that
-   * tenant's own scheduled pages and publish anything that is due. This avoids
+   * Lazy scheduler: every time a store's storefront is touched we check that
+   * store's own scheduled pages and publish anything that is due. This avoids
    * needing a background worker while still feeling immediate to the visitor.
    */
-  private async runScheduledPublishingForTenant(tenantId: string): Promise<void> {
+  private async runScheduledPublishingForStore(storeId: string): Promise<void> {
     try {
-      const due = await this.pageRepository.findScheduledDue(new Date(), tenantId)
+      const due = await this.pageRepository.findScheduledDue(new Date(), storeId)
       if (!due.length) return
       for (const page of due) {
         page.status = PageStatus.PUBLISHED
         page.publishAt = null
         await this.pageRepository.updateAndSave(page, page)
-        await this.cache.delCache(`slug:${page.slug}`, tenantId)
-        if (page.isHomePage) await this.cache.delCache('home', tenantId)
+        await this.cache.delCache(`slug:${page.slug}`, storeId)
+        if (page.isHomePage) await this.cache.delCache('home', storeId)
         this.logger.log(`Auto-published scheduled page ${page.id} (${page.slug || 'home'})`)
       }
     } catch (err) {
@@ -301,9 +301,9 @@ export class PageService {
     return { success: true, message: 'Page deleted successfully' }
   }
 
-  async findAllPagesCrossTenant(): Promise<PageEntity[]> {
-    this.logger.log(`${this.findAllPagesCrossTenant.name} Service Called`)
-    return await this.crossTenantRepository.findAllPagesCrossTenant()
+  async findAllPagesCrossStore(): Promise<PageEntity[]> {
+    this.logger.log(`${this.findAllPagesCrossStore.name} Service Called`)
+    return await this.crossStoreRepository.findAllPagesCrossStore()
   }
 
   async enrichPageWithFaqs(page: PageEntity, ctx: RequestContextDto): Promise<PageEntity> {
@@ -351,30 +351,30 @@ export class PageService {
     return { ...page, sections: enrichedSections } as PageEntity
   }
 
-  async countByTenant(ctx: RequestContextDto): Promise<number> {
-    this.logger.log(`${this.countByTenant.name} Service Called`)
-    return await this.pageRepository.countByTenant(ctx)
+  async countByStore(ctx: RequestContextDto): Promise<number> {
+    this.logger.log(`${this.countByStore.name} Service Called`)
+    return await this.pageRepository.countByStore(ctx)
   }
 
-  /** Invalidate storefront page caches for a tenant (e.g. after FAQ updates). */
-  async invalidateAllPageCachesForTenant(tenantId: string): Promise<void> {
-    await this.cache.delCache('home', tenantId)
+  /** Invalidate storefront page caches for a store (e.g. after FAQ updates). */
+  async invalidateAllPageCachesForStore(storeId: string): Promise<void> {
+    await this.cache.delCache('home', storeId)
     const pages = await this.pageRepository.findAllWithStatus(
-      { tenantId } as RequestContextDto,
+      { storeId } as RequestContextDto,
       undefined,
       { publishedOnly: false },
     )
     await Promise.all(
-      pages.filter((p) => p.slug).map((p) => this.cache.delCache(`slug:${p.slug}`, tenantId)),
+      pages.filter((p) => p.slug).map((p) => this.cache.delCache(`slug:${p.slug}`, storeId)),
     )
   }
 
   private async invalidatePageCache(ctx: RequestContextDto, slug?: string) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     if (slug === 'home') {
-      await this.cache.delCache('home', tenantId)
+      await this.cache.delCache('home', storeId)
     } else if (slug) {
-      await this.cache.delCache(`slug:${slug}`, tenantId)
+      await this.cache.delCache(`slug:${slug}`, storeId)
     }
   }
 }

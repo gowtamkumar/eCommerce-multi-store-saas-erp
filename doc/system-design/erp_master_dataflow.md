@@ -7,7 +7,7 @@
 > Where the older READMEs or design docs claim a behaviour that does not match the code, this document follows the **code** and the discrepancy is logged in §33.
 
 **Stack:** NestJS 11 · TypeORM (PostgreSQL) · Redis · BullMQ · Next.js 15 (App Router) · NextAuth
-**Architecture:** Modular monolith · Tenant-scoped · Append-only ledgers · Transactional outbox · BullMQ side-effects
+**Architecture:** Modular monolith · Store-scoped · Append-only ledgers · Transactional outbox · BullMQ side-effects
 **Last verified against code:** May 25, 2026
 
 ---
@@ -25,17 +25,17 @@
 
 **Part I — Cross-cutting dataflow**
 1. [Request lifecycle (browser → DB → response)](#1-request-lifecycle-browser--db--response)
-2. [Tenant, Branch & Permission resolution](#2-tenant-branch--permission-resolution)
+2. [Store, Branch & Permission resolution](#2-store-branch--permission-resolution)
 3. [Transaction boundaries](#3-transaction-boundaries)
 4. [The Outbox + BullMQ side-effect machinery](#4-the-outbox--bullmq-side-effect-machinery)
 5. [Money & Stock — the four append-only ledgers](#5-money--stock--the-four-append-only-ledgers)
-6. [Multi-tenant invariants every flow must honour](#6-multi-tenant-invariants-every-flow-must-honour)
+6. [Multi-store invariants every flow must honour](#6-multi-store-invariants-every-flow-must-honour)
 7. [Client → Server contract (how Next.js calls Nest)](#7-client--server-contract-how-nextjs-calls-nest)
 
 **Part II — Module-by-module dataflow**
 8. [Identity & Authentication](#8-identity--authentication)
 9. [RBAC (Roles & Permissions)](#9-rbac-roles--permissions)
-10. [Tenant onboarding & Subscription](#10-tenant-onboarding--subscription)
+10. [Store onboarding & Subscription](#10-store-onboarding--subscription)
 11. [Organization (Branch · Warehouse · Bin)](#11-organization-branch--warehouse--bin)
 12. [Catalog (Product · Variant · Pricing · Category · Brand · Review)](#12-catalog-product--variant--pricing--category--brand--review)
 13. [Sales Order — Online](#13-sales-order--online)
@@ -77,7 +77,7 @@
 │      → features/<area>/...      (UI components, hooks)          │
 │      → services/<area>.ts       (fetch wrappers)                │
 │      → services/api.ts: fetchAPI()                              │
-│         · sets x-tenant-id  (cookie/host-derived)               │
+│         · sets x-store-id  (cookie/host-derived)               │
 │         · sets x-branch-id  (localStorage)                      │
 │         · sets Authorization: Bearer <NextAuth JWT>             │
 └────────────────────────────┬────────────────────────────────────┘
@@ -89,10 +89,10 @@
 │   → cookieParser → express.json{20mb}                           │
 │                                                                 │
 │ AppModule middleware:                                           │
-│   TenantContextMiddleware  ──▶ req.tenantId (from x-tenant-id)  │
+│   StoreContextMiddleware  ──▶ req.storeId (from x-store-id)  │
 │                                                                 │
 │ Global guards (order = registration order):                     │
-│   1) TenantStatusGuard    : block SUSPENDED/EXPIRED tenants     │
+│   1) StoreStatusGuard    : block SUSPENDED/EXPIRED stores     │
 │   2) BranchScopeGuard     : non-admin sees only own branch      │
 │   3) PermissionsGuard     : @RequirePermissions(...)            │
 │                                                                 │
@@ -130,7 +130,7 @@
                 │ PostgreSQL          │    │  Redis (cache +  │
                 │  · ledgers          │    │   BullMQ broker) │
                 │  · OLTP tables      │    │   key prefix     │
-                │  · accounting_outbox│    │   t:{tenantId}:* │
+                │  · accounting_outbox│    │   t:{storeId}:* │
                 └─────────────────────┘    └──────────────────┘
 ```
 
@@ -154,7 +154,7 @@
 
 ```76:103:server/src/app.module.ts
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
-    { provide: APP_GUARD, useClass: TenantStatusGuard },
+    { provide: APP_GUARD, useClass: StoreStatusGuard },
     { provide: APP_GUARD, useClass: BranchScopeGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
@@ -166,7 +166,7 @@
 
 | # | Primitive | Where in code | Why |
 | - | --------- | ------------- | --- |
-| 1 | **Tenant id is read from the `x-tenant-id` header by middleware**, never the body. | `server/src/common/middleware/tenant-context.middleware.ts` | Prevents tenant-injection. |
+| 1 | **Store id is read from the `x-store-id` header by middleware**, never the body. | `server/src/common/middleware/store-context.middleware.ts` | Prevents store-injection. |
 | 2 | **Branch is read from `x-branch-id` header**; non-admins are pinned to `user.branchId`. | `server/src/common/guards/branch-scope.guard.ts` | Branch isolation. |
 | 3 | **JWT is route-level, not global** (route stacks `@UseGuards(JwtAuthGuard, …)`). | `server/src/common/guards/jwt-auth.guard.ts` + controllers | Allows public webhooks (Pathao/Steadfast/SSL Commerz IPN). |
 | 4 | **Append-only ledgers** (`journal_entries`, `ledger_entries`, `inventory_ledger`, `wallet_ledger`, `ar_ledger`, `supplier_ap_ledger`) **throw on update/delete** via `@BeforeUpdate()` / `@BeforeRemove()`. | `journal-entry.entity.ts`, `ledger-entry.entity.ts` | GAAP-compliance + audit trail. |
@@ -174,7 +174,7 @@
 | 6 | **Multi-row writes are wrapped in `dataSource.transaction(...)` or `queryRunner.startTransaction()`** — never raw repository sequences. | `OrderService.createOrder()`, `GrnService.verifyGrn()`, `StockTransferService.ship()`, `HrmService.processPayroll()` | All-or-nothing. |
 | 7 | **Idempotency for POS offline sales** uses the **`offlineSaleId`** column UNIQUE on `orders` (not "clientSaleId" as docs say). | `pos.service.ts: syncPosSale()` + `OrderEntity.offlineSaleId` | Re-syncs are no-ops. |
 | 8 | **BullMQ queues actually registered**: `order`, `product`, `campaign`, `loyalty`. There are **no others**. | `queue.module.ts`, `*.processor.ts` | Bounded operational surface. |
-| 9 | **Permissions are dynamic** (DB-driven), not hard-coded. `@RequirePermissions('orders:create')` is resolved per request against `user_role_assignments` + `role_permissions` + `permission_overrides`. | `permissions.guard.ts`, `rbac/*` | Tenant-customisable RBAC. |
+| 9 | **Permissions are dynamic** (DB-driven), not hard-coded. `@RequirePermissions('orders:create')` is resolved per request against `user_role_assignments` + `role_permissions` + `permission_overrides`. | `permissions.guard.ts`, `rbac/*` | Store-customisable RBAC. |
 | 10 | **Subscription gating is route-level** via `@RequireFeature('hrm.payroll' | 'pos' | …)`. | `subscription.guard.ts` | Plan tiers gate features without code branches. |
 | 11 | **Response envelope** is `{ success: true, statusCode, data }`. Errors are `{ success: false, statusCode, timestamp, path, message, error }`. | `transform.interceptor.ts`, `exception-filter.ts` | Stable client contract. |
 | 12 | **Audit is on demand**: only routes decorated with `@Audit({entity, action})` log; the interceptor reads request method/url/ip/user/headers/body/params and writes asynchronously. | `audit-log.interceptor.ts` | Avoids audit-log spam on read-only endpoints. |
@@ -212,7 +212,7 @@ Use this legend when reading every diagram and table below. It separates **data 
 
 | Data category | Add allowed? | Update allowed? | Remove allowed? | Rule |
 | ------------- | ------------ | --------------- | --------------- | ---- |
-| Master data (`products`, `categories`, `branches`, `warehouses`, `suppliers`) | Yes | Yes, with tenant scope | Prefer soft-delete (`deleted_at`) | Master rows are editable, but historical documents keep snapshots. |
+| Master data (`products`, `categories`, `branches`, `warehouses`, `suppliers`) | Yes | Yes, with store scope | Prefer soft-delete (`deleted_at`) | Master rows are editable, but historical documents keep snapshots. |
 | Business documents (`orders`, `purchase_orders`, `grn`, `payroll_batches`) | Yes | Only state/status and controlled fields | Usually no hard delete | Move through state machines; do not erase history after approval/posting. |
 | Ledgers (`journal_entries`, `ledger_entries`, `inventory_ledger`, `wallet_ledger`, `ar_ledger`, `supplier_ap_ledger`) | Yes, append-only | No | No | Corrections use reversing rows, never mutation. |
 | Temporary user data (`carts`, `cart_items`, sessions) | Yes | Yes | Yes | Cart/session data can be removed because it is not accounting truth. |
@@ -232,12 +232,12 @@ flowchart LR
   end
 
   subgraph Security["Request security"]
-    TenantCtx["TenantContextMiddleware"]
-    Guards["TenantStatusGuard<br/>BranchScopeGuard<br/>PermissionsGuard<br/>JwtAuthGuard<br/>SubscriptionGuard"]
+    StoreCtx["StoreContextMiddleware"]
+    Guards["StoreStatusGuard<br/>BranchScopeGuard<br/>PermissionsGuard<br/>JwtAuthGuard<br/>SubscriptionGuard"]
   end
 
   subgraph Platform["System modules"]
-    Tenant["Tenant"]
+    Store["Store"]
     Subscription["Subscription + Plans"]
     Org["Organization<br/>Branch/Warehouse/Bin"]
     RBAC["RBAC + Users"]
@@ -283,12 +283,12 @@ flowchart LR
     Chat["Chat/Notification"]
   end
 
-  AdminUI --> TenantCtx --> Guards
-  Storefront --> TenantCtx
-  SystemUI --> TenantCtx
-  SupplierPortal --> TenantCtx
+  AdminUI --> StoreCtx --> Guards
+  Storefront --> StoreCtx
+  SystemUI --> StoreCtx
+  SupplierPortal --> StoreCtx
 
-  Guards --> Tenant
+  Guards --> Store
   Guards --> Subscription
   Guards --> RBAC
   Guards --> Org
@@ -350,10 +350,10 @@ This is the same diagram in table form. Use it when you need to answer: **"If I 
 
 | Module | Owns / source-of-truth tables | Reads from | Writes to / calls | Downstream side-effects |
 | ------ | ----------------------------- | ---------- | ----------------- | ----------------------- |
-| Auth/User | `users`, `sessions` | `tenants`, `roles` | `sessions`, `users.refresh_token` | JWT identity for every secured module. |
+| Auth/User | `users`, `sessions` | `stores`, `roles` | `sessions`, `users.refresh_token` | JWT identity for every secured module. |
 | RBAC | `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `permission_overrides` | `users`, `branches`, `warehouses` | permission checks in guards | Blocks or allows all admin writes. |
-| Tenant/Subscription | `tenants`, `subscription_plans`, `subscription_invoices` | `users` | `subscription_invoices` | `SubscriptionGuard` gates modules such as POS, HRM, Campaigns. |
-| Organization | `branches`, `warehouses`, `warehouse_bins` | `tenants`, `users` | branch/warehouse master data | Branch/warehouse scope for orders, stock, payroll, reports. |
+| Store/Subscription | `stores`, `subscription_plans`, `subscription_invoices` | `users` | `subscription_invoices` | `SubscriptionGuard` gates modules such as POS, HRM, Campaigns. |
+| Organization | `branches`, `warehouses`, `warehouse_bins` | `stores`, `users` | branch/warehouse master data | Branch/warehouse scope for orders, stock, payroll, reports. |
 | Catalog | `products`, `product_variants`, `categories`, `brands`, `price_books`, `reviews` | `warehouses`, `suppliers` | product master, variants, batches | Inventory, Cart, Order, POS, Campaign audience. |
 | Cart | `carts`, `cart_items` | `products`, `product_variants`, `coupons`, `wallet_ledger` | `carts`, `cart_items` | Feeds checkout/order creation. |
 | Order | `orders`, `order_items`, `order_returns` | Catalog, Coupon, Wallet, Inventory ATP, Customer | `orders`, `order_items`, `stock_reservations`, `inventory_ledger`, `wallet_ledger`, `ar_ledger`, `accounting_outbox` | Invoice job, notification job, fulfillment, GL posting. |
@@ -371,7 +371,7 @@ This is the same diagram in table form. Use it when you need to answer: **"If I 
 | Loyalty | `loyalty_ledger`, `loyalty_tier_rules`, `users.membership_tier` | Orders, Customers | loyalty ledger, user tier cache | Loyalty balance in storefront and customer profile. |
 | CRM | `leads`, `subscribers`, customer fields on `users` | Orders, Wallet, AR, Loyalty | lead/subscriber/customer rows | Campaign audience, support context, B2B credit rules. |
 | Fulfillment/Courier | `fulfillment_tasks`, `fulfillment_items`, courier fields on `orders` | Orders, Reservations, Warehouses | fulfillment rows, order tracking/status fields | Courier API call, webhook updates. |
-| Reporting | no source-of-truth writes | GL, AR, AP, Inventory, Orders, Payroll | read-only projections | Tenant owner, accountant, manager dashboards. |
+| Reporting | no source-of-truth writes | GL, AR, AP, Inventory, Orders, Payroll | read-only projections | Store owner, accountant, manager dashboards. |
 | Infra | `audit_logs`, `notifications`, `files`, `campaign_logs`, queue state | All modules | cache, files, messages, notifications, audit rows | Operational reliability and support traceability. |
 
 ## 0.7 Core business-cycle diagrams
@@ -499,12 +499,12 @@ The system has **eleven** observable stages on every HTTP request. The stages an
 
 | # | Stage | Owner | What it does | Reads | Writes |
 | - | ----- | ----- | ------------ | ----- | ------ |
-| 1 | **Network ingress** | Reverse proxy / Next.js rewrite | TLS termination, host → tenant routing for custom domains. | TLS + Host | — |
+| 1 | **Network ingress** | Reverse proxy / Next.js rewrite | TLS termination, host → store routing for custom domains. | TLS + Host | — |
 | 2 | **Next.js page render** | `client/app/**/page.tsx` | Server-rendered shell + client-rendered widgets. | NextAuth session cookie | — |
-| 3 | **Client fetch wrapper** | `client/services/api.ts: fetchAPI()` | Adds `x-tenant-id`, `x-branch-id`, `Authorization: Bearer`. | tenant resolver, localStorage, NextAuth session | HTTP headers |
+| 3 | **Client fetch wrapper** | `client/services/api.ts: fetchAPI()` | Adds `x-store-id`, `x-branch-id`, `Authorization: Bearer`. | store resolver, localStorage, NextAuth session | HTTP headers |
 | 4 | **Nest bootstrap pipeline** | `server/src/main.ts` | `ValidationPipe(whitelist+transform)`, CORS, compression, cookieParser, `json({limit:'20mb'})`. | request body | normalises DTO |
-| 5 | **TenantContextMiddleware** | `common/middleware/tenant-context.middleware.ts` | Mandatory `x-tenant-id`; throws `BadRequestException('Tenant context missing')` otherwise. | `req.headers['x-tenant-id']` | `req.tenantId` |
-| 6 | **Global guards** | `TenantStatusGuard → BranchScopeGuard → PermissionsGuard` (registration order in `AppModule`). | See §2. | — |
+| 5 | **StoreContextMiddleware** | `common/middleware/store-context.middleware.ts` | Mandatory `x-store-id`; throws `BadRequestException('Store context missing')` otherwise. | `req.headers['x-store-id']` | `req.storeId` |
+| 6 | **Global guards** | `StoreStatusGuard → BranchScopeGuard → PermissionsGuard` (registration order in `AppModule`). | See §2. | — |
 | 7 | **Route-level guards** | Controller `@UseGuards(JwtAuthGuard, SubscriptionGuard, RolesGuard?)` | JWT verify, feature gating, role check. | JWT, `subscription_plans.features`, `request.user.role` | `request.user` |
 | 8 | **Controller** | `*.controller.ts` | Maps HTTP → service method, applies DTO transforms. | DTO | — |
 | 9 | **Service** | `*.service.ts` | Business logic; opens TX with `dataSource.transaction(...)` for multi-row writes; inserts append-only ledger rows; inserts `accounting_outbox` rows; enqueues BullMQ jobs. | repositories | DB rows |
@@ -515,31 +515,31 @@ The system has **eleven** observable stages on every HTTP request. The stages an
 
 | # | Stage | Owner | Job names | Behaviour |
 | - | ----- | ----- | --------- | --------- |
-| A | BullMQ `order` consumer | `server/src/modules/admin/sales/order/queue/order.processor.ts` | `create-invoice`, `send-order-notification`, `sweep-expired-reservations`, `process-accounting-outbox` | Reads pending `accounting_outbox` rows for the tenant and posts journals. |
+| A | BullMQ `order` consumer | `server/src/modules/admin/sales/order/queue/order.processor.ts` | `create-invoice`, `send-order-notification`, `sweep-expired-reservations`, `process-accounting-outbox` | Reads pending `accounting_outbox` rows for the store and posts journals. |
 | B | BullMQ `product` consumer | `server/src/modules/admin/catalog/product/queue/product.processor.ts` | `create-purchase-order`, `update-stock` | Writes `inventory_ledger` rows (FEFO batch allocation when applicable). |
 | C | BullMQ `campaign` consumer | `marketing/campaign/queue/campaign.processor.ts` | `start-campaign`, `send-message` | Walks audience, dispatches mail/SMS/push. |
 | D | BullMQ `loyalty` consumer | `marketing/loyalty/queue/tier-scheduler.processor.ts` | `assess-tiers` | Re-evaluates `users.membership_tier` from rolling 12-month spend. |
 
 > **The architecture has no `EventEmitter2`**. Where the codebase-understanding docs and the top-level `doc/README.md` list domain events (`order.paid`, `grn.verified`, `payroll.batch.approved`, …), the **actual mechanism is the `accounting_outbox` table + the BullMQ `order` queue**. See §33 for the discrepancy.
 
-## 2. Tenant, Branch & Permission resolution
+## 2. Store, Branch & Permission resolution
 
 ### 2.1 The five-step resolution pipeline
 
 ```
-            Header: x-tenant-id            Header: x-branch-id            JWT: sub=user_id
+            Header: x-store-id            Header: x-branch-id            JWT: sub=user_id
                   │                              │                               │
                   ▼                              ▼                               ▼
 ┌─────────────────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────────────┐
-│ TenantContextMiddleware         │  │ BranchScopeGuard         │  │ PermissionsGuard            │
+│ StoreContextMiddleware         │  │ BranchScopeGuard         │  │ PermissionsGuard            │
 │ ─ throws if missing             │  │ ─ admins pass through    │  │ ─ admins pass through       │
-│ ─ writes req.tenantId           │  │ ─ non-admins forced to   │  │ ─ resolves @RequirePermissions │
+│ ─ writes req.storeId           │  │ ─ non-admins forced to   │  │ ─ resolves @RequirePermissions │
 └────────────┬────────────────────┘  │   user.branchId          │  │ ─ supports scope (branch/   │
              │                       │ ─ if header missing &    │  │   warehouse via x-scope-id) │
              ▼                       │   user has branchId,     │  │ ─ checks                    │
 ┌─────────────────────────────────┐  │   writes header back     │  │   role_permissions ∪        │
-│ TenantStatusGuard               │  └─────────────────────────┘  │   permission_overrides      │
-│ ─ loads tenant by req.tenantId  │                               └─────────────────────────────┘
+│ StoreStatusGuard               │  └─────────────────────────┘  │   permission_overrides      │
+│ ─ loads store by req.storeId  │                               └─────────────────────────────┘
 │ ─ blocks SUSPENDED/EXPIRED      │
 │   unless @PublicDuringExpiration│
 └─────────────────────────────────┘
@@ -550,24 +550,24 @@ The system has **eleven** observable stages on every HTTP request. The stages an
 | Decorator | Read by | Effect |
 | --------- | ------- | ------ |
 | `@Public()` | `JwtAuthGuard`, `SubscriptionGuard`, `PermissionsGuard` | Skips all three. |
-| `@PublicDuringExpiration()` | `TenantStatusGuard` | Allows access even on `SUSPENDED`/`EXPIRED` tenant (used for billing UI). |
+| `@PublicDuringExpiration()` | `StoreStatusGuard` | Allows access even on `SUSPENDED`/`EXPIRED` store (used for billing UI). |
 | `@RequireFeature('hrm.payroll')` | `SubscriptionGuard` | Reads `subscription_plans.features` JSON. |
 | `@RequirePermissions('orders:create')` | `PermissionsGuard` | Resolves dynamic permission via RBAC tables. |
 | `@Roles('ADMIN','MANAGER')` | `RolesGuard` | Static check against `users.role` enum. |
 | `@Audit({entity:'order', action:'create'})` | `AuditLogInterceptor` | Persists `audit_logs` row post-success. |
 | `@CurrentUser()` | controllers | Returns `request.user`. |
-| `@TenantId()` | controllers | Returns `request.tenantId || x-tenant-id`. |
-| `@RequestContext()` | controllers | Returns `{userId, tenantId, branchId, user, sessionId}`. |
+| `@StoreId()` | controllers | Returns `request.storeId || x-store-id`. |
+| `@RequestContext()` | controllers | Returns `{userId, storeId, branchId, user, sessionId}`. |
 
 ### 2.3 Worked example — POST `/orders`
 
 | Step | Component | Side effect |
 | ---- | --------- | ----------- |
-| 1 | `TenantContextMiddleware` | `req.tenantId = '8e3a…'` |
-| 2 | `TenantStatusGuard` | `tenants` row loaded; `status='ACTIVE'` ✔ |
+| 1 | `StoreContextMiddleware` | `req.storeId = '8e3a…'` |
+| 2 | `StoreStatusGuard` | `stores` row loaded; `status='ACTIVE'` ✔ |
 | 3 | `BranchScopeGuard` | header `x-branch-id` = `b-01`, matches user.branchId ✔ |
 | 4 | `PermissionsGuard` | reads `@RequirePermissions('orders:create')`; admin pass-through OR DB check passes |
-| 5 | `JwtAuthGuard` (route-level) | verifies JWT; `request.user = {id, role, tenantId, branchId,…}` |
+| 5 | `JwtAuthGuard` (route-level) | verifies JWT; `request.user = {id, role, storeId, branchId,…}` |
 | 6 | `SubscriptionGuard` | route does not declare `@RequireFeature`, skip |
 | 7 | `OrderController.createOrder()` → `OrderService.createOrder()` | full TX (see §13) |
 
@@ -637,7 +637,7 @@ A standard `EventEmitter2.emit('order.paid', ...)` cannot guarantee any of these
 | Column | Type | Notes |
 | ------ | ---- | ----- |
 | `id` | uuid PK | |
-| `tenant_id` | uuid | Always tenant-scoped. |
+| `store_id` | uuid | Always store-scoped. |
 | `event` | varchar(100) | Today: `'CREATE_JOURNAL_ENTRY'`. Designed extensible. |
 | `payload` | jsonb | Headed by `{ journalType, description, referenceType, referenceId, lines:[{accountCode, side, amount}…] }`. |
 | `status` | varchar(50) default `'PENDING'` | `PENDING` / `PROCESSING` / `COMPLETED` / `FAILED`. |
@@ -646,7 +646,7 @@ A standard `EventEmitter2.emit('order.paid', ...)` cannot guarantee any of these
 | `created_at` | timestamptz | |
 | `processed_at` | timestamptz nullable | Set when status → COMPLETED. |
 
-Indexes: `(status, created_at)`, `(tenant_id, status)`.
+Indexes: `(status, created_at)`, `(store_id, status)`.
 
 ### 4.3 End-to-end flow
 
@@ -705,7 +705,7 @@ There are **four immutable ledgers** in the system. Every financial or stock tru
 | Field | Sample value | Source code |
 | ----- | ------------ | ----------- |
 | `id` | `je_8f3b…` | PK |
-| `tenant_id` | `t_8e3a…` | from ctx |
+| `store_id` | `t_8e3a…` | from ctx |
 | `date` | `2026-05-25 14:42:11+06` | TX time |
 | `type` | `SALE` | `JournalType` enum (`SALE`, `PURCHASE`, `PAYROLL`, `EXPENSE`, `WALLET`, `ADJUSTMENT`, `RETURN`, …) |
 | `description` | `Sale completion order ORD-2026-00123` | Service-generated |
@@ -724,7 +724,7 @@ There are **four immutable ledgers** in the system. Every financial or stock tru
 | `side` | `DEBIT` | `CREDIT` | `CREDIT` |
 | `amount` | `1200.00` | `1000.00` | `200.00` |
 | `balance_after` | (running snapshot for the account) | … | … |
-| `tenant_id` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` |
+| `store_id` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` |
 
 **Invariant**: `SUM(side='DEBIT'.amount) = SUM(side='CREDIT'.amount)` per `journal_entry_id`. Enforced in the service before commit.
 
@@ -746,7 +746,7 @@ There are **four immutable ledgers** in the system. Every financial or stock tru
 | `cogs_amount` | 0 | `240.00` (FEFO-cost-weighted) | 0 | 0 |
 | `reference_type` | `ORDER` | `ORDER` | `GOODS_RECEIVED_NOTE` | `STOCK_TRANSFER` |
 | `reference_id` | `o_a1b2…` | `o_a1b2…` | `grn_…` | `tr_…` |
-| `tenant_id` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` |
+| `store_id` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` |
 
 > See [§6.6 of `erp_master_database_design.md`](erp_master_database_design.md#66-inventory--wms-tables) for the full schema.
 
@@ -761,7 +761,7 @@ There are **four immutable ledgers** in the system. Every financial or stock tru
 | `currency` | `BDT` | `BDT` | `BDT` |
 | `reference_type` | `MANUAL` | `MANUAL` | `ORDER` (or `POS_SALE`) |
 | `reference_id` | NULL | NULL | `o_a1b2…` |
-| `tenant_id` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` |
+| `store_id` | `t_8e3a…` | `t_8e3a…` | `t_8e3a…` |
 
 > Important: for **redemption inside an order/POS**, `WalletService` is called with `skipGlPost: true`. The GL impact is then folded into the order's single SALE journal (DR `2300` Wallet Liability rather than emitting a separate WALLET journal). This avoids double counting.
 
@@ -789,15 +789,15 @@ There are **four immutable ledgers** in the system. Every financial or stock tru
 | `reference_type` | `GRN` | `SUPPLIER_PAYMENT` |
 | `reference_id` | `grn_…` | `sp_…` |
 
-## 6. Multi-tenant invariants every flow must honour
+## 6. Multi-store invariants every flow must honour
 
 Every service must satisfy **all five** of the following — they are tested in the integration suite under `server/test/`:
 
-1. **No write reaches the DB without a `tenantId`.** Repositories enforce this; missing `tenantId` → 400.
-2. **Every SELECT query filters by `tenant_id` first**, even if the table is small and even if subsequent filters look unique.
-3. **No FK ever crosses tenants.** `branches.tenant_id`, `warehouses.tenant_id`, `products.tenant_id` … form a tenant-cohesive graph. (Composite FK is the *planned* enforcement; see master DB design §8.)
-4. **Redis keys** always start with `t:{tenantId}:`. Tenant deletion can flush `t:<id>:*` in one operation.
-5. **Files in S3** are partitioned by tenant prefix (`tenants/{tenantId}/...`).
+1. **No write reaches the DB without a `storeId`.** Repositories enforce this; missing `storeId` → 400.
+2. **Every SELECT query filters by `store_id` first**, even if the table is small and even if subsequent filters look unique.
+3. **No FK ever crosses stores.** `branches.store_id`, `warehouses.store_id`, `products.store_id` … form a store-cohesive graph. (Composite FK is the *planned* enforcement; see master DB design §8.)
+4. **Redis keys** always start with `t:{storeId}:`. Store deletion can flush `t:<id>:*` in one operation.
+5. **Files in S3** are partitioned by store prefix (`stores/{storeId}/...`).
 
 ## 7. Client → Server contract (how Next.js calls Nest)
 
@@ -808,7 +808,7 @@ Every service must satisfy **all five** of the following — they are tested in 
 | Header / setting | Source | Server consumer |
 | ---------------- | ------ | --------------- |
 | `Authorization: Bearer <token>` | NextAuth session via `getServerSession`/`useSession` | `JwtAuthGuard`, `PermissionsGuard` |
-| `x-tenant-id` | `getTenantId()` (resolves from cookie/subdomain/custom-domain) | `TenantContextMiddleware` |
+| `x-store-id` | `getStoreId()` (resolves from cookie/subdomain/custom-domain) | `StoreContextMiddleware` |
 | `x-branch-id` | `localStorage.getItem('x-branch-id')` (chosen in admin UI) | `BranchScopeGuard` |
 | `x-scope-id` | optional — for scoped permission checks | `PermissionsGuard` |
 
@@ -818,7 +818,7 @@ Base URL: `NEXT_PUBLIC_API_URL` (browser) or `API_URL_INTERNAL` (server-side fet
 
 | App segment | Audience | Service wrappers |
 | ----------- | -------- | ---------------- |
-| `client/app/admin/**` | Tenant staff (back-office) | `fetchAPI()` with bearer + tenant + branch headers. Examples: `services/accounting.ts`, `hrm.ts`, `procurement.ts`. |
+| `client/app/admin/**` | Store staff (back-office) | `fetchAPI()` with bearer + store + branch headers. Examples: `services/accounting.ts`, `hrm.ts`, `procurement.ts`. |
 | `client/app/system/**` | Platform super-admin | `services/supperAdminApi.ts: fetchSuperAdminAPI()` — requires platform super-admin JWT. |
 | `client/app/(user)/**`, `client/app/supplier-portal/**` | Customers, suppliers | `services/publicSaasApi .ts: fetchAPI()` for unauthenticated reads; cart/order endpoints require customer JWT. |
 
@@ -858,16 +858,16 @@ Base URL: `NEXT_PUBLIC_API_URL` (browser) or `API_URL_INTERNAL` (server-side fet
 Browser (NextAuth Credentials provider)
    │ POST /auth/login  { username, password, isAdmin? }
    ▼
-TenantContextMiddleware    ── reads x-tenant-id; sets req.tenantId
-TenantStatusGuard          ── ensures tenant ACTIVE
+StoreContextMiddleware    ── reads x-store-id; sets req.storeId
+StoreStatusGuard          ── ensures store ACTIVE
 BranchScopeGuard           ── pass (no x-branch-id yet)
 PermissionsGuard           ── route is @Public()
 AuthController.login()
    │
    ▼ AuthService.login(dto)
-       ├─ users repo: findOne by username & tenantId
+       ├─ users repo: findOne by username & storeId
        ├─ bcrypt.compare(password, user.password)
-       ├─ sign JWT { sub: user.id, role, tenantId, branchId }
+       ├─ sign JWT { sub: user.id, role, storeId, branchId }
        ├─ rotate refresh token; hash; write users.refresh_token
        ├─ create sessions row { user_id, refresh_token_hash, ip, user_agent, expires_at }
        └─ return { accessToken, refreshToken, user }
@@ -884,7 +884,7 @@ TransformInterceptor wraps response → { success:true, data:{ accessToken, … 
 | Table | Action | Sample row |
 | ----- | ------ | ---------- |
 | `users` | UPDATE `refresh_token`, `last_login_at` (where present) | — |
-| `sessions` | INSERT | `{ id, tenant_id, user_id, refresh_token_hash, ip:'1.2.3.4', user_agent:'…', expires_at }` |
+| `sessions` | INSERT | `{ id, store_id, user_id, refresh_token_hash, ip:'1.2.3.4', user_agent:'…', expires_at }` |
 
 ### 8.5 Side effects
 
@@ -895,8 +895,8 @@ TransformInterceptor wraps response → { success:true, data:{ accessToken, … 
 
 | Failure | Where caught | HTTP |
 | ------- | ------------ | ---- |
-| Wrong tenant or no `x-tenant-id` | `TenantContextMiddleware` | 400 `Tenant context missing` |
-| Suspended tenant | `TenantStatusGuard` | 403 |
+| Wrong store or no `x-store-id` | `StoreContextMiddleware` | 400 `Store context missing` |
+| Suspended store | `StoreStatusGuard` | 403 |
 | Wrong password | `AuthService` | 401 |
 | Expired JWT on later request | `JwtAuthGuard` (passport-jwt) | 401 |
 
@@ -907,7 +907,7 @@ TransformInterceptor wraps response → { success:true, data:{ accessToken, … 
 ### 9.1 Seed → assignment → check pipeline
 
 ```
-[ Platform seed ]                  [ Tenant admin assigns ]                [ Request time check ]
+[ Platform seed ]                  [ Store admin assigns ]                [ Request time check ]
 permissions table     ─────▶   user_role_assignments   ────────▶    PermissionsGuard reads
 ( seeded from script,          (user_id, role_id, scope_type,        @RequirePermissions metadata
   CRUD codes per module,       scope_id, expires_at?)                 → resolves per request
@@ -925,7 +925,7 @@ permissions table     ─────▶   user_role_assignments   ────�
 | Table | Sample row |
 | ----- | ---------- |
 | `permissions` | `{ id:'perm_orders_create', code:'orders:create', module:'sales', action:'create', is_system_default:true }` |
-| `roles` | `{ id:'role_manager', tenant_id:'t_8e3a…', name:'Manager', scope_type:'BRANCH', is_system_role:false }` |
+| `roles` | `{ id:'role_manager', store_id:'t_8e3a…', name:'Manager', scope_type:'BRANCH', is_system_role:false }` |
 | `role_permissions` | `{ role_id:'role_manager', permission_id:'perm_orders_create' }` |
 | `user_role_assignments` | `{ user_id:'u_1', role_id:'role_manager', scope_type:'BRANCH', scope_id:'b_01', expires_at:null }` |
 | `permission_overrides` | `{ user_id:'u_2', permission_id:'perm_orders_create', effect:'DENY', scope_type:'BRANCH', scope_id:'b_01' }` |
@@ -936,32 +936,32 @@ permissions table     ─────▶   user_role_assignments   ────�
 - Tables: [`erp_master_database_design.md` §6.2](erp_master_database_design.md#62-identity--rbac-tables).
 - Dynamic seed: [`developer/dynamic_role_feature_permission.md`](../developer/dynamic_role_feature_permission.md).
 
-## 10. Tenant onboarding & Subscription
+## 10. Store onboarding & Subscription
 
 ### 10.1 Trigger surfaces
 
 | Surface | Route | Endpoint |
 | ------- | ----- | -------- |
-| Sign up "Create your store" | `client/app/(user)/create-store/` | `POST /tenants/onboarding` |
+| Sign up "Create your store" | `client/app/(user)/create-store/` | `POST /stores/onboarding` |
 | Plan checkout | `client/app/billing/...` | `POST /subscription-billing/checkout` |
-| Custom-domain bind | admin settings | `POST /tenants/me/custom-domain` |
+| Custom-domain bind | admin settings | `POST /stores/me/custom-domain` |
 
 ### 10.2 Sequence — sign-up
 
 ```
-Customer → POST /tenants/onboarding { storeName, subdomain, ownerEmail, ownerPassword, planSlug? }
-TenantContextMiddleware: this route is in the allowlist — does NOT require x-tenant-id.
-TenantService.onboard()  (TX):
-   ├─ INSERT tenants { id, store_name, subdomain, status:'TRIAL', subscription_status:'TRIAL', subscription_plan_id }
-   ├─ INSERT users   { tenant_id, role:'ADMIN', is_email_verified:false, … }      ← becomes tenant owner
-   ├─ UPDATE tenants.user_id = owner.user.id
-   ├─ INSERT subscription_invoices { tenant_id, plan_id, status:'PENDING' }       ← trial period
+Customer → POST /stores/onboarding { storeName, subdomain, ownerEmail, ownerPassword, planSlug? }
+StoreContextMiddleware: this route is in the allowlist — does NOT require x-store-id.
+StoreService.onboard()  (TX):
+   ├─ INSERT stores { id, store_name, subdomain, status:'TRIAL', subscription_status:'TRIAL', subscription_plan_id }
+   ├─ INSERT users   { store_id, role:'ADMIN', is_email_verified:false, … }      ← becomes store owner
+   ├─ UPDATE stores.user_id = owner.user.id
+   ├─ INSERT subscription_invoices { store_id, plan_id, status:'PENDING' }       ← trial period
    └─ enqueue mail (verification + welcome)
    COMMIT
-   → returns { tenant, owner }; client stores tenant + JWT.
+   → returns { store, owner }; client stores store + JWT.
 ```
 
-### 10.3 State machine (tenants)
+### 10.3 State machine (stores)
 
 `TRIAL → ACTIVE → SUSPENDED → CANCELED`.
 `subscription_status`: `TRIAL → ACTIVE → PAST_DUE → CANCELED`.
@@ -970,15 +970,15 @@ TenantService.onboard()  (TX):
 
 | Table | Sample row |
 | ----- | ---------- |
-| `tenants` | `{ id:'t_8e3a…', store_name:'Demo Shop', subdomain:'demo', status:'TRIAL', subscription_plan_id:'pl_basic', subscription_status:'TRIAL', user_id:null }` |
-| `users` (owner) | `{ tenant_id:'t_8e3a…', role:'ADMIN', username:'demo_owner', password:'<bcrypt>', is_email_verified:false }` |
-| `subscription_invoices` | `{ tenant_id:'t_8e3a…', plan_id:'pl_basic', amount:0, status:'PENDING', due_at:'2026-06-08' }` |
+| `stores` | `{ id:'t_8e3a…', store_name:'Demo Shop', subdomain:'demo', status:'TRIAL', subscription_plan_id:'pl_basic', subscription_status:'TRIAL', user_id:null }` |
+| `users` (owner) | `{ store_id:'t_8e3a…', role:'ADMIN', username:'demo_owner', password:'<bcrypt>', is_email_verified:false }` |
+| `subscription_invoices` | `{ store_id:'t_8e3a…', plan_id:'pl_basic', amount:0, status:'PENDING', due_at:'2026-06-08' }` |
 
 ### 10.5 Cross-references
 
 - Onboarding doc: [`developer/onboarding_data_flow.md`](../developer/onboarding_data_flow.md).
 - Subscription gating: [`subscription_plan_entitlements.md`](subscription_plan_entitlements.md), [`erp_subscription_feature_completion_matrix.md`](erp_subscription_feature_completion_matrix.md).
-- Schema: [`erp_master_database_design.md` §6.1](erp_master_database_design.md#61-system--tenant-tables).
+- Schema: [`erp_master_database_design.md` §6.1](erp_master_database_design.md#61-system--store-tables).
 
 ## 11. Organization (Branch · Warehouse · Bin)
 
@@ -992,15 +992,15 @@ TenantService.onboard()  (TX):
 ### 11.2 Sequence (create branch)
 
 `BranchController.create()` → `OrganizationService.createBranch()` (no TX needed):
-- INSERT `branches { tenant_id, code, name, status:'ACTIVE', address, currency, time_zone }`
-- Optional: cache invalidate `t:{tenantId}:branches:*`.
+- INSERT `branches { store_id, code, name, status:'ACTIVE', address, currency, time_zone }`
+- Optional: cache invalidate `t:{storeId}:branches:*`.
 
 ### 11.3 Tables written
 
 | Table | Sample row |
 | ----- | ---------- |
-| `branches` | `{ id:'b_main', tenant_id:'t_8e3a…', code:'BR-01', name:'Dhaka HQ', status:'ACTIVE', currency:'BDT', time_zone:'Asia/Dhaka' }` |
-| `warehouses` | `{ id:'w_central', tenant_id, branch_id:'b_main', code:'WH-01', name:'Central WH', type:'STANDARD', status:'ACTIVE' }` |
+| `branches` | `{ id:'b_main', store_id:'t_8e3a…', code:'BR-01', name:'Dhaka HQ', status:'ACTIVE', currency:'BDT', time_zone:'Asia/Dhaka' }` |
+| `warehouses` | `{ id:'w_central', store_id, branch_id:'b_main', code:'WH-01', name:'Central WH', type:'STANDARD', status:'ACTIVE' }` |
 | `warehouse_bins` | `{ id:'bin_a1', warehouse_id:'w_central', code:'A-01', max_capacity:200 }` |
 
 ### 11.4 Cross-references
@@ -1026,18 +1026,18 @@ TenantService.onboard()  (TX):
 POST /products { name, sku, basePrice, categoryId, variants:[…], pricingTiers:[…] }
 ProductController.create()
    ▼ ProductService.create()  (no TX needed unless variants > 0)
-       ├─ INSERT products { tenant_id, name, sku, slug, base_price, category_id, brand_id, status:'DRAFT' }
+       ├─ INSERT products { store_id, name, sku, slug, base_price, category_id, brand_id, status:'DRAFT' }
        ├─ INSERT product_variants[]
        ├─ INSERT product_price_tiers[]   (wholesale, member, etc.)
        ├─ optional: queue 'create-purchase-order' on product queue
-       └─ cache invalidate t:{tenantId}:catalog:*
+       └─ cache invalidate t:{storeId}:catalog:*
 ```
 
 ### 12.3 Tables written
 
 | Table | Sample row |
 | ----- | ---------- |
-| `products` | `{ id:'p_001', tenant_id, name:'Tee', sku:'TEE-001', base_price:500.00, average_cost:0, category_id:'c_apparel', status:'PUBLISHED' }` |
+| `products` | `{ id:'p_001', store_id, name:'Tee', sku:'TEE-001', base_price:500.00, average_cost:0, category_id:'c_apparel', status:'PUBLISHED' }` |
 | `product_variants` | `{ id:'v_red_m', product_id:'p_001', sku:'TEE-001-R-M', attributes:{color:'red',size:'M'}, price:500.00 }` |
 | `product_price_tiers` | `{ product_id:'p_001', tier:'WHOLESALE', min_qty:10, price:400.00 }` |
 | `product_batches` | `{ id:'lot_2026_05', product_id, expiry_date:'2026-12-31', received_qty:50, remaining:30 }` |
@@ -1085,7 +1085,7 @@ OrderController.createOrder()
                          | 'PROCESSING' depending on paymentMethod,           │
                          payment_status:'PENDING'|'PAID',                     │
                          payments:[{method,amount,transactionId}],            │
-                         tenant_id, branch_id, currency, totalAmount,         │
+                         store_id, branch_id, currency, totalAmount,         │
                          shippingFee, taxAmount, couponDiscountAmount,        │
                          walletDeductionAmount, ... }                         │
          INSERT order_items[]                                                 │
@@ -1093,7 +1093,7 @@ OrderController.createOrder()
          backfill stock_reservations.order_id  = order.id                     │
                                                                               │
        })   // COMMIT
-       enqueue BullMQ 'order' → 'create-invoice' { orderId, tenantId }
+       enqueue BullMQ 'order' → 'create-invoice' { orderId, storeId }
        if paymentMethod=='COD': enqueue 'send-order-notification'
        return order
 ```
@@ -1180,7 +1180,7 @@ OrderService.return()  (TX)
 ```
 POST /cart/items { productId, variantId, quantity }
 CartService.addToCart(ctx, dto)
-   ├─ SELECT carts WHERE user_id=ctx.userId AND tenant_id=ctx.tenantId  (or create)
+   ├─ SELECT carts WHERE user_id=ctx.userId AND store_id=ctx.storeId  (or create)
    ├─ UPSERT cart_items  ( cart_id, product_id, variant_id, quantity )
    └─ return updated cart with computed totals
 ```
@@ -1191,7 +1191,7 @@ CartService.addToCart(ctx, dto)
 
 | Table | Sample row |
 | ----- | ---------- |
-| `carts` | `{ id:'cart_…', user_id, tenant_id, applied_coupon_code:null, total_items:3 }` |
+| `carts` | `{ id:'cart_…', user_id, store_id, applied_coupon_code:null, total_items:3 }` |
 | `cart_items` | `{ cart_id, product_id, variant_id, quantity:2, unit_price:500, line_total:1000 }` |
 
 ### 14.4 Cross-references
@@ -1214,7 +1214,7 @@ CartService.addToCart(ctx, dto)
 
 Each POS terminal generates an `offlineSaleId` (UUID) per sale **locally** while offline. When connectivity returns, the terminal POSTs a batch to `/pos/sync`. The server:
 
-1. For each sale, `SELECT orders WHERE offline_sale_id = :id AND tenant_id = :t`.
+1. For each sale, `SELECT orders WHERE offline_sale_id = :id AND store_id = :t`.
 2. If found → return existing order (idempotent no-op).
 3. Otherwise process as below.
 
@@ -1437,7 +1437,7 @@ INSERT accounting_outbox (PENDING)   ─── inside the same DB TX as the busi
 AccountingOutboxService.processPending()
         │
         ▼
-AccountingService.createJournal({ tenantId, journalType, referenceType, referenceId, description, lines })
+AccountingService.createJournal({ storeId, journalType, referenceType, referenceId, description, lines })
         │
         ▼
        TX:
@@ -1648,7 +1648,7 @@ BullMQ `loyalty` queue, job `assess-tiers` (scheduled). For each customer:
 
 ### 26.3 Subscribers
 
-Newsletter signup creates `subscribers` (tenant-scoped). Targeted by campaign audience.
+Newsletter signup creates `subscribers` (store-scoped). Targeted by campaign audience.
 
 ### 26.4 Cross-references
 
@@ -1694,12 +1694,12 @@ These are **read-only** services that aggregate the immutable ledgers. They neve
 
 | Service | Module path | Backend | Used by |
 | ------- | ----------- | ------- | ------- |
-| Cache | `admin/operations/infra/cache` | Redis with `t:{tenantId}:` prefix | Catalog reads, settings, branch lists. |
+| Cache | `admin/operations/infra/cache` | Redis with `t:{storeId}:` prefix | Catalog reads, settings, branch lists. |
 | Mail | `admin/operations/infra/mail` | SMTP / provider | Order confirmations, password resets, campaign messages. |
 | Push (FCM) | `admin/operations/infra/push` | Firebase | Mobile staff app + customer app. |
 | SMS | `admin/operations/infra/sms` | Provider | OTP, campaign messages, delivery alerts. |
 | Chat | `admin/operations/infra/chat` | Socket.IO | Live customer/support chat. |
-| File | `admin/operations/infra/file` | S3-compatible, `tenants/{tenantId}/...` prefix | Product images, attachments, payslip PDFs. |
+| File | `admin/operations/infra/file` | S3-compatible, `stores/{storeId}/...` prefix | Product images, attachments, payslip PDFs. |
 | Notification | `admin/operations/infra/notification` | DB-backed (`notifications` table) | In-app real-time notifications. |
 | Queue | `admin/operations/infra/queue` | BullMQ | All async work. |
 
@@ -1712,13 +1712,13 @@ These are **read-only** services that aggregate the immutable ledgers. They neve
 
 Triggered only by `@Audit({entity, action})` on routes. The interceptor (`audit-log.interceptor.ts`) reads:
 - `method`, `originalUrl`, `ip`, `user.id`, `headers`, `body`, `params`
-- `tenant_id`, `branch_id`, `warehouse_id` from request/headers/body
+- `store_id`, `branch_id`, `warehouse_id` from request/headers/body
 
 …and writes `audit_logs` rows **after** a successful response (failures are not audited; they go to the global filter logs).
 
 | Field | Sample |
 | ----- | ------ |
-| `tenant_id` | `t_8e3a…` |
+| `store_id` | `t_8e3a…` |
 | `user_id` | `u_admin_1` |
 | `branch_id` | `b_main` |
 | `entity` | `payroll_batch` |
@@ -1748,10 +1748,10 @@ Legend: `A` = add row, `U` = update row, `D` = delete/remove row, `R` = read onl
 
 | Module | A — adds data | U — updates data | D — removes data | R — reads data | Cross-module connection |
 | ------ | ------------- | ---------------- | ---------------- | -------------- | ----------------------- |
-| Auth/User | `sessions`; sometimes `users` during signup | `users.refresh_token`, verification/reset fields, `sessions.revoked_at` | Session revoke only; do not hard-delete users with history | `tenants`, `roles`, `permissions` | Auth feeds `request.user` to every secured module. |
+| Auth/User | `sessions`; sometimes `users` during signup | `users.refresh_token`, verification/reset fields, `sessions.revoked_at` | Session revoke only; do not hard-delete users with history | `stores`, `roles`, `permissions` | Auth feeds `request.user` to every secured module. |
 | RBAC | `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `permission_overrides` | role names/scopes, permission assignments | Soft-delete/revoke assignments; do not remove seeded permissions casually | `users`, `branches`, `warehouses` | Guard-level dependency for all admin modules. |
-| Tenant/Subscription | `tenants`, `subscription_invoices` | `tenants.status`, `subscription_status` | Tenant cancellation is status transition; physical delete requires retention workflow | `subscription_plans`, `users` | SubscriptionGuard gates POS, HRM, Campaigns, builder, etc. |
-| Organization | `branches`, `warehouses`, `warehouse_bins` | branch/warehouse status, address, capacity | Prefer soft-delete; blocked if stock/orders reference the row | `tenants`, `users` | Used by Orders, POS, Inventory, Payroll, Reports. |
+| Store/Subscription | `stores`, `subscription_invoices` | `stores.status`, `subscription_status` | Store cancellation is status transition; physical delete requires retention workflow | `subscription_plans`, `users` | SubscriptionGuard gates POS, HRM, Campaigns, builder, etc. |
+| Organization | `branches`, `warehouses`, `warehouse_bins` | branch/warehouse status, address, capacity | Prefer soft-delete; blocked if stock/orders reference the row | `stores`, `users` | Used by Orders, POS, Inventory, Payroll, Reports. |
 | Catalog | `products`, `product_variants`, `categories`, `brands`, pricing rows, reviews | product status, pricing, average cost, category tree | Soft-delete product/category; historical orders keep snapshots | `warehouses`, `suppliers`, reviews | Feeds Cart, Order, POS, GRN, Inventory, Campaigns. |
 | Cart | `carts`, `cart_items` | cart quantities, applied coupon | Hard-remove `cart_items`; delete/clear cart after checkout | Catalog, coupons, wallet balance | Feeds Order; does not reserve stock. |
 | Order | `orders`, `order_items`, `order_returns` | status, payment status, tracking fields | Cancel/return through state; do not hard-delete posted orders | Catalog, Customer, Wallet, Coupon, Inventory ATP | Writes Inventory, Wallet, AR, Fulfillment, Outbox, Payment. |
@@ -1824,7 +1824,7 @@ Most ERP data is **not physically removed** after it becomes business truth. The
 | 3 | | `coupons` (UPDATE) | `used_count += 1` for `code='SAVE10'` |
 | 4 | | `wallet_ledger` (if redeem) | `{customer_id:'u_1', type:'WALLET_SPEND', amount:-200, balance_after:0, reference_type:'ORDER'}` |
 | 5 | | `ar_ledger` (B2B on-account only) | `{customer_id:'u_b2b', type:'INVOICE', amount:+12500, balance_after:12500, due_date:'2026-06-24', reference_type:'ORDER'}` |
-| 6 | | `orders` | `{id:'o_a1b2…', tenant_id, branch_id, customer_name:'…', total_amount:1200, currency:'BDT', status:'PENDING', payment_status:'PENDING', payment_method:'CARD', payments:[{method:'CARD',amount:1200}], offline_sale_id:null}` |
+| 6 | | `orders` | `{id:'o_a1b2…', store_id, branch_id, customer_name:'…', total_amount:1200, currency:'BDT', status:'PENDING', payment_status:'PENDING', payment_method:'CARD', payments:[{method:'CARD',amount:1200}], offline_sale_id:null}` |
 | 7 | | `order_items` | per line `{order_id, product_id, variant_id, quantity:2, unit_price:500, tax_amount, line_total:1000}` |
 | 8 | | `inventory_ledger` (UPDATE-via-backfill) | set `reference_id = order.id` |
 | 9 | | `stock_reservations` (UPDATE-via-backfill) | set `order_id = order.id` |
@@ -1881,7 +1881,7 @@ Most ERP data is **not physically removed** after it becomes business truth. The
 
 | # | Table | Sample row |
 | - | ----- | ---------- |
-| 1 | `orders` (idempotency check) | `SELECT … WHERE offline_sale_id='os_…' AND tenant_id=…` |
+| 1 | `orders` (idempotency check) | `SELECT … WHERE offline_sale_id='os_…' AND store_id=…` |
 | 2 | `inventory_ledger` | `{type:'SALE', quantity:-q, batch_id (FEFO), reference_type:'ORDER'}` |
 | 3 | `wallet_ledger` (if redeem) | `{type:'WALLET_SPEND', amount:-x, reference_type:'POS_SALE'}` |
 | 4 | `orders` | `{orderSource:'POS', status:'COMPLETED', payment_status:'PAID', offline_sale_id:'os_…', payments:[{method:'CASH',amount:600},{method:'CARD',amount:400}]}` |
@@ -1910,7 +1910,7 @@ These were found during this dataflow audit. They should be reconciled by either
 | 2 | `codebase-understanding/03_sales_and_pos.md` references **`clientSaleId`** as the POS idempotency key. | The column on `orders` is **`offline_sale_id`** (`OrderEntity.offlineSaleId`). `PosService.syncPosSale()` looks it up by `offline_sale_id`. | Rename references to `offline_sale_id` (or rename column — but rename is more invasive). |
 | 3 | `system-design` docs imply the order completion journal is posted on `payment.success`. | `PaymentService.handleSuccessPayment()` only flips `orders.payment_status='PAID'`. The SALE journal is posted on `orders.status='COMPLETED'` inside `OrderService.updateOrder()`. | Keep the code behaviour. Clarify in `erp_master_system_design.md` §0.6 that completion (not payment) is the recognition trigger. |
 | 4 | `server/src/database/data-source.ts` has `synchronize: true`. | True. | Set to `false` for non-development environments; migrations are the source of truth. |
-| 5 | `app.module.ts` defines `BranchScopeGuard` as a global guard. The README chain says "JWT → Subscription → Permission → BranchScope". | Code order is `TenantStatus → BranchScope → Permissions` (globals) then route-level `Jwt → Subscription`. | Update README's stated order; the actual order is fine (BranchScope before Permissions allows the permission resolver to scope by branch). |
+| 5 | `app.module.ts` defines `BranchScopeGuard` as a global guard. The README chain says "JWT → Subscription → Permission → BranchScope". | Code order is `StoreStatus → BranchScope → Permissions` (globals) then route-level `Jwt → Subscription`. | Update README's stated order; the actual order is fine (BranchScope before Permissions allows the permission resolver to scope by branch). |
 | 6 | Throttler is mentioned in `erp_low_level_system_design.md`. | Throttler import is **commented out** in `AppModule`. | Either re-enable rate limiting or remove the claim. |
 | 7 | README mentions `helmet`. | Not used. | Add helmet middleware in `main.ts` or remove the claim. |
 
@@ -1919,15 +1919,15 @@ These were found during this dataflow audit. They should be reconciled by either
 | New section (this doc) | System design ref | DB design ref | Codebase-understanding ref |
 | ---------------------- | ----------------- | ------------- | -------------------------- |
 | §1 Request lifecycle | [§0.5](erp_master_system_design.md#05-request-lifecycle-in-5-steps), [§11](erp_master_system_design.md#11-boundary-enforcement-rules) | — | — |
-| §2 Tenant/Branch/Permission | [§9](erp_master_system_design.md#9-user--customer-scope-inside-boundaries) | [§6.2](erp_master_database_design.md#62-identity--rbac-tables) | [07_auth_and_rbac.md](../codebase-understanding/07_auth_and_rbac.md) |
+| §2 Store/Branch/Permission | [§9](erp_master_system_design.md#9-user--customer-scope-inside-boundaries) | [§6.2](erp_master_database_design.md#62-identity--rbac-tables) | [07_auth_and_rbac.md](../codebase-understanding/07_auth_and_rbac.md) |
 | §3 Transactions | [§0.6](erp_master_system_design.md#06-where-the-money--stock-truth-lives) | [§7](erp_master_database_design.md#7-append-only-ledger-tables--special-rules) | [DEVELOPER_GUIDE.md](../developer/DEVELOPER_GUIDE.md) |
 | §4 Outbox+BullMQ | — | [§6.13](erp_master_database_design.md#613-infra-tables-audit--notifications--files--chat--device--outbox) | [09_infrastructure_services.md](../codebase-understanding/09_infrastructure_services.md) |
 | §5 Ledgers | [§0.6](erp_master_system_design.md#06-where-the-money--stock-truth-lives) | [§6.9](erp_master_database_design.md#69-finance--accounting-tables), [§6.6](erp_master_database_design.md#66-inventory--wms-tables), [§6.11](erp_master_database_design.md#611-crm-tables-customer--subscriber--lead--loyalty--wallet) | [05_finance_and_procurement.md](../codebase-understanding/05_finance_and_procurement.md), [04_logistics_and_inventory.md](../codebase-understanding/04_logistics_and_inventory.md) |
-| §6 Multi-tenant invariants | [§11.2](erp_master_system_design.md#112-foreign-key-tenant-consistency) | [§8](erp_master_database_design.md#8-multi-tenant-fk-invariants) | — |
+| §6 Multi-store invariants | [§11.2](erp_master_system_design.md#112-foreign-key-store-consistency) | [§8](erp_master_database_design.md#8-multi-store-fk-invariants) | — |
 | §7 Client→Server | — | — | (this doc) |
-| §8 Auth | [§6.5](erp_master_system_design.md#65-tenant-subscription--boundary-interaction) | [§6.2](erp_master_database_design.md#62-identity--rbac-tables) | [07_auth_and_rbac.md](../codebase-understanding/07_auth_and_rbac.md) |
+| §8 Auth | [§6.5](erp_master_system_design.md#65-store-subscription--boundary-interaction) | [§6.2](erp_master_database_design.md#62-identity--rbac-tables) | [07_auth_and_rbac.md](../codebase-understanding/07_auth_and_rbac.md) |
 | §9 RBAC | [§11](erp_master_system_design.md#11-boundary-enforcement-rules) | [§6.2](erp_master_database_design.md#62-identity--rbac-tables) | [07_auth_and_rbac.md](../codebase-understanding/07_auth_and_rbac.md) |
-| §10 Tenant onboarding | [§6](erp_master_system_design.md#6-tenant-boundary) | [§6.1](erp_master_database_design.md#61-system--tenant-tables) | [01_system_infrastructure.md](../codebase-understanding/01_system_infrastructure.md) |
+| §10 Store onboarding | [§6](erp_master_system_design.md#6-store-boundary) | [§6.1](erp_master_database_design.md#61-system--store-tables) | [01_system_infrastructure.md](../codebase-understanding/01_system_infrastructure.md) |
 | §11 Organization | [§§7,8](erp_master_system_design.md#7-branch-boundary) | [§6.3](erp_master_database_design.md#63-organization-tables) | [01_system_infrastructure.md](../codebase-understanding/01_system_infrastructure.md) |
 | §12 Catalog | — | [§6.4](erp_master_database_design.md#64-catalog--pricing-tables) | [02_catalog_and_marketing.md](../codebase-understanding/02_catalog_and_marketing.md) |
 | §13 Sales Order | [§7.6](erp_master_system_design.md#76-branch-and-orders) | [§6.5](erp_master_database_design.md#65-sales--pos--coupon--promotion-tables) | [03_sales_and_pos.md](../codebase-understanding/03_sales_and_pos.md) |

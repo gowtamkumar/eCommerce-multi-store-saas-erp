@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,7 +7,7 @@ import { ProductEntity } from '../product/entities/product.entity'
 import { CategoryEntity } from './entities/category.entity'
 
 @Injectable()
-export class CategoryRepository extends BaseTenantRepository<CategoryEntity> {
+export class CategoryRepository extends BaseStoreRepository<CategoryEntity> {
   constructor(
     @InjectRepository(CategoryEntity)
     repo: Repository<CategoryEntity>,
@@ -15,23 +15,23 @@ export class CategoryRepository extends BaseTenantRepository<CategoryEntity> {
     super(CategoryEntity, repo)
   }
 
-  async findBySlug(slug: string, tenantId: string): Promise<CategoryEntity | null> {
-    return this.repo.findOne({ where: { slug, tenantId } })
+  async findBySlug(slug: string, storeId: string): Promise<CategoryEntity | null> {
+    return this.repo.findOne({ where: { slug, storeId } })
   }
 
-  async findById(id: string, tenantId: string): Promise<CategoryEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findById(id: string, storeId: string): Promise<CategoryEntity | null> {
+    return this.repo.findOne({ where: { id, storeId } })
   }
 
-  async findAllByTenant(tenantId: string): Promise<CategoryEntity[]> {
+  async findAllByStore(storeId: string): Promise<CategoryEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       order: { name: 'ASC' },
     })
   }
 
   /**
-   * Retrieve all categories across tenants. Used by super‑admin UI where no tenant
+   * Retrieve all categories across stores. Used by super‑admin UI where no store
    * context is available. This method bypasses the private `repo` property restriction
    * by exposing a public accessor.
    */
@@ -40,14 +40,14 @@ export class CategoryRepository extends BaseTenantRepository<CategoryEntity> {
   }
 
   /**
-   * Expose a query builder for categories without tenant filtering.
-   * Used by the service when computing stats for all tenants.
+   * Expose a query builder for categories without store filtering.
+   * Used by the service when computing stats for all stores.
    */
   getAllCategoriesQueryBuilder() {
     return this.repo.createQueryBuilder('category')
   }
 
-  async findAllWithProductCounts(tenantId: string) {
+  async findAllWithProductCounts(storeId: string) {
     return this.repo
       .createQueryBuilder('category')
       .select([
@@ -64,9 +64,9 @@ export class CategoryRepository extends BaseTenantRepository<CategoryEntity> {
           .from(ProductEntity, 'p')
           .where('p.categoryId = category.id')
           .andWhere('p.deletedAt IS NULL')
-          .andWhere('p.tenantId = :tenantId', { tenantId })
+          .andWhere('p.storeId = :storeId', { storeId })
       }, 'productCount')
-      .where('category.tenantId = :tenantId', { tenantId })
+      .where('category.storeId = :storeId', { storeId })
       .orderBy('category.name', 'ASC')
       .getRawMany()
   }
@@ -77,7 +77,7 @@ export class CategoryRepository extends BaseTenantRepository<CategoryEntity> {
   ): Promise<CategoryEntity> {
     const category = this.repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as CategoryEntity)
     return this.repo.save(category)

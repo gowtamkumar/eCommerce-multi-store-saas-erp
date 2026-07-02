@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Between, FindOptionsWhere, In, Repository } from 'typeorm'
@@ -10,7 +10,7 @@ import type { PaginatedResult } from '../hrm.repository'
 const DEFAULT_LIMIT = 20
 
 @Injectable()
-export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
+export class HrmAttendanceRepository extends BaseStoreRepository<ShiftEntity> {
   constructor(
     @InjectRepository(ShiftEntity)
     private readonly shiftRepo: Repository<ShiftEntity>,
@@ -29,12 +29,12 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
     return this.shiftRepo.save(this.shiftRepo.create(data))
   }
 
-  async findAllShifts(tenantId: string): Promise<ShiftEntity[]> {
-    return this.shiftRepo.find({ where: { tenantId } })
+  async findAllShifts(storeId: string): Promise<ShiftEntity[]> {
+    return this.shiftRepo.find({ where: { storeId } })
   }
 
-  async findShiftById(id: string, tenantId: string): Promise<ShiftEntity | null> {
-    return this.shiftRepo.findOne({ where: { id, tenantId } })
+  async findShiftById(id: string, storeId: string): Promise<ShiftEntity | null> {
+    return this.shiftRepo.findOne({ where: { id, storeId } })
   }
 
   async updateShift(id: string, data: Partial<ShiftEntity>): Promise<void> {
@@ -53,10 +53,10 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
 
   async findEmployeeShiftAssignments(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<EmployeeShiftAssignmentEntity[]> {
     return this.shiftAssignmentRepo.find({
-      where: { employeeId, tenantId },
+      where: { employeeId, storeId },
       relations: {
         shift: true,
       },
@@ -71,13 +71,13 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
   async findEmployeeShift(
     employeeId: string,
     date: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<EmployeeShiftAssignmentEntity | null> {
     const qb = this.shiftAssignmentRepo
       .createQueryBuilder('a')
       .leftJoinAndSelect('a.shift', 'shift')
       .where('a.employeeId = :employeeId', { employeeId })
-      .andWhere('a.tenantId = :tenantId', { tenantId })
+      .andWhere('a.storeId = :storeId', { storeId })
       .andWhere('a.effectiveFrom <= :date', { date })
       .andWhere('(a.effectiveTo IS NULL OR a.effectiveTo >= :date)', { date })
       .orderBy('a.effectiveFrom', 'DESC')
@@ -88,14 +88,14 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
   async findEmployeeShiftsForEmployees(
     employeeIds: string[],
     date: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<EmployeeShiftAssignmentEntity[]> {
     if (employeeIds.length === 0) return []
     return this.shiftAssignmentRepo
       .createQueryBuilder('a')
       .leftJoinAndSelect('a.shift', 'shift')
       .where('a.employeeId IN (:...employeeIds)', { employeeIds })
-      .andWhere('a.tenantId = :tenantId', { tenantId })
+      .andWhere('a.storeId = :storeId', { storeId })
       .andWhere('a.effectiveFrom <= :date', { date })
       .andWhere('(a.effectiveTo IS NULL OR a.effectiveTo >= :date)', { date })
       .orderBy('a.effectiveFrom', 'DESC')
@@ -115,16 +115,16 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
 
   async findLatestAttendanceSession(
     employeeId: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<AttendanceSessionEntity | null> {
     return this.attendanceSessionRepo.findOne({
-      where: { employeeId, tenantId },
+      where: { employeeId, storeId },
       order: { checkIn: 'DESC' },
     })
   }
 
   async findAllAttendanceSessions(
-    tenantId: string,
+    storeId: string,
     branchId?: string,
     options?: {
       page?: number
@@ -143,7 +143,7 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
       .leftJoinAndSelect('employee.user', 'user')
       .leftJoinAndSelect('employee.department', 'department')
       .leftJoinAndSelect('employee.designation', 'designation')
-      .where('s.tenantId = :tenantId', { tenantId })
+      .where('s.storeId = :storeId', { storeId })
 
     if (branchId) qb.andWhere('s.branchId = :branchId', { branchId })
     if (options?.employeeId)
@@ -163,12 +163,12 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
     employeeId: string,
     startDate: Date,
     endDate: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<AttendanceSessionEntity[]> {
     return this.attendanceSessionRepo.find({
       where: {
         employeeId,
-        tenantId,
+        storeId,
         checkIn: Between(startDate, endDate),
       },
       order: { checkIn: 'ASC' },
@@ -179,13 +179,13 @@ export class HrmAttendanceRepository extends BaseTenantRepository<ShiftEntity> {
     employeeIds: string[],
     startDate: Date,
     endDate: Date,
-    tenantId: string,
+    storeId: string,
   ): Promise<AttendanceSessionEntity[]> {
     if (employeeIds.length === 0) return []
     return this.attendanceSessionRepo.find({
       where: {
         employeeId: In(employeeIds),
-        tenantId,
+        storeId,
         checkIn: Between(startDate, endDate),
       },
       order: { checkIn: 'ASC' },

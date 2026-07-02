@@ -9,7 +9,7 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest()
     const { method, url, hostname } = req
-    const tenantId = req.headers['x-tenant-id'] || 'no-tenant'
+    const storeId = req.headers['x-store-id'] || 'no-store'
     const now = Date.now()
 
     return next.handle().pipe(
@@ -18,7 +18,7 @@ export class LoggingInterceptor implements NestInterceptor {
         const { statusCode } = res
         const delay = Date.now() - now
         this.logger.log(
-          `${method} ${url} ${statusCode} - ${hostname} [Tenant: ${tenantId}] +${delay}ms`,
+          `${method} ${url} ${statusCode} - ${hostname} [Store: ${storeId}] +${delay}ms`,
         )
       }),
     )

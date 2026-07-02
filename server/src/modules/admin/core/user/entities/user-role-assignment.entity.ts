@@ -1,5 +1,5 @@
 import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from './user.entity'
 import { RoleEntity } from './role.entity'
 import {
@@ -14,18 +14,18 @@ import {
 } from 'typeorm'
 
 /**
- * Associates a user with a role within a tenant.
+ * Associates a user with a role within a store.
  *
  * A single user can hold MULTIPLE role assignments simultaneously.
  * The permission engine unions the permissions of all active (non-expired) assignments.
  *
  * Scope columns (scope_type, scope_id) are kept for future use (branch/warehouse filtering).
- * The current resolution engine treats all assignments as tenant-wide (GLOBAL).
+ * The current resolution engine treats all assignments as store-wide (GLOBAL).
  * Assignments can optionally expire — useful for contractors or temporary promotions.
  * Expired assignments are ignored at runtime but NOT automatically deleted.
  */
 @Entity('user_role_assignments')
-@Index(['userId', 'tenantId'])
+@Index(['userId', 'storeId'])
 @Index(['userId', 'roleId', 'scopeId'], { unique: true })
 export class UserRoleAssignmentEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -45,12 +45,12 @@ export class UserRoleAssignmentEntity {
   @JoinColumn({ name: 'role_id' })
   role: RoleEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   /**
    * The boundary within which this role assignment applies.

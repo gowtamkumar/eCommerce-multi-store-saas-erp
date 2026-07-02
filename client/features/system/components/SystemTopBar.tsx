@@ -98,9 +98,9 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
     const getMappedLink = (link?: string | null) => {
         if (!link || typeof link !== 'string' || link.trim() === '') return null;
         let targetLink = link.trim();
-        if (targetLink.startsWith('/admin/system/tenants/')) {
-            const tenantId = targetLink.split('/').pop();
-            return `/system/tenants/${tenantId}/analytics`;
+        if (targetLink.startsWith('/admin/system/stores/')) {
+            const storeId = targetLink.split('/').pop();
+            return `/system/stores/${storeId}/analytics`;
         }
         if (targetLink.startsWith('/admin/system/billing/')) {
             return '/system/billing';
@@ -108,11 +108,11 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
         if (targetLink.startsWith('/admin/settings/billing')) {
             return '/system/billing';
         }
-        if (targetLink.startsWith('/system/tenants/') && !targetLink.endsWith('/analytics')) {
+        if (targetLink.startsWith('/system/stores/') && !targetLink.endsWith('/analytics')) {
             const parts = targetLink.split('/');
-            const tenantId = parts[3];
-            if (tenantId) {
-                return `/system/tenants/${tenantId}/analytics`;
+            const storeId = parts[3];
+            if (storeId) {
+                return `/system/stores/${storeId}/analytics`;
             }
         }
         return targetLink;

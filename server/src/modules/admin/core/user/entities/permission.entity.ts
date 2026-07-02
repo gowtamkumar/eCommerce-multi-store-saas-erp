@@ -5,7 +5,7 @@ import { Column, Entity, PrimaryGeneratedColumn, Index } from 'typeorm'
  * A single atomic capability in the system.
  * Slug format: `feature:action`  (e.g. payroll:approve, pos:refund, inventory:delete)
  *
- * These are platform-owned and seeded on bootstrap. Tenants cannot invent new permissions.
+ * These are platform-owned and seeded on bootstrap. Stores cannot invent new permissions.
  */
 @Entity('permissions')
 export class PermissionEntity {

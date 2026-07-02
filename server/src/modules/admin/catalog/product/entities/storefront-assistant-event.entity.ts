@@ -3,13 +3,13 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 
 export type StorefrontAssistantEventType = 'chat' | 'qa'
 
 @Entity('storefront_assistant_events')
-@Index(['tenantId', 'createdAt'])
+@Index(['storeId', 'createdAt'])
 export class StorefrontAssistantEventEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ name: 'tenant_id', type: 'uuid' })
-  tenantId: string
+  @Column({ name: 'store_id', type: 'uuid' })
+  storeId: string
 
   @Column({ type: 'varchar', length: 32 })
   type: StorefrontAssistantEventType

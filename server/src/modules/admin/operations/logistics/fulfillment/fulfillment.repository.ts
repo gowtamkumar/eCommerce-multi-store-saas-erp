@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { FulfillmentTaskEntity } from './entities/fulfillment-task.entity'
 import { FulfillmentItemEntity } from './entities/fulfillment-item.entity'
 
 @Injectable()
-export class FulfillmentRepository extends BaseTenantRepository<FulfillmentTaskEntity> {
+export class FulfillmentRepository extends BaseStoreRepository<FulfillmentTaskEntity> {
   constructor(
     @InjectRepository(FulfillmentTaskEntity)
     private readonly taskRepository: Repository<FulfillmentTaskEntity>,
@@ -21,9 +21,9 @@ export class FulfillmentRepository extends BaseTenantRepository<FulfillmentTaskE
     return this.taskRepository.save(newEntry)
   }
 
-  async findTaskById(id: string, tenantId: string): Promise<FulfillmentTaskEntity | null> {
+  async findTaskById(id: string, storeId: string): Promise<FulfillmentTaskEntity | null> {
     return this.taskRepository.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         items: {
           product: true,
@@ -37,11 +37,11 @@ export class FulfillmentRepository extends BaseTenantRepository<FulfillmentTaskE
     })
   }
 
-  async findAllTasksByTenant(tenantId: string, status?: string): Promise<FulfillmentTaskEntity[]> {
+  async findAllTasksByStore(storeId: string, status?: string): Promise<FulfillmentTaskEntity[]> {
     const query = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.order', 'order')
-      .where('task.tenantId = :tenantId', { tenantId })
+      .where('task.storeId = :storeId', { storeId })
 
     if (status) {
       query.andWhere('task.status = :status', { status })

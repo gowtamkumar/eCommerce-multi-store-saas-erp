@@ -1,10 +1,10 @@
-# Multi-Tenant Custom Domain & Subdomain Implementation
+# Multi-Store Custom Domain & Subdomain Implementation
 
 As a senior engineer, implementing custom domains and subdomains requires a mix of infrastructure configuration, DNS management, and application-level routing. Below is the architectural breakdown and implementation guide.
 
 ## 1. Core Architecture
 
-The goal is to route requests from different hostnames to a single application instance, where the tenant is identified dynamically.
+The goal is to route requests from different hostnames to a single application instance, where the store is identified dynamically.
 
 ### 1.1 Architecture Visualization
 
@@ -18,13 +18,13 @@ sequenceDiagram
 
     U->>D: Resolves shop.customer.com
     D->>C: Points to Gateway IP
-    C->>B: GET /api/tenants/check-domain?domain=shop.customer.com
+    C->>B: GET /api/stores/check-domain?domain=shop.customer.com
     Note over C,B: On-Demand TLS Check
     B-->>C: 200 OK (Domain is Active)
     C->>C: Fetches SSL Certificate (Let's Encrypt)
     C->>F: Proxies Request (Host: shop.customer.com)
-    F->>F: Middleware Rewrites to /tenants/tenant-slug
-    F-->>U: Serves Tenant Storefront
+    F->>F: Middleware Rewrites to /stores/store-slug
+    F-->>U: Serves Store Storefront
 ```
 
 ### 1.2 DNS Setup Relationship
@@ -46,7 +46,7 @@ graph TD
 
 
 ### Subdomains vs. Custom Domains
-- **Subdomains** (`tenant1.mysaas.com`): Easier to set up. We control the main domain DNS. We typically use a wildcard CNAME (`*.mysaas.com`) pointing to our server.
+- **Subdomains** (`store1.mysaas.com`): Easier to set up. We control the main domain DNS. We typically use a wildcard CNAME (`*.mysaas.com`) pointing to our server.
 - **Custom Domains** (`shop.customer.com`): Harder to set up. The customer controls the DNS. They must point a CNAME to our "Gateway" domain.
 
 ### The "Gateway" Strategy
@@ -62,14 +62,14 @@ Instead, use a **Gateway Domain**:
 For a SaaS, you need **On-Demand TLS**. Manually running Certbot for every customer domain is not scalable and will hit rate limits.
 
 ### Caddy Configuration (Recommended)
-Caddy handles SSL termination and automatically fetches certificates for any domain that hits it, *provided* you verify it belongs to a tenant.
+Caddy handles SSL termination and automatically fetches certificates for any domain that hits it, *provided* you verify it belongs to a store.
 
 ```caddyfile
 # Caddyfile
 {
     on_demand_tls {
         # Ask our backend if this domain is allowed before getting a cert
-        ask http://localhost:4000/api/tenants/check-domain
+        ask http://localhost:4000/api/stores/check-domain
         interval 2m
         burst 5
     }
@@ -96,7 +96,7 @@ Caddy handles SSL termination and automatically fetches certificates for any dom
 When a user adds a domain, you MUST verify ownership via a TXT record to prevent "Domain Takeover".
 
 ```typescript
-// tenant.service.ts
+// store.service.ts
 import { resolveTxt } from 'dns/promises';
 
 async verifyDomainOwnership(domain: string, expectedToken: string): Promise<boolean> {
@@ -106,7 +106,7 @@ async verifyDomainOwnership(domain: string, expectedToken: string): Promise<bool
     const tokenFound = records.flat().includes(expectedToken);
     
     if (tokenFound) {
-      // Update tenant status to ACTIVE in DB
+      // Update store status to ACTIVE in DB
       return true;
     }
     return false;
@@ -119,11 +119,11 @@ async verifyDomainOwnership(domain: string, expectedToken: string): Promise<bool
 
 ### B. Backend: Caddy Permission Check
 ```typescript
-// tenant.controller.ts
+// store.controller.ts
 @Get('check-domain')
 async checkDomain(@Query('domain') domain: string) {
-  const tenant = await this.tenantService.findByCustomDomain(domain);
-  if (tenant && tenant.customDomainStatus === 'ACTIVE') {
+  const store = await this.storeService.findByCustomDomain(domain);
+  if (store && store.customDomainStatus === 'ACTIVE') {
     return { status: 200 }; // Caddy will issue SSL
   }
   throw new ForbiddenException(); // Caddy will refuse SSL
@@ -131,7 +131,7 @@ async checkDomain(@Query('domain') domain: string) {
 ```
 
 ### C. Application Middleware (Next.js)
-This handles internal routing. If someone visits `shop.customer.com`, we rewrite them to the tenant's store page.
+This handles internal routing. If someone visits `shop.customer.com`, we rewrite them to the store's store page.
 
 ```typescript
 // middleware.ts
@@ -146,15 +146,15 @@ export function middleware(req) {
     return NextResponse.next();
   }
 
-  // 2. Resolve Tenant
-  // For subdomains: tenant1.mysaas.com
+  // 2. Resolve Store
+  // For subdomains: store1.mysaas.com
   // For custom domains: shop.customer.com
   const isCustom = !hostname.endsWith('mysaas.com');
-  const tenantSlug = isCustom ? hostname : hostname.split('.')[0];
+  const storeSlug = isCustom ? hostname : hostname.split('.')[0];
 
   // 3. Rewrite Path
-  // Internally serve /tenants/[slug]/...
-  return NextResponse.rewrite(new URL(`/tenants/${tenantSlug}${url.pathname}`, req.url));
+  // Internally serve /stores/[slug]/...
+  return NextResponse.rewrite(new URL(`/stores/${storeSlug}${url.pathname}`, req.url));
 }
 ```
 
@@ -175,7 +175,7 @@ export function middleware(req) {
     - Visitor visits `shop.mybrand.com`.
     - Caddy sees the request, asks your API "Is this domain active?", API says "Yes".
     - Caddy gets SSL, proxies to Next.js.
-    - Next.js Middleware sees `Host: shop.mybrand.com`, rewrites to the tenant's store.
+    - Next.js Middleware sees `Host: shop.mybrand.com`, rewrites to the store's store.
 
 ## 5. Security Considerations
 - **Rate Limiting**: Limit DNS checks to prevent abuse.

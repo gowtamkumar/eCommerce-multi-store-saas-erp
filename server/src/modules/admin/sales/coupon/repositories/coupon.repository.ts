@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, ILike, Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { CouponEntity } from '../entities/coupon.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class CouponRepository extends BaseTenantRepository<CouponEntity> {
+export class CouponRepository extends BaseStoreRepository<CouponEntity> {
   constructor(
     @InjectRepository(CouponEntity)
     repo: Repository<CouponEntity>,
@@ -18,7 +18,7 @@ export class CouponRepository extends BaseTenantRepository<CouponEntity> {
    * Atomically reserve one coupon usage slot.
    *
    *   UPDATE coupons SET used_count = used_count + 1
-   *    WHERE id = $1 AND tenant_id = $2 AND is_active = true
+   *    WHERE id = $1 AND store_id = $2 AND is_active = true
    *      AND (usage_limit IS NULL OR used_count < usage_limit)
    *
    * Returns true iff exactly one row was updated. Used at order-commit time
@@ -28,14 +28,14 @@ export class CouponRepository extends BaseTenantRepository<CouponEntity> {
    * Always pass the order's transactional EntityManager so a later order
    * rollback rolls the counter back too.
    */
-  async tryReserveUsage(id: string, tenantId: string, manager: EntityManager): Promise<boolean> {
+  async tryReserveUsage(id: string, storeId: string, manager: EntityManager): Promise<boolean> {
     const repo = manager.getRepository(CouponEntity)
     const result = await repo
       .createQueryBuilder()
       .update(CouponEntity)
       .set({ usedCount: () => '"used_count" + 1' })
       .where('id = :id', { id })
-      .andWhere('tenant_id = :tenantId', { tenantId })
+      .andWhere('store_id = :storeId', { storeId })
       .andWhere('is_active = true')
       .andWhere('(usage_limit IS NULL OR used_count < usage_limit)')
       .andWhere('(start_date IS NULL OR start_date <= NOW())')
@@ -50,37 +50,37 @@ export class CouponRepository extends BaseTenantRepository<CouponEntity> {
    * (Optional safety net; rollback handles this automatically when the
    * reserve and the failure share a transaction.)
    */
-  async releaseUsage(id: string, tenantId: string, manager: EntityManager): Promise<boolean> {
+  async releaseUsage(id: string, storeId: string, manager: EntityManager): Promise<boolean> {
     const repo = manager.getRepository(CouponEntity)
     const result = await repo
       .createQueryBuilder()
       .update(CouponEntity)
       .set({ usedCount: () => 'GREATEST("used_count" - 1, 0)' })
       .where('id = :id', { id })
-      .andWhere('tenant_id = :tenantId', { tenantId })
+      .andWhere('store_id = :storeId', { storeId })
       .execute()
     return (result.affected ?? 0) > 0
   }
 
-  async findByCode(code: string, tenantId: string): Promise<CouponEntity | null> {
+  async findByCode(code: string, storeId: string): Promise<CouponEntity | null> {
     return await this.repo.findOne({
-      where: { code: ILike(code), tenantId },
+      where: { code: ILike(code), storeId },
     })
   }
 
-  async findById(id: string, tenantId: string): Promise<CouponEntity | null> {
+  async findById(id: string, storeId: string): Promise<CouponEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 
-  async findAllWithFilters(filterDto: any, tenantId: string): Promise<[CouponEntity[], number]> {
+  async findAllWithFilters(filterDto: any, storeId: string): Promise<[CouponEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { search, isActive } = filterDto
 
-    const query = this.repo.createQueryBuilder('coupon').where('coupon.tenantId = :tenantId', {
-      tenantId,
+    const query = this.repo.createQueryBuilder('coupon').where('coupon.storeId = :storeId', {
+      storeId,
     })
 
     if (isActive !== undefined) {
@@ -102,7 +102,7 @@ export class CouponRepository extends BaseTenantRepository<CouponEntity> {
     const coupon = this.repo.create({
       ...dto,
       code: dto.code.toUpperCase(),
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as any) as unknown as CouponEntity
     return await (this.repo.save(coupon) as Promise<CouponEntity>)

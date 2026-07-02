@@ -7,13 +7,13 @@ import { InvoiceRepository } from './invoice.repository'
 import { InvoiceService } from './invoice.service'
 import { InvoiceProcessor } from './invoice.processor'
 import { BullModule } from '@nestjs/bullmq'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([InvoiceEntity]),
     forwardRef(() => OrderModule),
-    TenantModule,
+    StoreModule,
     BullModule.registerQueue({
       name: 'invoice',
     }),

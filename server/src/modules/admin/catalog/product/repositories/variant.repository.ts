@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { ProductVariantEntity } from '../entities/variant.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class ProductVariantRepository extends BaseTenantRepository<ProductVariantEntity> {
+export class ProductVariantRepository extends BaseStoreRepository<ProductVariantEntity> {
   constructor(
     @InjectRepository(ProductVariantEntity)
     repo: Repository<ProductVariantEntity>,
@@ -14,11 +14,11 @@ export class ProductVariantRepository extends BaseTenantRepository<ProductVarian
     super(ProductVariantEntity, repo)
   }
 
-  async findCombinationsForProducts(tenantId: string, categoryId?: string) {
+  async findCombinationsForProducts(storeId: string, categoryId?: string) {
     const variantQuery = this.repo
       .createQueryBuilder('variant')
       .innerJoin('variant.product', 'product')
-      .where('variant.tenantId = :tenantId', { tenantId })
+      .where('variant.storeId = :storeId', { storeId })
       .select('variant.combination', 'combination')
 
     if (categoryId) {
@@ -27,17 +27,17 @@ export class ProductVariantRepository extends BaseTenantRepository<ProductVarian
     return variantQuery.getRawMany()
   }
 
-  async findByProductId(productId: string, tenantId: string): Promise<ProductVariantEntity[]> {
-    return this.repo.find({ where: { productId, tenantId } })
+  async findByProductId(productId: string, storeId: string): Promise<ProductVariantEntity[]> {
+    return this.repo.find({ where: { productId, storeId } })
   }
 
   async findById(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: any,
   ): Promise<ProductVariantEntity | null> {
     const repo = this.txRepo(manager)
-    return repo.findOne({ where: { id, tenantId } })
+    return repo.findOne({ where: { id, storeId } })
   }
 
   async saveNewVariant(
@@ -50,7 +50,7 @@ export class ProductVariantRepository extends BaseTenantRepository<ProductVarian
     const variant = repo.create({
       ...variantDto,
       productId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
       stock: 0,
     } as ProductVariantEntity)
@@ -71,7 +71,7 @@ export class ProductVariantRepository extends BaseTenantRepository<ProductVarian
     const variant = repo.create({
       ...updateData,
       productId,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as ProductVariantEntity)
     return repo.save(variant)
@@ -79,22 +79,22 @@ export class ProductVariantRepository extends BaseTenantRepository<ProductVarian
 
   async updateAverageCost(
     id: string,
-    tenantId: string,
+    storeId: string,
     newCost: number,
     manager?: any,
   ): Promise<void> {
     const repo = this.txRepo(manager)
-    await repo.update({ id, tenantId }, { averageCost: newCost })
+    await repo.update({ id, storeId }, { averageCost: newCost })
   }
 
   async findBySku(
     sku: string,
-    tenantId: string,
+    storeId: string,
     manager?: any,
     withDeleted: boolean = false,
   ): Promise<ProductVariantEntity | null> {
     const repo = this.txRepo(manager)
-    return repo.findOne({ where: { sku, tenantId }, withDeleted })
+    return repo.findOne({ where: { sku, storeId }, withDeleted })
   }
 
   async deleteByIds(ids: string[], manager?: any): Promise<void> {

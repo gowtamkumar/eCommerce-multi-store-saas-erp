@@ -2,14 +2,14 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { SslCommerzPaymentStrategy } from '@/common/strategies/payment/sslcommerz-payment.strategy'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
-import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
-import { TenantSubscriptionEntity } from '@/modules/system/tenant/entities/tenant-subscription.entity'
+import { StoreRepository } from '@/modules/system/store/store.repository'
+import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-subscription.entity'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
@@ -21,7 +21,7 @@ import { SubscriptionInvoiceRepository } from './subscription-invoice.repository
 import { buildAllowedBillingOrigins, resolveSafeBillingUrl } from './billing-origin.util'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
-import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { StoreFeatureEntity } from '@/modules/system/store/entities/store-feature.entity'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 
 const DEFAULT_PLATFORM_CURRENCY = 'BDT'
@@ -32,36 +32,36 @@ export class SubscriptionBillingService {
 
   constructor(
     private readonly planRecordRepository: SubscriptionInvoiceRepository,
-    private readonly tenantRepository: TenantRepository,
+    private readonly storeRepository: StoreRepository,
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
     private readonly addonCatalogService: AddonCatalogService,
-    @InjectRepository(TenantSubscriptionEntity)
-    private readonly subscriptionRepo: Repository<TenantSubscriptionEntity>,
+    @InjectRepository(StoreSubscriptionEntity)
+    private readonly subscriptionRepo: Repository<StoreSubscriptionEntity>,
     private readonly dataSource: DataSource,
   ) {}
 
-  async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
-    this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
-    const cacheKey = `subscription:${tenantId}:current`
+  async getCurrentSubscription(storeId: string): Promise<CurrentSubscriptionResponseDto> {
+    this.logger.log(`${this.getCurrentSubscription.name} Called for store: ${storeId}`)
+    const cacheKey = `subscription:${storeId}:current`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
-        if (!tenant) throw new NotFoundException('Tenant not found')
+        const store = await this.storeRepository.findByIdWithRelations(storeId)
+        if (!store) throw new NotFoundException('Store not found')
 
         // Subscription Expiration Alert Logic
-        if (tenant.subscriptionEndsAt && !tenant.isExpired) {
+        if (store.subscriptionEndsAt && !store.isExpired) {
           const daysUntilExpiry = Math.ceil(
-            (tenant.subscriptionEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+            (store.subscriptionEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
           )
           if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
             // Use cache to prevent spamming the notification every time they load the page
-            const alertKey = `subscription_alert:${tenantId}`
-            const alertSent = await this.cacheService.getCache(alertKey, tenantId)
+            const alertKey = `subscription_alert:${storeId}`
+            const alertSent = await this.cacheService.getCache(alertKey, storeId)
             if (!alertSent) {
               try {
                 await this.notificationService.createNotification(
@@ -72,10 +72,10 @@ export class SubscriptionBillingService {
                     link: `/admin/settings/billing`,
                     userId: null as any,
                   },
-                  tenantId,
+                  storeId,
                 )
                 // Set cache to prevent re-alerting for 24 hours
-                await this.cacheService.setCache(alertKey, true, 86400, tenantId)
+                await this.cacheService.setCache(alertKey, true, 86400, storeId)
               } catch (e: any) {
                 this.logger.error(
                   `Failed to trigger subscription expiry notification: ${e.message}`,
@@ -90,17 +90,17 @@ export class SubscriptionBillingService {
           .getRepository(FileEntity)
           .createQueryBuilder('file')
           .select('SUM(file.size)', 'total')
-          .where('file.tenantId = :tenantId', { tenantId })
+          .where('file.storeId = :storeId', { storeId })
           .getRawOne()
         const storageUsage = parseInt(fileResult?.total || '0', 10)
 
         // Calculate storage limit and collect active overrides
-        const baseLimitMb = tenant.subscriptionPlan?.maxStorageMb ?? 1024 // default 1GB
+        const baseLimitMb = store.subscriptionPlan?.maxStorageMb ?? 1024 // default 1GB
         let storageLimit = baseLimitMb
         const activeAddons: string[] = []
 
-        const activeOverrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
-          where: { tenantId, isEnabled: true },
+        const activeOverrides = await this.dataSource.getRepository(StoreFeatureEntity).find({
+          where: { storeId, isEnabled: true },
         })
 
         // Load storage addon definitions from DB (boost_unit === 'mb')
@@ -130,19 +130,19 @@ export class SubscriptionBillingService {
         }
 
         return {
-          planName: tenant.subscriptionPlan?.name || 'No Plan',
-          status: tenant.subscriptionStatus,
-          startsAt: tenant.subscriptionStartsAt,
-          endsAt: tenant.subscriptionEndsAt,
-          billingCycle: tenant.subscriptionBillingCycle,
-          isExpired: tenant.isExpired,
+          planName: store.subscriptionPlan?.name || 'No Plan',
+          status: store.subscriptionStatus,
+          startsAt: store.subscriptionStartsAt,
+          endsAt: store.subscriptionEndsAt,
+          billingCycle: store.subscriptionBillingCycle,
+          isExpired: store.isExpired,
           storageUsage,
           storageLimit,
           activeAddons,
         }
       },
       3600, // 1 hour
-      tenantId,
+      storeId,
     )
   }
 
@@ -154,8 +154,8 @@ export class SubscriptionBillingService {
     )
   }
 
-  async getBillingHistory(tenantId: string): Promise<SubscriptionInvoiceEntity[]> {
-    return await this.planRecordRepository.findAllByTenant(tenantId)
+  async getBillingHistory(storeId: string): Promise<SubscriptionInvoiceEntity[]> {
+    return await this.planRecordRepository.findAllByStore(storeId)
   }
 
   async initiateSubscriptionPayment(
@@ -164,19 +164,19 @@ export class SubscriptionBillingService {
     billingCycle: SubscriptionBillingCycle = SubscriptionBillingCycle.MONTHLY,
     frontendUrl?: string,
   ): Promise<{ gatewayUrl: string }> {
-    const { tenantId, userId } = ctx
-    this.logger.log(`Initiating subscription payment for tenant ${tenantId} and plan ${planId}`)
+    const { storeId, userId } = ctx
+    this.logger.log(`Initiating subscription payment for store ${storeId} and plan ${planId}`)
     const plan = await this.planRepository.findById(planId)
     if (!plan) throw new NotFoundException('Plan not found')
 
-    const tenant = await this.tenantRepository.findByIdWithUser(tenantId)
+    const store = await this.storeRepository.findByIdWithUser(storeId)
 
-    if (!tenant) throw new NotFoundException('Tenant not found')
+    if (!store) throw new NotFoundException('Store not found')
 
     // RENEWAL RESTRICTION: Block if not expired and same plan
-    const isSamePlan = tenant.subscriptionPlanId === planId
+    const isSamePlan = store.subscriptionPlanId === planId
     const isCurrentlyActive =
-      tenant.subscriptionStatus !== SubscriptionStatus.TRIAL && !tenant.isExpired
+      store.subscriptionStatus !== SubscriptionStatus.TRIAL && !store.isExpired
 
     if (isSamePlan && isCurrentlyActive) {
       throw new BadRequestException(
@@ -212,7 +212,7 @@ export class SubscriptionBillingService {
     const record = await this.planRecordRepository.createAndSave(
       {
         invoiceNumber,
-        tenantId,
+        storeId,
         subscriptionPlanId: planId,
         amount,
         billingCycle: cycle,
@@ -224,11 +224,11 @@ export class SubscriptionBillingService {
       ctx,
     )
 
-    // Restrict frontendUrl to origins we recognise for this tenant —
+    // Restrict frontendUrl to origins we recognise for this store —
     // otherwise an attacker could send users to a phishing host after a real
     // successful payment.
     const platformFrontend = this.configService.get<string>('FRONTEND_URL') || ''
-    const allowedOrigins = buildAllowedBillingOrigins(tenant, {
+    const allowedOrigins = buildAllowedBillingOrigins(store, {
       frontendUrl: platformFrontend,
       platformHost: this.configService.get<string>('PLATFORM_HOST'),
       nodeEnv: this.configService.get<string>('NODE_ENV'),
@@ -243,10 +243,10 @@ export class SubscriptionBillingService {
       transactionId: transactionId,
       totalAmount: amount,
       currency,
-      customerName: tenant.user?.name || tenant.storeName || 'Store Owner',
-      customerEmail: tenant.user?.email || 'billing@omnicart.com',
-      address: tenant.user?.address || 'Dhaka, Bangladesh',
-      customerPhone: tenant.user?.phone || '01700000000',
+      customerName: store.user?.name || store.storeName || 'Store Owner',
+      customerEmail: store.user?.email || 'billing@omnicart.com',
+      address: store.user?.address || 'Dhaka, Bangladesh',
+      customerPhone: store.user?.phone || '01700000000',
       items: [{ product: { name: `Subscription: ${plan.name} Plan` } }],
     } as any as OrderEntity
 
@@ -271,7 +271,7 @@ export class SubscriptionBillingService {
 
     const result = await strategy.initiate(mockOrder, mockSettings, {
       callbackUrl,
-      tenantId: tenant.id,
+      storeId: store.id,
       frontendUrl: safeFrontendUrl,
     })
 
@@ -341,14 +341,14 @@ export class SubscriptionBillingService {
       gatewayResponse: verification.gatewayResponse ?? gatewayResponse,
     })
 
-    const tenant = await this.tenantRepository.findByIdWithRelations(record.tenantId)
+    const store = await this.storeRepository.findByIdWithRelations(record.storeId)
     const plan = await this.planRepository.findById(record.subscriptionPlanId)
 
-    if (tenant && plan) {
+    if (store && plan) {
       const currentDate = new Date()
       // If current subscription is still active, extend from endsAt, otherwise from now
-      const isCurrentlyActive = tenant.subscriptionEndsAt && tenant.subscriptionEndsAt > currentDate
-      const baseDate = isCurrentlyActive ? tenant.subscriptionEndsAt : currentDate
+      const isCurrentlyActive = store.subscriptionEndsAt && store.subscriptionEndsAt > currentDate
+      const baseDate = isCurrentlyActive ? store.subscriptionEndsAt : currentDate
 
       const newEndsAt = new Date(baseDate)
 
@@ -360,29 +360,29 @@ export class SubscriptionBillingService {
       }
 
       const sub = this.subscriptionRepo.create({
-        tenantId: tenant.id,
+        storeId: store.id,
         subscriptionPlanId: record.subscriptionPlanId,
         status: SubscriptionStatus.ACTIVE,
         billingCycle: record.billingCycle,
         startsAt:
-          isCurrentlyActive && tenant.subscriptionStartsAt
-            ? tenant.subscriptionStartsAt
+          isCurrentlyActive && store.subscriptionStartsAt
+            ? store.subscriptionStartsAt
             : currentDate,
         endsAt: newEndsAt,
       })
       const savedSub = await this.subscriptionRepo.save(sub)
 
-      await this.tenantRepository.updateAndSave(tenant, {
+      await this.storeRepository.updateAndSave(store, {
         activeSubscriptionId: savedSub.id,
         activeSubscription: savedSub,
-        status: TenantStatus.ACTIVE,
+        status: StoreStatus.ACTIVE,
       })
 
       // Invalidate current subscription cache
-      await this.cacheService.delCache(`subscription:${tenant.id}:current`, tenant.id)
+      await this.cacheService.delCache(`subscription:${store.id}:current`, store.id)
 
       this.logger.log(
-        `Tenant ${tenant.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`,
+        `Store ${store.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`,
       )
 
       // Trigger global notification for new purchase/upgrade
@@ -390,9 +390,9 @@ export class SubscriptionBillingService {
         await this.notificationService.createNotification(
           {
             title: 'Subscription Purchase',
-            message: `Tenant '${tenant.storeName}' purchased/renewed the ${plan.name} plan for ${record.currency} ${record.amount}.`,
+            message: `Store '${store.storeName}' purchased/renewed the ${plan.name} plan for ${record.currency} ${record.amount}.`,
             type: 'SUCCESS',
-            link: `/system/tenants/${tenant.id}`,
+            link: `/system/stores/${store.id}`,
             userId: null as any,
           },
           null,
@@ -422,7 +422,7 @@ export class SubscriptionBillingService {
         await this.notificationService.createNotification(
           {
             title: 'Billing Payment Failed',
-            message: `Subscription payment of ${record.currency} ${record.amount} failed for Tenant ID: ${record.tenantId}.`,
+            message: `Subscription payment of ${record.currency} ${record.amount} failed for Store ID: ${record.storeId}.`,
             type: 'DANGER',
             link: `/system/billing`,
             userId: null as any,
@@ -462,8 +462,8 @@ export class SubscriptionBillingService {
     return `${baseUrl}/billing/${status}?tran_id=${transactionId}`
   }
 
-  async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
-    this.logger.log(`Purchasing addon: ${addonSlug} for tenant: ${tenantId}`)
+  async purchaseAddon(storeId: string, addonSlug: string): Promise<void> {
+    this.logger.log(`Purchasing addon: ${addonSlug} for store: ${storeId}`)
 
     // Validate slug against DB catalog (supports suffixed stacked slugs)
     const isValid = await this.addonCatalogService.isValidAddonSlug(addonSlug)
@@ -471,8 +471,8 @@ export class SubscriptionBillingService {
       throw new BadRequestException(`Invalid addon slug: ${addonSlug}`)
     }
 
-    const featureRepo = this.dataSource.getRepository(TenantFeatureEntity)
-    let override = await featureRepo.findOne({ where: { tenantId, featureSlug: addonSlug } })
+    const featureRepo = this.dataSource.getRepository(StoreFeatureEntity)
+    let override = await featureRepo.findOne({ where: { storeId, featureSlug: addonSlug } })
     if (override && !override.isEnabled) {
       override.isEnabled = true
       override.updatedAt = new Date()
@@ -481,12 +481,12 @@ export class SubscriptionBillingService {
       // Find the next available suffix
       let suffix = 1
       let newSlug = `${addonSlug}_${suffix}`
-      while (await featureRepo.findOne({ where: { tenantId, featureSlug: newSlug } })) {
+      while (await featureRepo.findOne({ where: { storeId, featureSlug: newSlug } })) {
         suffix++
         newSlug = `${addonSlug}_${suffix}`
       }
       override = featureRepo.create({
-        tenantId,
+        storeId,
         featureSlug: newSlug,
         isEnabled: true,
         enabledAt: new Date(),
@@ -494,7 +494,7 @@ export class SubscriptionBillingService {
       await featureRepo.save(override)
     } else {
       override = featureRepo.create({
-        tenantId,
+        storeId,
         featureSlug: addonSlug,
         isEnabled: true,
         enabledAt: new Date(),
@@ -503,7 +503,7 @@ export class SubscriptionBillingService {
     }
 
     // Invalidate current subscription cache
-    await this.cacheService.delCache(`subscription:${tenantId}:current`, tenantId)
+    await this.cacheService.delCache(`subscription:${storeId}:current`, storeId)
 
     // Trigger local notification
     try {
@@ -515,7 +515,7 @@ export class SubscriptionBillingService {
           link: `/admin/settings/billing`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger billing notification for addon purchase: ${e.message}`)

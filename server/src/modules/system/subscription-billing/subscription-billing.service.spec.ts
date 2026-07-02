@@ -3,8 +3,8 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
-import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
-import { TenantSubscriptionEntity } from '@/modules/system/tenant/entities/tenant-subscription.entity'
+import { StoreRepository } from '@/modules/system/store/store.repository'
+import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-subscription.entity'
 import { ConfigService } from '@nestjs/config'
 import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
@@ -23,7 +23,7 @@ describe('SubscriptionBillingService', () => {
           useValue: {},
         },
         {
-          provide: TenantRepository,
+          provide: StoreRepository,
           useValue: {},
         },
         {
@@ -54,7 +54,7 @@ describe('SubscriptionBillingService', () => {
           useValue: {},
         },
         {
-          provide: getRepositoryToken(TenantSubscriptionEntity),
+          provide: getRepositoryToken(StoreSubscriptionEntity),
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),

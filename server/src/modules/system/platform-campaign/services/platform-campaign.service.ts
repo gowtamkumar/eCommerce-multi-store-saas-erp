@@ -29,7 +29,7 @@ export class PlatformCampaignService {
       status: CampaignStatus.DRAFT,
       scheduleTime: dto.scheduleTime ? new Date(dto.scheduleTime) : null,
       userId,
-      targetTenants: dto.targetTenants ?? false,
+      targetStores: dto.targetStores ?? false,
       targetSubscribers: dto.targetSubscribers ?? false,
       targetUsers: dto.targetUsers ?? false,
     })
@@ -116,7 +116,7 @@ export class PlatformCampaignService {
     if (dto.name) campaign.name = dto.name
     if (dto.type) campaign.type = dto.type
     if (dto.scheduleTime) campaign.scheduleTime = new Date(dto.scheduleTime)
-    if (dto.targetTenants !== undefined) campaign.targetTenants = dto.targetTenants
+    if (dto.targetStores !== undefined) campaign.targetStores = dto.targetStores
     if (dto.targetSubscribers !== undefined) campaign.targetSubscribers = dto.targetSubscribers
     if (dto.targetUsers !== undefined) campaign.targetUsers = dto.targetUsers
 

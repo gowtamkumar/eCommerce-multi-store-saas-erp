@@ -46,7 +46,7 @@ export class StockTransferService {
     dto: CreateStockTransferDocDto,
     ctx: RequestContextDto,
   ): Promise<StockTransferEntity> {
-    this.logger.log(`Creating Stock Transfer document for tenant: ${ctx.tenantId}`)
+    this.logger.log(`Creating Stock Transfer document for store: ${ctx.storeId}`)
 
     if (dto.sourceWarehouseId === dto.destinationWarehouseId) {
       throw new BadRequestException('Source and Destination warehouse must be different')
@@ -57,7 +57,7 @@ export class StockTransferService {
     }
 
     const transfer = this.repo.create({
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
       transferNumber: this.generateTransferNumber(),
       sourceWarehouseId: dto.sourceWarehouseId,
@@ -99,7 +99,7 @@ export class StockTransferService {
       .leftJoinAndSelect('t.sourceWarehouse', 'sourceWarehouse')
       .leftJoinAndSelect('t.destinationWarehouse', 'destinationWarehouse')
       .leftJoinAndSelect('t.user', 'user')
-      .where('t.tenantId = :tenantId', { tenantId: ctx.tenantId })
+      .where('t.storeId = :storeId', { storeId: ctx.storeId })
       .orderBy('t.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -126,7 +126,7 @@ export class StockTransferService {
 
   async findOne(id: string, ctx: RequestContextDto): Promise<StockTransferEntity> {
     const transfer = await this.repo.findOne({
-      where: { id, tenantId: ctx.tenantId },
+      where: { id, storeId: ctx.storeId },
       relations: {
         sourceWarehouse: true,
         destinationWarehouse: true,
@@ -247,7 +247,7 @@ export class StockTransferService {
       const stock = await this.inventoryLedgerService.getLiveStock(
         item.productId,
         item.variantId,
-        ctx.tenantId,
+        ctx.storeId,
         transfer.sourceWarehouseId,
       )
       if (stock < item.quantityRequested) {
@@ -398,7 +398,7 @@ export class StockTransferService {
           link: `/admin/stock-transfers`,
           userId: null as any,
         },
-        transfer.tenantId,
+        transfer.storeId,
       )
     } catch (e: any) {
       this.logger.error(`Failed to trigger stock transfer notification: ${e.message}`)

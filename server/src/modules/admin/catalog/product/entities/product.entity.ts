@@ -5,7 +5,7 @@ import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.ent
 import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { BrandEntity } from '../../brand/entities/brand.entity'
 import { CategoryEntity } from '../../category/entities/category.entity'
@@ -16,8 +16,8 @@ import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inve
 @Entity('products')
 @Index(['status'])
 @Index(['createdAt'])
-@Index(['tenantId', 'status']) // Hot path: storefront product list filter
-@Index(['tenantId', 'createdAt']) // Hot path: ORDER BY newest products per tenant
+@Index(['storeId', 'status']) // Hot path: storefront product list filter
+@Index(['storeId', 'createdAt']) // Hot path: ORDER BY newest products per store
 export class ProductEntity extends BaseEntity {
   @Column()
   name: string
@@ -152,13 +152,13 @@ export class ProductEntity extends BaseEntity {
   @JoinColumn({ name: 'supplier_id' })
   supplier: SupplierEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
+  @Column({ type: 'uuid', name: 'store_id' })
   @Index()
-  tenantId: string
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

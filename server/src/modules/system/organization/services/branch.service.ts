@@ -9,11 +9,11 @@ export class BranchService {
   constructor(private readonly branchRepository: BranchRepository) {}
 
   async findAll(ctx: RequestContextDto): Promise<BranchEntity[]> {
-    return this.branchRepository.findAll(ctx.tenantId)
+    return this.branchRepository.findAll(ctx.storeId)
   }
 
   async findOne(id: string, ctx: RequestContextDto): Promise<BranchEntity> {
-    const branch = await this.branchRepository.findOne(id, ctx.tenantId)
+    const branch = await this.branchRepository.findOne(id, ctx.storeId)
     if (!branch) {
       throw new NotFoundException('Branch not found')
     }
@@ -21,7 +21,7 @@ export class BranchService {
   }
 
   async create(createBranchDto: CreateBranchDto, ctx: RequestContextDto): Promise<BranchEntity> {
-    const existing = await this.branchRepository.findByCode(createBranchDto.code, ctx.tenantId)
+    const existing = await this.branchRepository.findByCode(createBranchDto.code, ctx.storeId)
     if (existing) {
       throw new ConflictException('Branch code already exists')
     }
@@ -35,7 +35,7 @@ export class BranchService {
   ): Promise<BranchEntity> {
     const branch = await this.findOne(id, ctx)
     if (updateBranchDto.code && updateBranchDto.code !== branch.code) {
-      const existing = await this.branchRepository.findByCode(updateBranchDto.code, ctx.tenantId)
+      const existing = await this.branchRepository.findByCode(updateBranchDto.code, ctx.storeId)
       if (existing) {
         throw new ConflictException('Branch code already exists')
       }

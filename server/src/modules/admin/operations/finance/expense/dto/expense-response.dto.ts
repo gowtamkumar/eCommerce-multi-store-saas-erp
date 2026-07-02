@@ -24,7 +24,7 @@ export class ExpenseResponseDto {
   referenceNumber: string
 
   @Expose()
-  tenantId: string
+  storeId: string
 
   @Expose()
   userId?: string | null

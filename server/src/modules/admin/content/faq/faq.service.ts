@@ -15,18 +15,18 @@ export class FaqService {
     private readonly cache: CacheService,
   ) {}
 
-  private async invalidateCache(tenantId: string) {
-    await this.cache.delCache('faqs:global', tenantId)
-    await this.cache.delCache('home', tenantId)
-    await this.cache.delCacheByPattern('slug:*', tenantId)
-    await this.cache.delCacheByPattern('faqs:page:*', tenantId)
+  private async invalidateCache(storeId: string) {
+    await this.cache.delCache('faqs:global', storeId)
+    await this.cache.delCache('home', storeId)
+    await this.cache.delCacheByPattern('slug:*', storeId)
+    await this.cache.delCacheByPattern('faqs:page:*', storeId)
   }
 
   async createFaq(createFaqDto: CreateFaqDto, ctx: RequestContextDto): Promise<FaqEntity> {
     this.logger.log(`${this.createFaq.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const result = await this.faqRepository.createAndSave(createFaqDto, ctx)
-    await this.invalidateCache(tenantId)
+    await this.invalidateCache(storeId)
     return result
   }
 
@@ -35,15 +35,15 @@ export class FaqService {
     ctx: RequestContextDto,
   ): Promise<{ faqs: FaqEntity[]; total: number }> {
     this.logger.log(`${this.findAllFaqs.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     // Admin dashboard fetches are not cached to ensure real-time accuracy
-    return await this.faqRepository.findAllWithFilters(filterDto, tenantId)
+    return await this.faqRepository.findAllWithFilters(filterDto, storeId)
   }
 
   async findOneFaq(id: string, ctx: RequestContextDto): Promise<FaqEntity> {
     this.logger.log(`${this.findOneFaq.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const faq = await this.faqRepository.findById(id, tenantId)
+    const storeId = ctx.storeId
+    const faq = await this.faqRepository.findById(id, storeId)
     if (!faq) throw new NotFoundException('FAQ not found')
     return faq
   }
@@ -54,10 +54,10 @@ export class FaqService {
     ctx: RequestContextDto,
   ): Promise<FaqEntity> {
     this.logger.log(`${this.updateFaq.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const faq = await this.findOneFaq(id, ctx)
     const result = await this.faqRepository.updateAndSave(faq, updateFaqDto)
-    await this.invalidateCache(tenantId)
+    await this.invalidateCache(storeId)
     return result
   }
 
@@ -66,52 +66,52 @@ export class FaqService {
     ctx: RequestContextDto,
   ): Promise<{ success: boolean; message?: string }> {
     this.logger.log(`${this.removeFaq.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const faq = await this.findOneFaq(id, ctx)
     await this.faqRepository.removeFaq(faq)
-    await this.invalidateCache(tenantId)
+    await this.invalidateCache(storeId)
     return { success: true, message: 'FAQ deleted successfully' }
   }
 
   // Find FAQs by Page ID
   async findByPageFaq(pageId: string, ctx: RequestContextDto): Promise<FaqEntity[]> {
     this.logger.log(`${this.findByPageFaq.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = `faqs:page:${pageId}`
     return await this.cache.rememberCache(
       cacheKey,
-      () => this.faqRepository.findByPageId(pageId, tenantId),
+      () => this.faqRepository.findByPageId(pageId, storeId),
       this.CACHE_TTL,
-      tenantId,
+      storeId,
     )
   }
 
   // Find Global FAQs (no productId or pageId)
   async findGlobalFaqs(ctx: RequestContextDto): Promise<FaqEntity[]> {
     this.logger.log(`${this.findGlobalFaqs.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const cacheKey = 'faqs:global'
     return await this.cache.rememberCache(
       cacheKey,
-      () => this.faqRepository.findGlobal(tenantId),
+      () => this.faqRepository.findGlobal(storeId),
       this.CACHE_TTL,
-      tenantId,
+      storeId,
     )
   }
 
   // Find FAQs by multiple IDs
   async findByIdsFaq(ids: string[], ctx: RequestContextDto): Promise<FaqEntity[]> {
     this.logger.log(`${this.findByIdsFaq.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     if (!ids || ids.length === 0) return []
     const sortedIds = [...ids].sort().join(',')
     const cacheKey = `faqs:ids:${sortedIds}`
 
     return await this.cache.rememberCache(
       cacheKey,
-      () => this.faqRepository.findByIdsList(ids, tenantId),
+      () => this.faqRepository.findByIdsList(ids, storeId),
       this.CACHE_TTL,
-      tenantId,
+      storeId,
     )
   }
 }

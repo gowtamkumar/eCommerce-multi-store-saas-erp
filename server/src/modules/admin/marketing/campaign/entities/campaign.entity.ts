@@ -1,6 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { CampaignStatus } from '../enums/campaign-status.enum'
 import { CampaignType } from '../enums/campaign-type.enum'
@@ -8,8 +8,8 @@ import { CampaignMessageEntity } from './campaign-message.entity'
 import { CampaignLogEntity } from './campaign-log.entity'
 
 @Entity('campaigns')
-@Index(['tenantId', 'status'])
-@Index(['tenantId', 'scheduleTime'])
+@Index(['storeId', 'status'])
+@Index(['storeId', 'scheduleTime'])
 export class CampaignEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string
@@ -31,12 +31,12 @@ export class CampaignEntity extends BaseEntity {
   @Column({ type: 'timestamp', name: 'schedule_time', nullable: true })
   scheduleTime: Date
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

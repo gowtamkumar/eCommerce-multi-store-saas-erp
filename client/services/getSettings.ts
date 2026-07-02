@@ -1,30 +1,30 @@
 import nestApiUrl from "../lib/api-url";
-import { getTenantId } from "./tenant";
+import { getStoreId } from "./store";
 import { DEFAULT_SETTINGS } from "./defaultSettings";
 
 export async function getSiteSettings() {
   try {
-    const tenantId = await getTenantId();
+    const storeId = await getStoreId();
 
-    if (!tenantId) {
+    if (!storeId) {
       return {
         ...DEFAULT_SETTINGS,
         brandName: "LuxeSaaS",
-        siteDescription: "The premium multi-tenant eCommerce platform.",
+        siteDescription: "The premium multi-store eCommerce platform.",
         contactEmail: "support@gowtam.com",
         isSaaS: true,
       };
     }
 
-    // Cache per-tenant public settings briefly instead of no-store. Next keys
-    // the Data Cache on URL + request headers, so the x-tenant-id header keeps
-    // each tenant's settings isolated. The "site-settings" tag allows targeted
+    // Cache per-store public settings briefly instead of no-store. Next keys
+    // the Data Cache on URL + request headers, so the x-store-id header keeps
+    // each store's settings isolated. The "site-settings" tag allows targeted
     // revalidation (revalidateTag) when settings change.
     const res = await fetch(`${nestApiUrl}/settings/public`, {
       headers: {
-        "x-tenant-id": tenantId,
+        "x-store-id": storeId,
       },
-      next: { revalidate: 60, tags: [`site-settings:${tenantId}`] },
+      next: { revalidate: 60, tags: [`site-settings:${storeId}`] },
     });
 
     if (res.ok) {

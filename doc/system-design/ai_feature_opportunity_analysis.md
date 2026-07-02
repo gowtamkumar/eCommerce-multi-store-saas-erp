@@ -1,6 +1,6 @@
 # AI Feature Opportunity Analysis
 
-> **Purpose:** Identify where AI adds value across this multi-tenant eCommerce ERP — what is already built, what should be built next, and what must stay human-controlled.  
+> **Purpose:** Identify where AI adds value across this multi-store eCommerce ERP — what is already built, what should be built next, and what must stay human-controlled.  
 > **Audience:** Product, engineering, and implementation planning.  
 > **Companion docs:** [AI System Guide](ai_system_guide.md) (A–Z architecture) · [AI Improvement Backlog](ai_improvement_backlog.md) (checklists & next work)
 
@@ -22,7 +22,7 @@
 
 ## 1. Executive Summary
 
-This platform treats AI as a **draft-and-approve productivity layer** on top of a deterministic ERP core ([ERP Master Design — Phase 7](erp_master_system_design.md#phase-7--future-aiapi-extension-separate-doc)). Tenants bring their own API keys; the platform does not host a shared LLM.
+This platform treats AI as a **draft-and-approve productivity layer** on top of a deterministic ERP core ([ERP Master Design — Phase 7](erp_master_system_design.md#phase-7--future-aiapi-extension-separate-doc)). Stores bring their own API keys; the platform does not host a shared LLM.
 
 **Today (through Phase D + platform infra):**
 
@@ -30,7 +30,7 @@ This platform treats AI as a **draft-and-approve productivity layer** on top of 
 - AI Studio (chat + product/campaign labs)
 - Inline assist on **40+ admin surfaces** (catalog, marketing, sales, support, procurement, finance, HRM)
 - Storefront: hybrid semantic search, product Q&A, shopping assistant
-- Platform AI: plan copy, tenant health narrative, support ticket summary, onboarding hints
+- Platform AI: plan copy, store health narrative, support ticket summary, onboarding hints
 - Infrastructure: `ai_jobs` + BullMQ, token usage logs, usage dashboard, rate limits, integration tests
 - Embeddings: auto-sync on product save, background reindex, search analytics
 - Automation: product SEO draft job, abandoned-cart draft job, async invoice OCR, demand forecast job
@@ -44,7 +44,7 @@ This platform treats AI as a **draft-and-approve productivity layer** on top of 
 | **Support conversation summary** | Agent handoff; complements reply assist |
 | **Bulk product import descriptions** | High volume; needs async `ai_jobs` batch |
 | **Global copilot sidebar** | Cross-module access outside dashboard |
-| **E2E storefront AI smoke** | CI confidence for public `x-tenant-id` routes |
+| **E2E storefront AI smoke** | CI confidence for public `x-store-id` routes |
 
 ---
 
@@ -68,7 +68,7 @@ flowchart LR
 
   subgraph Never [Never automate]
     Ledger[GL / finance writes]
-    Scope[Tenant isolation decisions]
+    Scope[Store isolation decisions]
     Perm[Permission grants]
   end
 
@@ -82,8 +82,8 @@ flowchart LR
 
 1. AI returns **suggestions**; existing APIs persist data only when a user saves.
 2. AI **never** posts journals, adjusts stock, issues refunds, or changes prices without explicit human action.
-3. AI **never** bypasses tenant isolation, RBAC, or plan feature gates.
-4. Sensitive finance/HRM data should only be sent to the LLM when the tenant opts in and the use case is read-only summarization.
+3. AI **never** bypasses store isolation, RBAC, or plan feature gates.
+4. Sensitive finance/HRM data should only be sent to the LLM when the store opts in and the use case is read-only summarization.
 
 ---
 
@@ -189,7 +189,7 @@ Legend: ✅ Implemented · 🟡 Partial · ⬜ Not started · 🔒 Planned (need
 | Area | AI need | Status | Notes |
 |------|---------|--------|-------|
 | Plan descriptions | ✅ | Marketing copy for SaaS plans; configure provider at **Platform Settings → AI** |
-| Tenant health | ✅ | Churn risk narrative from aggregate metrics (`POST /super-admin/ai/generate/tenant-health-narrative`) |
+| Store health | ✅ | Churn risk narrative from aggregate metrics (`POST /super-admin/ai/generate/store-health-narrative`) |
 | Support tooling | ✅ | Ticket summary + onboarding hints (`POST /super-admin/ai/generate/*`); Super Admin dashboard panel |
 
 ---
@@ -327,7 +327,7 @@ Recommend separate permission: `ai:use` with HRM scope or `ai:manage` policy for
 
 | Feature | Dependency |
 |---------|------------|
-| Semantic product search | `embeddingModel` in `ai_config`, vector store per tenant |
+| Semantic product search | `embeddingModel` in `ai_config`, vector store per store |
 | “Ask about this product” | Embed `description` + `attributes` + FAQs |
 | Storefront chatbot | FAQ RAG + product catalog read APIs; escalate to human support |
 
@@ -364,7 +364,7 @@ Reuse existing endpoints and `useAiGenerate`; no new infrastructure.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 1 | Embedding pipeline per tenant | ✅ `product_embeddings` + admin reindex + auto-sync |
+| 1 | Embedding pipeline per store | ✅ `product_embeddings` + admin reindex + auto-sync |
 | 2 | Storefront semantic search API | ✅ Hybrid search on `GET /products?q=` |
 | 3 | Admin copilot (read-only tools) | ✅ `DashboardCopilot` + `POST /ai/copilot/admin` |
 | 4 | Support chat with RAG (FAQ + orders) | ✅ Reply assist with context |
@@ -384,7 +384,7 @@ Reuse existing endpoints and `useAiGenerate`; no new infrastructure.
 | Issue refunds or capture payments | Money movement |
 | Change prices, discounts, or tax rules | Commercial terms |
 | Grant/revoke permissions | Security |
-| Cross-tenant data access | Isolation |
+| Cross-store data access | Isolation |
 | Auto-publish campaigns or products | Draft-and-approve principle |
 | Auto-send emails/SMS/push | Compliance and brand risk |
 
@@ -396,13 +396,13 @@ Before expanding AI beyond inline forms:
 
 | Prerequisite | Status | Needed for |
 |--------------|--------|------------|
-| `tenants.ai_config` + BYOK | ✅ | Everything |
+| `stores.ai_config` + BYOK | ✅ | Everything |
 | `ai:use` permission + plan feature `ai` | ✅ | Everything |
 | `useAiGenerate` + `AiInlineBar` | ✅ | New inline surfaces |
 | `ai_jobs` table | ✅ | OCR, bulk, automation dispatch |
 | BullMQ `ai` queue | ✅ | Async work |
 | BullMQ automation dispatch | ✅ | `product.created`, `cart.abandoned` |
-| Embedding API in `TenantAiClientService` | ✅ | Semantic search |
+| Embedding API in `StoreAiClientService` | ✅ | Semantic search |
 | Token usage audit log | ✅ | Billing, quotas, usage dashboard |
 | `ai:manage` policy UI | ⬜ | Sensitive modules (HRM, finance) |
 
@@ -410,7 +410,7 @@ Before expanding AI beyond inline forms:
 
 ## 9. Success Metrics
 
-Track per tenant after each phase:
+Track per store after each phase:
 
 | Metric | Target |
 |--------|--------|
@@ -418,8 +418,8 @@ Track per tenant after each phase:
 | Campaign creation time | ↓ 25% |
 | FAQ coverage (active entries) | ↑ with AI lowering effort |
 | Support first-response time | ↓ with suggested replies |
-| AI feature adoption (% tenants with `configured: true`) | ↑ via onboarding prompt |
-| Token cost per tenant | Visible in Settings → AI usage dashboard |
+| AI feature adoption (% stores with `configured: true`) | ↑ via onboarding prompt |
+| Token cost per store | Visible in Settings → AI usage dashboard |
 
 ---
 
@@ -445,7 +445,7 @@ Track per tenant after each phase:
 | **Operations / inventory** | ✅ Anomaly, transfer, cycle count, fulfillment, batches; demand forecast job | Global copilot sidebar |
 | **Procurement / finance** | ✅ Sync drafts + async invoice OCR job | 3-way match explanation |
 | **HRM** | ✅ Job copy, review phrases, payslip explain | Leave policy FAQ, sensitive-module opt-out |
-| **Storefront** | ✅ Hybrid search, Q&A, assistant, tenant guards, search analytics, live chat handoff | Multilingual prompts, assistant analytics |
+| **Storefront** | ✅ Hybrid search, Q&A, assistant, store guards, search analytics, live chat handoff | Multilingual prompts, assistant analytics |
 | **Copilot** | ✅ Dashboard KPI + admin read-only tools (`listOrders`, `getStockLevel`, …) | Global sidebar (cross-route) |
 | **Platform & infra** | ✅ `ai_jobs`, BullMQ, token metering UI, platform AI + support tooling | E2E storefront smoke, churn trend narratives |
 

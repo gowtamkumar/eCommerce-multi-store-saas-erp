@@ -1,22 +1,22 @@
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
+import { CustomDomainStatus } from '@/common/enums/store/custom-domain-status'
 
 /**
- * Returns the canonical set of origins (`scheme://host[:port]`) that a tenant
+ * Returns the canonical set of origins (`scheme://host[:port]`) that a store
  * is allowed to be redirected back to after a payment flow. Anything outside
  * this set is treated as an open-redirect attempt.
  *
  * The allow-list is composed of:
  *   - the platform fallback (FRONTEND_URL env)
- *   - the tenant's subdomain on the platform host (e.g. `store.platform.com`)
- *   - the tenant's verified custom domain (ACTIVE only)
+ *   - the store's subdomain on the platform host (e.g. `store.platform.com`)
+ *   - the store's verified custom domain (ACTIVE only)
  *
  * In development we additionally accept `localhost` and `127.0.0.1` so the
  * existing dev workflow keeps working — production deployments should set
  * NODE_ENV=production to lock this off.
  */
 export function buildAllowedBillingOrigins(
-  tenant: TenantEntity | null,
+  store: StoreEntity | null,
   env: {
     frontendUrl?: string
     platformHost?: string
@@ -37,13 +37,13 @@ export function buildAllowedBillingOrigins(
 
   add(env.frontendUrl)
 
-  if (tenant?.subdomain && env.platformHost) {
-    add(`https://${tenant.subdomain}.${env.platformHost}`)
-    add(`http://${tenant.subdomain}.${env.platformHost}`)
+  if (store?.subdomain && env.platformHost) {
+    add(`https://${store.subdomain}.${env.platformHost}`)
+    add(`http://${store.subdomain}.${env.platformHost}`)
   }
 
-  if (tenant?.domains) {
-    for (const d of tenant.domains) {
+  if (store?.domains) {
+    for (const d of store.domains) {
       if (d.status === CustomDomainStatus.ACTIVE) {
         add(`https://${d.hostname}`)
         add(`http://${d.hostname}`)

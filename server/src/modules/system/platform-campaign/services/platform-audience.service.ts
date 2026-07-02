@@ -19,7 +19,7 @@ export class PlatformAudienceService {
   ) {}
 
   async getAudience(options: {
-    targetTenants?: boolean
+    targetStores?: boolean
     targetSubscribers?: boolean
     targetUsers?: boolean
     channel?: CampaignType
@@ -27,13 +27,13 @@ export class PlatformAudienceService {
     this.logger.log(`Fetching platform campaign audience with options: ${JSON.stringify(options)}`)
     const membersMap = new Map<string, AudienceMember>()
 
-    // 1. Fetch Registered Store Admins (Tenant owners/managers)
-    if (options.targetTenants) {
-      const tenantAdmins = await this.userRepository.find({
+    // 1. Fetch Registered Store Admins (Store owners/managers)
+    if (options.targetStores) {
+      const storeAdmins = await this.userRepository.find({
         where: { role: UserRole.ADMIN, status: 'active' as any },
         select: { id: true, email: true, phone: true, name: true, pushToken: true, fcmToken: true },
       })
-      tenantAdmins.forEach((u) => {
+      storeAdmins.forEach((u) => {
         if (u.email) {
           membersMap.set(u.email.toLowerCase(), {
             id: u.id,
@@ -48,10 +48,10 @@ export class PlatformAudienceService {
       })
     }
 
-    // 2. Fetch Global Subscribers (landing page subscribers where tenantId is null)
+    // 2. Fetch Global Subscribers (landing page subscribers where storeId is null)
     if (options.targetSubscribers) {
       const subscribers = await this.subscriberRepository.find({
-        where: { tenantId: IsNull(), isActive: true },
+        where: { storeId: IsNull(), isActive: true },
         select: { id: true, email: true },
       })
       subscribers.forEach((s) => {

@@ -51,7 +51,7 @@ export class StockReservationService {
     const repo = this.r(manager)
 
     const reservation = repo.create({
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
       productId: dto.productId,
       variantId: dto.variantId ?? null,
@@ -87,7 +87,7 @@ export class StockReservationService {
   ): Promise<StockReservationEntity> {
     const repo = this.r(manager)
     const reservation = await repo.findOne({
-      where: { id: reservationId, tenantId: ctx.tenantId },
+      where: { id: reservationId, storeId: ctx.storeId },
     })
 
     if (!reservation) {
@@ -136,7 +136,7 @@ export class StockReservationService {
   ): Promise<StockReservationEntity> {
     const repo = this.r(manager)
     const reservation = await repo.findOne({
-      where: { id: reservationId, tenantId: ctx.tenantId },
+      where: { id: reservationId, storeId: ctx.storeId },
     })
 
     if (!reservation) {
@@ -174,17 +174,17 @@ export class StockReservationService {
   /**
    * Marks ACTIVE reservations whose expiresAt has passed as EXPIRED.
    * Should be called by a BullMQ cron or Nest scheduled task.
-   * Optionally scoped to a single tenant for targeted sweeps.
+   * Optionally scoped to a single store for targeted sweeps.
    */
-  async expireStale(tenantId?: string): Promise<number> {
+  async expireStale(storeId?: string): Promise<number> {
     const qb = this.repo
       .createQueryBuilder('sr')
       .where('sr.status = :status', { status: ReservationStatus.ACTIVE })
       .andWhere('sr.expires_at IS NOT NULL')
       .andWhere('sr.expires_at < NOW()')
 
-    if (tenantId) {
-      qb.andWhere('sr.tenant_id = :tenantId', { tenantId })
+    if (storeId) {
+      qb.andWhere('sr.store_id = :storeId', { storeId })
     }
 
     const expiredReservations = await qb.getMany()
@@ -214,7 +214,7 @@ export class StockReservationService {
 
           if (remaining > 0) {
             const ctx: RequestContextDto = {
-              tenantId: freshRes.tenantId,
+              storeId: freshRes.storeId,
               userId: freshRes.userId || 'system',
               user: { id: freshRes.userId || 'system', role: 'SYSTEM' } as any,
             }
@@ -248,7 +248,7 @@ export class StockReservationService {
         })
       } catch (error: any) {
         this.logger.error(
-          `Failed to auto-expire reservation ${reservation.id} (tenantId=${reservation.tenantId}): ${error.message}`,
+          `Failed to auto-expire reservation ${reservation.id} (storeId=${reservation.storeId}): ${error.message}`,
           error.stack,
         )
       }
@@ -256,7 +256,7 @@ export class StockReservationService {
 
     if (count > 0) {
       this.logger.log(
-        `Expired ${count} stale stock reservations${tenantId ? ` for tenant ${tenantId}` : ''}`,
+        `Expired ${count} stale stock reservations${storeId ? ` for store ${storeId}` : ''}`,
       )
     }
     return count
@@ -268,13 +268,13 @@ export class StockReservationService {
 
   /**
    * Returns the total ACTIVE reserved quantity for a product/variant across
-   * all warehouses for a given tenant.
+   * all warehouses for a given store.
    * Use this to compute ATP: ATP = physicalStock − getOpenReservedQty(...)
    */
   async getOpenReservedQty(
     productId: string,
     variantId: string | null,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<number> {
     const repo = this.r(manager)
@@ -283,7 +283,7 @@ export class StockReservationService {
       .createQueryBuilder('sr')
       .select('COALESCE(SUM(sr.reserved_qty - sr.fulfilled_qty - sr.released_qty), 0)', 'openQty')
       .where('sr.product_id = :productId', { productId })
-      .andWhere('sr.tenant_id = :tenantId', { tenantId })
+      .andWhere('sr.store_id = :storeId', { storeId })
       .andWhere('sr.status = :status', { status: ReservationStatus.ACTIVE })
 
     if (variantId) {
@@ -301,17 +301,17 @@ export class StockReservationService {
     productId: string,
     variantId: string | null,
     physicalBalance: number,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<number> {
-    const openReserved = await this.getOpenReservedQty(productId, variantId, tenantId, manager)
+    const openReserved = await this.getOpenReservedQty(productId, variantId, storeId, manager)
     return Math.max(0, physicalBalance - openReserved)
   }
 
   /** List all reservations for a given order. */
-  async findByOrder(orderId: string, tenantId: string): Promise<StockReservationEntity[]> {
+  async findByOrder(orderId: string, storeId: string): Promise<StockReservationEntity[]> {
     return this.repo.find({
-      where: { orderId, tenantId },
+      where: { orderId, storeId },
       order: { reservedAt: 'DESC' },
       relations: {
         product: true,
@@ -323,7 +323,7 @@ export class StockReservationService {
 
   /** Paginated list of reservations with optional filters. */
   async findAll(
-    tenantId: string,
+    storeId: string,
     opts: {
       productId?: string
       status?: ReservationStatus
@@ -338,7 +338,7 @@ export class StockReservationService {
       .leftJoinAndSelect('sr.product', 'product')
       .leftJoinAndSelect('sr.variant', 'variant')
       .leftJoinAndSelect('sr.warehouse', 'warehouse')
-      .where('sr.tenantId = :tenantId', { tenantId })
+      .where('sr.storeId = :storeId', { storeId })
       .orderBy('sr.reservedAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)

@@ -1,11 +1,11 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { SupplierEntity } from './supplier.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('supplier_documents')
-@Index(['tenantId', 'supplierId'])
+@Index(['storeId', 'supplierId'])
 export class SupplierDocumentEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string
@@ -23,12 +23,12 @@ export class SupplierDocumentEntity extends BaseEntity {
   @JoinColumn({ name: 'supplier_id' })
   supplier: SupplierEntity
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

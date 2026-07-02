@@ -28,7 +28,7 @@ export class AiInventoryAssistantService {
   ) {}
 
   async generateInventoryAnomaly(
-    tenantId: string,
+    storeId: string,
     dto: GenerateInventoryAnomalyDto,
   ): Promise<InventoryAnomalyResultDto> {
     const prompt = `Explain inventory anomalies for a store operations team as JSON only (no markdown fences).
@@ -51,7 +51,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -71,7 +71,7 @@ Return exactly this JSON shape:
   }
 
   async generateStockTransferReason(
-    tenantId: string,
+    storeId: string,
     dto: GenerateStockTransferReasonDto,
   ): Promise<StockTransferReasonResultDto> {
     const prompt = `Draft stock transfer reason notes for a warehouse operations team as JSON only (no markdown fences).
@@ -89,7 +89,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -109,7 +109,7 @@ Return exactly this JSON shape:
   }
 
   async generateCycleCountVariance(
-    tenantId: string,
+    storeId: string,
     dto: GenerateCycleCountVarianceDto,
   ): Promise<CycleCountVarianceResultDto> {
     const prompt = `Explain cycle count variances for a warehouse operations team as JSON only (no markdown fences).
@@ -130,7 +130,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -150,7 +150,7 @@ Return exactly this JSON shape:
   }
 
   async generatePackingSlipNotes(
-    tenantId: string,
+    storeId: string,
     dto: GeneratePackingSlipNotesDto,
   ): Promise<PackingSlipNotesResultDto> {
     const prompt = `Draft packing slip notes for a warehouse fulfillment team as JSON only (no markdown fences).
@@ -168,7 +168,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -188,7 +188,7 @@ Return exactly this JSON shape:
   }
 
   async generateBatchWasteReduction(
-    tenantId: string,
+    storeId: string,
     dto: GenerateBatchWasteReductionDto,
   ): Promise<BatchWasteReductionResultDto> {
     const prompt = `Suggest batch and expiry waste reduction tips for an e-commerce inventory team as JSON only (no markdown fences).
@@ -209,7 +209,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

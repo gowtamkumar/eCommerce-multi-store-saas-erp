@@ -17,15 +17,15 @@ export class ShippingAddressService {
 
   async findShippingAddresses(ctx: RequestContextDto): Promise<ShippingAddressEntity[]> {
     this.logger.log(`${this.findShippingAddresses.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
-    return await this.repo.findAllByUserId(userId, tenantId)
+    return await this.repo.findAllByUserId(userId, storeId)
   }
 
   async findShippingAddress(id: string, ctx: RequestContextDto): Promise<ShippingAddressEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
-    const address = await this.repo.findById(id, userId, tenantId)
+    const address = await this.repo.findById(id, userId, storeId)
     if (!address) throw new NotFoundException('Shipping address not found')
     return address
   }
@@ -35,7 +35,7 @@ export class ShippingAddressService {
     dto: CreateShippingAddressDto,
   ): Promise<ShippingAddressEntity> {
     this.logger.log(`${this.createShippingAddress.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
 
     // Validate the address
@@ -43,7 +43,7 @@ export class ShippingAddressService {
 
     // If isDefault, unset existing defaults first
     if (dto.isDefault) {
-      await this.repo.unsetDefaults(userId, tenantId)
+      await this.repo.unsetDefaults(userId, storeId)
     }
     return await this.repo.createAndSave(dto, ctx)
   }
@@ -54,7 +54,7 @@ export class ShippingAddressService {
     dto: UpdateShippingAddressDto,
   ): Promise<ShippingAddressEntity> {
     this.logger.log(`${this.updateShippingAddress.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
     const address = await this.findShippingAddress(id, ctx)
 
@@ -65,7 +65,7 @@ export class ShippingAddressService {
     } as any)
 
     if (dto.isDefault) {
-      await this.repo.unsetDefaults(userId, tenantId)
+      await this.repo.unsetDefaults(userId, storeId)
     }
     return await this.repo.updateAndSave(address, dto)
   }
@@ -75,10 +75,10 @@ export class ShippingAddressService {
     ctx: RequestContextDto,
   ): Promise<ShippingAddressEntity> {
     this.logger.log(`${this.setDefaultShippingAddress.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const userId = ctx.userId
     const address = await this.findShippingAddress(id, ctx)
-    await this.repo.unsetDefaults(userId, tenantId)
+    await this.repo.unsetDefaults(userId, storeId)
     return await this.repo.updateAndSave(address, { isDefault: true })
   }
 

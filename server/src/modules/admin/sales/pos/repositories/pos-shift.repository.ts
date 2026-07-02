@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
@@ -6,7 +6,7 @@ import { PosShiftEntity, PosShiftStatus } from '../entities/pos-shift.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PosShiftRepository extends BaseTenantRepository<PosShiftEntity> {
+export class PosShiftRepository extends BaseStoreRepository<PosShiftEntity> {
   constructor(
     @InjectRepository(PosShiftEntity)
     repo: Repository<PosShiftEntity>,
@@ -14,9 +14,9 @@ export class PosShiftRepository extends BaseTenantRepository<PosShiftEntity> {
     super(PosShiftEntity, repo)
 }
 
-  async findAll(tenantId: string): Promise<PosShiftEntity[]> {
+  async findAll(storeId: string): Promise<PosShiftEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         register: true,
         user: true,
@@ -27,12 +27,12 @@ export class PosShiftRepository extends BaseTenantRepository<PosShiftEntity> {
 
   async findOne(
     id: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<PosShiftEntity | null> {
     const repository = this.txRepo(manager)
     return repository.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         register: true,
         user: true,
@@ -40,9 +40,9 @@ export class PosShiftRepository extends BaseTenantRepository<PosShiftEntity> {
     })
   }
 
-  async findActiveShiftForUser(userId: string, tenantId: string): Promise<PosShiftEntity | null> {
+  async findActiveShiftForUser(userId: string, storeId: string): Promise<PosShiftEntity | null> {
     return this.repo.findOne({
-      where: { userId, tenantId, status: PosShiftStatus.OPEN },
+      where: { userId, storeId, status: PosShiftStatus.OPEN },
       relations: {
         register: true,
       },
@@ -57,7 +57,7 @@ export class PosShiftRepository extends BaseTenantRepository<PosShiftEntity> {
     const repository = this.txRepo(manager)
     const shift = repository.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
     })
     return repository.save(shift) as any
   }

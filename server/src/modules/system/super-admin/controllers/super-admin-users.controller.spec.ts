@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { SuperAdminUsersController } from './super-admin-users.controller'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { SuperAdminCrossTenantRepository } from '../repositories/super-admin-cross-tenant.repository'
+import { SuperAdminCrossStoreRepository } from '../repositories/super-admin-cross-store.repository'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common'
 
@@ -18,7 +18,7 @@ describe('SuperAdminUsersController', () => {
     const mockMailService = {
       sendVerificationEmail: jest.fn(),
     }
-    const mockCrossTenantRepo = {}
+    const mockCrossStoreRepo = {}
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SuperAdminUsersController],
@@ -32,8 +32,8 @@ describe('SuperAdminUsersController', () => {
           useValue: mockMailService,
         },
         {
-          provide: SuperAdminCrossTenantRepository,
-          useValue: mockCrossTenantRepo,
+          provide: SuperAdminCrossStoreRepository,
+          useValue: mockCrossStoreRepo,
         },
       ],
     }).compile()
@@ -66,7 +66,7 @@ describe('SuperAdminUsersController', () => {
       const mockUser = {
         id: '1',
         email: 'test@example.com',
-        tenantId: 'tenant-123',
+        storeId: 'store-123',
         emailVerificationToken: null,
       }
       userService.getUser.mockResolvedValue(mockUser as any)
@@ -81,7 +81,7 @@ describe('SuperAdminUsersController', () => {
       expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
         'test@example.com',
         expect.any(String),
-        'tenant-123',
+        'store-123',
       )
       expect(result).toEqual({
         success: true,
@@ -95,7 +95,7 @@ describe('SuperAdminUsersController', () => {
       const mockUser = {
         id: '1',
         email: 'test@example.com',
-        tenantId: 'tenant-123',
+        storeId: 'store-123',
         emailVerificationToken: 'existing-token-xyz',
       }
       userService.getUser.mockResolvedValue(mockUser as any)
@@ -107,7 +107,7 @@ describe('SuperAdminUsersController', () => {
       expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
         'test@example.com',
         'existing-token-xyz',
-        'tenant-123',
+        'store-123',
       )
       expect(result).toEqual({
         success: true,
@@ -121,7 +121,7 @@ describe('SuperAdminUsersController', () => {
       const mockUser = {
         id: '1',
         email: 'test@example.com',
-        tenantId: 'tenant-123',
+        storeId: 'store-123',
         emailVerificationToken: 'token',
       }
       userService.getUser.mockResolvedValue(mockUser as any)

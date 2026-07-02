@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { FileEntity } from './entities/file.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class FileRepository extends BaseTenantRepository<FileEntity> {
+export class FileRepository extends BaseStoreRepository<FileEntity> {
   constructor(
     @InjectRepository(FileEntity)
     repo: Repository<FileEntity>,
@@ -14,11 +14,11 @@ export class FileRepository extends BaseTenantRepository<FileEntity> {
     super(FileEntity, repo)
 }
 
-  async findAllByTenant(where: any): Promise<FileEntity[]> {
+  async findAllByStore(where: any): Promise<FileEntity[]> {
     return await this.repo.find({ where, order: { createdAt: 'DESC' } })
   }
 
-  async findPaginatedByTenant(
+  async findPaginatedByStore(
     where: any,
     page: number,
     limit: number,
@@ -35,14 +35,14 @@ export class FileRepository extends BaseTenantRepository<FileEntity> {
     return await this.repo.findOne({ where: { id } })
   }
 
-  async findByIdAndTenant(id: string, tenantId: string): Promise<FileEntity | null> {
-    return await this.repo.findOne({ where: { id, tenantId } })
+  async findByIdAndStore(id: string, storeId: string): Promise<FileEntity | null> {
+    return await this.repo.findOne({ where: { id, storeId } })
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<FileEntity> {
     const file = this.repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as any) as unknown as FileEntity
     return await (this.repo.save(file) as Promise<FileEntity>)
@@ -57,11 +57,11 @@ export class FileRepository extends BaseTenantRepository<FileEntity> {
     return await this.repo.softRemove(file)
   }
 
-  async getTotalStorageUsed(tenantId: string): Promise<number> {
+  async getTotalStorageUsed(storeId: string): Promise<number> {
     const result = await this.repo
       .createQueryBuilder('file')
       .select('SUM(file.size)', 'total')
-      .where('file.tenantId = :tenantId', { tenantId })
+      .where('file.storeId = :storeId', { storeId })
       .getRawOne()
     return parseInt(result?.total || '0', 10)
   }

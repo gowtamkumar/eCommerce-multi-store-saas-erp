@@ -17,9 +17,9 @@ export class ArService {
     private readonly accountingService: AccountingService,
   ) {}
 
-  private async getTenantBaseCurrency(tenantId: string, manager?: EntityManager): Promise<string> {
+  private async getStoreBaseCurrency(storeId: string, manager?: EntityManager): Promise<string> {
     const em = manager || this.dataSource.manager
-    const settings = await em.findOne(SiteSettingsEntity, { where: { tenantId } })
+    const settings = await em.findOne(SiteSettingsEntity, { where: { storeId } })
     return (settings?.currency || 'USD').toUpperCase()
   }
 
@@ -28,7 +28,7 @@ export class ArService {
    */
   async getCustomerOutstandingBalance(
     customerId: string,
-    tenantId: string,
+    storeId: string,
     manager?: EntityManager,
   ): Promise<number> {
     const em = manager || this.dataSource.manager
@@ -36,7 +36,7 @@ export class ArService {
       .createQueryBuilder(ArLedgerEntity, 'ledger')
       .select('SUM(ledger.amount)', 'total')
       .where('ledger.customer_id = :customerId', { customerId })
-      .andWhere('ledger.tenant_id = :tenantId', { tenantId })
+      .andWhere('ledger.store_id = :storeId', { storeId })
       .getRawOne()
 
     return Number(result?.total || 0)
@@ -60,10 +60,10 @@ export class ArService {
     manager?: EntityManager,
   ): Promise<ArLedgerEntity> {
     const em = manager || this.dataSource.manager
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // Calculate balance after
-    const currentBalance = await this.getCustomerOutstandingBalance(data.customerId, tenantId, em)
+    const currentBalance = await this.getCustomerOutstandingBalance(data.customerId, storeId, em)
     const balanceAfter = currentBalance + Number(data.amount)
 
     const ledgerEntry = em.create(ArLedgerEntity, {
@@ -75,7 +75,7 @@ export class ArService {
       dueDate: data.dueDate || null,
       referenceType: data.referenceType || null,
       referenceId: data.referenceId || null,
-      tenantId,
+      storeId,
       createdBy: data.createdBy || ctx.userId || null,
     })
 
@@ -97,7 +97,7 @@ export class ArService {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<ArLedgerEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const amount = Number(data.amount)
 
     if (amount <= 0) {
@@ -114,13 +114,13 @@ export class ArService {
 
     try {
       // 1. Verify customer exists
-      const customer = await em.findOne(UserEntity, { where: { id: data.customerId, tenantId } })
+      const customer = await em.findOne(UserEntity, { where: { id: data.customerId, storeId } })
       if (!customer) {
         throw new NotFoundException(`Customer with ID ${data.customerId} not found`)
       }
 
       // 2. Post AR Ledger Entry (negative amount to reduce outstanding balance)
-      const baseCurrency = await this.getTenantBaseCurrency(tenantId, em)
+      const baseCurrency = await this.getStoreBaseCurrency(storeId, em)
       const ledgerEntry = await this.postArTransaction(
         {
           customerId: data.customerId,
@@ -164,18 +164,18 @@ export class ArService {
    * Generates a B2B Accounts Receivable aging report using a FIFO allocation algorithm.
    */
   async getArAgingReport(ctx: RequestContextDto): Promise<any[]> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const em = this.dataSource.manager
 
     // 1. Get all customer profiles who are eligible for credit
     const customers = await em.find(UserEntity, {
-      where: { tenantId },
+      where: { storeId },
       order: { name: 'ASC' },
     })
 
     // Preload all AR entries to avoid N+1 queries
     const allEntries = await em.find(ArLedgerEntity, {
-      where: { tenantId },
+      where: { storeId },
       order: { createdAt: 'ASC', id: 'ASC' },
     })
 
@@ -276,9 +276,9 @@ export class ArService {
   /**
    * Retrieves all ledger entries for a single customer.
    */
-  async getCustomerLedger(customerId: string, tenantId: string): Promise<ArLedgerEntity[]> {
+  async getCustomerLedger(customerId: string, storeId: string): Promise<ArLedgerEntity[]> {
     return this.dataSource.manager.find(ArLedgerEntity, {
-      where: { customerId, tenantId },
+      where: { customerId, storeId },
       order: { createdAt: 'DESC', id: 'DESC' },
     })
   }
@@ -289,17 +289,17 @@ export class ArService {
    * Requires the purchase module's SupplierInvoice/SupplierPayment entities to be loaded.
    */
   async getApAgingReport(ctx: RequestContextDto): Promise<any[]> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const em = this.dataSource.manager
 
     // Load all AP ledger entries (supplier invoices are positive, payments are negative)
     const allEntries = await em.find(ArLedgerEntity, {
-      where: { tenantId, referenceType: 'SUPPLIER_INVOICE' },
+      where: { storeId, referenceType: 'SUPPLIER_INVOICE' },
       order: { createdAt: 'ASC', id: 'ASC' },
     })
 
     const paymentEntries = await em.find(ArLedgerEntity, {
-      where: { tenantId, referenceType: 'SUPPLIER_PAYMENT' },
+      where: { storeId, referenceType: 'SUPPLIER_PAYMENT' },
       order: { createdAt: 'ASC', id: 'ASC' },
     })
 

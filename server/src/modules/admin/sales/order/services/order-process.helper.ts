@@ -47,10 +47,10 @@ export class OrderProcessHelper {
     reservationId: string | null
   }> {
     const { productId, variantId, quantity, pricing: itemPricingDto } = itemDto
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const product = await manager.findOne(ProductEntity, {
-      where: { id: productId, tenantId },
+      where: { id: productId, storeId },
       lock: { mode: 'pessimistic_write' },
     })
 
@@ -61,7 +61,7 @@ export class OrderProcessHelper {
     let variant: ProductVariantEntity | null = null
     if (variantId) {
       variant = await manager.findOne(ProductVariantEntity, {
-        where: { id: variantId, productId: product.id, tenantId },
+        where: { id: variantId, productId: product.id, storeId },
         lock: { mode: 'pessimistic_write' },
       })
       if (!variant) {
@@ -79,7 +79,7 @@ export class OrderProcessHelper {
       variant?.id || null,
       quantity,
       priceBookCode || null, // Use specified book; falls back to default if null
-      tenantId,
+      storeId,
       orderCurrency,
     )
 
@@ -115,7 +115,7 @@ export class OrderProcessHelper {
       orderItem.discountAmount = pricing.discountAmount
       orderItem.taxAmount = pricing.taxAmount
       orderItem.totalAmount = itemTotal
-      orderItem.tenantId = tenantId
+      orderItem.storeId = storeId
       orderItem.snapshot = {
         productId: product.id,
         productName: product.name,
@@ -137,7 +137,7 @@ export class OrderProcessHelper {
     const currentStock = await this.inventoryService.getGlobalLiveStock(
       product.id,
       variant?.id || null,
-      tenantId,
+      storeId,
       manager,
     )
     if (currentStock < quantity) {
@@ -235,7 +235,7 @@ export class OrderProcessHelper {
     settings: SiteSettingsEntity | null,
     ctx: RequestContextDto,
   ): Promise<number> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const shippingZone = (dto.shippingZone as any) || 'standard'
     const strategy = ShippingStrategyFactory.create(shippingZone)
     let shippingFee = strategy.calculate(settings?.shippingConfig, totalAfterCoupon)

@@ -8,20 +8,20 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { PermissionEntity } from './permission.entity'
 
 /**
- * A named collection of permissions assigned to users within a tenant.
+ * A named collection of permissions assigned to users within a store.
  *
- * System roles (isSystemRole = true) are auto-provisioned on tenant creation.
+ * System roles (isSystemRole = true) are auto-provisioned on store creation.
  * They cannot be modified or deleted — attempting to do so throws a ForbiddenException.
  *
  * Roles are flat — there is no inheritance chain. Assign multiple roles to a user
  * to combine their permissions (the resolution engine unions all active assignments).
  */
 @Entity('roles')
-@Index(['name', 'tenantId'], { unique: true })
+@Index(['name', 'storeId'], { unique: true })
 export class RoleEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
@@ -43,12 +43,12 @@ export class RoleEntity {
   @Column({ default: false, name: 'is_system_default' })
   isSystemDefault: boolean
 
-  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id', nullable: true })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   /** Direct permissions assigned to this role */
   @ManyToMany(() => PermissionEntity)

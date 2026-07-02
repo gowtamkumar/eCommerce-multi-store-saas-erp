@@ -18,7 +18,7 @@ import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/enti
 import { InventoryLedgerRepository } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
@@ -44,7 +44,7 @@ import { InventoryProcessor } from './inventory.processor'
       CategoryEntity,
       SupplierEntity,
     ]),
-    TenantModule,
+    StoreModule,
     AccountingModule,
     CacheModule,
     NotificationModule,

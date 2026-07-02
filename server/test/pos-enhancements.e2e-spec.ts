@@ -13,7 +13,7 @@ import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-regist
 import { PosShiftEntity } from '@/modules/admin/sales/pos/entities/pos-shift.entity'
 import { PosService } from '@/modules/admin/sales/pos/pos.service'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { INestApplication } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { DataSource } from 'typeorm'
@@ -25,7 +25,7 @@ describe('POS Enhancements (e2e)', () => {
   let dataSource: DataSource
   let posService: PosService
   let accountingService: AccountingService
-  let tenant: TenantEntity
+  let store: StoreEntity
   let ctx: RequestContextDto
   let product: ProductEntity
   let register: PosRegisterEntity
@@ -43,20 +43,20 @@ describe('POS Enhancements (e2e)', () => {
     posService = app.get(PosService)
     accountingService = app.get(AccountingService)
 
-    // Create a mock tenant for testing
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    // Create a mock store for testing
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'E2E Test POS Enhancements Store',
       subdomain: `e2e-test-pos-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
 
     ctx = new RequestContextDto()
-    ctx.tenantId = tenant.id
+    ctx.storeId = store.id
     ctx.userId = '00000000-0000-0000-0000-000000000000'
 
     // Initialize Chart of Accounts
-    await accountingService.initializeTenantCOA(ctx)
+    await accountingService.initializeStoreCOA(ctx)
 
     // Create a product
     const productRepo = dataSource.getRepository(ProductEntity)
@@ -68,7 +68,7 @@ describe('POS Enhancements (e2e)', () => {
       images: [],
       status: ProductStatus.ACTIVE,
       taxRate: 10,
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     await productRepo.save(product)
 
@@ -77,7 +77,7 @@ describe('POS Enhancements (e2e)', () => {
     const branch = branchRepo.create({
       name: 'Main Branch',
       code: `MB-${Date.now()}`,
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     await branchRepo.save(branch)
 
@@ -88,7 +88,7 @@ describe('POS Enhancements (e2e)', () => {
       name: 'E2E Test User',
       username: `e2etestuser-${Date.now()}`,
       password: 'password',
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     await userRepo.save(user)
 
@@ -112,7 +112,7 @@ describe('POS Enhancements (e2e)', () => {
   })
 
   afterAll(async () => {
-    if (tenant) {
+    if (store) {
       const tables = [
         'order_items',
         'orders',
@@ -129,13 +129,13 @@ describe('POS Enhancements (e2e)', () => {
       ]
       for (const table of tables) {
         try {
-          await dataSource.query(`DELETE FROM "${table}" WHERE "tenant_id" = $1`, [tenant.id])
+          await dataSource.query(`DELETE FROM "${table}" WHERE "store_id" = $1`, [store.id])
         } catch (e) {
           // Ignore table deletion errors to continue cleanup
         }
       }
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      await tenantRepo.delete(tenant.id)
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      await storeRepo.delete(store.id)
     }
     if (app) {
       await app.close()

@@ -1,6 +1,6 @@
-# Enterprise Multi-Tenant SaaS ERP — Documentation Index
+# Enterprise Multi-Store SaaS ERP — Documentation Index
 
-**Platform:** eCommerce Multi-Tenant SaaS ERP  
+**Platform:** eCommerce Multi-Store SaaS ERP  
 **Stack:** NestJS · TypeORM · PostgreSQL · Redis · BullMQ · Next.js  
 **Architecture:** Modular Monolith · Event-Driven · Ledger-Based · GAAP-Compliant  
 **Last Updated:** May 24, 2026  
@@ -18,7 +18,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 | **System Architect / reviewer** | [`system-design/erp_master_system_design.md`](system-design/erp_master_system_design.md) |
 | **Engineer tracing a feature end-to-end** | [`system-design/erp_master_dataflow.md`](system-design/erp_master_dataflow.md) |
 | **Platform Super-Admin** (SaaS Owner) | [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) |
-| **Tenant Owner / Business CFO** | [`manuals/02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) |
+| **Store Owner / Business CFO** | [`manuals/02_STORE_OWNER_MANUAL.md`](manuals/02_STORE_OWNER_MANUAL.md) |
 | **Store Cashier / POS staff** | [`manuals/03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) |
 | **Accountant / Bookkeeper** | [`manuals/04_ACCOUNTANT_MANUAL.md`](manuals/04_ACCOUNTANT_MANUAL.md) |
 | **HR Specialist / Payroll Manager** | [`manuals/05_HR_PAYROLL_MANUAL.md`](manuals/05_HR_PAYROLL_MANUAL.md) |
@@ -36,7 +36,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 *   [`erp_business_logic_deep_dive.md`](system-design/erp_business_logic_deep_dive.md) — **Business Logic Deep Dive**: Real-world business examples, module-by-module business rules, add/update/remove behaviour, module connections, edge cases, and end-to-end scenarios. Read this when you need to understand why the ERP behaves a certain way.
 *   [`erp_master_dataflow.md`](system-design/erp_master_dataflow.md) — **Master Dataflow Map**: End-to-end module-by-module data flow (UI → guards → controller → service → ledgers → outbox → BullMQ), row-level write maps, and code-vs-docs discrepancy log. Read after the master system design.
 *   [`erp_low_level_system_design.md`](system-design/erp_low_level_system_design.md) — **Low-Level Code Contracts**: Details the NestJS request processing guard chain, typed BullMQ payloads, ledger boundaries, transaction handling, and migration rules.
-*   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERDs (Mermaid), 107-table inventory, schema definitions, indexes, and tenant-isolation rules.
+*   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERDs (Mermaid), 107-table inventory, schema definitions, indexes, and store-isolation rules.
 *   [`erp_documentation_and_user_manual_plan.md`](system-design/erp_documentation_and_user_manual_plan.md) — Documentation strategy and writing phases.
 *   [`developer_architecture_onboarding.md`](system-design/developer_architecture_onboarding.md) — **Developer Architectural Onboarding & System Flow Map**: Explains modular monolith layouts, request guard pipelines, double-entry verification flowchart, and offline POS sync strategies.
 *   [`erp_remaining_roadmap.md`](system-design/erp_remaining_roadmap.md) — Implementation roadmap and task tracking.
@@ -87,7 +87,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 | Document | Domains Covered |
 | :--- | :--- |
-| [`01_system_infrastructure.md`](codebase-understanding/01_system_infrastructure.md) | Tenant, Subscription, Organization (Branch/Warehouse), Audit Log |
+| [`01_system_infrastructure.md`](codebase-understanding/01_system_infrastructure.md) | Store, Subscription, Organization (Branch/Warehouse), Audit Log |
 | [`02_catalog_and_marketing.md`](codebase-understanding/02_catalog_and_marketing.md) | Products, Variants, Categories, Price Books, Loyalty, Campaigns, Site Settings |
 | [`03_sales_and_pos.md`](codebase-understanding/03_sales_and_pos.md) | Orders, Returns, POS Registers, Cashier Shifts, Cash Drawer, Coupons, Promotions |
 | [`04_logistics_and_inventory.md`](codebase-understanding/04_logistics_and_inventory.md) | Inventory Ledger, Batch/Expiry Lots, Reservations, Transfers, GRN, Fulfillment, Courier |
@@ -106,7 +106,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 ### 3.1 Role-Based End-User Manuals
 *   [`01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) — Super-admin operations, subscription billing upgrades/suspensions, domain audits, GDPR data dumps, and queue monitoring.
-*   [`02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) — Multi-company configuration, branch/warehouse definitions, staff invitations, and profit/loss reports.
+*   [`02_STORE_OWNER_MANUAL.md`](manuals/02_STORE_OWNER_MANUAL.md) — Multi-company configuration, branch/warehouse definitions, staff invitations, and profit/loss reports.
 *   [`03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) — Opening/closing shifts, scanner checkouts, split payments, offline mode sync, cash drawer adjustments, Z-reports.
 *   [`04_ACCOUNTANT_MANUAL.md`](manuals/04_ACCOUNTANT_MANUAL.md) — Chart of Accounts, manual journal entries, reversals, 3-way invoice matching, supplier ledger, AP/AR aging statements, tax sandbox filing.
 *   [`05_HR_PAYROLL_MANUAL.md`](manuals/05_HR_PAYROLL_MANUAL.md) — Employee personal dossiers, GPS geofenced punch attendance checks, leave quotas, monthly payroll auto-runs.
@@ -116,9 +116,9 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 ### 3.2 Reference Operational Guidelines
 *   [`00_SUPER_ADMIN_GUIDELINES.md`](manuals/00_SUPER_ADMIN_GUIDELINES.md) — Platform support checklists.
 *   [`08_HRM_TEAM_MANAGEMENT_GUIDELINE.md`](manuals/08_HRM_TEAM_MANAGEMENT_GUIDELINE.md) — HRM employee onboarding setup instructions.
-*   [`09_TENANT_OWNER_ONBOARDING_GUIDE.md`](manuals/09_TENANT_OWNER_ONBOARDING_GUIDE.md) — Setup guidelines for new business stores.
+*   [`09_STORE_OWNER_ONBOARDING_GUIDE.md`](manuals/09_STORE_OWNER_ONBOARDING_GUIDE.md) — Setup guidelines for new business stores.
 *   [`12_STOREFRONT_AI_GUIDE.md`](manuals/12_STOREFRONT_AI_GUIDE.md) — **Storefront AI (customer-facing):** semantic search, product Q&A, shopping assistant — user manual + developer guide with diagrams.
-*   [`ai_system_guide.md`](system-design/ai_system_guide.md) — **AI System (A–Z):** tenant admin assists, storefront AI, platform AI, embeddings, access control, and file map.
+*   [`ai_system_guide.md`](system-design/ai_system_guide.md) — **AI System (A–Z):** store admin assists, storefront AI, platform AI, embeddings, access control, and file map.
 
 ---
 
@@ -126,7 +126,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 ```
                     ┌──────────────────────────────────────────┐
-                    │          Multi-Tenant SaaS ERP           │
+                    │          Multi-Store SaaS ERP           │
                     │  NestJS · Next.js · PostgreSQL · Redis   │
                     └────────────────────┬─────────────────────┘
                                          │
@@ -151,8 +151,8 @@ This folder is the single source of truth for the entire ERP platform. Documenta
               ▼                          ▼                           ▼
    ┌──────────────────┐      ┌──────────────────────┐    ┌──────────────────┐
    │   PostgreSQL     │      │   Redis Cache        │    │  BullMQ Queues   │
-   │ (Ledger-Based    │      │ (t:{tenantId}:key)   │    │ stock · journal  │
-   │  Multi-Tenant)   │      │                      │    │ email · reports  │
+   │ (Ledger-Based    │      │ (t:{storeId}:key)   │    │ stock · journal  │
+   │  Multi-Store)   │      │                      │    │ email · reports  │
    └──────────────────┘      └──────────────────────┘    └──────────────────┘
 ```
 

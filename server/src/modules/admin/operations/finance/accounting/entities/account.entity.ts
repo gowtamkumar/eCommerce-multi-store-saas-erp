@@ -1,10 +1,10 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm'
 import { AccountType, AccountCategory } from '@/common/enums/account-type.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 @Entity('accounts')
-@Index(['tenantId', 'code'], { unique: true })
+@Index(['storeId', 'code'], { unique: true })
 export class AccountEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })
   code: string
@@ -33,12 +33,12 @@ export class AccountEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
   balance: number
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'text', nullable: true })
   description: string

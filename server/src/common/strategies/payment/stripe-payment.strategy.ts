@@ -43,7 +43,7 @@ export class StripePaymentStrategy implements PaymentStrategy {
       params.append('success_url', `${options.callbackUrl}/success?tran_id=${tran_id}&session_id={CHECKOUT_SESSION_ID}`)
       params.append('cancel_url', `${options.callbackUrl}/cancel?tran_id=${tran_id}`)
       params.append('metadata[tran_id]', tran_id)
-      params.append('metadata[tenant_id]', options.tenantId)
+      params.append('metadata[store_id]', options.storeId)
 
       const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

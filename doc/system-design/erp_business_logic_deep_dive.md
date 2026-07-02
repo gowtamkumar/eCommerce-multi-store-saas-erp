@@ -47,7 +47,7 @@ This ERP runs the full operating loop of a retail business:
 
 ```mermaid
 flowchart LR
-  Setup["Setup business<br/>Tenant, plan, branches,<br/>warehouses, staff"]
+  Setup["Setup business<br/>Store, plan, branches,<br/>warehouses, staff"]
   Buy["Buy stock<br/>Supplier, PO, GRN"]
   Stock["Manage stock<br/>Inventory ledger,<br/>transfer, reservation"]
   Sell["Sell<br/>Storefront, admin order,<br/>POS offline/online"]
@@ -78,11 +78,11 @@ Examples:
 
 # Part I - Platform Foundation
 
-## 1. Tenant, Subscription, and Feature Access
+## 1. Store, Subscription, and Feature Access
 
 ### Business Purpose
 
-This is a multi-tenant SaaS ERP. One codebase runs many businesses. A tenant is one business/store. Each tenant can have different branches, warehouses, users, subscription plan, and enabled features.
+This is a multi-store SaaS ERP. One codebase runs many businesses. A store is one business/store. Each store can have different branches, warehouses, users, subscription plan, and enabled features.
 
 ### Real-World Example
 
@@ -97,12 +97,12 @@ They choose:
 - Branches: Dhaka, Chittagong
 - Warehouses: Central Warehouse, Dhaka Store Stockroom
 
-Another tenant, `ABC Electronics`, uses the same software but must never see Demo Fashion's data.
+Another store, `ABC Electronics`, uses the same software but must never see Demo Fashion's data.
 
 ### Main Users
 
 - SaaS platform owner
-- Tenant owner
+- Store owner
 - Store administrator
 - Billing/support team
 
@@ -110,46 +110,46 @@ Another tenant, `ABC Electronics`, uses the same software but must never see Dem
 
 | Rule | Why |
 | ---- | --- |
-| Every tenant has isolated data. | Prevents cross-business data leak. |
-| A suspended tenant cannot operate normal ERP workflows. | Enforces billing/compliance. |
+| Every store has isolated data. | Prevents cross-business data leak. |
+| A suspended store cannot operate normal ERP workflows. | Enforces billing/compliance. |
 | Feature access comes from subscription plan features. | Allows pricing tiers. |
-| Tenant id must come from trusted request context/header, not request body. | Prevents tenant spoofing. |
+| Store id must come from trusted request context/header, not request body. | Prevents store spoofing. |
 
 ### Data Changes
 
 | Action | Data impact |
 | ------ | ----------- |
-| Tenant signup | `A tenants`, `A users` owner, `A subscription_invoices`. |
-| Plan upgrade | `U tenants.subscription_plan_id`, `A subscription_invoices`. |
-| Tenant suspend | `U tenants.status='SUSPENDED'`. |
-| Custom domain verify | `U tenants.custom_domain_status`, `custom_domain_verified_at`. |
+| Store signup | `A stores`, `A users` owner, `A subscription_invoices`. |
+| Plan upgrade | `U stores.subscription_plan_id`, `A subscription_invoices`. |
+| Store suspend | `U stores.status='SUSPENDED'`. |
+| Custom domain verify | `U stores.custom_domain_status`, `custom_domain_verified_at`. |
 
 ### Module Connections
 
 ```mermaid
 flowchart LR
-  Tenant["Tenant"]
+  Store["Store"]
   Subscription["Subscription Plan"]
-  Feature["Tenant Features"]
+  Feature["Store Features"]
   Guard["SubscriptionGuard"]
   Modules["POS / HRM / Campaigns / Builder / Reports"]
   Billing["Subscription Billing"]
 
-  Tenant --> Subscription
+  Store --> Subscription
   Subscription --> Feature
   Feature --> Guard
   Guard --> Modules
-  Billing --> Tenant
+  Billing --> Store
 ```
 
 ### Edge Cases
 
 | Case | Expected behaviour |
 | ---- | ------------------ |
-| Tenant expired while cashier is using POS | Block new server sync; offline POS may queue locally but server sync should fail until billing resolved. |
-| Tenant changes plan from Pro to Basic | Disable gated features, but do not delete historical data. |
-| Tenant has custom domain and subdomain | Both resolve to same `tenant_id`; cache keys still use tenant id. |
-| Tenant owner leaves company | Transfer ownership by updating tenant `user_id` after verifying authority. |
+| Store expired while cashier is using POS | Block new server sync; offline POS may queue locally but server sync should fail until billing resolved. |
+| Store changes plan from Pro to Basic | Disable gated features, but do not delete historical data. |
+| Store has custom domain and subdomain | Both resolve to same `store_id`; cache keys still use store id. |
+| Store owner leaves company | Transfer ownership by updating store `user_id` after verifying authority. |
 
 ---
 
@@ -171,7 +171,7 @@ Demo Fashion has:
 
 ### Main Users
 
-- Tenant owner
+- Store owner
 - HR/admin staff
 - Department managers
 - Cashiers
@@ -182,7 +182,7 @@ Demo Fashion has:
 
 | Rule | Why |
 | ---- | --- |
-| A user belongs to one tenant except platform super-admin. | Data isolation. |
+| A user belongs to one store except platform super-admin. | Data isolation. |
 | Permission can be role-based and scope-based. | `orders:create` may be allowed in Dhaka but not all branches. |
 | Admin bypass should be explicit. | Prevents accidental privilege escalation. |
 | Branch id can be supplied through `x-branch-id`, but guard validates it. | Prevents staff choosing another branch. |
@@ -340,7 +340,7 @@ Category:
 
 | Rule | Why |
 | ---- | --- |
-| SKU must be unique per tenant. | Prevents stock confusion. |
+| SKU must be unique per store. | Prevents stock confusion. |
 | Product can be inactive without deleting history. | Old orders still need product snapshot. |
 | Variant carries size/color/attribute-specific stock and SKU. | Stock for Red/M is not same as Black/L. |
 | Average cost is updated by purchase/GRN, not manually during sale. | Correct COGS. |
@@ -696,7 +696,7 @@ flowchart LR
 | Supplier delivers less than PO | PO becomes partially received. |
 | Supplier invoice exceeds PO price | 3-way match should fail or require approval. |
 | Goods damaged at receiving | GRN reject/partial receive; no stock increase for rejected qty. |
-| Duplicate supplier invoice number | Reject per supplier/tenant. |
+| Duplicate supplier invoice number | Reject per supplier/store. |
 
 ---
 
@@ -832,7 +832,7 @@ flowchart TD
 
 | Case | Expected behaviour |
 | ---- | ------------------ |
-| Negative stock | Either blocked or allowed by explicit tenant policy with audit. |
+| Negative stock | Either blocked or allowed by explicit store policy with audit. |
 | Expired reservation | Sweep job releases it. |
 | Batch expired | FEFO excludes expired batches from sale. |
 | Transfer lost in transit | Receive partial and create variance adjustment. |
@@ -1229,7 +1229,7 @@ Owner asks:
 | Rule | Why |
 | ---- | --- |
 | Reports should read truth ledgers, not UI guesses. | Accuracy. |
-| Reports are tenant and branch scoped. | Access control and business segmentation. |
+| Reports are store and branch scoped. | Access control and business segmentation. |
 | Reports should not mutate source data. | Read-only safety. |
 | Financial reports depend on posted journals. | Draft documents should not inflate finance. |
 
@@ -1251,7 +1251,7 @@ Owner asks:
 | ---- | ------------------ |
 | Outbox pending | Financial report may lag until journal posts; show processing status if needed. |
 | User branch scoped | Report filters to allowed branch. |
-| Time zone difference | Tenant timezone controls date buckets. |
+| Time zone difference | Store timezone controls date buckets. |
 | Historical price changed | Report uses order item snapshot, not current product price. |
 
 ---
@@ -1266,9 +1266,9 @@ Infra modules keep the ERP fast, reliable, traceable, and connected to outside s
 
 | Service | Rule |
 | ------- | ---- |
-| Cache | Key must include tenant prefix `t:{tenantId}:`. |
+| Cache | Key must include store prefix `t:{storeId}:`. |
 | Queue | Jobs must be idempotent and retry-safe. |
-| File | Files must be tenant partitioned. |
+| File | Files must be store partitioned. |
 | Notification | Do not block main transaction on slow delivery. |
 | Audit | Important actions must be traceable. |
 | SMS/Mail/Push | External failure should be logged and retryable if safe. |
@@ -1277,9 +1277,9 @@ Infra modules keep the ERP fast, reliable, traceable, and connected to outside s
 
 | Action | Data impact |
 | ------ | ----------- |
-| Cache set | Redis key `t:{tenantId}:...`. |
+| Cache set | Redis key `t:{storeId}:...`. |
 | Queue job | `Q` in BullMQ queue. |
-| File upload | `A files`, S3 object under tenant prefix. |
+| File upload | `A files`, S3 object under store prefix. |
 | Notification | `A notifications`, optional push job. |
 | Audit decorated route | `A audit_logs`. |
 | Chat message | `A chat_messages`, socket broadcast. |
@@ -1452,12 +1452,12 @@ When adding or changing any ERP module, answer these questions before coding:
 | -------- | --- |
 | Who owns this data? | Prevents wrong module writing another module's truth. |
 | Is this master data, document data, temporary data, or ledger data? | Determines update/delete rules. |
-| What tenant/branch/warehouse scope applies? | Prevents data leaks. |
+| What store/branch/warehouse scope applies? | Prevents data leaks. |
 | Does this action need a transaction? | Multi-row business changes must be atomic. |
 | Does it write money or stock truth? | Must use ledgers/outbox. |
 | Does it need approval state? | Procurement, payroll, adjustments, returns often do. |
 | What happens on retry? | Queue/payment/webhook/offline sync must be idempotent. |
-| What should be audited? | Financial, stock, payroll, permission, and tenant actions. |
+| What should be audited? | Financial, stock, payroll, permission, and store actions. |
 | What report should reflect this change? | Ensures downstream reporting correctness. |
 
 ---
@@ -1465,7 +1465,7 @@ When adding or changing any ERP module, answer these questions before coding:
 ## 23. Golden Rules
 
 1. Never trust client totals. Recalculate on server.
-2. Never read/write data without tenant scope.
+2. Never read/write data without store scope.
 3. Never directly mutate ledger truth.
 4. Never delete posted financial or stock history.
 5. Never enqueue non-idempotent jobs without a retry strategy.

@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -7,7 +7,7 @@ import { ReviewEntity } from '../entities/review.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class ReviewRepository extends BaseTenantRepository<ReviewEntity> {
+export class ReviewRepository extends BaseStoreRepository<ReviewEntity> {
   constructor(
     @InjectRepository(ReviewEntity)
     repo: Repository<ReviewEntity>,
@@ -17,14 +17,14 @@ export class ReviewRepository extends BaseTenantRepository<ReviewEntity> {
 
   async findAllWithFilters(
     filterDto: any,
-    tenantId: string,
+    storeId: string,
   ): Promise<{ reviews: ReviewEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
     const query = this.repo
       .createQueryBuilder('review')
       .leftJoinAndSelect('review.product', 'product')
       .leftJoinAndSelect('review.user', 'user')
-      .where('review.tenantId = :tenantId', { tenantId })
+      .where('review.storeId = :storeId', { storeId })
 
     if (status) {
       query.andWhere('review.status = :status', { status })
@@ -45,9 +45,9 @@ export class ReviewRepository extends BaseTenantRepository<ReviewEntity> {
     return { reviews, total }
   }
 
-  async findPublicReviews(tenantId: string): Promise<ReviewEntity[]> {
+  async findPublicReviews(storeId: string): Promise<ReviewEntity[]> {
     return this.repo.find({
-      where: { tenantId, status: ReviewStatus.APPROVED },
+      where: { storeId, status: ReviewStatus.APPROVED },
       relations: {
         user: true,
       },
@@ -55,9 +55,9 @@ export class ReviewRepository extends BaseTenantRepository<ReviewEntity> {
     })
   }
 
-  async findByProductReviews(productId: string, tenantId: string): Promise<ReviewEntity[]> {
+  async findByProductReviews(productId: string, storeId: string): Promise<ReviewEntity[]> {
     return this.repo.find({
-      where: { productId, tenantId },
+      where: { productId, storeId },
       relations: {
         user: true,
       },
@@ -65,13 +65,13 @@ export class ReviewRepository extends BaseTenantRepository<ReviewEntity> {
     })
   }
 
-  async findById(id: string, tenantId: string): Promise<ReviewEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findById(id: string, storeId: string): Promise<ReviewEntity | null> {
+    return this.repo.findOne({ where: { id, storeId } })
   }
 
-  async findByIdWithRelations(id: string, tenantId: string): Promise<ReviewEntity | null> {
+  async findByIdWithRelations(id: string, storeId: string): Promise<ReviewEntity | null> {
     return this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         product: true,
         user: true,
@@ -82,7 +82,7 @@ export class ReviewRepository extends BaseTenantRepository<ReviewEntity> {
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<ReviewEntity> {
     const review = this.repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as ReviewEntity)
     return this.repo.save(review)

@@ -137,7 +137,7 @@ describe('FulfillmentService', () => {
         return cb(mockManager)
       })
 
-      const ctx = { tenantId: 'tenant-1', userId: 'user-1' } as any
+      const ctx = { storeId: 'store-1', userId: 'user-1' } as any
       await service.shipOrder('task-1', ctx)
 
       // Verify reservation was fulfilled

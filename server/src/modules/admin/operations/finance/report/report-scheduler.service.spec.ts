@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
+import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
@@ -9,15 +9,15 @@ import { ReportSchedulerService } from './report-scheduler.service'
 
 describe('ReportSchedulerService', () => {
   let service: ReportSchedulerService
-  let tenantRepo: any
+  let storeRepo: any
   let reportService: any
   let mailService: any
   let settingsService: any
 
   beforeEach(async () => {
-    tenantRepo = {
+    storeRepo = {
       find: jest.fn().mockResolvedValue([
-        { id: 'tenant-1', storeName: 'Test Tenant 1', status: TenantStatus.ACTIVE },
+        { id: 'store-1', storeName: 'Test Store 1', status: StoreStatus.ACTIVE },
       ]),
     }
 
@@ -54,8 +54,8 @@ describe('ReportSchedulerService', () => {
     }
 
     settingsService = {
-      findByTenantSettings: jest.fn().mockResolvedValue({
-        contactEmail: 'admin@tenant1.com',
+      findByStoreSettings: jest.fn().mockResolvedValue({
+        contactEmail: 'admin@store1.com',
       }),
     }
 
@@ -63,8 +63,8 @@ describe('ReportSchedulerService', () => {
       providers: [
         ReportSchedulerService,
         {
-          provide: getRepositoryToken(TenantEntity),
-          useValue: tenantRepo,
+          provide: getRepositoryToken(StoreEntity),
+          useValue: storeRepo,
         },
         {
           provide: ReportService,
@@ -88,20 +88,20 @@ describe('ReportSchedulerService', () => {
     expect(service).toBeDefined()
   })
 
-  it('should process active tenants and send weekly email summary', async () => {
+  it('should process active stores and send weekly email summary', async () => {
     await service.sendWeeklyReportEmails()
 
-    expect(tenantRepo.find).toHaveBeenCalledWith({
-      where: { status: TenantStatus.ACTIVE },
+    expect(storeRepo.find).toHaveBeenCalledWith({
+      where: { status: StoreStatus.ACTIVE },
       select: { id: true, storeName: true },
     })
 
-    expect(settingsService.findByTenantSettings).toHaveBeenCalled()
+    expect(settingsService.findByStoreSettings).toHaveBeenCalled()
     expect(reportService.getProfitLossReport).toHaveBeenCalled()
     expect(reportService.getDashboardReport).toHaveBeenCalled()
     expect(reportService.exportReport).toHaveBeenCalledTimes(2)
     expect(mailService.sendGenericEmail).toHaveBeenCalledWith(expect.objectContaining({
-      to: 'admin@tenant1.com',
+      to: 'admin@store1.com',
       attachments: expect.arrayContaining([
         expect.objectContaining({ filename: 'sales-report.csv' }),
         expect.objectContaining({ filename: 'expenses-report.csv' }),

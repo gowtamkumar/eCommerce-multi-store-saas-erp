@@ -132,10 +132,10 @@ export class AdminCopilotToolService {
   }
 
   private async getStockLevel(args: Record<string, unknown>, ctx: RequestContextDto) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     if (args.productId) {
-      const product = await this.productRepository.findProductById(String(args.productId), tenantId)
+      const product = await this.productRepository.findProductById(String(args.productId), storeId)
       if (!product) {
         return { error: 'Product not found' }
       }
@@ -149,7 +149,7 @@ export class AdminCopilotToolService {
 
     const [products] = await this.productRepository.findAllWithFilters(
       { q: search, page: 1, limit: 3 },
-      tenantId,
+      storeId,
     )
 
     if (!products.length) {

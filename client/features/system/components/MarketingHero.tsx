@@ -7,7 +7,7 @@ import React from 'react';
 
 export default function MarketingHero({ data }: any) {
   const content = data || {
-    badge: 'Enterprise Multi-Tenant SaaS ERP',
+    badge: 'Enterprise Multi-Store SaaS ERP',
     title: 'Supercharge Your eCommerce & Retail Operations',
     description: 'A unified POS, Inventory, HRM, and multi-store management platform built for modern retail. Launch separate stores dynamically, control logistics, and monitor real-time insights from one sleek dashboard.',
     primaryBtnText: 'Start Free Trial',

@@ -1,18 +1,18 @@
 import {
-  DEFAULT_TENANT_AI_CONFIG,
-  TenantAiConfig,
-  TenantAiStorefrontConfig,
-} from '@/common/types/tenant-ai-config.types'
+  DEFAULT_STORE_AI_CONFIG,
+  StoreAiConfig,
+  StoreAiStorefrontConfig,
+} from '@/common/types/store-ai-config.types'
 
-export const DEFAULT_STOREFRONT_AI_CONFIG: Required<TenantAiStorefrontConfig> = {
+export const DEFAULT_STOREFRONT_AI_CONFIG: Required<StoreAiStorefrontConfig> = {
   shoppingAssistantEnabled: true,
   productQaEnabled: true,
   semanticSearchEnabled: true,
 }
 
 export function normalizeStorefrontAiConfig(
-  raw?: TenantAiStorefrontConfig | null,
-): Required<TenantAiStorefrontConfig> {
+  raw?: StoreAiStorefrontConfig | null,
+): Required<StoreAiStorefrontConfig> {
   return {
     shoppingAssistantEnabled: raw?.shoppingAssistantEnabled !== false,
     productQaEnabled: raw?.productQaEnabled !== false,
@@ -20,18 +20,18 @@ export function normalizeStorefrontAiConfig(
   }
 }
 
-export function isTenantAiProviderReady(config: TenantAiConfig): boolean {
+export function isStoreAiProviderReady(config: StoreAiConfig): boolean {
   return Boolean(
     config.enabled && config.apiKey?.trim() && config.defaultModel?.trim(),
   )
 }
 
 export function mergeStorefrontAiConfig(
-  current?: TenantAiStorefrontConfig | null,
-  patch?: TenantAiStorefrontConfig | null,
-): Required<TenantAiStorefrontConfig> {
+  current?: StoreAiStorefrontConfig | null,
+  patch?: StoreAiStorefrontConfig | null,
+): Required<StoreAiStorefrontConfig> {
   return normalizeStorefrontAiConfig({
-    ...DEFAULT_TENANT_AI_CONFIG.storefront,
+    ...DEFAULT_STORE_AI_CONFIG.storefront,
     ...current,
     ...patch,
   })

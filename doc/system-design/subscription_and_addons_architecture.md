@@ -1,6 +1,6 @@
 # Subscription Plans & Addon Boosts Architecture
 
-This document details the architecture, database design, and logic flows governing **Subscription Plans** and **Dynamic Addon Boosts** within the eCommerce multi-tenant SaaS platform. 
+This document details the architecture, database design, and logic flows governing **Subscription Plans** and **Dynamic Addon Boosts** within the eCommerce multi-store SaaS platform. 
 
 It is designed as a low-level onboarding guide for developers seeking to understand, modify, or extend the billing and quota limits enforcement systems.
 
@@ -8,26 +8,26 @@ It is designed as a low-level onboarding guide for developers seeking to underst
 
 ## 1. System Overview
 
-The platform uses a hybrid subscription-and-addon model to control tenant capacities (limits) and feature gates.
+The platform uses a hybrid subscription-and-addon model to control store capacities (limits) and feature gates.
 1. **Subscription Plans**: Predefined tiers (Starter, Pro Seller, Enterprise) defining base resource quotas (e.g., maximum products, storage, locations) and feature access switches.
-2. **Addon Catalog**: A superadmin-managed list of individual purchasable upgrades (e.g. `+5 GB Storage`, `+1,000 SKUs`) that tenants can buy.
-3. **Tenant Feature Overrides**: An operational registry where active addon boosts are stacked and saved. If a tenant buys the same storage addon multiple times, the system stacks these capabilities using a unique suffix routing strategy.
+2. **Addon Catalog**: A superadmin-managed list of individual purchasable upgrades (e.g. `+5 GB Storage`, `+1,000 SKUs`) that stores can buy.
+3. **Store Feature Overrides**: An operational registry where active addon boosts are stacked and saved. If a store buys the same storage addon multiple times, the system stacks these capabilities using a unique suffix routing strategy.
 
 ---
 
 ## 2. Entity Relationship Diagram (ERD)
 
-The following diagram illustrates the complete, unified database schema for all tenant-related entities, subscription plans, custom domains, active feature registries, and the superadmin addon catalog:
+The following diagram illustrates the complete, unified database schema for all store-related entities, subscription plans, custom domains, active feature registries, and the superadmin addon catalog:
 
 ```mermaid
 erDiagram
-    SubscriptionPlan ||--o{ TenantEntity : "defines base template for"
-    SubscriptionPlan ||--o{ TenantSubscription : "referenced by"
-    TenantEntity ||--o{ TenantSubscription : "possesses multiple"
-    TenantEntity ||--o{ TenantFeature : "possesses features/addons override"
-    TenantEntity ||--o{ TenantDomain : "possesses multiple custom domains"
-    TenantEntity }|--|| TenantSubscription : "points to active"
-    TenantFeature }o--|| AddonCatalog : "matches base slug to"
+    SubscriptionPlan ||--o{ StoreEntity : "defines base template for"
+    SubscriptionPlan ||--o{ StoreSubscription : "referenced by"
+    StoreEntity ||--o{ StoreSubscription : "possesses multiple"
+    StoreEntity ||--o{ StoreFeature : "possesses features/addons override"
+    StoreEntity ||--o{ StoreDomain : "possesses multiple custom domains"
+    StoreEntity }|--|| StoreSubscription : "points to active"
+    StoreFeature }o--|| AddonCatalog : "matches base slug to"
 
     SubscriptionPlan {
         uuid id PK
@@ -56,21 +56,21 @@ erDiagram
         timestamptz updated_at
     }
 
-    TenantEntity {
+    StoreEntity {
         uuid id PK
         varchar store_name
         varchar subdomain "unique"
         varchar status "active, suspended, inactive"
         boolean ssl_enabled
-        uuid active_subscription_id FK "points to active tenant_subscriptions"
+        uuid active_subscription_id FK "points to active store_subscriptions"
         uuid user_id FK "primary admin user owner"
         timestamptz created_at
         timestamptz updated_at
     }
 
-    TenantSubscription {
+    StoreSubscription {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         uuid subscription_plan_id FK
         varchar status "trial, active, past_due, canceled, expired"
         varchar billing_cycle "monthly, yearly"
@@ -83,9 +83,9 @@ erDiagram
         timestamptz updated_at
     }
 
-    TenantFeature {
+    StoreFeature {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         varchar feature_slug "e.g. addon_storage_5gb or addon_storage_5gb_1"
         boolean is_enabled
         uuid enabled_by FK "admin user ID"
@@ -94,9 +94,9 @@ erDiagram
         timestamptz updated_at
     }
 
-    TenantDomain {
+    StoreDomain {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         varchar hostname "unique custom hostname"
         boolean is_primary
         varchar status "pending, active, failed"
@@ -134,8 +134,8 @@ The backend dynamically checks resource quotas instead of reading static configu
 $$\text{Total Quota} = \text{Plan Base Limit} + \sum (\text{Active Addon Boost Values})$$
 
 ### 3.1 Storage Limit Logic (MinIO Uploads)
-When a tenant requests a presigned upload URL (`FilesService.generatePresignedUpload`):
-1. The base limit (`maxStorageMb`) is fetched from the tenant's active plan.
+When a store requests a presigned upload URL (`FilesService.generatePresignedUpload`):
+1. The base limit (`maxStorageMb`) is fetched from the store's active plan.
 2. If not unlimited (`-1`), active feature overrides starting with addon storage slugs (e.g. `addon_storage_5gb`) are looked up.
 3. The catalog is queried for matching addon details to extract the `boostValue` (in MB).
 4. The cumulative limit is calculated, and the upload is rejected if it exceeds the sum.
@@ -144,7 +144,7 @@ When a tenant requests a presigned upload URL (`FilesService.generatePresignedUp
 [Upload Request (size: X)] 
           │
           ▼
-Get Tenant's Active Plan Base limit (maxStorageMb)
+Get Store's Active Plan Base limit (maxStorageMb)
           │
      ┌────┴────┐
      │         ▼
@@ -153,7 +153,7 @@ Get Tenant's Active Plan Base limit (maxStorageMb)
 [Base Limit is Finite]
      │
      ▼
-Find Tenant's Active Addons from 'tenant_features' (feature_slug starts with def.slug)
+Find Store's Active Addons from 'store_features' (feature_slug starts with def.slug)
      │
      ▼
 Fetch matching active definitions from 'addon_catalog' (boost_unit == 'mb')
@@ -162,7 +162,7 @@ Fetch matching active definitions from 'addon_catalog' (boost_unit == 'mb')
 Calculate total limit: (Base Limit + Addons Boost) * 1024 * 1024 (in Bytes)
      │
      ▼
-Query total database storage used by tenant files ('files' table SUM of size)
+Query total database storage used by store files ('files' table SUM of size)
      │
      ▼
 Is (Used Bytes + Requested X) > Total Limit?
@@ -181,19 +181,19 @@ When a product is added or updated (`ProductService.assertProductQuotaAvailable`
 
 ## 4. Multi-Purchase & Stacking (Suffix Strategy)
 
-To allow tenants to buy the same addon multiple times (e.g., purchasing three $5$ GB storage boosts) without violating the unique constraint (`tenant_id`, `feature_slug`) on the `tenant_features` table, the platform implements a **suffixed slug stack**.
+To allow stores to buy the same addon multiple times (e.g., purchasing three $5$ GB storage boosts) without violating the unique constraint (`store_id`, `feature_slug`) on the `store_features` table, the platform implements a **suffixed slug stack**.
 
 ### 4.1 Purchase Addon Flow (`subscription-billing.service.ts`)
 ```typescript
-async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
+async purchaseAddon(storeId: string, addonSlug: string): Promise<void> {
   // 1. Verify slug is active in AddonCatalog
   const isValid = await this.addonCatalogService.isValidAddonSlug(addonSlug);
   if (!isValid) throw new BadRequestException(`Invalid addon slug: ${addonSlug}`);
 
-  const featureRepo = this.dataSource.getRepository(TenantFeatureEntity);
+  const featureRepo = this.dataSource.getRepository(StoreFeatureEntity);
   
   // 2. Check if this is the first purchase or a stack purchase
-  let override = await featureRepo.findOne({ where: { tenantId, featureSlug: addonSlug } });
+  let override = await featureRepo.findOne({ where: { storeId, featureSlug: addonSlug } });
   
   if (override && !override.isEnabled) {
     // Re-enable if it was previously bought and deactivated
@@ -204,13 +204,13 @@ async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
     // 3. Stacking: Find the next available numeric suffix (e.g. addon_storage_5gb_1)
     let suffix = 1;
     let newSlug = `${addonSlug}_${suffix}`;
-    while (await featureRepo.findOne({ where: { tenantId, featureSlug: newSlug } })) {
+    while (await featureRepo.findOne({ where: { storeId, featureSlug: newSlug } })) {
       suffix++;
       newSlug = `${addonSlug}_${suffix}`;
     }
     
     override = featureRepo.create({
-      tenantId,
+      storeId,
       featureSlug: newSlug,
       isEnabled: true,
       enabledAt: new Date(),
@@ -219,7 +219,7 @@ async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
   } else {
     // First purchase of this specific addon type
     override = featureRepo.create({
-      tenantId,
+      storeId,
       featureSlug: addonSlug,
       isEnabled: true,
       enabledAt: new Date(),
@@ -228,7 +228,7 @@ async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
   }
 
   // 4. Invalidate subscription caches to reflect changes immediately
-  await this.cacheService.delCache(`subscription:${tenantId}:current`, tenantId);
+  await this.cacheService.delCache(`subscription:${storeId}:current`, storeId);
 }
 ```
 
@@ -237,18 +237,18 @@ async purchaseAddon(tenantId: string, addonSlug: string): Promise<void> {
 ## 5. Developer Code Navigation Map
 
 ### 5.1 Backend Files
-* **Entity**: [addon-catalog.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/addon-catalog/entities/addon-catalog.entity.ts) — Database columns, indexes, and relations.
-* **Repository**: [addon-catalog.repository.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/addon-catalog/addon-catalog.repository.ts) — Base database selectors (active-only vs superadmin-all).
-* **Service**: [addon-catalog.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/addon-catalog/addon-catalog.service.ts) — Core CRUD logic, validation, cache invalidation, and default seed mappings.
-* **Superadmin Controller**: [super-admin.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/super-admin/super-admin.controller.ts) — Exposes addon catalog creation/modification under `@Roles(UserRole.SUPER_ADMIN)`.
-* **Tenant Billing Controller**: [subscription-billing.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/subscription-billing/subscription-billing.controller.ts) — Exposes `GET /billing/addon-catalog` (public listing) and `POST /billing/purchase-addon` (simulation triggers).
+* **Entity**: [addon-catalog.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/addon-catalog/entities/addon-catalog.entity.ts) — Database columns, indexes, and relations.
+* **Repository**: [addon-catalog.repository.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/addon-catalog/addon-catalog.repository.ts) — Base database selectors (active-only vs superadmin-all).
+* **Service**: [addon-catalog.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/addon-catalog/addon-catalog.service.ts) — Core CRUD logic, validation, cache invalidation, and default seed mappings.
+* **Superadmin Controller**: [super-admin.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/super-admin/super-admin.controller.ts) — Exposes addon catalog creation/modification under `@Roles(UserRole.SUPER_ADMIN)`.
+* **Store Billing Controller**: [subscription-billing.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/subscription-billing/subscription-billing.controller.ts) — Exposes `GET /billing/addon-catalog` (public listing) and `POST /billing/purchase-addon` (simulation triggers).
 
 ### 5.2 Frontend Files
-* **SuperPanel Addons Page**: [page.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/app/system/addons/page.tsx) — Main layout container for platform managers.
-* **Addon Management Panel**: [AddonCatalogList.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/system/components/AddonCatalogList.tsx) — High-fidelity administration table, catalog statistic cards, and form modals.
-* **Billing Settings Dashboard**: [BillingDashboard.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/admin/settings/billing/components/BillingDashboard.tsx) — Tabs layout dividing plans and billing history.
-* **Subscription Inclusions Card**: [SubscriptionOverview.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/admin/settings/billing/components/SubscriptionOverview.tsx) — Dynamic progress bar showing storage used/limit percentages, catalog boosts badge stack, and plan module indicators.
-* **Store Addons Buy Grid**: [StorageAddons.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/admin/settings/billing/components/StorageAddons.tsx) — Renders purchasable grids and triggers purchases.
+* **SuperPanel Addons Page**: [page.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/app/system/addons/page.tsx) — Main layout container for platform managers.
+* **Addon Management Panel**: [AddonCatalogList.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/system/components/AddonCatalogList.tsx) — High-fidelity administration table, catalog statistic cards, and form modals.
+* **Billing Settings Dashboard**: [BillingDashboard.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/admin/settings/billing/components/BillingDashboard.tsx) — Tabs layout dividing plans and billing history.
+* **Subscription Inclusions Card**: [SubscriptionOverview.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/admin/settings/billing/components/SubscriptionOverview.tsx) — Dynamic progress bar showing storage used/limit percentages, catalog boosts badge stack, and plan module indicators.
+* **Store Addons Buy Grid**: [StorageAddons.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/admin/settings/billing/components/StorageAddons.tsx) — Renders purchasable grids and triggers purchases.
 
 ---
 
@@ -277,22 +277,22 @@ When a new Addon is created or updated by a SuperAdmin, the `slug` is automatica
 
 ---
 
-## 7. Tenant Model — Deep Dive
+## 7. Store Model — Deep Dive
 
-A **Tenant** represents a single isolated merchant store on the platform. Every tenant gets their own subdomain, admin user, database-scoped data, subscription, and feature access matrix.
+A **Store** represents a single isolated merchant store on the platform. Every store gets their own subdomain, admin user, database-scoped data, subscription, and feature access matrix.
 
-### 7.1 Tenant Database Tables
+### 7.1 Store Database Tables
 
-The tenant system is split into **four database tables**, each with a specific role:
+The store system is split into **four database tables**, each with a specific role:
 
 ```mermaid
 erDiagram
-    tenants ||--o{ tenant_subscriptions : "has many"
-    tenants ||--o{ tenant_domains : "has many custom domains"
-    tenants ||--o{ tenant_features : "has many feature overrides"
-    tenants }|--|| tenant_subscriptions : "points to one active"
+    stores ||--o{ store_subscriptions : "has many"
+    stores ||--o{ store_domains : "has many custom domains"
+    stores ||--o{ store_features : "has many feature overrides"
+    stores }|--|| store_subscriptions : "points to one active"
 
-    tenants {
+    stores {
         uuid id PK
         varchar store_name "Display name of the store"
         varchar subdomain "unique subdomain, e.g. mystore"
@@ -303,9 +303,9 @@ erDiagram
         timestamptz created_at
     }
 
-    tenant_subscriptions {
+    store_subscriptions {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         uuid subscription_plan_id FK
         varchar status "trial, active, past_due, canceled, expired"
         varchar billing_cycle "monthly, yearly"
@@ -316,9 +316,9 @@ erDiagram
         boolean cancel_at_period_end
     }
 
-    tenant_domains {
+    store_domains {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         varchar hostname "unique hostname, e.g. shop.example.com"
         boolean is_primary "Only one can be primary"
         varchar status "pending, active, failed"
@@ -326,29 +326,29 @@ erDiagram
         timestamptz verified_at
     }
 
-    tenant_features {
+    store_features {
         uuid id PK
-        uuid tenant_id FK
-        varchar feature_slug "unique per tenant, e.g. addon_storage_5gb"
+        uuid store_id FK
+        varchar feature_slug "unique per store, e.g. addon_storage_5gb"
         boolean is_enabled
         uuid enabled_by "Admin who toggled this"
         timestamptz enabled_at
     }
 ```
 
-> **Key design note**: `tenants.active_subscription_id` is a **pointer** to the current active `tenant_subscriptions` row. This means the tenant entity can have a full history of past subscriptions and the active subscription is resolved via join.
+> **Key design note**: `stores.active_subscription_id` is a **pointer** to the current active `store_subscriptions` row. This means the store entity can have a full history of past subscriptions and the active subscription is resolved via join.
 
 ---
 
 ### 7.2 Subscription Status Lifecycle
 
-A tenant's subscription status progresses through these states:
+A store's subscription status progresses through these states:
 
 ```
                      ┌────────────┐
   New Signup ──────► │   TRIAL    │
                      └─────┬──────┘
-                           │ Trial expires OR tenant upgrades
+                           │ Trial expires OR store upgrades
                            ▼
                      ┌────────────┐
        Payment OK ──►│   ACTIVE   │◄─── Renewal Success
@@ -361,7 +361,7 @@ A tenant's subscription status progresses through these states:
                            │ Not recovered in grace period
                            ▼
                      ┌────────────┐
-    Tenant cancels ─►│  CANCELED  │
+    Store cancels ─►│  CANCELED  │
                      └────────────┘
                            │ 
                            ▼ End of billing period
@@ -370,7 +370,7 @@ A tenant's subscription status progresses through these states:
                      └────────────┘
 ```
 
-| Status | `SubscriptionStatus` | Effect on tenant access |
+| Status | `SubscriptionStatus` | Effect on store access |
 | :--- | :--- | :--- |
 | `trial` | `TRIAL` | Full plan features, limited by `trialPeriodDays` |
 | `active` | `ACTIVE` | Full plan features, enforced by `endsAt` |
@@ -380,32 +380,32 @@ A tenant's subscription status progresses through these states:
 
 ---
 
-### 7.3 Tenant Computed Virtual Getters
+### 7.3 Store Computed Virtual Getters
 
-`TenantEntity` exposes **virtual getters** (not stored columns) that join through the active subscription to expose convenient flat properties to service code:
+`StoreEntity` exposes **virtual getters** (not stored columns) that join through the active subscription to expose convenient flat properties to service code:
 
 ```typescript
 // Example: get the plan name without a join in your service
-const plan = tenant.subscriptionPlan           // → SubscriptionPlanEntity | null
-const planId = tenant.subscriptionPlanId       // → string | null
-const status = tenant.subscriptionStatus       // → SubscriptionStatus | null
-const cycle = tenant.subscriptionBillingCycle  // → 'monthly' | 'yearly' | null
-const starts = tenant.subscriptionStartsAt     // → Date | null
-const ends = tenant.subscriptionEndsAt         // → Date | null
-const expired = tenant.isExpired               // → boolean (computed: now > endsAt)
-const domain = tenant.primaryCustomDomain      // → 'shop.example.com' | null
+const plan = store.subscriptionPlan           // → SubscriptionPlanEntity | null
+const planId = store.subscriptionPlanId       // → string | null
+const status = store.subscriptionStatus       // → SubscriptionStatus | null
+const cycle = store.subscriptionBillingCycle  // → 'monthly' | 'yearly' | null
+const starts = store.subscriptionStartsAt     // → Date | null
+const ends = store.subscriptionEndsAt         // → Date | null
+const expired = store.isExpired               // → boolean (computed: now > endsAt)
+const domain = store.primaryCustomDomain      // → 'shop.example.com' | null
 ```
 
-> **Important for developers**: Always load the tenant with `activeSubscription.subscriptionPlan` relation eagerly or these getters return `null`. The `TenantRepository.findByIdWithUser()` method does this correctly.
+> **Important for developers**: Always load the store with `activeSubscription.subscriptionPlan` relation eagerly or these getters return `null`. The `StoreRepository.findByIdWithUser()` method does this correctly.
 
 ---
 
-### 7.4 Tenant Onboarding Flow (Full Transaction)
+### 7.4 Store Onboarding Flow (Full Transaction)
 
-When a new store signs up via `POST /tenants` or `POST /tenants/onboard`, the following steps happen atomically inside a **database transaction**:
+When a new store signs up via `POST /stores` or `POST /stores/onboard`, the following steps happen atomically inside a **database transaction**:
 
 ```
-POST /tenants  { storeName, subdomain, planId?, email, username, password }
+POST /stores  { storeName, subdomain, planId?, email, username, password }
           │
           ▼
 1. Validate subdomain uniqueness
@@ -418,13 +418,13 @@ POST /tenants  { storeName, subdomain, planId?, email, username, password }
           ▼
 3. BEGIN TRANSACTION ──────────────────────────────────────────────────────┐
    │                                                                        │
-   ├── 3a. INSERT tenants (store_name, subdomain)                          │
+   ├── 3a. INSERT stores (store_name, subdomain)                          │
    │                                                                        │
-   ├── 3b. INSERT tenant_subscriptions                                     │
+   ├── 3b. INSERT store_subscriptions                                     │
    │        status = TRIAL                                                  │
    │        ends_at = now + trialPeriodDays                                │
    │                                                                        │
-   ├── 3c. UPDATE tenants.active_subscription_id = new sub.id             │
+   ├── 3c. UPDATE stores.active_subscription_id = new sub.id             │
    │                                                                        │
    ├── 3d. INSERT branches (Main Branch)                                   │
    │                                                                        │
@@ -432,7 +432,7 @@ POST /tenants  { storeName, subdomain, planId?, email, username, password }
    │                                                                        │
    ├── 3f. INSERT pos_registers (Main Till → links to branch)             │
    │                                                                        │
-   ├── 3g. INSERT users (Admin role, links to branch & tenant)             │
+   ├── 3g. INSERT users (Admin role, links to branch & store)             │
    │        password is bcrypt-hashed                                       │
    │                                                                        │
    ├── 3h. Seed default RBAC roles (SuperAdmin, Manager, etc.)             │
@@ -446,17 +446,17 @@ END TRANSACTION ─────────────────────�
 4. AFTER TRANSACTION (parallel, non-critical):
    ├── Initialize default site settings (store name, contact email)
    ├── Send email verification link to admin email
-   └── Send "New Tenant Signup" notification to SuperAdmin dashboard
+   └── Send "New Store Signup" notification to SuperAdmin dashboard
           │
           ▼
-5. Return { tenant, admin: { id, name, username, email } }
+5. Return { store, admin: { id, name, username, email } }
 ```
 
 ---
 
-### 7.5 Tenant Feature Overrides (`tenant_features` table)
+### 7.5 Store Feature Overrides (`store_features` table)
 
-This table is the **intersection registry** between a tenant and their active capabilities. It stores two kinds of slugs:
+This table is the **intersection registry** between a store and their active capabilities. It stores two kinds of slugs:
 
 | Slug Pattern | Source | Example |
 | :--- | :--- | :--- |
@@ -471,7 +471,7 @@ This table is the **intersection registry** between a tenant and their active ca
 ```typescript
 // In SubscriptionGuard / feature checks
 const activeFeatures = await featureRepo.find({
-  where: { tenantId, isEnabled: true }
+  where: { storeId, isEnabled: true }
 })
 const hasHrm = activeFeatures.some(f => f.featureSlug === '/admin/hrm')
 
@@ -483,15 +483,15 @@ const storageAddonCount = activeFeatures.filter(f =>
 
 ---
 
-### 7.6 Custom Domains (`tenant_domains` table)
+### 7.6 Custom Domains (`store_domains` table)
 
-Tenants can attach their own domains (e.g. `shop.mybrand.com`) via the custom domain system. Caddy reverse-proxy uses **on-demand TLS** and validates ownership via a DNS check endpoint:
+Stores can attach their own domains (e.g. `shop.mybrand.com`) via the custom domain system. Caddy reverse-proxy uses **on-demand TLS** and validates ownership via a DNS check endpoint:
 
 ```
 [Browser: shop.mybrand.com]
           │
           ▼
-[Caddy: on_demand_tls asks → GET /api/v1/tenants/check-domain?hostname=shop.mybrand.com]
+[Caddy: on_demand_tls asks → GET /api/v1/stores/check-domain?hostname=shop.mybrand.com]
           │
           ├── Found & ACTIVE → ✅ Issue certificate, proxy to client:3000
           └── Not found / PENDING → ❌ Reject connection
@@ -499,40 +499,40 @@ Tenants can attach their own domains (e.g. `shop.mybrand.com`) via the custom do
 
 | Domain Status | Meaning |
 | :--- | :--- |
-| `pending` | Added by tenant, DNS TXT record not yet verified |
+| `pending` | Added by store, DNS TXT record not yet verified |
 | `active` | DNS verified — Caddy will serve HTTPS for this hostname |
 | `failed` | Verification attempts exhausted |
 
 ---
 
-### 7.7 Tenant API Endpoints Reference
+### 7.7 Store API Endpoints Reference
 
 | Method | Path | Auth | Description |
 | :--- | :--- | :---: | :--- |
-| `POST` | `/api/v1/tenants/onboard` | Public | Register a new store (public signup) |
-| `POST` | `/api/v1/tenants` | SuperAdmin | Create a tenant manually from SuperAdmin |
-| `GET` | `/api/v1/tenants` | SuperAdmin | List all tenants with pagination |
-| `GET` | `/api/v1/tenants/:id` | SuperAdmin | Get one tenant with full subscription context |
-| `PATCH` | `/api/v1/tenants/:id` | SuperAdmin | Update tenant (status, plan, etc.) |
-| `DELETE` | `/api/v1/tenants/:id` | SuperAdmin | Soft-delete tenant |
-| `GET` | `/api/v1/tenants?subdomain=x` | Internal | Resolve tenant by subdomain (used by middleware) |
-| `GET` | `/api/v1/tenants/check-domain` | Internal | Caddy domain validation hook |
-| `POST` | `/api/v1/billing/purchase-addon` | Tenant Admin | Purchase and stack an addon boost |
-| `GET` | `/api/v1/billing/current` | Tenant Admin | Get current subscription info + active addons |
-| `GET` | `/api/v1/billing/addon-catalog` | Tenant Admin | List all available purchasable addons |
+| `POST` | `/api/v1/stores/onboard` | Public | Register a new store (public signup) |
+| `POST` | `/api/v1/stores` | SuperAdmin | Create a store manually from SuperAdmin |
+| `GET` | `/api/v1/stores` | SuperAdmin | List all stores with pagination |
+| `GET` | `/api/v1/stores/:id` | SuperAdmin | Get one store with full subscription context |
+| `PATCH` | `/api/v1/stores/:id` | SuperAdmin | Update store (status, plan, etc.) |
+| `DELETE` | `/api/v1/stores/:id` | SuperAdmin | Soft-delete store |
+| `GET` | `/api/v1/stores?subdomain=x` | Internal | Resolve store by subdomain (used by middleware) |
+| `GET` | `/api/v1/stores/check-domain` | Internal | Caddy domain validation hook |
+| `POST` | `/api/v1/billing/purchase-addon` | Store Admin | Purchase and stack an addon boost |
+| `GET` | `/api/v1/billing/current` | Store Admin | Get current subscription info + active addons |
+| `GET` | `/api/v1/billing/addon-catalog` | Store Admin | List all available purchasable addons |
 
 ---
 
-### 7.8 Tenant Code Navigation Map
+### 7.8 Store Code Navigation Map
 
 | Layer | File | Purpose |
 | :--- | :--- | :--- |
-| Entity | [tenant.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/entities/tenant.entity.ts) | Main tenant record + virtual getters |
-| Entity | [tenant-subscription.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/entities/tenant-subscription.entity.ts) | Subscription history rows |
-| Entity | [tenant-feature.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/entities/tenant-feature.entity.ts) | Active features / addon overrides |
-| Entity | [tenant-domain.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/entities/tenant-domain.entity.ts) | Custom hostnames + TLS verification |
-| DTO | [create-tenant.dto.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/dto/create-tenant.dto.ts) | Onboarding payload validation |
-| Service | [tenant.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/tenant.service.ts) | Full onboarding transaction + business rules |
-| Controller | [tenant.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/tenant.controller.ts) | SuperAdmin-guarded CRUD endpoints |
-| Controller | [public-tenant.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/tenant/public-tenant.controller.ts) | Public onboard endpoint (signup page) |
-| Billing Svc | [subscription-billing.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/modules/system/subscription-billing/subscription-billing.service.ts) | `getCurrentSubscription`, `purchaseAddon` |
+| Entity | [store.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/entities/store.entity.ts) | Main store record + virtual getters |
+| Entity | [store-subscription.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/entities/store-subscription.entity.ts) | Subscription history rows |
+| Entity | [store-feature.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/entities/store-feature.entity.ts) | Active features / addon overrides |
+| Entity | [store-domain.entity.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/entities/store-domain.entity.ts) | Custom hostnames + TLS verification |
+| DTO | [create-store.dto.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/dto/create-store.dto.ts) | Onboarding payload validation |
+| Service | [store.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/store.service.ts) | Full onboarding transaction + business rules |
+| Controller | [store.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/store.controller.ts) | SuperAdmin-guarded CRUD endpoints |
+| Controller | [public-store.controller.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/store/public-store.controller.ts) | Public onboard endpoint (signup page) |
+| Billing Svc | [subscription-billing.service.ts](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/server/src/modules/system/subscription-billing/subscription-billing.service.ts) | `getCurrentSubscription`, `purchaseAddon` |

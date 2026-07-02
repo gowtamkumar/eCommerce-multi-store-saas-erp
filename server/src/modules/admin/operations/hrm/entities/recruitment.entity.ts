@@ -1,6 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { DepartmentEntity } from './department.entity'
 import { EmployeeEntity } from './employee.entity'
 import { JobStatus, ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
@@ -35,12 +35,12 @@ export class JobPostingEntity extends BaseEntity {
   @Column({ type: 'enum', enum: JobStatus, default: JobStatus.DRAFT })
   status: JobStatus
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @OneToMany(() => ApplicantEntity, (applicant) => applicant.jobPosting)
   applicants: ApplicantEntity[]
@@ -76,12 +76,12 @@ export class ApplicantEntity extends BaseEntity {
   @Column({ type: 'varchar', nullable: true })
   source: string // LinkedIn, Referral, etc.
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @OneToMany(() => InterviewEntity, (interview) => interview.applicant)
   interviews: InterviewEntity[]
@@ -115,10 +115,10 @@ export class InterviewEntity extends BaseEntity {
   @Column({ type: 'varchar', default: 'SCHEDULED' })
   status: string // SCHEDULED, COMPLETED, CANCELLED
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity)
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity)
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 }

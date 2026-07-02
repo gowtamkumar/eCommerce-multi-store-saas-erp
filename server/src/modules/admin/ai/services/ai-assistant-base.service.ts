@@ -2,20 +2,20 @@ import { Injectable } from '@nestjs/common'
 import {
   AiChatMessage,
   AiCompletionResult,
-  TenantAiClientService,
-} from './tenant-ai-client.service'
+  StoreAiClientService,
+} from './store-ai-client.service'
 
 @Injectable()
 export class AiAssistantBaseService {
-  constructor(private readonly aiClient: TenantAiClientService) {}
+  constructor(private readonly aiClient: StoreAiClientService) {}
 
   complete(
-    tenantId: string,
+    storeId: string,
     messages: AiChatMessage[],
     endpoint: string,
-    options?: Parameters<TenantAiClientService['chatCompletion']>[2],
+    options?: Parameters<StoreAiClientService['chatCompletion']>[2],
   ): Promise<AiCompletionResult> {
-    return this.aiClient.chatCompletion(tenantId, messages, {
+    return this.aiClient.chatCompletion(storeId, messages, {
       ...options,
       usageContext: { endpoint, jobId: options?.usageContext?.jobId },
     })

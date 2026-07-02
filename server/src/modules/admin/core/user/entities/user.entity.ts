@@ -1,6 +1,6 @@
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { EmployeeEntity } from '@/modules/admin/operations/hrm/entities/employee.entity'
@@ -19,9 +19,9 @@ import {
 } from 'typeorm'
 
 @Entity('users')
-@Index(['username', 'tenantId'], { unique: true })
-@Index(['email', 'tenantId'], { unique: true })
-@Index(['tenantId'])
+@Index(['username', 'storeId'], { unique: true })
+@Index(['email', 'storeId'], { unique: true })
+@Index(['storeId'])
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
@@ -89,12 +89,12 @@ export class UserEntity {
   @Column({ nullable: true, name: 'refresh_token' })
   refreshToken: string
 
-  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id', nullable: true })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
   @Index()

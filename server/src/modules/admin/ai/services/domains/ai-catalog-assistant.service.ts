@@ -23,7 +23,7 @@ export class AiCatalogAssistantService {
   constructor(private readonly base: AiAssistantBaseService) {}
 
   async generateProductContent(
-    tenantId: string,
+    storeId: string,
     dto: GenerateProductContentDto,
   ): Promise<ProductContentResultDto> {
     const prompt = `Generate product listing content as JSON only (no markdown fences).
@@ -44,7 +44,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -68,7 +68,7 @@ Return exactly this JSON shape:
   }
 
   async generateCatalogContent(
-    tenantId: string,
+    storeId: string,
     dto: GenerateCatalogContentDto,
   ): Promise<CatalogContentResultDto> {
     const entityLabel = dto.entityType === 'category' ? 'product category' : 'brand'
@@ -87,7 +87,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -108,7 +108,7 @@ Return exactly this JSON shape:
   }
 
   async generateMediaAssist(
-    tenantId: string,
+    storeId: string,
     dto: GenerateMediaAssistDto,
   ): Promise<MediaAssistResultDto> {
     const isImage = dto.mimetype?.startsWith('image/') ?? false
@@ -133,7 +133,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -157,7 +157,7 @@ Return exactly this JSON shape:
   }
 
   async generatePriceBookRationale(
-    tenantId: string,
+    storeId: string,
     dto: GeneratePriceBookRationaleDto,
   ): Promise<PriceBookRationaleResultDto> {
     const prompt = `Write internal pricing rationale notes for a commerce team as JSON only (no markdown fences).
@@ -175,7 +175,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -195,7 +195,7 @@ Return exactly this JSON shape:
   }
 
   async generateDemandForecast(
-    tenantId: string,
+    storeId: string,
     dto: GenerateDemandForecastDto,
   ): Promise<DemandForecastResultDto> {
     const prompt = `Analyze product sales velocity and stock levels. Return read-only reorder suggestions as JSON only (no markdown fences).
@@ -223,7 +223,7 @@ Return exactly this JSON shape:
 Rules: Use only products listed in context. suggestedReorderQty should be a reasonable heuristic (e.g. cover ~2-4 weeks of recent velocity minus on-hand stock). Never recommend automatic PO creation.`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

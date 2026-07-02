@@ -16,18 +16,18 @@ export class TaxService {
   constructor(private readonly dataSource: DataSource) {}
 
   /**
-   * Initializes default regional tax rules for onboarding tenants.
+   * Initializes default regional tax rules for onboarding stores.
    */
-  async seedDefaultTenantTaxRules(ctx: RequestContextDto, manager?: EntityManager) {
+  async seedDefaultStoreTaxRules(ctx: RequestContextDto, manager?: EntityManager) {
     const repo = manager
       ? manager.getRepository(TaxRuleEntity)
       : this.dataSource.getRepository(TaxRuleEntity)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
-    const count = await repo.count({ where: { tenantId } })
+    const count = await repo.count({ where: { storeId } })
     if (count > 0) return
 
-    this.logger.log(`Seeding multi-jurisdiction system tax rules for tenant ${tenantId}`)
+    this.logger.log(`Seeding multi-jurisdiction system tax rules for store ${storeId}`)
 
     const defaults = [
       {
@@ -91,7 +91,7 @@ export class TaxService {
     const entities = defaults.map((d) =>
       repo.create({
         ...d,
-        tenantId,
+        storeId,
         isActive: true,
       }),
     )
@@ -102,7 +102,7 @@ export class TaxService {
   // CRUD API helpers
   async getTaxRules(ctx: RequestContextDto): Promise<TaxRuleEntity[]> {
     return this.dataSource.getRepository(TaxRuleEntity).find({
-      where: { tenantId: ctx.tenantId },
+      where: { storeId: ctx.storeId },
       order: { country: 'ASC', state: 'ASC', rate: 'DESC' },
     })
   }
@@ -114,7 +114,7 @@ export class TaxService {
     const repo = this.dataSource.getRepository(TaxRuleEntity)
     const rule = repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       isSystem: false,
       isActive: true,
     })
@@ -127,7 +127,7 @@ export class TaxService {
     ctx: RequestContextDto,
   ): Promise<TaxRuleEntity> {
     const repo = this.dataSource.getRepository(TaxRuleEntity)
-    const rule = await repo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const rule = await repo.findOne({ where: { id, storeId: ctx.storeId } })
     if (!rule) {
       throw new NotFoundException('Tax rule not found')
     }
@@ -140,7 +140,7 @@ export class TaxService {
 
   async deleteTaxRule(id: string, ctx: RequestContextDto): Promise<void> {
     const repo = this.dataSource.getRepository(TaxRuleEntity)
-    const rule = await repo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    const rule = await repo.findOne({ where: { id, storeId: ctx.storeId } })
     if (!rule) {
       throw new NotFoundException('Tax rule not found')
     }
@@ -154,9 +154,9 @@ export class TaxService {
    * Dynamically calculates multi-jurisdiction tax rate and amounts.
    * Scopes down by country, state, and rate classification.
    */
-  async getTenantCountry(tenantId: string, manager?: EntityManager): Promise<string> {
+  async getStoreCountry(storeId: string, manager?: EntityManager): Promise<string> {
     const repo = manager ? manager.getRepository(SiteSettingsEntity) : this.dataSource.getRepository(SiteSettingsEntity)
-    const settings = await repo.findOne({ where: { tenantId } })
+    const settings = await repo.findOne({ where: { storeId } })
     if (settings?.locale) {
       const parts = settings.locale.split(/[-_]/)
       if (parts.length > 1) {
@@ -234,7 +234,7 @@ export class TaxService {
     manager?: EntityManager,
   ) {
     const em = manager || this.dataSource.manager
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const customerCountry = payload.country.toUpperCase()
     let targetState = payload.state || null
@@ -261,11 +261,11 @@ export class TaxService {
       'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK', 'EL'
     ])
 
-    const tenantCountry = await this.getTenantCountry(tenantId, em)
+    const storeCountry = await this.getStoreCountry(storeId, em)
     const isEuCrossBorder =
-      EU_COUNTRIES.has(tenantCountry) &&
+      EU_COUNTRIES.has(storeCountry) &&
       EU_COUNTRIES.has(customerCountry) &&
-      tenantCountry !== customerCountry
+      storeCountry !== customerCountry
 
     if (isEuCrossBorder) {
       const isValidVat = payload.vatNumber ? this.verifyVatNumber(customerCountry, payload.vatNumber) : false
@@ -284,7 +284,7 @@ export class TaxService {
     }
 
     // 3. Resolve taxProvider config from site settings
-    const settings = await em.getRepository(SiteSettingsEntity).findOne({ where: { tenantId } })
+    const settings = await em.getRepository(SiteSettingsEntity).findOne({ where: { storeId } })
     const taxProvider = settings?.financeConfig?.taxProvider?.toLowerCase()
     const taxApiKey = settings?.financeConfig?.taxApiKey
 
@@ -328,7 +328,7 @@ export class TaxService {
     // 4. Resolve rule from DB based on country specificity and category
     let rule = await repo.findOne({
       where: {
-        tenantId,
+        storeId,
         country: customerCountry,
         state: targetState || null,
         category: payload.category || TaxCategory.STANDARD,
@@ -340,7 +340,7 @@ export class TaxService {
     if (!rule && targetState) {
       rule = await repo.findOne({
         where: {
-          tenantId,
+          storeId,
           country: customerCountry,
           state: null,
           category: payload.category || TaxCategory.STANDARD,
@@ -403,11 +403,11 @@ export class TaxService {
     ctx: RequestContextDto,
     query?: { startDate?: string; endDate?: string },
   ) {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     // Load ledger accounts to filter by tax categories if mapped
     const accountsRepo = this.dataSource.getRepository(AccountEntity)
-    const allAccounts = await accountsRepo.find({ where: { tenantId } })
+    const allAccounts = await accountsRepo.find({ where: { storeId } })
 
     // Build ledger entries query scoped to date range and restricted to tax-related accounts
     const qb = this.dataSource
@@ -415,7 +415,7 @@ export class TaxService {
       .createQueryBuilder('le')
       .leftJoinAndSelect('le.journalEntry', 'je')
       .leftJoinAndSelect('le.account', 'acc')
-      .where('le.tenantId = :tenantId', { tenantId })
+      .where('le.storeId = :storeId', { storeId })
       .andWhere(
         `((acc.code = :outputCode OR LOWER(acc.name) LIKE :outputVatLike OR LOWER(acc.name) LIKE :salesTaxLike) OR 
           (acc.code = :inputCode OR LOWER(acc.name) LIKE :inputVatLike OR LOWER(acc.name) LIKE :taxCreditLike))`,

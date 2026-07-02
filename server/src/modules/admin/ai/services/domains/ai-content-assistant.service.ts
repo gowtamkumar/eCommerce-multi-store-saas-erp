@@ -29,7 +29,7 @@ export class AiContentAssistantService {
   ) {}
 
   async generateCampaignCopy(
-    tenantId: string,
+    storeId: string,
     dto: GenerateCampaignCopyDto,
   ): Promise<CampaignCopyResultDto> {
     const channel = dto.channel || 'both'
@@ -57,7 +57,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -73,7 +73,7 @@ Return exactly this JSON shape:
     return this.base.parseJsonResponse<CampaignCopyResultDto>(result.content, {})
   }
 
-  async generateFaq(tenantId: string, dto: GenerateFaqDto): Promise<FaqContentResultDto> {
+  async generateFaq(storeId: string, dto: GenerateFaqDto): Promise<FaqContentResultDto> {
     const prompt = `Generate an FAQ entry as JSON only (no markdown fences).
 Topic: ${dto.topic}
 ${dto.category ? `Category: ${dto.category}` : ''}
@@ -86,7 +86,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -105,7 +105,7 @@ Return exactly this JSON shape:
     })
   }
 
-  async generatePageSeo(tenantId: string, dto: GeneratePageSeoDto): Promise<PageSeoResultDto> {
+  async generatePageSeo(storeId: string, dto: GeneratePageSeoDto): Promise<PageSeoResultDto> {
     const prompt = `Generate SEO metadata for a store page as JSON only (no markdown fences).
 Page title: ${dto.pageTitle}
 ${dto.keywords ? `Keywords: ${dto.keywords}` : ''}
@@ -118,7 +118,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -136,7 +136,7 @@ Return exactly this JSON shape:
     })
   }
 
-  async generateStoreSeo(tenantId: string, dto: GenerateStoreSeoDto): Promise<StoreSeoResultDto> {
+  async generateStoreSeo(storeId: string, dto: GenerateStoreSeoDto): Promise<StoreSeoResultDto> {
     const prompt = `Generate default storefront SEO for an e-commerce store as JSON only (no markdown fences).
 Store / brand name: ${dto.brandName}
 ${dto.keywords ? `Keywords: ${dto.keywords}` : ''}
@@ -152,7 +152,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -172,7 +172,7 @@ Return exactly this JSON shape:
   }
 
   async generatePageBlockContent(
-    tenantId: string,
+    storeId: string,
     dto: GeneratePageBlockContentDto,
   ): Promise<PageBlockContentResultDto> {
     const jsonShapes: Record<GeneratePageBlockContentDto['blockType'], string> = {
@@ -198,7 +198,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -215,7 +215,7 @@ Return exactly this JSON shape:
   }
 
   async generateLoyaltyCopy(
-    tenantId: string,
+    storeId: string,
     dto: GenerateLoyaltyCopyDto,
   ): Promise<LoyaltyProgramCopyResultDto | LoyaltyRuleCopyResultDto> {
     if (dto.context === 'rule') {
@@ -230,7 +230,7 @@ Return exactly this JSON shape:
 }`
 
       const result = await this.base.complete(
-        tenantId,
+        storeId,
         [
           {
             role: 'system',
@@ -257,7 +257,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -277,7 +277,7 @@ Return exactly this JSON shape:
   }
 
   async generateMarketingDescription(
-    tenantId: string,
+    storeId: string,
     dto: GenerateMarketingDescriptionDto,
   ): Promise<MarketingDescriptionResultDto> {
     const context = dto.context === 'coupon' ? 'discount coupon' : 'promotional offer'
@@ -293,7 +293,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',
@@ -311,7 +311,7 @@ Return exactly this JSON shape:
   }
 
   async generateCouponCodeSuggestions(
-    tenantId: string,
+    storeId: string,
     dto: GenerateCouponCodeSuggestionsDto,
   ): Promise<CouponCodeSuggestionsResultDto> {
     const count = dto.count ?? 6
@@ -340,7 +340,7 @@ Return exactly this JSON shape:
 }`
 
     const result = await this.base.complete(
-      tenantId,
+      storeId,
       [
         {
           role: 'system',

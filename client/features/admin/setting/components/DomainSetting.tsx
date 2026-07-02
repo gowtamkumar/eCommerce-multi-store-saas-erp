@@ -10,7 +10,7 @@ import { DomainsList } from "./domain/DomainsList";
 export const DomainSetting = () => {
   const domain = useDomainManager();
 
-  if (!domain.tenantInfo) {
+  if (!domain.storeInfo) {
     return <div className="animate-pulse h-64 bg-slate-100 dark:bg-slate-800 rounded-3xl" />;
   }
 

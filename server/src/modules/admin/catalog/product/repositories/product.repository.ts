@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ProductStatus } from '@/common/enums/product-status.enum'
 import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
@@ -8,7 +8,7 @@ import { EntityManager, In, Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
 
 @Injectable()
-export class ProductRepository extends BaseTenantRepository<ProductEntity> {
+export class ProductRepository extends BaseStoreRepository<ProductEntity> {
   private readonly logger = new Logger(ProductRepository.name)
 
   constructor(
@@ -18,7 +18,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
     super(ProductEntity, repo)
   }
 
-  async findAllWithFilters(filterDto: any, tenantId: string): Promise<[ProductEntity[], number]> {
+  async findAllWithFilters(filterDto: any, storeId: string): Promise<[ProductEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { q, status, categoryId, brandId, exclude, lowStock } = filterDto
@@ -29,7 +29,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
       .createQueryBuilder('product')
       .leftJoin('product.category', 'category')
       .leftJoin('product.brand', 'brand')
-      .where('product.tenantId = :tenantId', { tenantId })
+      .where('product.storeId = :storeId', { storeId })
       .select([
         'product.id',
         'product.name',
@@ -58,7 +58,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
         SELECT SUM(il.quantity)
         FROM inventory_ledger il
         WHERE il.product_id = product.id
-          AND il.tenant_id = :tenantId
+          AND il.store_id = :storeId
       ), 0)`
       query.andWhere(`${stockSubquery} <= product.low_stock_threshold`)
     }
@@ -126,7 +126,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
   async findByIdsWithFilters(
     ids: string[],
     filterDto: any,
-    tenantId: string,
+    storeId: string,
   ): Promise<ProductEntity[]> {
     if (ids.length === 0) {
       return []
@@ -138,7 +138,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
       .createQueryBuilder('product')
       .leftJoin('product.category', 'category')
       .leftJoin('product.brand', 'brand')
-      .where('product.tenantId = :tenantId', { tenantId })
+      .where('product.storeId = :storeId', { storeId })
       .andWhere('product.id IN (:...ids)', { ids })
       .select([
         'product.id',
@@ -167,7 +167,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
         SELECT SUM(il.quantity)
         FROM inventory_ledger il
         WHERE il.product_id = product.id
-          AND il.tenant_id = :tenantId
+          AND il.store_id = :storeId
       ), 0)`
       query.andWhere(`${stockSubquery} <= product.low_stock_threshold`)
     }
@@ -217,7 +217,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
     return query.getMany()
   }
 
-  async getPriceRange(tenantId: string, categoryId?: string) {
+  async getPriceRange(storeId: string, categoryId?: string) {
     const finalPriceExpr = `CASE 
       WHEN product.discount_type = 'percentage' 
       THEN (product.price * (1 - product.discount_amount / 100)) * (1 + COALESCE(product.tax_rate, 0) / 100)
@@ -228,7 +228,7 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
 
     const query = this.repo
       .createQueryBuilder('product')
-      .where('product.tenantId = :tenantId', { tenantId })
+      .where('product.storeId = :storeId', { storeId })
       .select(`MIN(${finalPriceExpr})`, 'min')
       .addSelect(`MAX(${finalPriceExpr})`, 'max')
 
@@ -236,9 +236,9 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
     return await query.getRawOne()
   }
 
-  async findBySlugWithRelations(slug: string, tenantId: string): Promise<ProductEntity | null> {
+  async findBySlugWithRelations(slug: string, storeId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
-      where: { slug, tenantId },
+      where: { slug, storeId },
       relations: {
         faqs: true,
         category: true,
@@ -249,9 +249,9 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
     })
   }
 
-  async findByIdWithRelations(id: string, tenantId: string): Promise<ProductEntity | null> {
+  async findByIdWithRelations(id: string, storeId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         faqs: true,
         attributes: true,
@@ -262,9 +262,9 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
     })
   }
 
-  async findProductById(id: string, tenantId: string): Promise<ProductEntity | null> {
+  async findProductById(id: string, storeId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
       relations: {
         variants: true,
       },
@@ -275,32 +275,32 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
    * Bulk variant of findProductById: loads many products (with variants) in a
    * single query. Used to avoid N+1 lookups when resolving cart/sync items.
    */
-  async findProductsByIds(ids: string[], tenantId: string): Promise<ProductEntity[]> {
+  async findProductsByIds(ids: string[], storeId: string): Promise<ProductEntity[]> {
     if (ids.length === 0) return []
     return this.repo.find({
-      where: { id: In(ids), tenantId },
+      where: { id: In(ids), storeId },
       relations: {
         variants: true,
       },
     })
   }
 
-  async findBySlug(slug: string, tenantId: string): Promise<ProductEntity | null> {
-    return this.repo.findOne({ where: { slug, tenantId } })
+  async findBySlug(slug: string, storeId: string): Promise<ProductEntity | null> {
+    return this.repo.findOne({ where: { slug, storeId } })
   }
 
   async createAndSave(data: any, ctx: RequestContextDto): Promise<ProductEntity> {
     const product = this.repo.create({
       ...data,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
       stock: 0,
     } as ProductEntity)
     return this.repo.save(product)
   }
 
-  async countByTenant(tenantId: string): Promise<number> {
-    return this.repo.count({ where: { tenantId } })
+  async countByStore(storeId: string): Promise<number> {
+    return this.repo.count({ where: { storeId } })
   }
 
   async updateAndSave(
@@ -324,21 +324,21 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
 
   async updateAverageCost(
     id: string,
-    tenantId: string,
+    storeId: string,
     newCost: number,
     manager?: EntityManager,
   ): Promise<void> {
     const repo = this.txRepo(manager)
-    await repo.update({ id, tenantId }, { averageCost: newCost })
+    await repo.update({ id, storeId }, { averageCost: newCost })
   }
 
   async removeProduct(product: ProductEntity): Promise<void> {
     await this.repo.softRemove(product)
   }
 
-  async findLatestProducts(tenantId: string, limit: number): Promise<ProductEntity[]> {
+  async findLatestProducts(storeId: string, limit: number): Promise<ProductEntity[]> {
     return this.repo.find({
-      where: { tenantId },
+      where: { storeId },
       relations: {
         variants: true,
         category: true,
@@ -348,8 +348,8 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
     })
   }
 
-  async countProducts(tenantId: string): Promise<number> {
-    return this.repo.count({ where: { tenantId } })
+  async countProducts(storeId: string): Promise<number> {
+    return this.repo.count({ where: { storeId } })
   }
 
   async getOverviewStats(): Promise<{
@@ -376,17 +376,17 @@ export class ProductRepository extends BaseTenantRepository<ProductEntity> {
   }
 
   async findOfferProducts(params: {
-    tenantId: string
+    storeId: string
     targetType?: string
     targetId?: string
     limit?: number
   }): Promise<ProductEntity[]> {
-    const { tenantId, targetType, targetId, limit = 20 } = params
+    const { storeId, targetType, targetId, limit = 20 } = params
     const query = this.repo
       .createQueryBuilder('product')
       .leftJoin('product.category', 'category')
       .leftJoin('product.brand', 'brand')
-      .where('product.tenantId = :tenantId', { tenantId })
+      .where('product.storeId = :storeId', { storeId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
       // Stock is derived from inventory ledger; we cannot filter on a non‑existent column.
       // The caller can still filter low‑stock via the lowStock flag in the main list query.

@@ -1,4 +1,4 @@
-import { AiProviderType } from '@/common/types/tenant-ai-config.types'
+import { AiProviderType } from '@/common/types/store-ai-config.types'
 
 export function providerSupportsEmbeddings(provider: string): boolean {
   return provider !== AiProviderType.ANTHROPIC

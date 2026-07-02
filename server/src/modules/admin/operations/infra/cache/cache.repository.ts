@@ -46,7 +46,7 @@ export class CacheRepository {
         if (client && typeof client.scan === 'function') {
           // Always use non-blocking SCAN (never KEYS): KEYS is O(N) and blocks
           // the single-threaded Redis server, causing latency spikes for every
-          // tenant during cache invalidation on large keyspaces.
+          // store during cache invalidation on large keyspaces.
           this.logger.debug(`Found Redis client in store. Using non-blocking SCAN.`)
           const keys = await this.scanRecursive(client, pattern)
 

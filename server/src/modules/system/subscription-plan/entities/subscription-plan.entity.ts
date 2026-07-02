@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
@@ -71,8 +71,8 @@ export class SubscriptionPlanEntity extends BaseEntity {
   @Column({ name: 'stripe_price_id_yearly', type: 'varchar', nullable: true })
   stripePriceIdYearly: string
 
-  @OneToMany(() => TenantEntity, (tenant) => tenant.subscriptionPlan)
-  tenants: TenantEntity[]
+  @OneToMany(() => StoreEntity, (store) => store.subscriptionPlan)
+  stores: StoreEntity[]
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

@@ -1,4 +1,4 @@
-import { BaseTenantRepository } from '@/common/base-repository'
+import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -6,7 +6,7 @@ import { PromotionEntity } from '../entities/promotion.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
-export class PromotionRepository extends BaseTenantRepository<PromotionEntity> {
+export class PromotionRepository extends BaseStoreRepository<PromotionEntity> {
   constructor(
     @InjectRepository(PromotionEntity)
     repo: Repository<PromotionEntity>,
@@ -14,10 +14,10 @@ export class PromotionRepository extends BaseTenantRepository<PromotionEntity> {
     super(PromotionEntity, repo)
 }
 
-  async findActivePromotions(tenantId: string, now: Date): Promise<PromotionEntity[]> {
+  async findActivePromotions(storeId: string, now: Date): Promise<PromotionEntity[]> {
     return await this.repo
       .createQueryBuilder('promotion')
-      .where('promotion.tenantId = :tenantId', { tenantId })
+      .where('promotion.storeId = :storeId', { storeId })
       .andWhere('promotion.isActive = true')
       .andWhere('(promotion.startDate IS NULL OR promotion.startDate <= :now)', { now })
       .andWhere('(promotion.endDate IS NULL OR promotion.endDate >= :now)', { now })
@@ -25,15 +25,15 @@ export class PromotionRepository extends BaseTenantRepository<PromotionEntity> {
       .getMany()
   }
 
-  async findAllWithFilters(filterDto: any, tenantId: string): Promise<[PromotionEntity[], number]> {
+  async findAllWithFilters(filterDto: any, storeId: string): Promise<[PromotionEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { search, isActive } = filterDto
 
     const query = this.repo
       .createQueryBuilder('promotion')
-      .where('promotion.tenantId = :tenantId', {
-        tenantId,
+      .where('promotion.storeId = :storeId', {
+        storeId,
       })
 
     if (isActive !== undefined) {
@@ -51,22 +51,22 @@ export class PromotionRepository extends BaseTenantRepository<PromotionEntity> {
       .getManyAndCount()
   }
 
-  async findBySlug(slug: string, tenantId: string): Promise<PromotionEntity | null> {
+  async findBySlug(slug: string, storeId: string): Promise<PromotionEntity | null> {
     return await this.repo.findOne({
-      where: { slug, tenantId },
+      where: { slug, storeId },
     })
   }
 
-  async findById(id: string, tenantId: string): Promise<PromotionEntity | null> {
+  async findById(id: string, storeId: string): Promise<PromotionEntity | null> {
     return await this.repo.findOne({
-      where: { id, tenantId },
+      where: { id, storeId },
     })
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<PromotionEntity> {
     const promotion = this.repo.create({
       ...dto,
-      tenantId: ctx.tenantId,
+      storeId: ctx.storeId,
       userId: ctx.userId,
     } as PromotionEntity)
     return await this.repo.save(promotion)

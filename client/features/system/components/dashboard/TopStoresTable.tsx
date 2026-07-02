@@ -4,9 +4,9 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { planColor } from '../../lib/dashboard';
-import type { RankedTenantAnalytics, TenantAnalytics } from '../../types/dashboard.types';
+import type { RankedStoreAnalytics, StoreAnalytics } from '../../types/dashboard.types';
 
-const columns: DataTableColumn<RankedTenantAnalytics>[] = [
+const columns: DataTableColumn<RankedStoreAnalytics>[] = [
   {
     key: 'store',
     header: 'Store',
@@ -15,7 +15,7 @@ const columns: DataTableColumn<RankedTenantAnalytics>[] = [
       <div className="flex items-center gap-3">
         <span className="text-xs font-black text-slate-350 dark:text-slate-600 w-4">#{t.rank}</span>
         <div>
-          <Link href={`/system/tenants/${t.id}/analytics`} className="font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+          <Link href={`/system/stores/${t.id}/analytics`} className="font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             {t.storeName}
           </Link>
           <p className="text-xs text-slate-400">{t.subdomain}</p>
@@ -56,8 +56,8 @@ const columns: DataTableColumn<RankedTenantAnalytics>[] = [
   },
 ];
 
-export default function TopStoresTable({ analytics }: { analytics: TenantAnalytics[] }) {
-  const topActiveStores = useMemo<RankedTenantAnalytics[]>(
+export default function TopStoresTable({ analytics }: { analytics: StoreAnalytics[] }) {
+  const topActiveStores = useMemo<RankedStoreAnalytics[]>(
     () =>
       [...analytics]
         .sort((a, b) => (b.stats?.orders || 0) - (a.stats?.orders || 0))
@@ -75,7 +75,7 @@ export default function TopStoresTable({ analytics }: { analytics: TenantAnalyti
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Top Active Stores</h2>
           <p className="text-xs text-slate-500">Ranked by order volume</p>
         </div>
-        <Link href="/system/tenants" className="text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors">View all →</Link>
+        <Link href="/system/stores" className="text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors">View all →</Link>
       </div>
       <DataTable
         data={topActiveStores}

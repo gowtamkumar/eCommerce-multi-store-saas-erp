@@ -7,7 +7,7 @@ export class GenerateTaxRuleExplanationDto {
   @MaxLength(4000)
   ruleSummary: string
 
-  @ApiPropertyOptional({ description: 'Optional summary of related tenant tax rules for jurisdiction context' })
+  @ApiPropertyOptional({ description: 'Optional summary of related store tax rules for jurisdiction context' })
   @IsOptional()
   @IsString()
   @MaxLength(4000)

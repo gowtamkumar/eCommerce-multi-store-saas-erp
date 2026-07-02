@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
@@ -17,7 +17,7 @@ describe('Checkout and Payment Gateway (e2e)', () => {
   let app: INestApplication
   let dataSource: DataSource
   let paymentService: PaymentService
-  let tenant: TenantEntity
+  let store: StoreEntity
   let ctx: RequestContextDto
 
   beforeAll(async () => {
@@ -31,13 +31,13 @@ describe('Checkout and Payment Gateway (e2e)', () => {
     dataSource = app.get(DataSource)
     paymentService = app.get(PaymentService)
 
-    // Create a mock tenant for testing
-    const tenantRepo = dataSource.getRepository(TenantEntity)
-    tenant = tenantRepo.create({
+    // Create a mock store for testing
+    const storeRepo = dataSource.getRepository(StoreEntity)
+    store = storeRepo.create({
       storeName: 'E2E Test Payment Store',
       subdomain: `e2e-test-pay-${Date.now()}`,
     })
-    await tenantRepo.save(tenant)
+    await storeRepo.save(store)
 
     // Create a mock user to satisfy foreign key constraints
     const userRepo = dataSource.getRepository(UserEntity)
@@ -46,17 +46,17 @@ describe('Checkout and Payment Gateway (e2e)', () => {
       name: 'E2E Test User',
       username: `e2etestuser-${Date.now()}`,
       password: 'password',
-      tenantId: tenant.id,
+      storeId: store.id,
     })
     await userRepo.save(user)
 
     ctx = new RequestContextDto()
-    ctx.tenantId = tenant.id
+    ctx.storeId = store.id
     ctx.userId = '00000000-0000-0000-0000-000000000000'
   })
 
   afterAll(async () => {
-    if (tenant) {
+    if (store) {
       const tables = [
         'payments',
         'order_items',
@@ -67,13 +67,13 @@ describe('Checkout and Payment Gateway (e2e)', () => {
       ]
       for (const table of tables) {
         try {
-          await dataSource.query(`DELETE FROM "${table}" WHERE "tenant_id" = $1`, [tenant.id])
+          await dataSource.query(`DELETE FROM "${table}" WHERE "store_id" = $1`, [store.id])
         } catch (e) {
           // Ignore table deletion errors to continue cleanup
         }
       }
-      const tenantRepo = dataSource.getRepository(TenantEntity)
-      await tenantRepo.delete(tenant.id)
+      const storeRepo = dataSource.getRepository(StoreEntity)
+      await storeRepo.delete(store.id)
     }
     if (app) {
       await app.close()
@@ -94,7 +94,7 @@ describe('Checkout and Payment Gateway (e2e)', () => {
           postalCode: '94043',
           country: 'US',
           isDefault: true,
-          tenantId: tenant.id,
+          storeId: store.id,
           userId: ctx.userId,
         },
         {
@@ -106,7 +106,7 @@ describe('Checkout and Payment Gateway (e2e)', () => {
           postalCode: 'SW1A 2AA',
           country: 'GB',
           isDefault: false,
-          tenantId: tenant.id,
+          storeId: store.id,
           userId: ctx.userId,
         },
       ]
@@ -148,7 +148,7 @@ describe('Checkout and Payment Gateway (e2e)', () => {
         paymentMethod: PaymentMethod.STRIPE,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
-        tenantId: tenant.id,
+        storeId: store.id,
         userId: ctx.userId,
       })
       await orderRepo.save(order)
@@ -175,7 +175,7 @@ describe('Checkout and Payment Gateway (e2e)', () => {
         paymentMethod: PaymentMethod.PAYPAL,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
-        tenantId: tenant.id,
+        storeId: store.id,
         userId: ctx.userId,
       })
       await orderRepo.save(order)
@@ -195,7 +195,7 @@ describe('Checkout and Payment Gateway (e2e)', () => {
       const orderRepo = dataSource.getRepository(OrderEntity)
       const order = await orderRepo.findOneBy({
         customerEmail: 'stripe@test.com',
-        tenantId: tenant.id,
+        storeId: store.id,
       })
       expect(order).toBeDefined()
 
@@ -212,7 +212,7 @@ describe('Checkout and Payment Gateway (e2e)', () => {
       const orderRepo = dataSource.getRepository(OrderEntity)
       const order = await orderRepo.findOneBy({
         customerEmail: 'paypal@test.com',
-        tenantId: tenant.id,
+        storeId: store.id,
       })
       expect(order).toBeDefined()
 

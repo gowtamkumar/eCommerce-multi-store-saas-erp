@@ -1,6 +1,6 @@
-# eCommerce Multi-Tenant SaaS ERP — Multi-Warehouse Stock Documents System & Project Analysis
+# eCommerce Multi-Store SaaS ERP — Multi-Warehouse Stock Documents System & Project Analysis
 
-This document provides a comprehensive technical analysis, architectural review, and implementation summary of the **Multi-Warehouse Stock Transfer Document System**, alongside an updated **Project Feature Completion & Gap Analysis** for the eCommerce Multi-Tenant SaaS ERP platform.
+This document provides a comprehensive technical analysis, architectural review, and implementation summary of the **Multi-Warehouse Stock Transfer Document System**, alongside an updated **Project Feature Completion & Gap Analysis** for the eCommerce Multi-Store SaaS ERP platform.
 
 ---
 
@@ -43,13 +43,13 @@ stateDiagram-v2
 
 ## 3. Data Model Architecture
 
-The implementation introduces two main entities inside the database to support document-based transfers. Both tables strictly enforce `tenant_id` scoping to prevent cross-tenant data leaks.
+The implementation introduces two main entities inside the database to support document-based transfers. Both tables strictly enforce `store_id` scoping to prevent cross-store data leaks.
 
 ### 3.1 Entity Relationship Diagram
 
 ```mermaid
 erDiagram
-    TENANTS ||--o{ STOCK_TRANSFERS : owns
+    STORES ||--o{ STOCK_TRANSFERS : owns
     USERS ||--o{ STOCK_TRANSFERS : creates
     WAREHOUSES ||--o{ STOCK_TRANSFERS : "source / destination"
     STOCK_TRANSFERS ||--|{ STOCK_TRANSFER_ITEMS : contains
@@ -57,7 +57,7 @@ erDiagram
     PRODUCT_VARIANTS ||--o{ STOCK_TRANSFER_ITEMS : references
     STOCK_TRANSFERS {
         uuid id PK
-        uuid tenant_id FK
+        uuid store_id FK
         varchar transfer_number UK
         uuid source_warehouse_id FK
         uuid destination_warehouse_id FK
@@ -79,9 +79,9 @@ erDiagram
 ```
 
 ### 3.2 Database Indexes & Constraints
-To optimize querying and enforce tenant separation:
-* **Composite Indexes**: Index on `[tenant_id, status]` and `[tenant_id, transfer_number]` for rapid dashboard lookup and validation.
-* **Uniqueness**: `transfer_number` is unique per tenant, automatically generated with the prefix `ST-YYYYMMDD-[SEQUENCE]`.
+To optimize querying and enforce store separation:
+* **Composite Indexes**: Index on `[store_id, status]` and `[store_id, transfer_number]` for rapid dashboard lookup and validation.
+* **Uniqueness**: `transfer_number` is unique per store, automatically generated with the prefix `ST-YYYYMMDD-[SEQUENCE]`.
 * **Foreign Keys**: Cascading deletion rules are applied to line items (`ON DELETE CASCADE` when the parent document is deleted).
 
 ---
@@ -92,10 +92,10 @@ The backend is built in **NestJS** and utilizes **TypeORM** transactions to ensu
 
 ### 4.1 Key Endpoints (`StockTransferController`)
 
-All endpoints require JWT authentication and verify tenant-scoped access:
+All endpoints require JWT authentication and verify store-scoped access:
 
 * `POST /api/stock-transfers` — Create a new `DRAFT` transfer document.
-* `GET /api/stock-transfers` — Paginated list of tenant transfers.
+* `GET /api/stock-transfers` — Paginated list of store transfers.
 * `GET /api/stock-transfers/:id` — Retrieve a single transfer document with details.
 * `PUT /api/stock-transfers/:id` — Update draft transfer (editable fields only).
 * `POST /api/stock-transfers/:id/approve` — Approve a draft transfer.
@@ -121,7 +121,7 @@ await this.connection.transaction(async (manager) => {
 
 ## 5. Frontend User Experience (UI)
 
-The UI was designed to match the premium, responsive dashboard guidelines of the project, located in [StockTransfer.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/admin/inventory/components/StockTransfer.tsx).
+The UI was designed to match the premium, responsive dashboard guidelines of the project, located in [StockTransfer.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas/client/features/admin/inventory/components/StockTransfer.tsx).
 
 ### 5.1 Design & Visual Highlights
 * **List Registry & Badges**: Clean table list featuring color-coded status pills:
@@ -150,7 +150,7 @@ A robust E2E test suite was developed at `server/test/stock-transfer.e2e-spec.ts
 
 ### 6.2 Test Logs
 ```bash
-docker exec multi_tenant_server_dev npx jest --config test/jest-e2e.json test/stock-transfer.e2e-spec.ts
+docker exec multi_store_server_dev npx jest --config test/jest-e2e.json test/stock-transfer.e2e-spec.ts
 ```
 ```text
 PASS test/stock-transfer.e2e-spec.ts (5.622 s)
@@ -182,13 +182,13 @@ Following the implementation of the Stock Transfer Document System, we have upda
 | **POS / Retail** | Register opening/closing, cashier cart UI, order sync. | **Partially Completed** | True offline-first POS sync (IndexedDB queue), split tender payments (e.g. Cash + Card). |
 | **Fulfillment** | Pick, pack, ship task lifecycle, shipping courier API sync. | **Partially Completed** | Split-shipment delivery, stock reservation consumption engine. |
 | **HRM & Payroll** | Departments, employees, attendance, leave logs, payroll batches. | **Partially Completed** | Link payroll directly to attendance penalties, remove development/demo seed backdoors. |
-| **RBAC & Security** | Dynamic roles, permission decorators, tenant isolation. | **Mostly Completed** | Security audit of high-risk operational permissions. |
+| **RBAC & Security** | Dynamic roles, permission decorators, store isolation. | **Mostly Completed** | Security audit of high-risk operational permissions. |
 
 ---
 
 ## 8. Development Recommendations (Phase Roadmap)
 
-To progress this platform toward a production-grade multi-tenant ERP, we recommend executing changes in the following order:
+To progress this platform toward a production-grade multi-store ERP, we recommend executing changes in the following order:
 
 1. **API Idempotency Middleware**: Protect payment, order sync, and inventory posting endpoints using `X-Idempotency-Key` headers saved in Redis.
 2. **Offline-First POS Queue**: Move the retail checkout process to load from a browser IndexedDB cache so cashier desks can transact offline and sync automatically upon reconnection.

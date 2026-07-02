@@ -27,7 +27,7 @@ export class RegisterCredentialDto {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
-  tenantId: string
+  storeId: string
 
   @IsString()
   @IsNotEmpty()

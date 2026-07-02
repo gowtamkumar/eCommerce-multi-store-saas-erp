@@ -3,19 +3,19 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { PromotionType } from '../enums/promotion-type.enum'
 import { PromotionTargetType } from '../enums/promotion-target-type.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 
 /** Optimizes the hot active-promotions query used by the storefront */
-@Index(['tenantId', 'isActive', 'startDate', 'endDate'])
-/** Slug uniqueness must be scoped to tenant — see migration MarketingMarketingHardening */
-@Index('UQ_promotions_tenant_slug', ['tenantId', 'slug'], { unique: true })
+@Index(['storeId', 'isActive', 'startDate', 'endDate'])
+/** Slug uniqueness must be scoped to store — see migration MarketingMarketingHardening */
+@Index('UQ_promotions_store_slug', ['storeId', 'slug'], { unique: true })
 @Entity('promotions')
 export class PromotionEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string
 
   // `unique: true` here would create a global-unique index that conflicts
-  // with the tenant-scoped composite above; we keep the column non-unique
+  // with the store-scoped composite above; we keep the column non-unique
   // and rely on the composite for the real uniqueness contract.
   @Column()
   slug: string
@@ -47,12 +47,12 @@ export class PromotionEntity extends BaseEntity {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive: boolean
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string
+  @Column({ type: 'uuid', name: 'store_id' })
+  storeId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity
+  @ManyToOne(() => StoreEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id' })
+  store: StoreEntity
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })

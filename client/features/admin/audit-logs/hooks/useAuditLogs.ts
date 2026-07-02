@@ -14,13 +14,13 @@ export function useAuditLogs() {
     const [actionFilter, setActionFilter] = useState('');
     const [entityFilter, setEntityFilter] = useState('');
     const [actorSearch, setActorSearch] = useState('');
-    const [tenantIdFilter, setTenantIdFilter] = useState('');
+    const [storeIdFilter, setStoreIdFilter] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
     const debouncedActorSearch = useDebounce(actorSearch, 500);
-    const debouncedTenantIdFilter = useDebounce(tenantIdFilter, 500);
+    const debouncedStoreIdFilter = useDebounce(storeIdFilter, 500);
 
     const fetchLogs = useCallback(async (page: number) => {
         setLoading(true);
@@ -34,7 +34,7 @@ export function useAuditLogs() {
             if (actionFilter) params.append('action', actionFilter);
             if (entityFilter) params.append('entity', entityFilter);
             if (debouncedActorSearch) params.append('userId', debouncedActorSearch); // backend filters by userId
-            if (debouncedTenantIdFilter) params.append('tenantId', debouncedTenantIdFilter);
+            if (debouncedStoreIdFilter) params.append('storeId', debouncedStoreIdFilter);
             if (fromDate) params.append('from', new Date(fromDate).toISOString());
             if (toDate) params.append('to', new Date(toDate).toISOString());
 
@@ -48,7 +48,7 @@ export function useAuditLogs() {
         } finally {
             setLoading(false);
         }
-    }, [actionFilter, entityFilter, debouncedActorSearch, debouncedTenantIdFilter, fromDate, toDate]);
+    }, [actionFilter, entityFilter, debouncedActorSearch, debouncedStoreIdFilter, fromDate, toDate]);
 
     // Separate page change handler
     const handlePageChange = useCallback((page: number) => {
@@ -60,13 +60,13 @@ export function useAuditLogs() {
     useEffect(() => {
         setCurrentPage(1);
         void fetchLogs(1);
-    }, [actionFilter, entityFilter, debouncedActorSearch, debouncedTenantIdFilter, fromDate, toDate, fetchLogs]);
+    }, [actionFilter, entityFilter, debouncedActorSearch, debouncedStoreIdFilter, fromDate, toDate, fetchLogs]);
 
     const handleResetFilters = useCallback(() => {
         setActionFilter('');
         setEntityFilter('');
         setActorSearch('');
-        setTenantIdFilter('');
+        setStoreIdFilter('');
         setFromDate('');
         setToDate('');
         setCurrentPage(1);
@@ -88,8 +88,8 @@ export function useAuditLogs() {
         setEntityFilter,
         actorSearch,
         setActorSearch,
-        tenantIdFilter,
-        setTenantIdFilter,
+        storeIdFilter,
+        setStoreIdFilter,
         fromDate,
         setFromDate,
         toDate,
@@ -97,7 +97,7 @@ export function useAuditLogs() {
         currentPage,
         setCurrentPage,
         debouncedActorSearch,
-        debouncedTenantIdFilter,
+        debouncedStoreIdFilter,
         handlePageChange,
         handleResetFilters,
         handleRefresh,

@@ -27,7 +27,7 @@ export class MaintenanceGuard implements CanActivate {
       path.includes('/login') ||
       path.includes('/admin/logout') ||
       path.includes('/admin/refresh') ||
-      path.includes('/tenants') ||
+      path.includes('/stores') ||
       path.includes('/settings/public') ||
       path.includes('/super-admin/impersonate')
 

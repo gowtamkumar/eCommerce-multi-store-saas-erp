@@ -32,7 +32,7 @@ export class OrderService {
     ctx: RequestContextDto,
   ): Promise<{ orders: OrderEntity[]; total: number }> {
     this.logger.log(`${this.findAllOrders.name} Service Called`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const page = filterDto.page ? Number(filterDto.page) : 1
     const limit = filterDto.limit ? Number(filterDto.limit) : 20
     return await this.orderRepository.findAllOrders(
@@ -41,14 +41,14 @@ export class OrderService {
         page,
         limit,
       },
-      tenantId,
+      storeId,
     )
   }
 
   async findOneOrder(id: string, ctx: RequestContextDto): Promise<OrderEntity> {
     this.logger.log(`${this.findOneOrder.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const order = await this.orderRepository.findOrderById(id, tenantId)
+    const storeId = ctx.storeId
+    const order = await this.orderRepository.findOrderById(id, storeId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -59,8 +59,8 @@ export class OrderService {
 
   async findOneForCourier(id: string, ctx: RequestContextDto): Promise<OrderEntity> {
     this.logger.log(`${this.findOneForCourier.name} Service Called`)
-    const tenantId = ctx.tenantId
-    const order = await this.orderRepository.findOneForCourier(id, tenantId)
+    const storeId = ctx.storeId
+    const order = await this.orderRepository.findOneForCourier(id, storeId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -71,16 +71,16 @@ export class OrderService {
 
   async findOrderByTrackingId(
     trackingId: string,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<OrderEntity | null> {
-    return await this.orderRepository.findOrderByTrackingId(trackingId, tenantId)
+    return await this.orderRepository.findOrderByTrackingId(trackingId, storeId)
   }
 
   async findOrderByInvoiceCode(
     invoiceCode: string,
-    tenantId?: string,
+    storeId?: string,
   ): Promise<OrderEntity | null> {
-    return await this.orderRepository.findOrderByInvoiceCode(invoiceCode, tenantId)
+    return await this.orderRepository.findOrderByInvoiceCode(invoiceCode, storeId)
   }
 
   async findByUserId(
@@ -91,14 +91,14 @@ export class OrderService {
     search?: string,
   ): Promise<{ orders: OrderEntity[]; total: number }> {
     this.logger.log(`${this.findByUserId.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.orderRepository.findByUserIdPaginated(userId, tenantId, page, limit, search)
+    const storeId = ctx.storeId
+    return await this.orderRepository.findByUserIdPaginated(userId, storeId, page, limit, search)
   }
 
   async countByUserId(userId: string, ctx: RequestContextDto): Promise<number> {
     this.logger.log(`${this.countByUserId.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.orderRepository.countByUserId(userId, tenantId)
+    const storeId = ctx.storeId
+    return await this.orderRepository.countByUserId(userId, storeId)
   }
 
   async updateOrder(
@@ -109,10 +109,10 @@ export class OrderService {
     return await this.orderLifecycleService.updateOrder(id, updateOrderDto, ctx)
   }
 
-  async countByTenant(ctx: RequestContextDto): Promise<number> {
-    this.logger.log(`${this.countByTenant.name} Service Called`)
-    const tenantId = ctx.tenantId
-    return await this.orderRepository.countByTenant(tenantId)
+  async countByStore(ctx: RequestContextDto): Promise<number> {
+    this.logger.log(`${this.countByStore.name} Service Called`)
+    const storeId = ctx.storeId
+    return await this.orderRepository.countByStore(storeId)
   }
 
   async orderOverview(ctx?: RequestContextDto): Promise<{
@@ -121,13 +121,13 @@ export class OrderService {
     completedOrders: number
     cancelledOrders: number
   }> {
-    const tenantId = ctx?.tenantId
+    const storeId = ctx?.storeId
     const cacheKey = 'orders:overview'
     return this.cacheService.rememberCache(
       cacheKey,
-      () => this.orderRepository.orderOverview(tenantId),
+      () => this.orderRepository.orderOverview(storeId),
       300,
-      tenantId,
+      storeId,
     )
   }
 }

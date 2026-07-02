@@ -53,7 +53,7 @@ export class WalletController {
     @Param('customerId') customerId: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.walletService.getCustomerWalletSummary(customerId, ctx.tenantId)
+    const data = await this.walletService.getCustomerWalletSummary(customerId, ctx.storeId)
     return {
       success: true,
       statusCode: 200,

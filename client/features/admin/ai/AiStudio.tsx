@@ -60,7 +60,7 @@ export default function AiStudio() {
             <h1 className="text-2xl font-black text-slate-900 dark:text-white">AI Studio</h1>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Chat assistant, product descriptions, campaign copy, FAQs, and SEO tools — powered by your tenant AI config.
+            Chat assistant, product descriptions, campaign copy, FAQs, and SEO tools — powered by your store AI config.
           </p>
         </div>
         {status?.configured ? (

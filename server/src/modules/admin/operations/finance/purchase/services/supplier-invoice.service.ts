@@ -45,7 +45,7 @@ export class SupplierInvoiceService {
     ctx: RequestContextDto,
   ): Promise<SupplierInvoiceEntity> {
     this.logger.log('Creating Supplier Invoice and performing 3-way matching')
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const totalAmount = dto.items.reduce(
       (sum, item) => sum + item.quantity * Number(item.unitPrice),
@@ -68,13 +68,13 @@ export class SupplierInvoiceService {
         paidAmount: 0,
         status: SupplierInvoiceStatus.PENDING_MATCH,
         matchStatus: ThreeWayMatchStatus.PENDING,
-        tenantId,
+        storeId,
         createdById: ctx.userId,
         items: dto.items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
           unitPrice: i.unitPrice,
-          tenantId,
+          storeId,
         })),
       })
 
@@ -83,7 +83,7 @@ export class SupplierInvoiceService {
       // 2. Perform 3-Way Matching Engine
       const po = await this.poRepository.findByIdWithRelations(
         dto.purchaseOrderId,
-        tenantId,
+        storeId,
         queryRunner.manager,
       )
       if (!po) {
@@ -91,7 +91,7 @@ export class SupplierInvoiceService {
       }
 
       const grns = await queryRunner.manager.find(GoodsReceivedNoteEntity, {
-        where: { poId: po.id, tenantId, status: GrnStatus.RECEIVED },
+        where: { poId: po.id, storeId, status: GrnStatus.RECEIVED },
         relations: {
           items: true,
         },
@@ -153,14 +153,14 @@ export class SupplierInvoiceService {
 
       await queryRunner.commitTransaction()
 
-      await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
+      await this.cacheService.delCacheByPattern(`si:list*`, storeId)
       if (finalInvoice.status === SupplierInvoiceStatus.DISCREPANCY) {
         await this.notifySupplierInvoice(
           finalInvoice,
           'Supplier Invoice Discrepancy',
           `Supplier Invoice #${finalInvoice.invoiceNumber} has 3-way match discrepancies.`,
           'WARNING',
-          tenantId,
+          storeId,
         )
       }
       return finalInvoice
@@ -183,15 +183,15 @@ export class SupplierInvoiceService {
     limit: number
     totalPages: number
   }> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `si:list:p${page}:l${limit}:q${search || ''}:s${status || ''}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.repository.findAllByTenant(
-          tenantId,
+        const [items, total] = await this.repository.findAllByStore(
+          storeId,
           page,
           limit,
           search,
@@ -206,13 +206,13 @@ export class SupplierInvoiceService {
         }
       },
       300,
-      tenantId,
+      storeId,
     )
   }
 
   async findOneInvoice(id: string, ctx: RequestContextDto): Promise<SupplierInvoiceEntity> {
-    const tenantId = ctx.tenantId
-    const invoice = await this.repository.findByIdWithRelations(id, tenantId)
+    const storeId = ctx.storeId
+    const invoice = await this.repository.findByIdWithRelations(id, storeId)
     if (!invoice) {
       throw new NotFoundException('Supplier Invoice not found')
     }
@@ -225,14 +225,14 @@ export class SupplierInvoiceService {
     ctx: RequestContextDto,
   ): Promise<SupplierInvoiceEntity> {
     this.logger.log(`Recording payment for invoice ${id}`)
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
 
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
-      const invoice = await this.repository.findByIdWithRelations(id, tenantId, queryRunner.manager)
+      const invoice = await this.repository.findByIdWithRelations(id, storeId, queryRunner.manager)
       if (!invoice) {
         throw new NotFoundException('Supplier Invoice not found')
       }
@@ -251,7 +251,7 @@ export class SupplierInvoiceService {
           paymentMethod: dto.paymentMethod,
           transactionId: dto.transactionId || null,
           note: dto.note || `Payment against Invoice #${invoice.invoiceNumber}`,
-          tenantId,
+          storeId,
         },
         ctx,
         queryRunner.manager,
@@ -267,7 +267,7 @@ export class SupplierInvoiceService {
 
       // Lock the supplier record to serialize AP Ledger updates and prevent empty-ledger race conditions
       await queryRunner.manager.findOne(SupplierEntity, {
-        where: { id: invoice.supplierId, tenantId },
+        where: { id: invoice.supplierId, storeId },
         lock: { mode: 'pessimistic_write' },
       })
 
@@ -275,7 +275,7 @@ export class SupplierInvoiceService {
       const lastEntry = await queryRunner.manager
         .createQueryBuilder(SupplierAPLedgerEntity, 'ap')
         .where('ap.supplierId = :supplierId', { supplierId: invoice.supplierId })
-        .andWhere('ap.tenantId = :tenantId', { tenantId })
+        .andWhere('ap.storeId = :storeId', { storeId })
         .orderBy('ap.createdAt', 'DESC')
         .getOne()
 
@@ -283,7 +283,7 @@ export class SupplierInvoiceService {
 
       const entry = queryRunner.manager.create(SupplierAPLedgerEntity, {
         supplierId: invoice.supplierId,
-        tenantId,
+        storeId,
         referenceType: SupplierAPReferenceType.PAYMENT,
         referenceId: invoice.id,
         debit: Number(dto.amount),
@@ -314,8 +314,8 @@ export class SupplierInvoiceService {
           )
         })
 
-      await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
-      await this.cacheService.delCache(`si:id:${invoice.id}`, tenantId)
+      await this.cacheService.delCacheByPattern(`si:list*`, storeId)
+      await this.cacheService.delCache(`si:id:${invoice.id}`, storeId)
       await this.notifySupplierInvoice(
         savedInvoice,
         savedInvoice.status === SupplierInvoiceStatus.PAID
@@ -323,7 +323,7 @@ export class SupplierInvoiceService {
           : 'Supplier Invoice Payment Recorded',
         `Payment of ${Number(dto.amount).toFixed(2)} recorded for Supplier Invoice #${savedInvoice.invoiceNumber}.`,
         savedInvoice.status === SupplierInvoiceStatus.PAID ? 'SUCCESS' : 'INFO',
-        tenantId,
+        storeId,
       )
 
       return savedInvoice
@@ -340,7 +340,7 @@ export class SupplierInvoiceService {
     dto: UpdateSupplierInvoiceStatusDto,
     ctx: RequestContextDto,
   ): Promise<SupplierInvoiceEntity> {
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const invoice = await this.findOneInvoice(id, ctx)
 
     if (invoice.status === SupplierInvoiceStatus.PAID) {
@@ -353,33 +353,33 @@ export class SupplierInvoiceService {
     }
 
     const saved = await this.repository.saveInvoice(invoice)
-    await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
-    await this.cacheService.delCache(`si:id:${id}`, tenantId)
+    await this.cacheService.delCacheByPattern(`si:list*`, storeId)
+    await this.cacheService.delCache(`si:id:${id}`, storeId)
     await this.notifySupplierInvoice(
       saved,
       'Supplier Invoice Status Updated',
       `Supplier Invoice #${saved.invoiceNumber} is now ${saved.status}.`,
       saved.status === SupplierInvoiceStatus.DISCREPANCY ? 'WARNING' : 'INFO',
-      tenantId,
+      storeId,
     )
     return saved
   }
 
   async getApAgingReport(ctx: RequestContextDto): Promise<any[]> {
     this.logger.log('Generating Accounts Payable (AP) aging report')
-    const tenantId = ctx.tenantId
+    const storeId = ctx.storeId
     const em = this.dataSource.manager
 
     const suppliers = await em.getRepository(SupplierEntity).find({
-      where: { tenantId },
+      where: { storeId },
       order: { name: 'ASC' },
     })
 
-    // Load every unpaid invoice for the tenant in a single query, then group
+    // Load every unpaid invoice for the store in a single query, then group
     // them by supplier in memory (avoids one invoice query per supplier).
     const unpaidInvoicesAll = await em
       .createQueryBuilder(SupplierInvoiceEntity, 'inv')
-      .where('inv.tenantId = :tenantId', { tenantId })
+      .where('inv.storeId = :storeId', { storeId })
       .andWhere('inv.status NOT IN (:...excluded)', {
         excluded: [SupplierInvoiceStatus.PAID, SupplierInvoiceStatus.CANCELLED],
       })
@@ -507,7 +507,7 @@ export class SupplierInvoiceService {
     title: string,
     message: string,
     type: string,
-    tenantId: string,
+    storeId: string,
   ): Promise<void> {
     try {
       await this.notificationService.createNotification(
@@ -518,7 +518,7 @@ export class SupplierInvoiceService {
           link: `/admin/procurement/invoices`,
           userId: null as any,
         },
-        tenantId,
+        storeId,
       )
     } catch (e: any) {
       this.logger.error(

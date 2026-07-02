@@ -14,7 +14,7 @@ import { SupplierModule } from '../supplier/supplier.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SettingsModule } from '@/modules/admin/settings/settings.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { StoreModule } from '@/modules/system/store/store.module'
 import { ReportSchedulerService } from './report-scheduler.service'
 import { ProductModule } from '@/modules/admin/catalog/product/product.module'
 
@@ -31,7 +31,7 @@ import { ProductModule } from '@/modules/admin/catalog/product/product.module'
     ExpenseModule,
     InvoiceModule,
     CacheModule,
-    TenantModule,
+    StoreModule,
     MailModule,
     SettingsModule,
   ],

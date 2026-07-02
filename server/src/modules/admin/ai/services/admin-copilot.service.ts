@@ -6,7 +6,7 @@ import {
   AdminCopilotToolName,
   isAdminCopilotToolName,
 } from '../copilot/admin-copilot-tool.registry'
-import { AiChatMessage, TenantAiClientService } from './tenant-ai-client.service'
+import { AiChatMessage, StoreAiClientService } from './store-ai-client.service'
 import { AdminCopilotToolService } from './admin-copilot-tool.service'
 
 const ADMIN_COPILOT_SYSTEM_PROMPT = `You are a read-only admin copilot for an e-commerce ERP.
@@ -24,7 +24,7 @@ interface ToolCallPlan {
 @Injectable()
 export class AdminCopilotService {
   constructor(
-    private readonly aiClient: TenantAiClientService,
+    private readonly aiClient: StoreAiClientService,
     private readonly toolService: AdminCopilotToolService,
   ) {}
 
@@ -46,7 +46,7 @@ Rules: max 3 tool calls; use exact tool names; empty array if no live data neede
       { role: 'user', content: dto.message },
     ]
 
-    const planResult = await this.aiClient.chatCompletion(ctx.tenantId, planMessages, {
+    const planResult = await this.aiClient.chatCompletion(ctx.storeId, planMessages, {
       temperature: 0.1,
       maxTokens: 400,
       usageContext: { endpoint: 'ai/copilot/admin/plan' },
@@ -79,7 +79,7 @@ Rules: max 3 tool calls; use exact tool names; empty array if no live data neede
       },
     ]
 
-    const answerResult = await this.aiClient.chatCompletion(ctx.tenantId, answerMessages, {
+    const answerResult = await this.aiClient.chatCompletion(ctx.storeId, answerMessages, {
       temperature: 0.3,
       usageContext: { endpoint: 'ai/copilot/admin' },
     })

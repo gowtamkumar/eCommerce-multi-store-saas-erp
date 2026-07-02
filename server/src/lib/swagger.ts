@@ -4,8 +4,8 @@ import { INestApplication } from '@nestjs/common'
 
 export const SwaggerConfig = (app: INestApplication) => {
   const config = new DocumentBuilder()
-    .setTitle('eCommerce Multi Tenant SaaS')
-    .setDescription('The eCommerce Multi Tenant SaaS API description')
+    .setTitle('eCommerce Multi Store SaaS')
+    .setDescription('The eCommerce Multi Store SaaS API description')
     .setVersion('1.0')
     .build()
   const documentFactory = () => SwaggerModule.createDocument(app, config)
