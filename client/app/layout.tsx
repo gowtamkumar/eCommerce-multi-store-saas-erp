@@ -1,4 +1,5 @@
 import AuthProvider from "@/hooks/AuthProvider";
+import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { SettingsProvider } from "@/hooks/SettingsContext";
 import { SocketProvider } from "@/hooks/SocketContext";
 import ToasterProvider from "@/hooks/ToasterProvider";
@@ -34,18 +35,20 @@ export default async function RootLayout({
         {facebookDomainVerification && <meta name="facebook-domain-verification" content={facebookDomainVerification} />}
       </head>
       <body className={`antialiased`} suppressHydrationWarning>
-        <AuthProvider>
-          <SocketProvider>
-            <SettingsProvider initialSettings={settings}>
-              <ConsentAwareMarketingScripts marketing={settings.marketing} />
-              <ToasterProvider />
-              <PushNotificationPrompt />
-              <MaintenanceWrapper>
-                {children}
-              </MaintenanceWrapper>
-            </SettingsProvider>
-          </SocketProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>
+            <SocketProvider>
+              <SettingsProvider initialSettings={settings}>
+                <ConsentAwareMarketingScripts marketing={settings.marketing} />
+                <ToasterProvider />
+                <PushNotificationPrompt />
+                <MaintenanceWrapper>
+                  {children}
+                </MaintenanceWrapper>
+              </SettingsProvider>
+            </SocketProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

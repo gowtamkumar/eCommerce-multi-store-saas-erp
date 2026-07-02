@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import CurrencySwitcher from "../shared/CurrencySwitcher";
 import UserDropdown from "./UserDropdown";
+// import ThemeToggle from "../shared/ThemeToggle";
+
 
 const Navbar = () => {
   const { data: session } = useSession();
@@ -258,6 +260,10 @@ const Navbar = () => {
 
   const UserActions = () => (
     <div className="flex items-center gap-1 sm:gap-2">
+      {/* <div className="hidden md:block">
+        <ThemeToggle />
+      </div> */}
+
       {navbarSettings?.showCurrency !== false && (
         <div className="hidden md:block">
           <CurrencySwitcher />
@@ -758,7 +764,10 @@ const Navbar = () => {
 
               <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 mt-auto">
                 <div className="flex justify-between items-center mb-6">
-                  {navbarSettings?.showCurrency !== false && <CurrencySwitcher />}
+                  <div className="flex items-center gap-2">
+                    {/* <ThemeToggle /> */}
+                    {navbarSettings?.showCurrency !== false && <CurrencySwitcher />}
+                  </div>
                   <div className="flex items-center gap-3">
                     <button className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
                       <Facebook className="w-4 h-4 text-brand-600" />

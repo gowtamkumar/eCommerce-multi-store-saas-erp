@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useSocketEvent } from '@/hooks/SocketContext';
 import { io, Socket } from 'socket.io-client';
 import { usePathname, useRouter } from 'next/navigation';
+import ThemeToggle from '@/components/shared/ThemeToggle';
+
 import {
     Bell,
     Building2,
@@ -431,6 +433,8 @@ export default function AdminTopBar({
 
                 {/* Actions: Notifications, Profile */}
                 <div className="flex items-center gap-3">
+                    <ThemeToggle />
+
                     {/* Copilot Sidebar Trigger */}
                     {onCopilotClick && (
                         <button

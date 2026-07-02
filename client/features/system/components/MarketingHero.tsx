@@ -116,7 +116,7 @@ export default function MarketingHero({ data }: any) {
         >
           {/* Glass background shadow */}
           <div className="absolute inset-0 bg-gradient-to-t from-transparent to-brand-500/5 dark:to-indigo-500/5 blur-3xl -z-10 rounded-[3rem]" />
-          
+
           <div className="relative rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.12)] dark:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] bg-slate-900 text-slate-200 font-sans">
             {/* Window Header */}
             <div className="bg-slate-950/80 px-6 py-4 flex items-center justify-between border-b border-slate-800/80 backdrop-blur-md">
@@ -127,7 +127,7 @@ export default function MarketingHero({ data }: any) {
               </div>
               <div className="hidden sm:flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-1.5 rounded-full text-xs text-slate-400 w-1/3 justify-center">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                gowtam.localhost:3000/admin/dashboard
+                localhost:3000/admin/dashboard
               </div>
               <div className="w-10" />
             </div>
@@ -142,7 +142,7 @@ export default function MarketingHero({ data }: any) {
                   </div>
                   <span className="font-bold text-sm hidden sm:block truncate">Gowtam Retail</span>
                 </div>
-                
+
                 <nav className="flex flex-col gap-1">
                   {[
                     { icon: Layout, label: 'Dashboard', active: true },
@@ -153,11 +153,10 @@ export default function MarketingHero({ data }: any) {
                   ].map((item, idx) => (
                     <div
                       key={idx}
-                      className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        item.active
-                          ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${item.active
+                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                        }`}
                     >
                       <item.icon className="w-4.5 h-4.5 shrink-0" />
                       <span className="hidden sm:block">{item.label}</span>
@@ -207,7 +206,7 @@ export default function MarketingHero({ data }: any) {
                       +28.5% hourly spike
                     </div>
                   </div>
-                  
+
                   {/* Fake visual bar chart */}
                   <div className="flex items-end justify-between h-40 gap-2 sm:gap-4 pt-4 border-b border-slate-800/80">
                     {[35, 48, 25, 60, 75, 50, 90, 65, 80, 100, 85, 95].map((val, idx) => (
@@ -216,16 +215,15 @@ export default function MarketingHero({ data }: any) {
                           initial={{ height: 0 }}
                           animate={{ height: `${val}%` }}
                           transition={{ duration: 1, delay: 0.6 + idx * 0.05, type: 'spring' }}
-                          className={`w-full rounded-t-lg bg-gradient-to-t ${
-                            idx === 9
-                              ? 'from-indigo-600 to-brand-500 shadow-lg shadow-brand-500/20'
-                              : 'from-slate-800 to-slate-700 group-hover:from-slate-700'
-                          }`}
+                          className={`w-full rounded-t-lg bg-gradient-to-t ${idx === 9
+                            ? 'from-indigo-600 to-brand-500 shadow-lg shadow-brand-500/20'
+                            : 'from-slate-800 to-slate-700 group-hover:from-slate-700'
+                            }`}
                         />
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="flex justify-between text-[9px] uppercase font-black text-slate-500 tracking-wider px-1">
                     <span>9:00 AM</span>
                     <span>1:00 PM</span>

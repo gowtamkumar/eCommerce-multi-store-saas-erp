@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand-50: #f0f9ff;
   --color-brand-100: #e0f2fe;
@@ -29,12 +31,10 @@
   --background-end-rgb: 248, 250, 252;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 248, 250, 252;
-    --background-start-rgb: 15, 23, 42;
-    --background-end-rgb: 2, 6, 23;
-  }
+.dark {
+  --foreground-rgb: 248, 250, 252;
+  --background-start-rgb: 15, 23, 42;
+  --background-end-rgb: 2, 6, 23;
 }
 
 body {

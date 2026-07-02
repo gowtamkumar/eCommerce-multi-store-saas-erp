@@ -7,6 +7,8 @@ import { Bell, Menu, ShieldCheck, User, Sun, Moon, ArrowUpRight, Monitor, LogOut
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { signOut } from 'next-auth/react';
+import ThemeToggle from '@/components/shared/ThemeToggle';
+
 
 interface SystemTopBarProps {
     session: any;
@@ -17,7 +19,6 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
     const notificationRef = useRef<HTMLDivElement>(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -27,73 +28,7 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
         window.location.href = '/login';
     };
 
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
-        const initialTheme = savedTheme || 'system';
-        setTheme(initialTheme);
-        
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        
-        const applyTheme = (t: 'light' | 'dark' | 'system') => {
-            if (t === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else if (t === 'light') {
-                document.documentElement.classList.remove('dark');
-            } else {
-                if (mediaQuery.matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            }
-        };
 
-        applyTheme(initialTheme);
-
-        const handleSystemThemeChange = () => {
-            const currentThemeSetting = localStorage.getItem('theme') || 'system';
-            if (currentThemeSetting === 'system') {
-                if (mediaQuery.matches) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            }
-        };
-
-        mediaQuery.addEventListener('change', handleSystemThemeChange);
-        return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
-    }, []);
-
-    const toggleTheme = () => {
-        let nextTheme: 'light' | 'dark' | 'system' = 'light';
-        if (theme === 'light') {
-            nextTheme = 'dark';
-        } else if (theme === 'dark') {
-            nextTheme = 'system';
-        } else {
-            nextTheme = 'light';
-        }
-        
-        setTheme(nextTheme);
-        localStorage.setItem('theme', nextTheme);
-        
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        if (nextTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-            toast.success('Theme changed to Dark', { id: 'theme-toast' });
-        } else if (nextTheme === 'light') {
-            document.documentElement.classList.remove('dark');
-            toast.success('Theme changed to Light', { id: 'theme-toast' });
-        } else {
-            if (mediaQuery.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-            toast.success('Theme changed to System Preference', { id: 'theme-toast' });
-        }
-    };
 
     const getMappedLink = (link?: string | null) => {
         if (!link || typeof link !== 'string' || link.trim() === '') return null;
@@ -263,16 +198,7 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
 
             <div className="flex items-center gap-4">
                 {/* Dark/Light/System Mode Toggle */}
-                <button
-                    onClick={toggleTheme}
-                    className="p-2.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center"
-                    title={`Theme: ${theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'}`}
-                    aria-label="Toggle theme mode"
-                >
-                    {theme === 'light' && <Sun className="w-5 h-5" />}
-                    {theme === 'dark' && <Moon className="w-5 h-5" />}
-                    {theme === 'system' && <Monitor className="w-5 h-5" />}
-                </button>
+                <ThemeToggle />
 
                 {/* Notifications Dropdown */}
                 <div className="relative" ref={notificationRef}>
