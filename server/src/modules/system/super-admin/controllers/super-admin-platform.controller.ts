@@ -249,10 +249,13 @@ export class SuperAdminPlatformController {
     }
 
     // Check MinIO/S3 connectivity
+    // MINIO_HEALTH_URL is a full http(s)://host:port URL reachable from this process.
+    // MINIO_ENDPOINT is the bare hostname used by the SDK — do NOT use it as a URL here.
     let minioStatus = 'Unknown'
     try {
-      const minioEndpoint = process.env.MINIO_ENDPOINT || 'http://minio:9000'
-      const minioHealthUrl = `${minioEndpoint}/minio/health/live`
+      const minioHealthUrl = process.env.MINIO_HEALTH_URL
+        ? `${process.env.MINIO_HEALTH_URL}/minio/health/live`
+        : `http://${process.env.MINIO_ENDPOINT || 'minio'}:${process.env.MINIO_PORT || 9000}/minio/health/live`
       const ctrl = new AbortController()
       const timeout = setTimeout(() => ctrl.abort(), 3000)
       const minioRes = await fetch(minioHealthUrl, { signal: ctrl.signal }).catch(() => null)

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
+import { fetchAPI } from '@/services/api';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { decodeJwtPayload } from '@/lib/jwt.util';
 import { navGroups } from '@/routes';
@@ -89,6 +90,42 @@ export default function AdminLayout({
     const { data: session, status } = useSession() as {
         data: AdminSession | null;
         status: 'loading' | 'authenticated' | 'unauthenticated';
+    };
+
+    const [subInfo, setSubInfo] = useState<{ status: string; isExpired: boolean } | null>(null);
+    const [isAlertDismissed, setIsAlertDismissed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return sessionStorage.getItem('admin:subscriptionAlertDismissed') === 'true';
+    });
+
+    useEffect(() => {
+        if (status === 'authenticated' && session?.user?.role !== UserRole.SUPER_ADMIN) {
+            fetchAPI('/billing/current')
+                .then((res) => {
+                    if (res?.success && res?.data) {
+                        setSubInfo(res.data);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch subscription info', err);
+                });
+        }
+    }, [status, session]);
+
+    const isSubscriptionExpired = (settings?.status === 'expired' || subInfo?.isExpired === true) && session?.user?.role !== UserRole.SUPER_ADMIN;
+
+    useEffect(() => {
+        if (isSubscriptionExpired) {
+            const isOnBillingPage = pathname?.startsWith('/admin/settings/billing');
+            if (!isOnBillingPage) {
+                router.replace('/admin/settings/billing');
+            }
+        }
+    }, [isSubscriptionExpired, pathname, router]);
+
+    const handleDismissAlert = () => {
+        setIsAlertDismissed(true);
+        sessionStorage.setItem('admin:subscriptionAlertDismissed', 'true');
     };
 
     const hasAiUse = useMemo(() => {
@@ -313,46 +350,39 @@ export default function AdminLayout({
         await signOut({ callbackUrl: `${window.location.origin}/login` });
     };
 
-    const isSubscriptionExpired = settings?.status === 'expired' && session?.user?.role !== UserRole.SUPER_ADMIN;
-    const isOnBillingPage = pathname?.startsWith('/admin/settings/billing');
-    const showExpirationOverlay = isSubscriptionExpired && !isOnBillingPage;
+    const showAlert = isSubscriptionExpired && !isAlertDismissed;
     const isPosRoute = pathname === '/admin/pos';
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
-            {/* Expiration Overlay */}
-            {showExpirationOverlay && (
-                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-2xl border border-amber-200 dark:border-amber-900/50 max-w-lg text-center"
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+            {/* Topbar Alert */}
+            {showAlert && (
+                <div className="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white px-4 py-3 text-center relative flex items-center justify-center gap-3 shadow-md z-[100] animate-in slide-in-from-top duration-300">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold min-w-0">
+                        <Shield className="w-4 h-4 shrink-0 animate-pulse" />
+                        <span className="truncate">
+                            {subInfo?.status === 'trial'
+                                ? 'Your 14-day trial period has ended. Please upgrade your plan to continue using the store.'
+                                : 'Your subscription has expired. Please renew to continue using the store.'}
+                        </span>
+                        <Link
+                            href="/admin/settings/billing"
+                            className="ml-4 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition-all whitespace-nowrap"
+                        >
+                            Upgrade Plan
+                        </Link>
+                    </div>
+                    <button
+                        onClick={handleDismissAlert}
+                        className="absolute right-4 p-1 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+                        aria-label="Dismiss alert"
                     >
-                        <div className="w-24 h-24 bg-amber-50 dark:bg-amber-900/20 rounded-4xl flex items-center justify-center mx-auto mb-8 relative">
-                            <Shield className="w-12 h-12 text-amber-500" />
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full animate-ping" />
-                        </div>
-                        <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tighter">Plan Expired</h2>
-                        <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed">
-                            Your store subscription has expired. Storefront access is currently locked and management features are restricted until renewal.
-                        </p>
-                        <div className="flex flex-col gap-4">
-                            <Link
-                                href="/admin/settings/billing"
-                                className="py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-amber-500/20 active:scale-95 text-center flex items-center justify-center"
-                            >
-                                Renew Subscription
-                            </Link>
-                            <button
-                                onClick={handleLogout}
-                                className="py-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold tracking-wide transition-all"
-                            >
-                                Sign Out
-                            </button>
-                        </div>
-                    </motion.div>
+                        <X className="w-4 h-4" />
+                    </button>
                 </div>
             )}
+
+            <div className="flex-1 flex">
 
             {/* Mobile Menu Overlay */}
             <AnimatePresence>
@@ -595,6 +625,7 @@ export default function AdminLayout({
                     {children}
                 </div>
             </main>
+        </div>
 
             {/* Global command palette (⌘K) */}
             <CommandPalette

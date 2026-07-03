@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Edit2, Layers, Plus, Search, Trash2, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 interface SubscriptionPlan {
     id: string;
@@ -92,13 +93,13 @@ export default function PlanList({ initialPlans }: PlanListProps) {
                             className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm font-bold"
                         />
                     </div>
-                    <button
-                        onClick={() => window.location.href = '/system/plans/create'}
+                    <Link
+                        href="/system/plans/create"
                         className="flex items-center justify-center gap-2 px-8 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all text-sm font-black uppercase tracking-widest shadow-xl active:scale-[0.98]"
                     >
                         <Plus className="w-5 h-5" strokeWidth={3} />
                         New Tier
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -123,30 +124,30 @@ export default function PlanList({ initialPlans }: PlanListProps) {
                                         <Layers className="w-7 h-7" />
                                     </div>
                                     
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleToggleActive(plan.id, plan.isActive)}
-                                            disabled={loadingId === plan.id}
-                                            className={`p-2.5 rounded-xl border transition-all hover:scale-110 active:scale-95 ${plan.isActive ? 'text-emerald-500 bg-emerald-50/50 border-emerald-100' : 'text-slate-400 bg-slate-50 border-slate-200'}`}
-                                            title={plan.isActive ? 'Deactivate' : 'Activate'}
-                                        >
-                                            {loadingId === plan.id ? <div className="w-5 h-5 border-2 border-current border-t-transparent animate-spin rounded-full" /> : (plan.isActive ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />)}
-                                        </button>
-                                        <div className="w-px h-8 bg-slate-100 dark:bg-slate-800 mx-1 self-center" />
-                                        <button
-                                            onClick={() => window.location.href = `/system/plans/${plan.id}/edit`}
-                                            className="p-2.5 text-slate-400 hover:text-brand-600 transition-all hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl hover:scale-110"
-                                        >
-                                            <Edit2 className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(plan.id)}
-                                            disabled={loadingId === plan.id}
-                                            className="p-2.5 text-slate-400 hover:text-rose-600 transition-all hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl hover:scale-110"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
-                                    </div>
+                                     <div className="flex gap-2">
+                                         <button
+                                             onClick={() => handleToggleActive(plan.id, plan.isActive)}
+                                             disabled={loadingId === plan.id}
+                                             className={`p-2.5 rounded-xl border transition-all hover:scale-110 active:scale-95 ${plan.isActive ? 'text-emerald-500 bg-emerald-50/50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/50 dark:text-emerald-400' : 'text-slate-400 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-500'}`}
+                                             title={plan.isActive ? 'Deactivate' : 'Activate'}
+                                         >
+                                             {loadingId === plan.id ? <div className="w-5 h-5 border-2 border-current border-t-transparent animate-spin rounded-full" /> : (plan.isActive ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />)}
+                                         </button>
+                                         <div className="w-px h-8 bg-slate-100 dark:bg-slate-800 mx-1 self-center" />
+                                         <Link
+                                             href={`/system/plans/${plan.id}/edit`}
+                                             className="p-2.5 text-slate-400 hover:text-brand-600 transition-all hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl hover:scale-110"
+                                         >
+                                             <Edit2 className="w-5 h-5" />
+                                         </Link>
+                                         <button
+                                             onClick={() => handleDelete(plan.id)}
+                                             disabled={loadingId === plan.id}
+                                             className="p-2.5 text-slate-400 hover:text-rose-600 transition-all hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl hover:scale-110"
+                                         >
+                                             <Trash2 className="w-5 h-5" />
+                                         </button>
+                                     </div>
                                 </div>
 
                                 <div className="mb-6">

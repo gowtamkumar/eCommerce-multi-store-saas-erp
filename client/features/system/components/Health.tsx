@@ -44,16 +44,20 @@ function UsageBar({ percent }: { percent: number }) {
     );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+function StatCard({ icon, label, value, sub, status }: { icon: React.ReactNode; label: string; value: string; sub?: string; status?: 'ok' | 'warn' | 'error' }) {
+    const statusColor =
+        status === 'ok' ? 'text-emerald-500' :
+        status === 'error' ? 'text-rose-500' :
+        'text-slate-900 dark:text-white';
     return (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700/50 shadow-sm flex items-center gap-5">
-            <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+        <div className="bg-white dark:bg-slate-800 p-4 xl:p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col gap-3">
+            <div className="w-9 h-9 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
                 {icon}
             </div>
             <div className="min-w-0">
-                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{label}</p>
-                <p className="text-xl font-black text-slate-900 dark:text-white truncate mt-0.5">{value}</p>
-                {sub && <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tight opacity-70">{sub}</p>}
+                <p className="text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest leading-none">{label}</p>
+                <p className={`text-base font-black truncate mt-1 leading-tight ${statusColor}`}>{value}</p>
+                {sub && <p className="text-[9px] text-slate-400 font-bold mt-0.5 uppercase tracking-tight opacity-70 truncate">{sub}</p>}
             </div>
         </div>
     );
@@ -182,64 +186,68 @@ export default function PlatformHealth() {
     const memUsage = parseFloat(ss?.memory?.usagePercent ?? 0);
 
     return (
-        <div className="max-w-[1700px] mx-auto space-y-10 pb-20">
+        <div className="w-full space-y-8 xl:space-y-10 pb-20">
             {/* Header */}
-            <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-slate-100 dark:border-slate-800 pb-10">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-md border border-rose-500/20 text-[10px] font-black uppercase tracking-[0.2em]">
+            <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 dark:border-slate-800 pb-8 lg:pb-10">
+                {/* Left: Title block */}
+                <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2.5 mb-4">
+                        <span className="px-3 py-1 bg-rose-500/10 text-rose-500 rounded-md border border-rose-500/20 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
                             System Restricted
-                        </div>
-                        <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-md border border-emerald-500/20 text-[10px] font-black uppercase tracking-[0.2em]">
+                        </span>
+                        <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-md border border-emerald-500/20 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
                             Health: Nominal
-                        </div>
+                        </span>
                     </div>
-                    <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">COMMAND CENTER</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">Real-time Infrastructure Monitoring & Telemetry</p>
+                    <h1 className="text-2xl sm:text-3xl xl:text-5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">COMMAND CENTER</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-bold text-sm sm:text-base xl:text-lg mt-2">Real-time Infrastructure Monitoring &amp; Telemetry</p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-3 px-6 py-3 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-                        <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(99,102,241,0.8)]" />
-                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">Active Link: {new Date().toLocaleTimeString()}</span>
-                    </div>
+                {/* Right: Live status pill */}
+                <div className="shrink-0 flex items-center gap-3 px-5 py-3 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(99,102,241,0.8)]" />
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest whitespace-nowrap">Live · {new Date().toLocaleTimeString()}</span>
                 </div>
             </header>
 
             {/* Quick Summary Bar */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 xl:gap-4">
                 <StatCard
-                    icon={<Database className="w-7 h-7" />}
+                    icon={<Database className="w-5 h-5" />}
                     label="Database"
-                    value={data?.database}
+                    value={data?.database || 'Unknown'}
                     sub="PostgreSQL Engine"
+                    status={data?.database === 'Connected' ? 'ok' : 'error'}
                 />
                 <StatCard
-                    icon={<Activity className="w-7 h-7" />}
+                    icon={<Activity className="w-5 h-5" />}
                     label="Cache Engine"
                     value={data?.redis || 'Unknown'}
                     sub={data?.redis === 'Connected' ? 'Redis Operational' : 'Redis Offline'}
+                    status={data?.redis === 'Connected' ? 'ok' : 'error'}
                 />
                 <StatCard
-                    icon={<Box className="w-7 h-7" />}
+                    icon={<Box className="w-5 h-5" />}
                     label="Object Store"
                     value={data?.minio || 'Unknown'}
                     sub={data?.minio === 'Connected' ? 'MinIO Operational' : 'MinIO Offline'}
+                    status={data?.minio === 'Connected' ? 'ok' : 'error'}
                 />
                 <StatCard
-                    icon={<Clock className="w-7 h-7" />}
+                    icon={<Clock className="w-5 h-5" />}
                     label="Uptime Matrix"
                     value={formatUptime(ss?.os?.uptimeSeconds || 0)}
                     sub="Continuous Session"
                 />
                 <StatCard
-                    icon={<Zap className="w-7 h-7" />}
+                    icon={<Zap className="w-5 h-5" />}
                     label="Heat Level"
                     value={ss?.temperature != null ? `${ss.temperature}°C` : 'N/A'}
                     sub="Chassis Thermal"
+                    status={ss?.temperature != null && ss.temperature > 80 ? 'error' : ss?.temperature > 60 ? 'warn' : 'ok'}
                 />
                 <StatCard
-                    icon={<ShieldCheck className="w-7 h-7" />}
+                    icon={<ShieldCheck className="w-5 h-5" />}
                     label="Revision"
                     value={`v${data?.version}`}
                     sub="Stable Build"
@@ -247,44 +255,44 @@ export default function PlatformHealth() {
             </div>
 
             {/* Main Interactive Matrix */}
-            <main className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+            <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
 
                 {/* COLUMN 1: COMPUTE CORE (8/12) */}
-                <div className="xl:col-span-8 space-y-10">
+                <div className="lg:col-span-8 space-y-6 lg:space-y-10">
 
                     {/* Performance Engine Module (Graphs) */}
-                    <section className="bg-slate-900 rounded-[3rem] border border-slate-800 shadow-2xl relative overflow-hidden group">
+                    <section className="bg-slate-900 rounded-[2rem] lg:rounded-[3rem] border border-slate-800 shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
                             <Activity className="w-32 h-32 text-indigo-500 transition-transform duration-700 group-hover:scale-110" />
                         </div>
 
-                        <div className="p-10 pb-0 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                        <div className="p-6 sm:p-10 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                             <SectionHeader
                                 icon={Activity}
                                 title="Performance Oscilloscope"
                                 subtitle="Real-time Compute Fluctuation"
                             />
-                            <div className="flex gap-8 mb-6 md:mb-0">
+                            <div className="flex gap-6 sm:gap-8 mb-4 sm:mb-6">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">CPU Load</span>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.6)]" />
-                                        <span className="text-2xl font-black text-white leading-none">{cpuUsage}%</span>
+                                        <span className="text-xl sm:text-2xl font-black text-white leading-none">{cpuUsage}%</span>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">MEM Load</span>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]" />
-                                        <span className="text-2xl font-black text-white leading-none">{memUsage}%</span>
+                                        <span className="text-xl sm:text-2xl font-black text-white leading-none">{memUsage}%</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="h-[400px] w-full relative z-10 px-6">
+                        <div className="h-[260px] sm:h-[320px] lg:h-[400px] w-full relative z-10 px-4 sm:px-6">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={history} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                                <AreaChart data={history} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
                                     <defs>
                                         <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
@@ -313,7 +321,7 @@ export default function PlatformHealth() {
                                         axisLine={false}
                                         tickLine={false}
                                         tickFormatter={(val) => `${val}%`}
-                                        width={40}
+                                        width={36}
                                     />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Area
@@ -342,12 +350,12 @@ export default function PlatformHealth() {
                     </section>
 
                     {/* Docker Module */}
-                    <section className="bg-white dark:bg-slate-800 rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-8 shadow-sm">
+                    <section className="bg-white dark:bg-slate-800 rounded-[2rem] lg:rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-6 sm:p-8 shadow-sm">
                         <SectionHeader icon={Box} title="Runtime Context" subtitle="Containerized Environment" />
                         <div className="space-y-4 max-h-[480px] overflow-y-auto pr-2 custom-scrollbar">
                             {ss?.docker?.length > 0 ? (
                                 ss.docker.map((container: any) => (
-                                    <div key={container.id} className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800 transition-all duration-300 hover:border-sky-500/40 group">
+                                    <div key={container.id} className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 transition-all duration-300 hover:border-sky-500/40 group">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex gap-4 min-w-0">
                                                 <div className={`mt-1 h-2 w-2 rounded-full shrink-0 group-hover:scale-150 transition-transform ${container.state === 'running' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
@@ -356,7 +364,7 @@ export default function PlatformHealth() {
                                                     <p className="text-[9px] font-bold text-slate-400 truncate mt-1.5 opacity-80">{container.image}</p>
                                                 </div>
                                             </div>
-                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest leading-none ${container.state === 'running' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest leading-none shrink-0 ${container.state === 'running' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                                                 {container.state}
                                             </span>
                                         </div>
@@ -372,14 +380,14 @@ export default function PlatformHealth() {
                     </section>
 
                     {/* Hardware Snapshot Module (Bars) */}
-                    <section className="bg-white dark:bg-slate-800 rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-10 shadow-xl shadow-indigo-500 text-slate-900 dark:text-white relative overflow-hidden">
+                    <section className="bg-white dark:bg-slate-800 rounded-[2rem] lg:rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-6 sm:p-10 shadow-xl shadow-indigo-500/10 text-slate-900 dark:text-white relative overflow-hidden">
                         <div className="absolute -bottom-10 -right-10 opacity-[0.03] rotate-12 pointer-events-none">
                             <Cpu className="w-80 h-80" />
                         </div>
 
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 sm:mb-12 relative z-10">
                             <SectionHeader icon={Cpu} title="Hardware Core" subtitle="Physical Resource Allocation" />
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-4 sm:gap-6">
                                 <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Threads</p>
                                     <p className="text-xl font-black text-indigo-500 leading-none">{ss?.totalProcesses ?? '0'}</p>
@@ -391,20 +399,20 @@ export default function PlatformHealth() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 relative z-10">
                             {/* CPU Column */}
                             <div className="space-y-8 group">
-                                <div className="flex justify-between items-start">
-                                    <div className="space-y-1">
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="space-y-1 min-w-0">
                                         <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Logic Stream</p>
-                                        <p className="text-lg font-black tracking-tight">{ss?.cpu?.brand || 'Processing'}</p>
+                                        <p className="text-base sm:text-lg font-black tracking-tight truncate">{ss?.cpu?.brand || 'Processing'}</p>
                                         <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
                                             {ss?.cpu?.cores} Logical Cores · {ss?.cpu?.manufacturer}
                                         </p>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-5xl font-black text-indigo-600 tracking-tighter leading-none block">
-                                            {cpuUsage}<span className="text-xl ml-0.5">%</span>
+                                    <div className="text-right shrink-0">
+                                        <span className="text-4xl sm:text-5xl font-black text-indigo-600 tracking-tighter leading-none block">
+                                            {cpuUsage}<span className="text-lg sm:text-xl ml-0.5">%</span>
                                         </span>
                                     </div>
                                 </div>
@@ -419,17 +427,17 @@ export default function PlatformHealth() {
 
                             {/* Memory Column */}
                             <div className="space-y-8 group">
-                                <div className="flex justify-between items-start">
-                                    <div className="space-y-1">
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="space-y-1 min-w-0">
                                         <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Volatile Cache</p>
-                                        <p className="text-lg font-black tracking-tight">Active Addressable</p>
+                                        <p className="text-base sm:text-lg font-black tracking-tight">Active Addressable</p>
                                         <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
                                             {ss?.memory?.used} of {ss?.memory?.total} Total
                                         </p>
                                     </div>
-                                    <div className="text-right">
-                                        <span className="text-5xl font-black text-indigo-600 tracking-tighter leading-none block">
-                                            {memUsage}<span className="text-xl ml-0.5">%</span>
+                                    <div className="text-right shrink-0">
+                                        <span className="text-4xl sm:text-5xl font-black text-indigo-600 tracking-tighter leading-none block">
+                                            {memUsage}<span className="text-lg sm:text-xl ml-0.5">%</span>
                                         </span>
                                     </div>
                                 </div>
@@ -444,11 +452,10 @@ export default function PlatformHealth() {
                 </div>
 
                 {/* COLUMN 2: ENVIRONMENT & INFRA (4/12) */}
-                <div className="xl:col-span-4 space-y-10">
-
+                <div className="lg:col-span-4 space-y-6 lg:space-y-10">
 
                     {/* Storage & Connectivity Module */}
-                    <section className="bg-white dark:bg-slate-800 rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-8 shadow-sm space-y-12">
+                    <section className="bg-white dark:bg-slate-800 rounded-[2rem] lg:rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-6 sm:p-8 shadow-sm space-y-10">
                         {/* Storage Header */}
                         <div>
                             <SectionHeader icon={HardDrive} title="Persistence" subtitle="Logical Drive Array" />
@@ -482,22 +489,22 @@ export default function PlatformHealth() {
                             <SectionHeader icon={Network} title="Connectivity" subtitle="I/O Matrix Flow" />
                             <div className="space-y-4">
                                 {ss?.network?.map((n: any, i: number) => (
-                                    <div key={i} className="p-5 bg-slate-50 dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-700/50">
+                                    <div key={i} className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 dark:border-slate-700/50">
                                         <p className="font-mono text-[9px] font-black text-slate-400 mb-4 bg-white dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 inline-block uppercase tracking-widest">
                                             IFACE: {n.interface}
                                         </p>
-                                        <div className="flex justify-between gap-6">
+                                        <div className="flex justify-between gap-4">
                                             <div>
                                                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Incoming</p>
                                                 <div className="flex items-baseline gap-1">
-                                                    <p className="text-xl font-black text-emerald-500 tracking-tighter">{(n.rx_bytes / 1024 / 1024).toFixed(2)}</p>
+                                                    <p className="text-lg sm:text-xl font-black text-emerald-500 tracking-tighter">{(n.rx_bytes / 1024 / 1024).toFixed(2)}</p>
                                                     <span className="text-[9px] font-black text-slate-400">MB</span>
                                                 </div>
                                             </div>
                                             <div>
                                                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 text-right">Outgoing</p>
                                                 <div className="flex items-baseline gap-1 justify-end">
-                                                    <p className="text-xl font-black text-indigo-500 tracking-tighter">{(n.tx_bytes / 1024 / 1024).toFixed(2)}</p>
+                                                    <p className="text-lg sm:text-xl font-black text-indigo-500 tracking-tighter">{(n.tx_bytes / 1024 / 1024).toFixed(2)}</p>
                                                     <span className="text-[9px] font-black text-slate-400">MB</span>
                                                 </div>
                                             </div>
@@ -509,7 +516,7 @@ export default function PlatformHealth() {
                     </section>
 
                     {/* Node Firmware (OS) */}
-                    <section className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                    <section className="bg-slate-900 rounded-[2rem] lg:rounded-[3rem] p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden group">
                         <div className="absolute -top-10 -left-10 opacity-10 pointer-events-none group-hover:rotate-45 transition-transform duration-1000">
                             <Server className="w-40 h-40" />
                         </div>
