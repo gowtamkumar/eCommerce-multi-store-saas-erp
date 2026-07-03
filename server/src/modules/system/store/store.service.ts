@@ -26,7 +26,7 @@ import {
   normalizeCustomDomain,
   verifyDomainOwnership,
 } from './custom-domain.util'
-import { InvalidSubdomainError, normalizeSubdomain } from './reserved-subdomains.util'
+import { InvalidSubdomainError, isReservedSubdomain, normalizeSubdomain } from './reserved-subdomains.util'
 import { CreateStoreDto } from './dto/create-store.dto'
 import { UpdateStoreAiConfigDto } from './dto/store-ai-config.dto'
 import { StoreOverviewResponseDto } from './dto/store-response.dto'
@@ -127,7 +127,14 @@ export class StoreService {
       throw err
     }
 
-    // 1. Check if subdomain already exists
+    // 1a. Reject reserved subdomains (e.g. admin, api, www)
+    if (isReservedSubdomain(subdomain)) {
+      throw new BadRequestException(
+        `Subdomain "${subdomain}" is reserved and cannot be used for a store`,
+      )
+    }
+
+    // 1b. Check if subdomain already exists
     const existingStore = await this.storeRepository.findBySubdomain(subdomain)
     if (existingStore) {
       throw new ConflictException(`Subdomain "${subdomain}" is already taken`)

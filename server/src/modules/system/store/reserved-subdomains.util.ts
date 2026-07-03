@@ -10,7 +10,7 @@
  *      whitespace into downstream host/DNS handling.
  */
 
-export class InvalidSubdomainError extends Error {}
+export class InvalidSubdomainError extends Error { }
 
 /**
  * Hostnames we never hand out to stores. Includes common infra/service names,

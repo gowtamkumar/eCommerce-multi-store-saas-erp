@@ -9,7 +9,7 @@ import { Public } from '@/common/decorators/public.decorator'
 export class OnboardController {
   private readonly logger = new Logger(OnboardController.name)
 
-  constructor(private readonly storeService: StoreService) {}
+  constructor(private readonly storeService: StoreService) { }
 
   @Post()
   async onboard(@Body() createStoreDto: CreateStoreDto) {

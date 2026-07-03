@@ -46,6 +46,20 @@ export default function CreateStore() {
     const searchParams = useSearchParams();
     const planIdFromUrl = searchParams.get('planId');
     const cycleFromUrl = searchParams.get('cycle');
+    const [formData, setFormData] = useState({
+        storeName: '',
+        subdomain: '',
+        planId: '',
+        subscriptionBillingCycle: cycleFromUrl || 'monthly',
+        name: '',
+        email: '',
+        username: '',
+        password: '',
+        country: 'US',
+        baseCurrency: 'USD',
+        timezone: 'America/New_York',
+    });
+
 
     useEffect(() => {
         async function getPlatformSettings() {
@@ -78,19 +92,6 @@ export default function CreateStore() {
         }
     }, []);
 
-    const [formData, setFormData] = useState({
-        storeName: '',
-        subdomain: '',
-        planId: '',
-        subscriptionBillingCycle: cycleFromUrl || 'monthly',
-        name: '',
-        email: '',
-        username: '',
-        password: '',
-        country: 'US',
-        baseCurrency: 'USD',
-        timezone: 'America/New_York',
-    });
 
     useEffect(() => {
         async function getPlans() {
