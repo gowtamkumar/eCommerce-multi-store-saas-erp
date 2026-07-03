@@ -9,13 +9,13 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        username: { label: "Username", type: "text" },
+        username: { label: "Email or Username", type: "text" },
         password: { label: "Password", type: "password" },
         impersonateToken: { label: "Impersonate Token", type: "text" },
       },
       async authorize(credentials, req) {
         if (!credentials?.impersonateToken && (!credentials?.username || !credentials?.password)) {
-          throw new Error("Please enter a username and password");
+          throw new Error("Please enter an email/username and password");
         }
 
         const headers: Record<string, string> = {
@@ -112,7 +112,7 @@ export const authOptions: NextAuthOptions = {
             method: "POST",
             headers,
             body: JSON.stringify({
-              username: credentials.username,
+              usernameOrEmail: credentials.username,
               password: credentials.password,
             }),
           });

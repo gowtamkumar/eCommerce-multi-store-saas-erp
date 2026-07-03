@@ -45,7 +45,7 @@ export class AuthService {
     private readonly cacheService: CacheService,
     @InjectRepository(SessionEntity)
     private readonly sessionRepository: Repository<SessionEntity>,
-  ) {}
+  ) { }
 
   async register(
     registerCredentialDto: RegisterCredentialDto,
@@ -114,9 +114,20 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<{ user: UserEntity; accessToken: string; refreshToken: string }> {
-    this.logger.log(`${this.login.name} Service Called`)
-    const { username, password } = loginCredentialsDto
-    const user = await this.userService.findUserByUsername(username, storeId)
+    const { usernameOrEmail, password } = loginCredentialsDto
+    let user = await this.userService.findUserByUsername(usernameOrEmail, storeId)
+    if (!user) {
+      user = await this.userService.findUserByEmail(usernameOrEmail, storeId)
+    }
+
+    if (!user) {
+      // Fallback for global Super Admin login from store subdomains or domains
+      const globalUser = await this.userService.findUserByUsername(usernameOrEmail) ||
+        await this.userService.findUserByEmail(usernameOrEmail)
+      if (globalUser && globalUser.role === UserRole.SUPER_ADMIN) {
+        user = globalUser
+      }
+    }
 
     if (!user) {
       throw new UnauthorizedException('Invalid Login Credentials')

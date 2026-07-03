@@ -4,7 +4,7 @@ export class LoginCredentialDto {
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  username: string
+  usernameOrEmail: string
 
   @IsString()
   @IsDefined()
