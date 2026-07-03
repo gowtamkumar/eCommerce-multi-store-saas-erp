@@ -361,7 +361,7 @@ export const navGroups = [
   },
   {
     title: "Human Resources",
-    roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
+    roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE],
     items: [
       {
         icon: LayoutDashboard,

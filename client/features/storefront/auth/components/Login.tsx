@@ -38,7 +38,7 @@ export default function Login() {
                 toast.success(`Logged in as ${userRole || UserRole.USER}`);
                 if (userRole === UserRole.SUPER_ADMIN) {
                     router.push('/system');
-                } else if ([UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING].includes(userRole)) {
+                } else if ([UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.EMPLOYEE].includes(userRole)) {
                     router.push('/admin');
                 } else {
                     router.push('/');
@@ -79,7 +79,7 @@ export default function Login() {
                         toast.success(`Impersonated successfully as ${userRole || UserRole.USER}`);
                         if (userRole === UserRole.SUPER_ADMIN) {
                             router.push('/system');
-                        } else if ([UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING].includes(userRole)) {
+                        } else if ([UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.EMPLOYEE].includes(userRole)) {
                             router.push('/admin');
                         } else {
                             router.push('/');

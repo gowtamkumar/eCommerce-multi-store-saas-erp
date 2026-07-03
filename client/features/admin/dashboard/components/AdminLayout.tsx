@@ -139,8 +139,8 @@ export default function AdminLayout({
             sessionFeatures.length > 0
                 ? sessionFeatures
                 : Array.isArray(tokenFeatures)
-                  ? tokenFeatures
-                  : [];
+                    ? tokenFeatures
+                    : [];
         return userRole === UserRole.SUPER_ADMIN || features.includes('*') || features.includes('ai:use');
     }, [session]);
 
@@ -175,8 +175,10 @@ export default function AdminLayout({
         if (status === 'unauthenticated') {
             router.replace('/login');
         } else if (status === 'authenticated') {
+            console.log("session", session);
+
             const rawRole = session?.user?.role || '';
-            const allowedRoles: string[] = [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPER_ADMIN];
+            const allowedRoles: string[] = [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE];
             if (!allowedRoles.includes(rawRole)) {
                 console.warn(`User role ${rawRole} is not authorized for admin access`);
                 router.replace('/');
@@ -196,8 +198,8 @@ export default function AdminLayout({
             sessionFeatures.length > 0
                 ? sessionFeatures
                 : Array.isArray(tokenFeatures)
-                  ? tokenFeatures
-                  : [];
+                    ? tokenFeatures
+                    : [];
         const isSuperAdmin = userRole === UserRole.SUPER_ADMIN || features.includes('*');
         const hasFeatureAccess = (feature?: string) => {
             if (!feature) return true;
@@ -210,7 +212,7 @@ export default function AdminLayout({
         return (navGroups as AdminNavGroup[])
             .filter(group => {
                 if (group.roles) {
-                    return group.roles.map((r) => r.toLowerCase()).includes(userRole) || isSuperAdmin;
+                    return group.roles.map((r) => r.toLowerCase()).includes(userRole) || userRole === UserRole.EMPLOYEE || isSuperAdmin;
                 }
                 return true;
             })
@@ -218,7 +220,7 @@ export default function AdminLayout({
                 ...group,
                 items: group.items.filter((item) => {
                     const hasRole = item.roles
-                        ? item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || isSuperAdmin
+                        ? item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.EMPLOYEE || isSuperAdmin
                         : true;
 
                     if (!hasRole) return false;
@@ -384,248 +386,248 @@ export default function AdminLayout({
 
             <div className="flex-1 flex">
 
-            {/* Mobile Menu Overlay */}
-            <AnimatePresence>
-                {isMobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="fixed inset-0 bg-black/50 z-40 md:hidden"
-                    />
-                )}
-            </AnimatePresence>
+                {/* Mobile Menu Overlay */}
+                <AnimatePresence>
+                    {isMobileMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                        />
+                    )}
+                </AnimatePresence>
 
-            {/* Sidebar */}
-            <motion.aside
-                className={`fixed md:sticky top-0 left-0 z-50 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ease-in-out print:hidden 
+                {/* Sidebar */}
+                <motion.aside
+                    className={`fixed md:sticky top-0 left-0 z-50 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ease-in-out print:hidden 
                         ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
                         ${sidebarCollapsed ? 'md:w-20' : 'md:w-72'}
                         `}
-            >
-                <div className={`p-6 border-b border-slate-200 dark:border-slate-700 flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
-                    {!sidebarCollapsed && (
-                        <Link href="/">
-                            <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3 overflow-hidden whitespace-nowrap">
-                                {logo ? (
-                                    <img src={logo} alt={brandName} className="h-10 w-auto object-contain" />
-                                ) : (
-                                    <>
-                                        {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
-                                    </>
-                                )}
-                            </h1>
-                        </Link>
-                    )}
-                    {sidebarCollapsed && logo && (
-                        <Link href="/">
-                            <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />
-                        </Link>
-                    )}
-                    {sidebarCollapsed && !logo && (
-                        <Link href="/">
-                            <h1 className="text-xl font-bold font-display text-brand-600">
-                                {brandName.substring(0, 1)}
-                            </h1>
-                        </Link>
-                    )}
+                >
+                    <div className={`p-6 border-b border-slate-200 dark:border-slate-700 flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+                        {!sidebarCollapsed && (
+                            <Link href="/">
+                                <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                                    {logo ? (
+                                        <img src={logo} alt={brandName} className="h-10 w-auto object-contain" />
+                                    ) : (
+                                        <>
+                                            {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
+                                        </>
+                                    )}
+                                </h1>
+                            </Link>
+                        )}
+                        {sidebarCollapsed && logo && (
+                            <Link href="/">
+                                <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />
+                            </Link>
+                        )}
+                        {sidebarCollapsed && !logo && (
+                            <Link href="/">
+                                <h1 className="text-xl font-bold font-display text-brand-600">
+                                    {brandName.substring(0, 1)}
+                                </h1>
+                            </Link>
+                        )}
 
-                    <div className="flex items-center">
-                        <button
-                            onClick={toggleSidebarCollapsed}
-                            className="hidden md:flex text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                        >
-                            {sidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-                        </button>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Sidebar Quick Navigation Search */}
-                <div className="px-4 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800/40">
-                    {sidebarCollapsed ? (
-                        <button
-                            onClick={() => setIsPaletteOpen(true)}
-                            title="Search (⌘K)"
-                            className="w-full flex items-center justify-center py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-slate-400 hover:text-brand-600 transition-all"
-                        >
-                            <Search className="w-4 h-4" />
-                        </button>
-                    ) : (
-                        <div className="relative">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Search navigation..."
-                                value={sidebarSearchQuery}
-                                onChange={(e) => setSidebarSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-12 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder-slate-400 dark:placeholder-slate-500"
-                            />
+                        <div className="flex items-center">
                             <button
-                                type="button"
-                                onClick={() => setIsPaletteOpen(true)}
-                                title="Open command palette"
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 border border-slate-200 dark:border-slate-600 rounded-md px-1.5 py-0.5 hover:text-brand-600 hover:border-brand-400 transition-colors"
+                                onClick={toggleSidebarCollapsed}
+                                className="hidden md:flex text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                             >
-                                ⌘K
+                                {sidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                            </button>
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
-                    )}
-                </div>
+                    </div>
 
-                <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-                    {/* Favorites / pinned pages */}
-                    {!sidebarCollapsed && !sidebarSearchQuery.trim() && favoriteItems.length > 0 && (
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2 px-4 py-2 font-semibold text-slate-400">
-                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                <span>Favorites</span>
+                    {/* Sidebar Quick Navigation Search */}
+                    <div className="px-4 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800/40">
+                        {sidebarCollapsed ? (
+                            <button
+                                onClick={() => setIsPaletteOpen(true)}
+                                title="Search (⌘K)"
+                                className="w-full flex items-center justify-center py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-slate-400 hover:text-brand-600 transition-all"
+                            >
+                                <Search className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            <div className="relative">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search navigation..."
+                                    value={sidebarSearchQuery}
+                                    onChange={(e) => setSidebarSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-12 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder-slate-400 dark:placeholder-slate-500"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPaletteOpen(true)}
+                                    title="Open command palette"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 border border-slate-200 dark:border-slate-600 rounded-md px-1.5 py-0.5 hover:text-brand-600 hover:border-brand-400 transition-colors"
+                                >
+                                    ⌘K
+                                </button>
                             </div>
-                            {favoriteItems.map((item, index) => {
-                                const FavoriteIcon = item.icon;
-                                const itemHref = item.href;
-                                const isActive = pathname === item.href.split('?')[0];
-                                return (
-                                    <div key={`fav-${index}`} className="group/fav relative">
-                                        <Link
-                                            href={itemHref}
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                            className={`flex items-center gap-3 px-4 py-2.5 pr-9 rounded-xl transition-all ${isActive
-                                                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                                }`}
-                                        >
-                                            <FavoriteIcon className={`w-5 h-5 shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                                            <span>{item.label}</span>
-                                        </Link>
+                        )}
+                    </div>
+
+                    <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+                        {/* Favorites / pinned pages */}
+                        {!sidebarCollapsed && !sidebarSearchQuery.trim() && favoriteItems.length > 0 && (
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2 px-4 py-2 font-semibold text-slate-400">
+                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                    <span>Favorites</span>
+                                </div>
+                                {favoriteItems.map((item, index) => {
+                                    const FavoriteIcon = item.icon;
+                                    const itemHref = item.href;
+                                    const isActive = pathname === item.href.split('?')[0];
+                                    return (
+                                        <div key={`fav-${index}`} className="group/fav relative">
+                                            <Link
+                                                href={itemHref}
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                className={`flex items-center gap-3 px-4 py-2.5 pr-9 rounded-xl transition-all ${isActive
+                                                    ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                                                    }`}
+                                            >
+                                                <FavoriteIcon className={`w-5 h-5 shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                                <span>{item.label}</span>
+                                            </Link>
+                                            <button
+                                                onClick={() => toggleFavorite(itemHref)}
+                                                title="Remove from favorites"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-amber-400 hover:text-amber-500 transition-colors"
+                                            >
+                                                <Star className="w-3.5 h-3.5 fill-amber-400" />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {filteredNavGroups.map((group, groupIndex) => {
+                            const isExpanded = expandedGroups.has(group.title) || activeGroupTitle === group.title || sidebarSearchQuery.trim().length > 0;
+                            const hasActive = group.items.some((item) => {
+                                if (!item.href) return false;
+                                const isMatch = item.href.includes('?')
+                                    ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
+                                    : pathname === item.href;
+                                return isMatch;
+                            });
+
+                            return (
+                                <div key={groupIndex} className="space-y-1">
+                                    {!sidebarCollapsed && (
                                         <button
-                                            onClick={() => toggleFavorite(itemHref)}
-                                            title="Remove from favorites"
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-amber-400 hover:text-amber-500 transition-colors"
+                                            onClick={() => toggleGroup(group.title)}
+                                            className="w-full flex items-center justify-between px-4 py-2  font-semibold text-slate-400 transition-colors group"
                                         >
-                                            <Star className="w-3.5 h-3.5 fill-amber-400" />
+                                            <span>{group.title}</span>
+                                            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} ${hasActive ? 'text-brand-500' : ''}`} />
                                         </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                    {filteredNavGroups.map((group, groupIndex) => {
-                        const isExpanded = expandedGroups.has(group.title) || activeGroupTitle === group.title || sidebarSearchQuery.trim().length > 0;
-                        const hasActive = group.items.some((item) => {
-                            if (!item.href) return false;
-                            const isMatch = item.href.includes('?')
-                                ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
-                                : pathname === item.href;
-                            return isMatch;
-                        });
+                                    )}
 
-                        return (
-                            <div key={groupIndex} className="space-y-1">
-                                {!sidebarCollapsed && (
-                                    <button
-                                        onClick={() => toggleGroup(group.title)}
-                                        className="w-full flex items-center justify-between px-4 py-2  font-semibold text-slate-400 transition-colors group"
-                                    >
-                                        <span>{group.title}</span>
-                                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} ${hasActive ? 'text-brand-500' : ''}`} />
-                                    </button>
-                                )}
+                                    <AnimatePresence initial={false}>
+                                        {(isExpanded || sidebarCollapsed) && (
+                                            <motion.div
+                                                initial={sidebarCollapsed ? undefined : { height: 0, opacity: 0 }}
+                                                animate={sidebarCollapsed ? undefined : { height: 'auto', opacity: 1 }}
+                                                exit={sidebarCollapsed ? undefined : { height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.2, ease: "easeInOut" }}
+                                                className="overflow-hidden space-y-1"
+                                            >
+                                                {group.items.map((item, index) => {
+                                                    if (item.type === 'header') {
+                                                        return !sidebarCollapsed && (
+                                                            <div
+                                                                key={`${groupIndex}-${index}`}
+                                                                className={`flex items-center gap-2 px-4 ${index !== 0 ? 'mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/50' : 'mt-2'}`}
+                                                            >
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-brand-500/50" />
+                                                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                                                    {item.label}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    }
 
-                                <AnimatePresence initial={false}>
-                                    {(isExpanded || sidebarCollapsed) && (
-                                        <motion.div
-                                            initial={sidebarCollapsed ? undefined : { height: 0, opacity: 0 }}
-                                            animate={sidebarCollapsed ? undefined : { height: 'auto', opacity: 1 }}
-                                            exit={sidebarCollapsed ? undefined : { height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2, ease: "easeInOut" }}
-                                            className="overflow-hidden space-y-1"
-                                        >
-                                            {group.items.map((item, index) => {
-                                                if (item.type === 'header') {
-                                                    return !sidebarCollapsed && (
-                                                        <div
-                                                            key={`${groupIndex}-${index}`}
-                                                            className={`flex items-center gap-2 px-4 ${index !== 0 ? 'mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/50' : 'mt-2'}`}
-                                                        >
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-brand-500/50" />
-                                                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                                                {item.label}
-                                                            </span>
+                                                    if (!item.href || !item.icon) return null;
+                                                    const ItemIcon = item.icon;
+                                                    const itemHref = item.href;
+                                                    const isActive = item.href.includes('?')
+                                                        ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
+                                                        : pathname === item.href;
+                                                    const isFavorite = favorites.includes(itemHref);
+                                                    return (
+                                                        <div key={`${groupIndex}-${index}`} className="group/item relative">
+                                                            <Link
+                                                                href={itemHref}
+                                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                                title={sidebarCollapsed ? item.label : ''}
+                                                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${!sidebarCollapsed ? 'pr-9' : ''} ${isActive
+                                                                    ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
+                                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                                                                    } ${sidebarCollapsed ? 'justify-center' : ''}`}
+                                                            >
+                                                                <ItemIcon className={`w-5 h-5 shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                                                {!sidebarCollapsed && <span>{item.label}</span>}
+                                                            </Link>
+                                                            {!sidebarCollapsed && (
+                                                                <button
+                                                                    onClick={() => toggleFavorite(itemHref)}
+                                                                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                                                    className={`absolute right-2 top-1/2 -translate-y-1/2 transition-all ${isFavorite
+                                                                        ? 'text-amber-400 hover:text-amber-500'
+                                                                        : 'text-slate-300 dark:text-slate-600 opacity-0 group-hover/item:opacity-100 hover:text-amber-400'
+                                                                        }`}
+                                                                >
+                                                                    <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-amber-400' : ''}`} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     );
-                                                }
-
-                                                if (!item.href || !item.icon) return null;
-                                                const ItemIcon = item.icon;
-                                                const itemHref = item.href;
-                                                const isActive = item.href.includes('?')
-                                                    ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
-                                                    : pathname === item.href;
-                                                const isFavorite = favorites.includes(itemHref);
-                                                return (
-                                                    <div key={`${groupIndex}-${index}`} className="group/item relative">
-                                                        <Link
-                                                            href={itemHref}
-                                                            onClick={() => setIsMobileMenuOpen(false)}
-                                                            title={sidebarCollapsed ? item.label : ''}
-                                                            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${!sidebarCollapsed ? 'pr-9' : ''} ${isActive
-                                                                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
-                                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                                                } ${sidebarCollapsed ? 'justify-center' : ''}`}
-                                                        >
-                                                            <ItemIcon className={`w-5 h-5 shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                                                            {!sidebarCollapsed && <span>{item.label}</span>}
-                                                        </Link>
-                                                        {!sidebarCollapsed && (
-                                                            <button
-                                                                onClick={() => toggleFavorite(itemHref)}
-                                                                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                                                                className={`absolute right-2 top-1/2 -translate-y-1/2 transition-all ${isFavorite
-                                                                    ? 'text-amber-400 hover:text-amber-500'
-                                                                    : 'text-slate-300 dark:text-slate-600 opacity-0 group-hover/item:opacity-100 hover:text-amber-400'
-                                                                    }`}
-                                                            >
-                                                                <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-amber-400' : ''}`} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        );
-                    })}
-                </nav>
+                                                })}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            );
+                        })}
+                    </nav>
 
 
-            </motion.aside>
+                </motion.aside>
 
-            {/* Main Content */}
-            <main className="flex-1 min-w-0 flex flex-col">
-                {/* Premium Inner Dashboard Top Bar */}
-                {!isPosRoute && (
-                    <AdminTopBar
-                        logo={logo}
-                        brandName={brandName}
-                        session={session}
-                        onMenuClick={() => setIsMobileMenuOpen(true)}
-                        onLogout={handleLogout}
-                        onCopilotClick={hasAiUse ? () => setIsCopilotOpen(!isCopilotOpen) : undefined}
-                    />
-                )}
+                {/* Main Content */}
+                <main className="flex-1 min-w-0 flex flex-col">
+                    {/* Premium Inner Dashboard Top Bar */}
+                    {!isPosRoute && (
+                        <AdminTopBar
+                            logo={logo}
+                            brandName={brandName}
+                            session={session}
+                            onMenuClick={() => setIsMobileMenuOpen(true)}
+                            onLogout={handleLogout}
+                            onCopilotClick={hasAiUse ? () => setIsCopilotOpen(!isCopilotOpen) : undefined}
+                        />
+                    )}
 
-                <div className={isPosRoute ? "p-4 md:p-6 w-full min-h-screen flex-1" : "p-4 md:p-8 max-w-full mx-auto w-full flex-1"}>
-                    {!isPosRoute && <AdminBreadcrumbs />}
-                    {children}
-                </div>
-            </main>
-        </div>
+                    <div className={isPosRoute ? "p-4 md:p-6 w-full min-h-screen flex-1" : "p-4 md:p-8 max-w-full mx-auto w-full flex-1"}>
+                        {!isPosRoute && <AdminBreadcrumbs />}
+                        {children}
+                    </div>
+                </main>
+            </div>
 
             {/* Global command palette (⌘K) */}
             <CommandPalette

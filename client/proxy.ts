@@ -34,8 +34,11 @@ export default withAuth(
       UserRole.SUPPORT,
       UserRole.MARKETING,
       UserRole.SUPER_ADMIN,
+      UserRole.EMPLOYEE,
     ];
+    console.log("Middleware: Checking admin route:", isAdminRoute, "Token role:", token?.role, "Token exists:", !!token);
     if (isAdminRoute && !staffRoles.includes(token?.role as UserRole)) {
+      console.warn("Middleware redirecting to login. Role not allowed:", token?.role);
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
