@@ -62,11 +62,20 @@ export class SettingsController {
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
     this.logger.verbose(`System called getPublicSettings.`)
     const settings = await this.settingsService.findByStoreSettings(ctx)
+    const responseSettings = toSafeSettings(settings)
+
+    // Explicitly delete sensitive credentials from public responses
+    delete responseSettings.smtp
+    delete responseSettings.payment
+    delete responseSettings.pathaoCourier
+    delete responseSettings.steadfastCourier
+    delete responseSettings.sms
+
     return {
       success: true,
       statusCode: 200,
       message: 'Settings retrieved successfully',
-      data: toSafeSettings(settings),
+      data: responseSettings,
     }
   }
 

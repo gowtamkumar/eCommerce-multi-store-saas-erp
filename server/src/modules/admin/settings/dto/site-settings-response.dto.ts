@@ -55,10 +55,20 @@ export class SiteSettingsResponseDto {
   @Expose()
   marketing: any
 
-  // smtp — intentionally EXCLUDED (contains credentials)
-  // payment — intentionally EXCLUDED (contains API keys)
-  // pathaoCourier — intentionally EXCLUDED (contains API keys)
-  // steadfastCourier — intentionally EXCLUDED (contains API keys)
+  @Expose()
+  smtp: any
+
+  @Expose()
+  payment: any
+
+  @Expose()
+  pathaoCourier: any
+
+  @Expose()
+  steadfastCourier: any
+
+  @Expose()
+  sms: any
 
   @Expose()
   shippingConfig: any
