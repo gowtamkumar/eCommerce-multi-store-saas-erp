@@ -1,4 +1,5 @@
 import { UserRole } from "@/lib/enums/user-role.enum";
+import type { PermissionManifest } from "@/lib/permissions";
 import "next-auth";
 import "next-auth/jwt";
 
@@ -17,6 +18,7 @@ declare module "next-auth" {
     refreshToken?: string;
     accessTokenExpires?: number;
     features: string[];
+    permissionManifest?: PermissionManifest | null;
   }
 
   interface Session {
@@ -35,6 +37,7 @@ declare module "next-auth" {
       accessTokenExpires?: number;
       error?: string;
       features: string[];
+      permissionManifest?: PermissionManifest | null;
     };
   }
 }
@@ -52,5 +55,6 @@ declare module "next-auth/jwt" {
     accessTokenExpires?: number;
     error?: string;
     features: string[];
+    permissionManifest?: PermissionManifest | null;
   }
 }

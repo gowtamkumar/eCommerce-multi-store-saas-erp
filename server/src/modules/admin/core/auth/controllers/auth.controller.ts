@@ -10,16 +10,20 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common'
-// import { Throttle, SkipThrottle } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { Audit } from '@/common/decorators/audit.decorator'
-import { RegisterCredentialDto } from '@/modules/admin/core/auth/dtos'
+import { RegisterCredentialDto, RefreshTokenDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { Throttle } from '@nestjs/throttler'
+import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
+import { Public } from '@/common/decorators/public.decorator'
+
 
 @Controller('auth')
 export class AuthController {
@@ -27,7 +31,9 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
-  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/register')
   @Audit({ entity: 'Auth', action: 'REGISTER' })
   async register(
@@ -58,12 +64,13 @@ export class AuthController {
     }
   }
 
-  // @SkipThrottle({ sensitive: true, transactional: true, promo: true })
-  // @Throttle({ standard: { limit: 60, ttl: 60000 } })
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ standard: { limit: 15, ttl: 60000 } })
   @Post('/refresh')
   @PublicDuringExpiration()
   async refresh(
-    @Body() body: { userId: string; refreshToken: string },
+    @Body() body: RefreshTokenDto,
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -72,7 +79,6 @@ export class AuthController {
     const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : ''
 
     const tokens = await this.authService.refreshTokens(
-      body.userId,
       body.refreshToken,
       ipStr,
       userAgent,
@@ -88,6 +94,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipPermissionCheck()
   @Post('/logout')
   @Audit({ entity: 'Auth', action: 'LOGOUT' })
   async logout(
@@ -106,6 +113,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipPermissionCheck()
   @Get('/sessions')
   async getSessions(
     @RequestContext() ctx: RequestContextDto,
@@ -120,6 +128,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipPermissionCheck()
   @Delete('/sessions/other')
   @Audit({ entity: 'Session', action: 'REVOKE_OTHERS' })
   async revokeOtherSessions(
@@ -135,6 +144,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipPermissionCheck()
   @Delete('/sessions/:id')
   @Audit({ entity: 'Session', action: 'REVOKE' })
   async revokeSession(
@@ -150,6 +160,9 @@ export class AuthController {
     }
   }
 
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/verify')
   async verify(@Body() body: { token: string }): Promise<BaseApiSuccessResponse<null>> {
     const { token } = body
@@ -162,7 +175,9 @@ export class AuthController {
     }
   }
 
-  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/forgot-password')
   async forgotPassword(
     @RequestContext() ctx: RequestContextDto,
@@ -179,6 +194,9 @@ export class AuthController {
     }
   }
 
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/reset-password')
   @Audit({ entity: 'Auth', action: 'PASSWORD_RESET' })
   async resetPassword(
@@ -194,6 +212,9 @@ export class AuthController {
     }
   }
 
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/accept-invitation')
   @Audit({ entity: 'Auth', action: 'ACCEPT_INVITATION' })
   async acceptInvitation(@Body() body: any): Promise<BaseApiSuccessResponse<any>> {
@@ -208,6 +229,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @SkipPermissionCheck()
   @Get('/me')
   @PublicDuringExpiration()
   async getMe(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {

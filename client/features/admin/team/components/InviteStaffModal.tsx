@@ -33,7 +33,7 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
 
                 const [branchesRes, rolesRes] = await Promise.all([
                     getBranches(),
-                    fetchAPI('/users/roles'),
+                    fetchAPI('/rbac/roles'),
                 ]);
 
                 if (branchesRes.success && branchesRes.data) {
@@ -45,7 +45,8 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                 }
 
                 if (rolesRes?.success && rolesRes?.data) {
-                    setCustomRoles(rolesRes.data);
+                    const roles = Array.isArray(rolesRes.data) ? rolesRes.data : rolesRes.data.items || [];
+                    setCustomRoles(roles.filter((r: { isSystemRole?: boolean }) => !r.isSystemRole));
                 }
             } catch (err) {
                 console.error('Failed to load branches or roles in invite modal:', err);
@@ -57,6 +58,12 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (!selectedRoleId && customRoles.length > 0) {
+            setError('Please select a role with permissions for this team member.');
+            return;
+        }
+
         setLoading(true);
 
         try {

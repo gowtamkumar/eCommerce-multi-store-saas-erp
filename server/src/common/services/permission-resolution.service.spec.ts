@@ -14,7 +14,12 @@ describe('PermissionResolutionService', () => {
     assignmentRepo = { find: jest.fn() }
     roleRepo = { find: jest.fn() }
     storeRepo = { findOne: jest.fn() }
-    storeFeatureRepo = { find: jest.fn(), findOne: jest.fn() }
+    storeFeatureRepo = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn((entity) => Promise.resolve(entity)),
+      create: jest.fn((entity) => entity),
+    }
     overrideRepo = { find: jest.fn(), findOne: jest.fn() }
     cacheService = { getCache: jest.fn(), setCache: jest.fn(), delCache: jest.fn() }
 
@@ -133,36 +138,102 @@ describe('PermissionResolutionService', () => {
   })
 
   describe('resolvePermissionsManifest', () => {
-    it('includes permissions with sub-feature prefixes in the manifest if parent feature is enabled', async () => {
-      cacheService.getCache.mockResolvedValue(null) // Force cache miss to build manifest
+    it('includes hrm role permissions when plan lacks hrm (RBAC enables store feature)', async () => {
+      cacheService.getCache.mockResolvedValue(null)
 
-      // Mock subscription plan with parent 'finance' feature enabled
+      storeRepo.findOne.mockResolvedValue({
+        subscriptionPlan: {
+          features: ['catalog', 'orders'],
+        },
+      })
+
+      storeFeatureRepo.find.mockResolvedValue([])
+      storeFeatureRepo.findOne.mockResolvedValue(null)
+      overrideRepo.find.mockResolvedValue([])
+
+      assignmentRepo.find.mockResolvedValue([
+        {
+          roleId: 'role-hrm',
+          expiresAt: null,
+          role: {
+            permissions: [
+              { code: 'hrm:manage-employees' },
+              { code: 'hrm:view-attendance-report' },
+            ],
+          },
+        },
+      ])
+
+      const manifest = await service.resolvePermissionsManifest('user-1', 'store-1')
+
+      expect(manifest.permissions).toContain('hrm:manage-employees')
+      expect(manifest.permissions).toContain('hrm:view-attendance-report')
+      expect(manifest.featuresEnabled).toContain('hrm')
+      expect(storeFeatureRepo.save).toHaveBeenCalled()
+    })
+
+    it('filters hrm permissions when store plan lacks hrm, and exposes hrm in featuresEnabled when enabled', async () => {
+      cacheService.getCache.mockResolvedValue(null)
+
+      storeRepo.findOne.mockResolvedValue({
+        subscriptionPlan: {
+          features: ['hrm'],
+        },
+      })
+
+      storeFeatureRepo.find.mockResolvedValue([])
+      overrideRepo.find.mockResolvedValue([])
+
+      assignmentRepo.find.mockResolvedValue([
+        {
+          roleId: 'role-hrm',
+          expiresAt: null,
+          role: {
+            permissions: [
+              { code: 'hrm:manage-employees' },
+              { code: 'hrm:view-attendance-report' },
+            ],
+          },
+        },
+      ])
+
+      const manifest = await service.resolvePermissionsManifest('user-1', 'store-1')
+
+      expect(manifest.permissions).toContain('hrm:manage-employees')
+      expect(manifest.permissions).toContain('hrm:view-attendance-report')
+      expect(manifest.featuresEnabled).toContain('hrm')
+      expect(manifest.featuresEnabled).not.toContain('catalog')
+    })
+
+    it('includes accounting permissions when finance is on plan; role-granted hrm when in role', async () => {
+      cacheService.getCache.mockResolvedValue(null)
+
       storeRepo.findOne.mockResolvedValue({
         subscriptionPlan: {
           features: ['finance'],
         },
       })
 
-      // No overrides
       storeFeatureRepo.find.mockResolvedValue([])
+      storeFeatureRepo.findOne.mockResolvedValue(null)
       overrideRepo.find.mockResolvedValue([])
 
-      // Mock user permissions: accounting:read, hrm:read
-      // Since user holds both, but plan only enables 'finance',
-      // only 'accounting:read' should be filtered in (as it maps to 'finance'),
-      // and 'hrm:read' should be filtered out (no 'hrm' feature).
-      assignmentRepo.find.mockResolvedValue([{ roleId: 'role-1', expiresAt: null }])
-      roleRepo.find.mockResolvedValue([
+      assignmentRepo.find.mockResolvedValue([
         {
-          id: 'role-1',
-          permissions: [{ code: 'accounting:read' }, { code: 'hrm:read' }],
+          roleId: 'role-1',
+          expiresAt: null,
+          role: {
+            permissions: [{ code: 'accounting:read' }, { code: 'hrm:view-attendance-report' }],
+          },
         },
       ])
 
       const manifest = await service.resolvePermissionsManifest('user-1', 'store-1')
 
       expect(manifest.permissions).toContain('accounting:read')
-      expect(manifest.permissions).not.toContain('hrm:read')
+      expect(manifest.permissions).toContain('hrm:view-attendance-report')
+      expect(manifest.featuresEnabled).toContain('finance')
+      expect(manifest.featuresEnabled).toContain('hrm')
     })
   })
 })

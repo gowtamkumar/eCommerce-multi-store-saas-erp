@@ -1,3 +1,5 @@
+import { CustomerRoute } from '@/common/decorators/customer-route.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -10,6 +12,8 @@ import { WishlistService } from './wishlist.service'
 
 @ApiTags('wishlist')
 @ApiBearerAuth()
+@CustomerRoute()
+@SkipPermissionCheck()
 @UseGuards(JwtAuthGuard)
 @Controller('wishlist')
 export class WishlistController {

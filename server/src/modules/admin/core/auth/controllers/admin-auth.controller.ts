@@ -1,11 +1,12 @@
 import { Audit } from '@/common/decorators/audit.decorator'
+import { Public } from '@/common/decorators/public.decorator'
 import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
+import { LoginCredentialDto, RefreshTokenDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { sanitizeUser } from '@/common/utils/sanitize-user.util'
 import {
@@ -20,15 +21,21 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
-// import { Throttle, SkipThrottle } from '@nestjs/throttler'
+import { Throttle } from '@nestjs/throttler'
+import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
+import { Roles } from '@/common/decorators/roles.decorator'
+
 
 @Controller('admin')
 export class AdminAuthController {
   private readonly logger = new Logger(AdminAuthController.name)
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
-  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/login')
   @Audit({ entity: 'Auth', action: 'LOGIN' })
   async login(
@@ -64,6 +71,9 @@ export class AdminAuthController {
     }
   }
 
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/login-impersonated')
   @Audit({ entity: 'Auth', action: 'IMPERSONATE_LOGIN' })
   async loginImpersonated(
@@ -146,12 +156,13 @@ export class AdminAuthController {
     }
   }
 
-  // @SkipThrottle({ sensitive: true, transactional: true, promo: true })
-  // @Throttle({ standard: { limit: 60, ttl: 60000 } })
+  @Public()
+  @UseGuards(CustomThrottlerGuard)
+  @Throttle({ standard: { limit: 15, ttl: 60000 } })
   @Post('/refresh')
   @PublicDuringExpiration()
   async refresh(
-    @Body() body: { userId: string; refreshToken: string },
+    @Body() body: RefreshTokenDto,
     @Res({ passthrough: true }) res: Response,
     @Req() req: Request,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -160,7 +171,6 @@ export class AdminAuthController {
     const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : ''
 
     const tokens = await this.authService.refreshTokens(
-      body.userId,
       body.refreshToken,
       ipStr,
       userAgent,

@@ -68,6 +68,8 @@ export class UserRepository extends BaseStoreRepository<UserEntity> {
         creditLimit: true,
         creditHold: true,
         priceBookCode: true,
+        branchId: true,
+        warehouseId: true,
       },
       relations: {
         roleEntity: {
@@ -100,6 +102,8 @@ export class UserRepository extends BaseStoreRepository<UserEntity> {
         creditLimit: true,
         creditHold: true,
         priceBookCode: true,
+        branchId: true,
+        warehouseId: true,
       },
       relations: {
         roleEntity: {

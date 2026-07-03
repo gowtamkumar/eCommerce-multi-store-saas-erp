@@ -1,5 +1,6 @@
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { NotificationModule } from '../../operations/infra/notification/notification.module'
@@ -27,6 +28,7 @@ import { UserService } from './services/user.service'
     MailModule,
     CacheModule,
     NotificationModule,
+    RbacModule,
   ],
   controllers: [RoleController, UserController],
   providers: [UserService, StaffInvitationService, UserRepository, StaffInvitationRepository],

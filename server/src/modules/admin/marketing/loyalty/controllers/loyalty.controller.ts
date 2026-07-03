@@ -1,3 +1,5 @@
+import { CustomerRoute } from '@/common/decorators/customer-route.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards } from '@nestjs/common'
 import { Audit } from '@/common/decorators/audit.decorator'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -146,6 +148,8 @@ export class LoyaltyController {
    * Storefront: Get currently authenticated customer's own points balance, tier, referral code, and history.
    */
   @Get('store/loyalty/me')
+  @CustomerRoute()
+  @SkipPermissionCheck()
   async getMyLoyaltySummary(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {

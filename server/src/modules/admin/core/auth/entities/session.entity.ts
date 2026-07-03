@@ -40,6 +40,9 @@ export class SessionEntity {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean
 
+  @Column({ name: 'hashed_refresh_token', type: 'varchar', length: 255, nullable: true })
+  hashedRefreshToken: string | null
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date
 

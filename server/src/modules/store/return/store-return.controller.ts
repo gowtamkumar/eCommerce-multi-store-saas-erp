@@ -1,3 +1,5 @@
+import { CustomerRoute } from '@/common/decorators/customer-route.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -7,6 +9,8 @@ import { OrderReturnResponseDto } from '@/modules/admin/sales/order/dto/order-re
 import { ReturnService } from '@/modules/admin/sales/order/services/return.service'
 import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common'
 
+@CustomerRoute()
+@SkipPermissionCheck()
 @UseGuards(JwtAuthGuard)
 @Controller('store/returns')
 export class StoreReturnController {

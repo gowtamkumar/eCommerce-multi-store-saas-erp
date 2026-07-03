@@ -1,7 +1,5 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { Reflector } from '@nestjs/core'
-import * as jwt from 'jsonwebtoken'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
 
@@ -10,15 +8,11 @@ import { UserRole } from '../enums/user/user-role.enum'
  * client-supplied `x-store-id` header, so we must verify it matches the
  * store baked into the authenticated user's JWT. Without this, any logged-in
  * user could read/write another store's data by swapping the header.
- *
- * This runs as a global guard, before the controller-scoped JwtAuthGuard, so
- * it decodes the bearer token itself (mirroring PermissionsGuard).
  */
 @Injectable()
 export class StoreIsolationGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly configService: ConfigService,
   ) { }
 
   canActivate(context: ExecutionContext): boolean {
@@ -29,29 +23,18 @@ export class StoreIsolationGuard implements CanActivate {
     if (isPublic) return true
 
     const request = context.switchToHttp().getRequest()
+    const { user } = request
 
-    // Resolve the authenticated identity from the bearer token. Unauthenticated
-    // (public/storefront) requests have no token — leave them to other guards.
-    const authHeader = request.headers['authorization']
-    if (!authHeader?.startsWith('Bearer ')) {
-      return true
-    }
-
-    let decoded: { storeId?: string | null; role?: string } | null = null
-    try {
-      const secret = this.configService.get('JWT_SECRET_KEY')
-      decoded = jwt.verify(authHeader.substring(7), secret) as any
-    } catch {
-      // Invalid/expired token — authentication guards will reject it.
-      return true
+    if (!user) {
+      throw new ForbiddenException('User context is missing')
     }
 
     // Super admins legitimately operate across every store.
-    if (decoded?.role === UserRole.SUPER_ADMIN) {
+    if (user.role === UserRole.SUPER_ADMIN) {
       return true
     }
 
-    const userStoreId = decoded?.storeId
+    const userStoreId = user.storeId
 
     // Store context the request is trying to act on (set by StoreContextMiddleware).
     let headerStoreId = request.storeId || (request.headers['x-store-id'] as string) || null

@@ -36,6 +36,7 @@ import { CreateStoreResponseDto, StoreService } from './store.service'
 import { StoreAiClientService } from '@/modules/admin/ai/services/store-ai-client.service'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { Public } from '@/common/decorators/public.decorator'
 import { ModuleRef } from '@nestjs/core'
 
 /**
@@ -73,6 +74,7 @@ export class StoreController {
     private readonly moduleRef: ModuleRef,
   ) {}
 
+  @Public()
   @Post()
   async create(
     @Body() createStoreDto: CreateStoreDto,
@@ -87,6 +89,7 @@ export class StoreController {
     }
   }
 
+  @Public()
   @Get()
   async findAll(
     @Query() query: StoreLookupDto,
@@ -110,6 +113,7 @@ export class StoreController {
     }
   }
 
+  @Public()
   @Get('check-domain')
   async checkDomain(@Query('domain') domain: string): Promise<void> {
     if (!domain) {
@@ -122,6 +126,8 @@ export class StoreController {
     throw new NotFoundException('Domain is not active or registered')
   }
 
+  @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   @Get('info')
   async getStoreInfo(
     @RequestContext() ctx: RequestContextDto,

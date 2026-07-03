@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { SessionEntity } from '../entities/session.entity'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
+import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { AuthService } from './auth.service'
@@ -54,6 +55,12 @@ describe('AuthService', () => {
         {
           provide: PermissionResolutionService,
           useValue: {},
+        },
+        {
+          provide: RoleManagementService,
+          useValue: {
+            ensureLegacyRoleAssignment: jest.fn().mockResolvedValue(false),
+          },
         },
         {
           provide: NotificationService,

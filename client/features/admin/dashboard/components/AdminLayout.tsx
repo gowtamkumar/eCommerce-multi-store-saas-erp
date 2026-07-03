@@ -1,10 +1,13 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { fetchAPI } from '@/services/api';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useRequirePermission } from '@/hooks/useRequirePermission';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { decodeJwtPayload } from '@/lib/jwt.util';
-import { navGroups } from '@/routes';
+import { canAccessNavItem, getEffectiveFeatures, isStaffRole, resolveNavItemFeature } from '@/lib/permissions';
+import { navGroups, type AdminNavGroup, type AdminNavItem } from '@/routes';
+import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Shield, Star, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
@@ -21,21 +24,6 @@ const EXPANDED_GROUPS_KEY = 'admin:expandedGroups';
 const SIDEBAR_COLLAPSED_KEY = 'admin:sidebarCollapsed';
 
 type IconComponent = ComponentType<{ className?: string }>;
-
-type AdminNavItem = {
-    type?: string;
-    icon?: IconComponent;
-    label?: string;
-    href?: string;
-    feature?: string;
-    roles?: string[];
-};
-
-type AdminNavGroup = {
-    title: string;
-    roles?: string[];
-    items: AdminNavItem[];
-};
 
 type NavigableAdminNavItem = AdminNavItem & {
     href: string;
@@ -87,16 +75,48 @@ export default function AdminLayout({
         () => readStoredJson<string[]>(FAVORITES_KEY, []),
     );
     const [isCopilotOpen, setIsCopilotOpen] = useState(false);
-    const { data: session, status } = useSession() as {
+    const { data: session, status, update } = useSession() as {
         data: AdminSession | null;
         status: 'loading' | 'authenticated' | 'unauthenticated';
+        update: (data?: Record<string, unknown>) => Promise<unknown>;
     };
+
+    const { manifest, isSuperAdmin, isFullAccess, canAccessRoute, firstAccessibleRoute } = usePermissions();
+    useRequirePermission();
 
     const [subInfo, setSubInfo] = useState<{ status: string; isExpired: boolean } | null>(null);
     const [isAlertDismissed, setIsAlertDismissed] = useState(() => {
         if (typeof window === 'undefined') return false;
         return sessionStorage.getItem('admin:subscriptionAlertDismissed') === 'true';
     });
+
+    useEffect(() => {
+        if (status !== 'authenticated' || isSuperAdmin) return;
+        const needsManifest =
+            !manifest?.permissions?.length && !manifest?.featuresEnabled?.length;
+        if (!needsManifest) return;
+        fetchAPI('/auth/me')
+            .then((res) => {
+                if (res?.success && res?.data?.permissionManifest) {
+                    void update({
+                        permissionManifest: res.data.permissionManifest,
+                        features:
+                            res.data.user?.features ??
+                            res.data.permissionManifest?.featuresEnabled,
+                    });
+                }
+            })
+            .catch(() => {
+                /* manifest refresh is best-effort */
+            });
+    }, [status, manifest, isSuperAdmin, update]);
+
+    useEffect(() => {
+        if (status !== 'authenticated' || isSuperAdmin || !manifest?.permissions?.length) return;
+        if (pathname === '/admin' && !canAccessRoute('/admin') && firstAccessibleRoute !== '/admin') {
+            router.replace(firstAccessibleRoute);
+        }
+    }, [status, pathname, manifest, isSuperAdmin, canAccessRoute, firstAccessibleRoute, router]);
 
     useEffect(() => {
         if (status === 'authenticated' && session?.user?.role !== UserRole.SUPER_ADMIN) {
@@ -175,79 +195,79 @@ export default function AdminLayout({
         if (status === 'unauthenticated') {
             router.replace('/login');
         } else if (status === 'authenticated') {
-            console.log("session", session);
-
             const rawRole = session?.user?.role || '';
-            const allowedRoles: string[] = [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPER_ADMIN, UserRole.EMPLOYEE];
-            if (!allowedRoles.includes(rawRole)) {
-                console.warn(`User role ${rawRole} is not authorized for admin access`);
+            if (!isStaffRole(rawRole)) {
                 router.replace('/');
             }
         }
     }, [status, session, router]);
 
-    // Nav groups filtered by user role and plan features (search-independent).
-    const roleFilteredNavGroups = useMemo(() => {
-        const rawRole = session?.user?.role || '';
-        const userRole = typeof rawRole === 'string' ? rawRole.toLowerCase() : '';
-        const sessionFeatures = session?.user?.features || [];
+    // Nav groups filtered by RBAC permissions + plan features (search-independent).
+    const permissionFilteredNavGroups = useMemo(() => {
         const tokenFeatures = decodeJwtPayload<{ features?: string[] }>(
             session?.user?.accessToken,
         )?.features;
-        const features =
-            sessionFeatures.length > 0
-                ? sessionFeatures
-                : Array.isArray(tokenFeatures)
-                    ? tokenFeatures
-                    : [];
-        const isSuperAdmin = userRole === UserRole.SUPER_ADMIN || features.includes('*');
-        const hasFeatureAccess = (feature?: string) => {
+        const features = getEffectiveFeatures(
+            manifest,
+            session?.user?.features || [],
+            Array.isArray(tokenFeatures) ? tokenFeatures : [],
+        );
+        const hasFeatureAccess = (feature?: string, item?: AdminNavItem) => {
+            if (!feature && item) {
+                feature = resolveNavItemFeature(item);
+            }
             if (!feature) return true;
             if (isSuperAdmin) return true;
-            // If plan features are unavailable (refresh/lookup issues), keep role-based nav visible.
+            if (manifest?.featuresEnabled?.length) {
+                return manifest.featuresEnabled.includes(feature);
+            }
             if (features.length === 0) return true;
             return features.includes(feature);
         };
 
+        const accessOptions = { isSuperAdmin, isFullAccess };
+
         return (navGroups as AdminNavGroup[])
-            .filter(group => {
-                if (group.roles) {
-                    return group.roles.map((r) => r.toLowerCase()).includes(userRole) || userRole === UserRole.EMPLOYEE || isSuperAdmin;
-                }
-                return true;
-            })
-            .map(group => ({
+            .map((group) => ({
                 ...group,
                 items: group.items.filter((item) => {
-                    const hasRole = item.roles
-                        ? item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.EMPLOYEE || isSuperAdmin
-                        : true;
-
-                    if (!hasRole) return false;
-                    return hasFeatureAccess(item.feature);
-                })
+                    if (item.type === 'header') return true;
+                    if (!hasFeatureAccess(item.feature, item)) return false;
+                    if (!manifest && !isSuperAdmin) return false;
+                    return canAccessNavItem(manifest, item, accessOptions);
+                }),
             }))
-            .filter(group => group.items.length > 0);
-    }, [session?.user?.role, session?.user?.features, session?.user?.accessToken]);
+            .map((group) => ({
+                ...group,
+                items: group.items.filter((item) => item.type === 'header' || item.href),
+            }))
+            .filter((group) => group.items.some((item) => item.href));
+    }, [
+        session?.user?.features,
+        session?.user?.accessToken,
+        manifest,
+        isSuperAdmin,
+        isFullAccess,
+    ]);
 
     // Expand all groups by default so the sidebar is never blank on first visit.
     useEffect(() => {
-        if (roleFilteredNavGroups.length === 0) return;
-        const validTitles = new Set(roleFilteredNavGroups.map((group) => group.title));
+        if (permissionFilteredNavGroups.length === 0) return;
+        const validTitles = new Set(permissionFilteredNavGroups.map((group) => group.title));
         setExpandedGroups((prev) => {
             const hasValidExpansion = Array.from(prev).some((title) => validTitles.has(title));
             if (hasValidExpansion) return prev;
             return validTitles;
         });
-    }, [roleFilteredNavGroups]);
+    }, [permissionFilteredNavGroups]);
 
     // Apply the sidebar search box on top of the role-filtered groups.
     const filteredNavGroups = useMemo(() => {
         if (!sidebarSearchQuery.trim()) {
-            return roleFilteredNavGroups;
+            return permissionFilteredNavGroups;
         }
         const query = sidebarSearchQuery.toLowerCase();
-        return roleFilteredNavGroups
+        return permissionFilteredNavGroups
             .map(group => ({
                 ...group,
                 items: group.items.filter((item) =>
@@ -255,13 +275,13 @@ export default function AdminLayout({
                 )
             }))
             .filter(group => group.items.length > 0);
-    }, [roleFilteredNavGroups, sidebarSearchQuery]);
+    }, [permissionFilteredNavGroups, sidebarSearchQuery]);
 
     // Resolve favorite hrefs against the (role-filtered) nav so labels/icons stay correct.
     const favoriteItems = useMemo(() => {
         if (favorites.length === 0) return [];
         const all: AdminNavItem[] = [];
-        for (const group of roleFilteredNavGroups) {
+        for (const group of permissionFilteredNavGroups) {
             for (const item of group.items) {
                 if (item.type === 'header' || !item.href) continue;
                 all.push(item);
@@ -270,7 +290,7 @@ export default function AdminLayout({
         return favorites
             .map((href) => all.find((i) => i.href === href))
             .filter(isNavigableItem);
-    }, [favorites, roleFilteredNavGroups]);
+    }, [favorites, permissionFilteredNavGroups]);
 
     const activeGroupTitle = useMemo(() => {
         const activeGroup = filteredNavGroups.find(group =>
@@ -322,7 +342,7 @@ export default function AdminLayout({
     // Record visited admin pages so the command palette can surface recents.
     useEffect(() => {
         if (!pathname || pathname === '/admin') return;
-        for (const group of roleFilteredNavGroups) {
+        for (const group of permissionFilteredNavGroups) {
             const match = group.items.find(
                 (i) => i.href && i.href.split('?')[0] === pathname,
             );
@@ -331,7 +351,7 @@ export default function AdminLayout({
                 break;
             }
         }
-    }, [pathname, roleFilteredNavGroups]);
+    }, [pathname, permissionFilteredNavGroups]);
 
     if (status === 'loading') {
         return (
@@ -633,7 +653,7 @@ export default function AdminLayout({
             <CommandPalette
                 open={isPaletteOpen}
                 onClose={() => setIsPaletteOpen(false)}
-                groups={roleFilteredNavGroups}
+                groups={permissionFilteredNavGroups}
             />
 
             {/* Global copilot sidebar */}

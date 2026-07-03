@@ -1,3 +1,4 @@
+import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
@@ -12,11 +13,16 @@ import { StoreFeatureEntity } from '@/modules/system/store/entities/store-featur
 import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
+import { Repository } from 'typeorm'
 
 export interface PermissionManifest {
   featuresEnabled: string[]
   permissions: string[]
+}
+
+export interface PermissionScopeContext {
+  branchId?: string
+  warehouseId?: string
 }
 
 /**
@@ -62,7 +68,7 @@ export class PermissionResolutionService {
     private readonly overrideRepo: Repository<UserPermissionOverrideEntity>,
 
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   // ─────────────────────────────────────────────────────────────────
   // Step 1 Helper: Feature Enabled Check (used standalone, not in hot path)
@@ -140,10 +146,9 @@ export class PermissionResolutionService {
     userId: string,
     storeId: string,
     requiredPermissions: string[],
+    scope?: PermissionScopeContext,
   ): Promise<{ denied: string | null; manifest: PermissionManifest }> {
-    // Load the cached manifest (or build it if not cached). This is at most 1 Redis
-    // operation for the entire request regardless of how many permissions are required.
-    const manifest = await this.resolvePermissionsManifest(userId, storeId)
+    const manifest = await this.resolvePermissionsManifest(userId, storeId, scope)
     const permissionSet = new Set(manifest.permissions)
     const featuresSet = new Set(manifest.featuresEnabled)
 
@@ -205,8 +210,17 @@ export class PermissionResolutionService {
    * Frontend uses this for UI gating. Backend guard uses this for per-request
    * authorization (0 DB queries on cache hit).
    */
-  async resolvePermissionsManifest(userId: string, storeId: string): Promise<PermissionManifest> {
-    const cacheKey = `rbac:manifest:${storeId}:${userId}`
+  async resolvePermissionsManifest(
+    userId: string,
+    storeId: string,
+    scope?: PermissionScopeContext,
+  ): Promise<PermissionManifest> {
+    const scopeKey = scope?.branchId
+      ? `:branch:${scope.branchId}`
+      : scope?.warehouseId
+        ? `:warehouse:${scope.warehouseId}`
+        : ''
+    const cacheKey = `rbac:manifest:${storeId}:${userId}${scopeKey}`
     const cached = await this.cacheService.getCache<PermissionManifest>(cacheKey)
     if (cached) {
       this.logger.debug(`[Cache HIT] RBAC manifest for user=${userId} store=${storeId}`)
@@ -257,7 +271,7 @@ export class PermissionResolutionService {
     const featuresEnabled = Array.from(featuresEnabledSet)
 
     // ── Build permissions list ────────────────────────────────────────
-    const effectivePermissions = await this.getEffectivePermissions(userId, storeId)
+    const effectivePermissions = await this.getEffectivePermissions(userId, storeId, scope)
 
     // Fetch active user-specific permission overrides
     const now = new Date()
@@ -279,17 +293,32 @@ export class PermissionResolutionService {
       }
     }
 
-    // Only include permissions whose feature is enabled for this store
+    // RBAC role permissions enable store features (for SubscriptionGuard + manifest).
+    // Fixes staff with e.g. "hrm manager" when the base plan omits `hrm`.
+    await this.ensureStoreFeaturesForPermissionSlugs(storeId, permSet, overridesMap)
+    this.mergeRoleGrantedFeatures(permSet, featuresEnabledSet, overridesMap)
+
+    // Include role permissions unless the feature is explicitly disabled for the store
     const permissions = Array.from(permSet).filter((p) => {
       const feat = p.split(':')[0]
       const planFeat = getPlanFeature(feat)
-      return featuresEnabledSet.has(feat) || featuresEnabledSet.has(planFeat)
+      if (overridesMap.get(feat) === false) return false
+      if (overridesMap.get(planFeat) === false) return false
+      return true
     })
 
+    // User-effective features: store plan features the user can access via role permissions.
+    // Used by login/me, JWT, and UI sidebar (same source as backend PermissionsGuard).
+    const userFeaturesEnabled = this.deriveUserFeaturesEnabled(
+      permissions,
+      featuresEnabledSet,
+    )
+
     const manifest: PermissionManifest = {
-      featuresEnabled,
+      featuresEnabled: userFeaturesEnabled,
       permissions: [...new Set(permissions)],
     }
+
 
     await this.cacheService.setCache(cacheKey, manifest, this.CACHE_TTL_SECONDS)
     return manifest
@@ -310,6 +339,46 @@ export class PermissionResolutionService {
     this.logger.log('[Cache] Invalidated all RBAC permission manifests')
   }
 
+  /**
+   * When a role grants permissions for a module, ensure the store has that feature
+   * enabled (store_features). Idempotent — safe on every manifest build / role assign.
+   */
+  async ensureStoreFeaturesForPermissionSlugs(
+    storeId: string,
+    permissionSlugs: Iterable<string>,
+    overridesMap?: Map<string, boolean>,
+  ): Promise<void> {
+    const slugsToEnable = this.collectFeatureSlugsFromPermissions(permissionSlugs)
+
+    for (const slug of slugsToEnable) {
+      if (overridesMap?.get(slug) === false) continue
+
+      const existing = await this.storeFeatureRepo.findOne({
+        where: { storeId, featureSlug: slug },
+      })
+
+      if (existing) {
+        if (!existing.isEnabled) {
+          existing.isEnabled = true
+          existing.enabledAt = new Date()
+          await this.storeFeatureRepo.save(existing)
+        }
+        overridesMap?.set(slug, true)
+        continue
+      }
+
+      await this.storeFeatureRepo.save(
+        this.storeFeatureRepo.create({
+          storeId,
+          featureSlug: slug,
+          isEnabled: true,
+          enabledAt: new Date(),
+        }),
+      )
+      overridesMap?.set(slug, true)
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────
   // Internal: Collect All Role-Based Permissions (flat, no inheritance)
   // ─────────────────────────────────────────────────────────────────
@@ -321,10 +390,36 @@ export class PermissionResolutionService {
    * - Roles are loaded flat (no parent chain walking).
    * - A user can hold multiple roles simultaneously; all are unioned together.
    */
-  private async getEffectivePermissions(userId: string, storeId: string): Promise<Set<string>> {
+  private assignmentMatchesScope(
+    assignment: UserRoleAssignmentEntity,
+    scope?: PermissionScopeContext,
+  ): boolean {
+    if (!scope?.branchId && !scope?.warehouseId) return true
+
+    if (assignment.scopeType === RoleScopeType.GLOBAL || !assignment.scopeType) {
+      return true
+    }
+
+    if (assignment.scopeType === RoleScopeType.BRANCH) {
+      if (!scope.branchId) return true
+      return assignment.scopeId === scope.branchId
+    }
+
+    if (assignment.scopeType === RoleScopeType.WAREHOUSE) {
+      if (!scope.warehouseId) return true
+      return assignment.scopeId === scope.warehouseId
+    }
+
+    return true
+  }
+
+  private async getEffectivePermissions(
+    userId: string,
+    storeId: string,
+    scope?: PermissionScopeContext,
+  ): Promise<Set<string>> {
     const now = new Date()
 
-    // Load all role assignments for this user in this store
     const assignments = await this.assignmentRepo.find({
       where: { userId, storeId },
       relations: {
@@ -334,30 +429,70 @@ export class PermissionResolutionService {
       },
     })
 
-    // Filter out expired assignments
-    const activeAssignments = assignments.filter((a) => !a.expiresAt || new Date(a.expiresAt) > now)
+    const activeAssignments = assignments.filter(
+      (a) =>
+        (!a.expiresAt || new Date(a.expiresAt) > now) &&
+        this.assignmentMatchesScope(a, scope),
+    )
 
     if (activeAssignments.length === 0) return new Set()
 
-    // Collect all unique roleIds from active assignments
-    const roleIds = [...new Set(activeAssignments.map((a) => a.roleId))]
-
-    // Load all roles with their permissions in a single query
-    const roles = await this.roleRepo.find({
-      where: { id: In(roleIds) },
-      relations: {
-        permissions: true,
-      },
-    })
-
-    // Union all permission slugs
     const permSet = new Set<string>()
-    for (const role of roles) {
-      for (const perm of role.permissions ?? []) {
+    for (const assignment of activeAssignments) {
+      for (const perm of assignment.role?.permissions ?? []) {
         permSet.add(perm.code)
       }
     }
 
     return permSet
+  }
+
+  /**
+   * Features a user may access: store-enabled features that match at least one
+   * granted permission (includes mapped plan slugs, e.g. accounting → finance).
+   */
+  private deriveUserFeaturesEnabled(
+    permissions: string[],
+    storeFeaturesEnabled: Set<string>,
+  ): string[] {
+    const userFeatures = new Set<string>()
+    for (const p of permissions) {
+      const feat = p.split(':')[0]
+      const planFeat = getPlanFeature(feat)
+      if (storeFeaturesEnabled.has(feat)) {
+        userFeatures.add(feat)
+      }
+      if (storeFeaturesEnabled.has(planFeat)) {
+        userFeatures.add(planFeat)
+      }
+    }
+    return Array.from(userFeatures)
+  }
+
+  private collectFeatureSlugsFromPermissions(permissionSlugs: Iterable<string>): Set<string> {
+    const slugs = new Set<string>()
+    for (const code of permissionSlugs) {
+      const feat = code.split(':')[0]
+      if (!feat || isCoreFeature(feat)) continue
+      slugs.add(feat)
+      const planFeat = getPlanFeature(feat)
+      if (!isCoreFeature(planFeat)) {
+        slugs.add(planFeat)
+      }
+    }
+    return slugs
+  }
+
+  /** Union role-granted module features into the store feature context for this user. */
+  private mergeRoleGrantedFeatures(
+    permSet: Set<string>,
+    featuresEnabledSet: Set<string>,
+    overridesMap: Map<string, boolean>,
+  ): void {
+    for (const slug of this.collectFeatureSlugsFromPermissions(permSet)) {
+      if (overridesMap.get(slug) !== false) {
+        featuresEnabledSet.add(slug)
+      }
+    }
   }
 }

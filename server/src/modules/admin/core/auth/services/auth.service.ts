@@ -18,13 +18,18 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as crypto from 'crypto'
+import * as bcrypt from 'bcrypt'
 import { Not, Repository } from 'typeorm'
 import { UserEntity } from '../../user/entities/user.entity'
 import { sanitizeUser } from '@/common/utils/sanitize-user.util'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 import { SessionEntity } from '../entities/session.entity'
 
-import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
+import {
+  PermissionManifest,
+  PermissionResolutionService,
+} from '@/common/services/permission-resolution.service'
+import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
@@ -40,6 +45,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly staffInvitationService: StaffInvitationService,
     private readonly permissionResolutionService: PermissionResolutionService,
+    private readonly roleManagementService: RoleManagementService,
     private readonly notificationService: NotificationService,
     private readonly referralService: ReferralService,
     private readonly cacheService: CacheService,
@@ -154,22 +160,17 @@ export class AuthService {
     }
 
     let features: string[] = []
+    let permissionManifest = null
+
     if (user.role === UserRole.SUPER_ADMIN) {
-      features = ['*'] // Super admin has access to everything
+      features = ['*']
     } else if (storeId) {
-      const store = await this.storeService.findOneStores(storeId)
-      features = store?.subscriptionPlan?.features || []
+      const ctx = await this.resolveStaffPermissionContext(user, storeId)
+      permissionManifest = ctx.permissionManifest
+      features = ctx.features
     }
 
     const tokens = await this.getTokens(user, features, ipAddress, userAgent)
-
-    let permissionManifest = null
-    if (storeId) {
-      permissionManifest = await this.permissionResolutionService.resolvePermissionsManifest(
-        user.id,
-        storeId,
-      )
-    }
 
     // Trigger New Device Login Alert (Simulation)
     try {
@@ -196,9 +197,52 @@ export class AuthService {
     } as any
   }
 
-  async getMe(user: UserDto): Promise<UserDto> {
+  async getMe(user: UserDto): Promise<any> {
     this.logger.log(`${this.getMe.name} Service Called`)
-    return user
+    const liveUser = await this.userService.findUserById(user.id)
+    if (!liveUser || liveUser.status === UserStatus.BLOCKED) {
+      throw new UnauthorizedException('User not found or blocked')
+    }
+
+    let permissionManifest = null
+    let features: string[] = []
+
+    if (liveUser.role === UserRole.SUPER_ADMIN) {
+      features = ['*']
+    } else if (liveUser.storeId) {
+      const ctx = await this.resolveStaffPermissionContext(liveUser, liveUser.storeId)
+      permissionManifest = ctx.permissionManifest
+      features = ctx.features
+    }
+
+    return {
+      user: { ...sanitizeUser(liveUser), features } as any,
+      permissionManifest,
+    }
+  }
+
+  private async resolveStaffPermissionContext(
+    user: Pick<UserEntity, 'id' | 'role' | 'branchId' | 'warehouseId'>,
+    storeId: string,
+  ): Promise<{ permissionManifest: { featuresEnabled: string[]; permissions: string[] }; features: string[] }> {
+    await this.roleManagementService.ensureLegacyRoleAssignment(user.id, storeId, user.role, {
+      branchId: user.branchId,
+      warehouseId: user.warehouseId,
+    })
+    const permissionManifest = await this.permissionResolutionService.resolvePermissionsManifest(
+      user.id,
+      storeId,
+    )
+    const features =
+      permissionManifest.featuresEnabled.length > 0
+        ? permissionManifest.featuresEnabled
+        : (await this.storeService.findOneStores(storeId))?.subscriptionPlan?.features || []
+
+    this.logger.debug(
+      `Resolved manifest for user ${user.id}: ${permissionManifest.permissions.length} permissions, ${features.length} features`,
+    )
+
+    return { permissionManifest, features }
   }
 
   async forgotPassword(email: string, storeId: string): Promise<void> {
@@ -242,17 +286,6 @@ export class AuthService {
     const sessionId = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days matching refresh token default
 
-    // Save session in database
-    await this.sessionRepository.save({
-      id: sessionId,
-      userId: user.id,
-      storeId: user.storeId,
-      ipAddress,
-      userAgent,
-      expiresAt,
-      isActive: true,
-    })
-
     const payload = {
       username: user.username,
       storeId: user.storeId,
@@ -268,12 +301,24 @@ export class AuthService {
         expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES') || '15m',
       } as any),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_SECRET_KEY'),
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET_KEY') || this.configService.get<string>('JWT_SECRET_KEY'),
         expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES') || '7d',
       } as any),
     ])
 
-    await this.userService.setCurrentRefreshToken(refreshToken, user.id)
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
+
+    // Save session in database
+    await this.sessionRepository.save({
+      id: sessionId,
+      userId: user.id,
+      storeId: user.storeId,
+      ipAddress,
+      userAgent,
+      expiresAt,
+      isActive: true,
+      hashedRefreshToken,
+    })
 
     return {
       accessToken,
@@ -282,53 +327,70 @@ export class AuthService {
   }
 
   async refreshTokens(
-    userId: string,
     refreshToken: string,
     ipAddress?: string,
     userAgent?: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{
+    accessToken: string
+    refreshToken: string
+    permissionManifest: PermissionManifest | null
+  }> {
     this.logger.log(`${this.refreshTokens.name} Service Called`)
 
-    // Verify the refresh token's signature AND expiry before trusting it. The
-    // bcrypt match below only proves it equals the stored token; without this
-    // an expired refresh JWT would still be accepted until it is rotated out.
+    // Verify the refresh token's signature AND expiry before trusting it.
+    let payload: any
     try {
-      await this.jwtService.verifyAsync(refreshToken, {
-        secret: this.configService.get<string>('JWT_SECRET_KEY'),
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET_KEY') || this.configService.get<string>('JWT_SECRET_KEY'),
       })
     } catch {
       throw new UnauthorizedException('Access Denied')
     }
 
-    const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
-    if (!user) throw new UnauthorizedException('Access Denied')
+    const userId = payload?.sub
+    const sessionId = payload?.sessionId
+    if (!userId || !sessionId) {
+      throw new UnauthorizedException('Access Denied')
+    }
+
+    const session = await this.sessionRepository.findOne({ where: { id: sessionId, userId } })
+    if (!session || !session.isActive || new Date(session.expiresAt) < new Date()) {
+      throw new UnauthorizedException('Access Denied')
+    }
+
+    if (!session.hashedRefreshToken) {
+      throw new UnauthorizedException('Access Denied')
+    }
+
+    const isMatch = await bcrypt.compare(refreshToken, session.hashedRefreshToken)
+    if (!isMatch) {
+      // Refresh token reuse detected! Revoke all sessions for this user for security.
+      await this.sessionRepository.update({ userId }, { isActive: false })
+      throw new UnauthorizedException('Access Denied')
+    }
+
+    const user = await this.userService.getUser(userId)
+    if (!user || user.status === UserStatus.BLOCKED) {
+      throw new UnauthorizedException('Access Denied')
+    }
 
     let features: string[] = []
+    let permissionManifest = null
+
     if (user.role === UserRole.SUPER_ADMIN) {
       features = ['*']
     } else if (user.storeId) {
-      const store = await this.storeService.findOneStores(user.storeId)
-      features = store?.subscriptionPlan?.features || []
+      const ctx = await this.resolveStaffPermissionContext(user, user.storeId)
+      permissionManifest = ctx.permissionManifest
+      features = ctx.features
     }
 
-    // Invalidate old session from rotated token (DB + Redis cache)
-    let oldSessionId: string | null = null
-    try {
-      const decoded = this.jwtService.decode(refreshToken) as any
-      if (decoded && decoded.sessionId) {
-        oldSessionId = decoded.sessionId
-      }
-    } catch (e: any) {
-      this.logger.error(`Failed to decode refresh token: ${e.message}`)
-    }
-
-    if (oldSessionId) {
-      await this.sessionRepository.update({ id: oldSessionId }, { isActive: false })
-      await this.cacheService.delCache(`auth:session:${oldSessionId}`)
-    }
+    // Invalidate old session (DB + cache)
+    await this.sessionRepository.update({ id: sessionId }, { isActive: false })
+    await this.cacheService.delCache(`auth:session:${sessionId}`)
 
     const tokens = await this.getTokens(user, features, ipAddress, userAgent)
-    return tokens
+    return { ...tokens, permissionManifest }
   }
 
   async logout(userId: string, sessionId?: string): Promise<void> {

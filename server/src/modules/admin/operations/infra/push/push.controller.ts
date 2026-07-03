@@ -1,3 +1,4 @@
+import { Public } from '@/common/decorators/public.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Post, UseGuards } from '@nestjs/common'
@@ -13,6 +14,7 @@ export class PushController {
   constructor(private readonly pushService: PushService) {}
 
   @Post('register')
+  @Public()
   @ApiOperation({ summary: 'Register device for push notifications' })
   // @UseGuards(StoreGuard) - We might want to allow this public-facing API to use a store ID via header, same as other store APIs.
   async registerDevice(@Body() dto: RegisterDeviceDto, @RequestContext() ctx: RequestContextDto) {

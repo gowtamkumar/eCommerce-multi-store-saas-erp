@@ -1,4 +1,7 @@
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -28,6 +31,7 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Get()
+  @SkipPermissionCheck()
   @ApiOperation({ summary: 'Get all user notifications' })
   async getUserNotifications(
     @RequestContext() ctx: RequestContextDto,
@@ -64,6 +68,7 @@ export class NotificationController {
   }
 
   @Patch('read-all')
+  @SkipPermissionCheck()
   @ApiOperation({ summary: 'Mark all notifications as read' })
   async markAllAsRead(
     @RequestContext() ctx: RequestContextDto,
@@ -79,6 +84,7 @@ export class NotificationController {
   }
 
   @Patch(':id/read')
+  @SkipPermissionCheck()
   @ApiOperation({ summary: 'Mark specific notification as read' })
   async markAsRead(
     @Param('id') id: string,

@@ -4,6 +4,8 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Logger, Post, Query, Res, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { ConfigService } from '@nestjs/config'
@@ -28,6 +30,7 @@ export class SubscriptionBillingController {
   @UseGuards(JwtAuthGuard)
   @Get('addon-catalog')
   @PublicDuringExpiration()
+  @RequirePermissions(SystemPermissions.SETTINGS_BILLING)
   async getAddonCatalog(): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.addonCatalogService.findActive()
     return { success: true, statusCode: 200, message: 'Active addon catalog retrieved', data }
@@ -36,6 +39,7 @@ export class SubscriptionBillingController {
   @UseGuards(JwtAuthGuard)
   @Get('current')
   @PublicDuringExpiration()
+  @RequirePermissions(SystemPermissions.SETTINGS_BILLING)
   async getCurrentSubscription(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<CurrentSubscriptionResponseDto>> {
@@ -52,6 +56,7 @@ export class SubscriptionBillingController {
   @UseGuards(JwtAuthGuard)
   @Get('plans')
   @PublicDuringExpiration()
+  @RequirePermissions(SystemPermissions.SETTINGS_BILLING)
   async getAvailablePlans(): Promise<BaseApiSuccessResponse<SubscriptionPlanEntity[]>> {
     this.logger.verbose('called getAvailablePlans.')
     const data = await this.billingService.getAvailablePlans()
@@ -66,6 +71,7 @@ export class SubscriptionBillingController {
   @UseGuards(JwtAuthGuard)
   @Get('history')
   @PublicDuringExpiration()
+  @RequirePermissions(SystemPermissions.SETTINGS_BILLING)
   async getBillingHistory(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto[]>> {
@@ -82,6 +88,7 @@ export class SubscriptionBillingController {
   @UseGuards(JwtAuthGuard)
   @Post('initiate')
   @PublicDuringExpiration()
+  @RequirePermissions(SystemPermissions.SETTINGS_BILLING)
   @Audit({ entity: 'SubscriptionInvoice', action: 'INITIATE_PAYMENT' })
   async initiatePayment(
     @RequestContext() ctx: RequestContextDto,
@@ -236,6 +243,7 @@ export class SubscriptionBillingController {
   @UseGuards(JwtAuthGuard)
   @Post('purchase-addon')
   @PublicDuringExpiration()
+  @RequirePermissions(SystemPermissions.SETTINGS_BILLING)
   @Audit({ entity: 'SubscriptionInvoice', action: 'PURCHASE_ADDON' })
   async purchaseAddon(
     @RequestContext() ctx: RequestContextDto,

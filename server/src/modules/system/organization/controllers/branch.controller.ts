@@ -1,6 +1,8 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequirePermissions, RequireAnyPermissions } from '@/common/decorators/permissions.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import {
   Body,
@@ -27,6 +29,7 @@ export class BranchController {
 
   @Post()
   @RequireFeature('inventory')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createBranchDto: CreateBranchDto,
@@ -42,6 +45,7 @@ export class BranchController {
   }
 
   @Get()
+  @RequireAnyPermissions(SystemPermissions.INVENTORY_READ, SystemPermissions.SETTINGS_MANAGE)
   async findAll(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
     const result = await this.branchService.findAll(ctx)
     return {
@@ -53,6 +57,7 @@ export class BranchController {
   }
 
   @Get(':id')
+  @RequireAnyPermissions(SystemPermissions.INVENTORY_READ, SystemPermissions.SETTINGS_MANAGE)
   async findOne(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -68,6 +73,7 @@ export class BranchController {
 
   @Patch(':id')
   @RequireFeature('inventory')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async update(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -84,6 +90,7 @@ export class BranchController {
 
   @Delete(':id')
   @RequireFeature('inventory')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async remove(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

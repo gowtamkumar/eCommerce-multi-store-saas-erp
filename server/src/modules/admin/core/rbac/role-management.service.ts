@@ -6,6 +6,9 @@ import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/use
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { DEFAULT_ROLE_DEFINITIONS } from './default-role-definitions'
+import { getLegacyRbacRoleName } from './legacy-role-mapping'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
 import {
   BadRequestException,
   ForbiddenException,
@@ -169,6 +172,13 @@ export class RoleManagementService implements OnApplicationBootstrap {
 
     const saved = await this.roleRepo.save(role)
 
+    if (saved.permissions?.length) {
+      await this.permissionResolutionService.ensureStoreFeaturesForPermissionSlugs(
+        storeId,
+        saved.permissions.map((p) => p.code),
+      )
+    }
+
     await this.auditLogService.logRoleCreated(
       storeId,
       actorId,
@@ -210,6 +220,13 @@ export class RoleManagementService implements OnApplicationBootstrap {
     }
 
     const saved = await this.roleRepo.save(role)
+
+    if (saved.permissions?.length) {
+      await this.permissionResolutionService.ensureStoreFeaturesForPermissionSlugs(
+        storeId,
+        saved.permissions.map((p) => p.code),
+      )
+    }
 
     const after = {
       name: saved.name,
@@ -269,6 +286,63 @@ export class RoleManagementService implements OnApplicationBootstrap {
     permissionCodes: string[],
   ): Promise<RoleEntity> {
     return this.updateRole(roleId, storeId, actorId, actorName, { permissionCodes })
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Legacy role → RBAC bridge
+  // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * When a staff user has a legacy `users.role` but no RBAC assignment
+   * (common for invites that omitted roleId), auto-assign the matching default role.
+   */
+  async ensureLegacyRoleAssignment(
+    userId: string,
+    storeId: string,
+    legacyRole: string,
+    scope?: { branchId?: string | null; warehouseId?: string | null },
+  ): Promise<boolean> {
+    const normalizedRole = (legacyRole || '').toLowerCase()
+    if (!normalizedRole || normalizedRole === UserRole.SUPER_ADMIN || normalizedRole === UserRole.USER) {
+      return false
+    }
+
+    const existingCount = await this.assignmentRepo.count({ where: { userId, storeId } })
+    if (existingCount > 0) return false
+
+    const roleName = getLegacyRbacRoleName(normalizedRole)
+    if (!roleName) return false
+
+    const role = await this.roleRepo.findOne({ where: { name: roleName, storeId } })
+    if (!role) {
+      this.logger.warn(
+        `Legacy RBAC bridge: role "${roleName}" not found for store ${storeId} (user ${userId})`,
+      )
+      return false
+    }
+
+    const scopeType = scope?.branchId
+      ? RoleScopeType.BRANCH
+      : scope?.warehouseId
+        ? RoleScopeType.WAREHOUSE
+        : RoleScopeType.GLOBAL
+
+    await this.assignmentRepo.save(
+      this.assignmentRepo.create({
+        userId,
+        roleId: role.id,
+        storeId,
+        scopeType,
+        scopeId: scope?.branchId || scope?.warehouseId || null,
+        assignedBy: null,
+      }),
+    )
+
+    await this.permissionResolutionService.invalidateUserPermissionCache(userId, storeId)
+    this.logger.log(
+      `Assigned legacy RBAC role "${roleName}" to user ${userId} in store ${storeId}`,
+    )
+    return true
   }
 
   // ─────────────────────────────────────────────────────────────────

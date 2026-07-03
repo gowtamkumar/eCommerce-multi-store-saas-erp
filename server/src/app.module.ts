@@ -2,8 +2,10 @@ import { GlobalExceptionFilter } from '@/common/exception/exception-filter'
 import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import { MaintenanceGuard } from '@/common/guards/maintenance.guard'
 import { PermissionsGuard } from '@/common/guards/permissions.guard'
+import { StaffGuard } from '@/common/guards/staff.guard'
 import { StoreIsolationGuard } from '@/common/guards/store-isolation.guard'
 import { StoreStatusGuard } from '@/common/guards/store-status.guard'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { AuditLogInterceptor } from '@/common/interceptors/audit-log.interceptor'
 import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
@@ -90,6 +92,10 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     },
     {
       provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
       useClass: StoreIsolationGuard,
     },
     {
@@ -99,6 +105,10 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     {
       provide: APP_GUARD,
       useClass: BranchScopeGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: StaffGuard,
     },
     {
       provide: APP_GUARD,

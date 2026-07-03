@@ -1,3 +1,5 @@
+import { CustomerRoute } from '@/common/decorators/customer-route.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { Controller, Get, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -12,6 +14,8 @@ import { UnauthorizedException } from '@nestjs/common'
  *
  * Endpoint: GET /api/v1/store/wallet/me
  */
+@CustomerRoute()
+@SkipPermissionCheck()
 @UseGuards(JwtAuthGuard)
 @Controller('store/wallet')
 export class StoreWalletController {

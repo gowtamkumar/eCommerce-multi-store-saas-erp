@@ -16,6 +16,8 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { Public } from '@/common/decorators/public.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 
 @ApiTags('Chat Support')
 @Controller('chat')
@@ -76,6 +78,7 @@ export class ChatController {
    */
   @Get('conversations')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CRM_READ)
   @ApiOperation({ summary: 'Get list of conversations for store dashboard' })
   async getConversations(
     @RequestContext() ctx: RequestContextDto,
@@ -107,6 +110,7 @@ export class ChatController {
    */
   @Get('conversations/:id/messages')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CRM_READ)
   @ApiOperation({ summary: 'Get messages for a conversation' })
   async getConversationMessages(
     @RequestContext() ctx: RequestContextDto,
@@ -137,6 +141,7 @@ export class ChatController {
    */
   @Post('conversations/:id/read')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CRM_WRITE)
   @ApiOperation({ summary: 'Mark conversation as read by Agent' })
   async markAsReadByAgent(
     @RequestContext() ctx: RequestContextDto,

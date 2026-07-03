@@ -121,6 +121,7 @@ export const authOptions: NextAuthOptions = {
             const user = data.data.user;
             user.accessToken = data.data.accessToken;
             user.refreshToken = data.data.refreshToken;
+            user.permissionManifest = data.data.permissionManifest ?? null;
             // Set expiry to 15 minutes from now (in seconds)
             user.accessTokenExpires = Math.floor(Date.now() / 1000) + 900;
             return user;
@@ -157,11 +158,18 @@ export const authOptions: NextAuthOptions = {
           refreshToken: user.refreshToken,
           accessTokenExpires: user.accessTokenExpires,
           features: user.features || [],
+          permissionManifest: user.permissionManifest ?? null,
         };
       }
 
       if (trigger === "update" && session) {
-        return { ...token, ...session };
+        return {
+          ...token,
+          ...session,
+          features: session.features ?? token.features ?? [],
+          permissionManifest:
+            session.permissionManifest ?? token.permissionManifest ?? null,
+        };
       }
       // If token is not expired, return it
       if (
@@ -185,6 +193,7 @@ export const authOptions: NextAuthOptions = {
         session.user.accessToken = token.accessToken;
         session.user.error = token.error;
         session.user.features = token.features || [];
+        session.user.permissionManifest = token.permissionManifest ?? null;
       }
       return session;
     },
@@ -251,12 +260,31 @@ async function refreshAccessToken(token: any) {
       const accessToken = refreshedTokens.data.accessToken as string;
       const payload = decodeJwtPayload<{ features?: string[] }>(accessToken);
 
+      let permissionManifest = token.permissionManifest ?? null;
+      let features = payload?.features ?? token.features ?? [];
+      try {
+        const meRes = await fetch(`${nestApiUrl}/auth/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (meRes.ok) {
+          const meBody = await meRes.json();
+          permissionManifest = meBody?.data?.permissionManifest ?? permissionManifest;
+          features =
+            meBody?.data?.user?.features ??
+            permissionManifest?.featuresEnabled ??
+            features;
+        }
+      } catch {
+        /* keep cached manifest on refresh failure */
+      }
+
       return {
         ...token,
         accessToken,
         refreshToken: refreshedTokens.data.refreshToken ?? token.refreshToken,
         accessTokenExpires: Math.floor(Date.now() / 1000) + 900,
-        features: payload?.features ?? token.features ?? [],
+        features,
+        permissionManifest,
         error: undefined,
       };
     } catch (error) {

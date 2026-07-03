@@ -17,16 +17,31 @@ const createContext = (user: any) =>
     }),
   }) as any
 
-/**
- * resolutionService mock now uses resolvePermissionsFromManifest() which returns
- * { denied: string | null, manifest: PermissionManifest }.
- */
-const createGuard = (requiredPermissions: string[], deniedPerm: string | null = null) => {
+const createGuard = (
+  options: {
+    requiredPermissions?: string[]
+    anyPermissions?: string[]
+    skipPermissionCheck?: boolean
+    deniedPerm?: string | null
+  } = {},
+) => {
+  const {
+    requiredPermissions = [],
+    anyPermissions = [],
+    skipPermissionCheck = false,
+    deniedPerm = null,
+  } = options
+
   const reflector = {
     getAllAndOverride: jest
       .fn()
-      .mockReturnValueOnce(false) // isPublic
-      .mockReturnValueOnce(requiredPermissions), // requiredPermissions
+      .mockImplementation((key: string) => {
+        if (key === 'isPublic') return false
+        if (key === 'skipPermissionCheck') return skipPermissionCheck
+        if (key === 'permissions') return requiredPermissions
+        if (key === 'anyPermissions') return anyPermissions
+        return undefined
+      }),
   } as unknown as Reflector
 
   const resolutionService = {
@@ -41,8 +56,6 @@ const createGuard = (requiredPermissions: string[], deniedPerm: string | null = 
 
   const guard = new PermissionsGuard(
     reflector,
-    {} as any,
-    {} as any,
     resolutionService as any,
     auditLogService as any,
   )
@@ -52,7 +65,7 @@ const createGuard = (requiredPermissions: string[], deniedPerm: string | null = 
 
 describe('PermissionsGuard', () => {
   it('bypasses dynamic permissions for super admins', async () => {
-    const { guard, resolutionService } = createGuard(['users:read'])
+    const { guard, resolutionService } = createGuard({ requiredPermissions: ['users:read'] })
 
     await expect(
       guard.canActivate(createContext({ id: 'user-1', role: UserRole.SUPER_ADMIN })),
@@ -61,7 +74,10 @@ describe('PermissionsGuard', () => {
   })
 
   it('allows store admin with required permission', async () => {
-    const { guard, resolutionService } = createGuard(['users:read'], null /* no denied perm */)
+    const { guard, resolutionService } = createGuard({
+      requiredPermissions: ['users:read'],
+      deniedPerm: null,
+    })
 
     await expect(
       guard.canActivate(
@@ -73,14 +89,15 @@ describe('PermissionsGuard', () => {
       'user-1',
       'store-1',
       ['users:read'],
+      expect.objectContaining({ branchId: undefined, warehouseId: undefined }),
     )
   })
 
   it('denies store admin without required permission and logs the failure', async () => {
-    const { guard, resolutionService, auditLogService } = createGuard(
-      ['users:read'],
-      'users:read', // denied
-    )
+    const { guard, resolutionService, auditLogService } = createGuard({
+      requiredPermissions: ['users:read'],
+      deniedPerm: 'users:read',
+    })
 
     await expect(
       guard.canActivate(
@@ -88,11 +105,28 @@ describe('PermissionsGuard', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException)
 
-    expect(resolutionService.resolvePermissionsFromManifest).toHaveBeenCalledWith(
-      'user-1',
-      'store-1',
-      ['users:read'],
-    )
+    expect(resolutionService.resolvePermissionsFromManifest).toHaveBeenCalled()
     expect(auditLogService.logPermissionCheckFailed).toHaveBeenCalled()
+  })
+
+  it('denies routes without explicit permission metadata', async () => {
+    const { guard } = createGuard()
+
+    await expect(
+      guard.canActivate(
+        createContext({ id: 'user-1', role: UserRole.ADMIN, storeId: 'store-1' }),
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException)
+  })
+
+  it('allows routes marked with skip permission check', async () => {
+    const { guard, resolutionService } = createGuard({ skipPermissionCheck: true })
+
+    await expect(
+      guard.canActivate(
+        createContext({ id: 'user-1', role: UserRole.ADMIN, storeId: 'store-1' }),
+      ),
+    ).resolves.toBe(true)
+    expect(resolutionService.resolvePermissionsFromManifest).not.toHaveBeenCalled()
   })
 })

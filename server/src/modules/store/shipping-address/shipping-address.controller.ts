@@ -1,3 +1,5 @@
+import { CustomerRoute } from '@/common/decorators/customer-route.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -18,6 +20,8 @@ import { ShippingAddressResponseDto } from './dto/shipping-address-response.dto'
 import { UpdateShippingAddressDto } from './dto/update-shipping-address.dto'
 import { ShippingAddressService } from './shipping-address.service'
 
+@CustomerRoute()
+@SkipPermissionCheck()
 @UseGuards(JwtAuthGuard)
 @Controller('store/shipping-address')
 export class ShippingAddressController {

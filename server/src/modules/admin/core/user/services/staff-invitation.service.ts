@@ -17,6 +17,7 @@ import { UserRoleAssignmentEntity } from '../entities/user-role-assignment.entit
 import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
 import { sanitizeInvitation, sanitizeUser } from '@/common/utils/sanitize-user.util'
 import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
 
 @Injectable()
 export class StaffInvitationService {
@@ -30,6 +31,7 @@ export class StaffInvitationService {
     private readonly notificationService: NotificationService,
     @InjectRepository(UserRoleAssignmentEntity)
     private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
+    private readonly roleManagementService: RoleManagementService,
   ) {}
 
   async inviteStaff(
@@ -171,6 +173,16 @@ export class StaffInvitationService {
         assignedBy: invitation.invitedBy || 'system',
       })
       await this.assignmentRepo.save(assignment)
+    } else {
+      await this.roleManagementService.ensureLegacyRoleAssignment(
+        user.id,
+        invitation.storeId,
+        invitation.role,
+        {
+          branchId: invitation.branchId,
+          warehouseId: invitation.warehouseId,
+        },
+      )
     }
 
     await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Accepted })

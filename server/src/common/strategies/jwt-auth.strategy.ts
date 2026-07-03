@@ -10,6 +10,7 @@ import { UserService } from 'src/modules/admin/core/user/services/user.service'
 import { SessionEntity } from 'src/modules/admin/core/auth/entities/session.entity'
 import { sanitizeUser } from 'src/common/utils/sanitize-user.util'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { UserStatus } from '@/common/enums/user/user-status.enum'
 
 /**
  * JWT validation strategy — hot path for every authenticated request.
@@ -74,6 +75,11 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
       if (!user) {
         this.logger.error(`[JwtStrategy] User not found for ID: ${userId}`)
         throw new UnauthorizedException('Token not valid - User not found')
+      }
+
+      if (user.status === UserStatus.BLOCKED) {
+        this.logger.warn(`[JwtStrategy] Blocked user access attempt denied for ID: ${userId}`)
+        throw new UnauthorizedException('User is blocked. Please contact support.')
       }
 
       return { ...sanitizeUser(user), sessionId } as any

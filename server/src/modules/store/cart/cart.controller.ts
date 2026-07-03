@@ -1,3 +1,5 @@
+import { CustomerRoute } from '@/common/decorators/customer-route.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -18,6 +20,8 @@ import { CartResponseDto } from './dto/cart-response.dto'
 import { CreateCartItemDto } from './dto/create-cart-item.dto'
 import { UpdateCartItemDto } from './dto/update-cart-item.dto'
 
+@CustomerRoute()
+@SkipPermissionCheck()
 @UseGuards(JwtAuthGuard)
 @Controller('cart')
 export class CartController {

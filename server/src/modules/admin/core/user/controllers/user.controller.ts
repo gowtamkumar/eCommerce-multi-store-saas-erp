@@ -1,3 +1,4 @@
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
@@ -64,6 +65,7 @@ export class UserController {
   }
 
   @Get('/profile')
+  @SkipPermissionCheck()
   async getProfile(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<UserResponseDto & { sessionId?: string }>> {
@@ -194,6 +196,7 @@ export class UserController {
   }
 
   @Patch('/profile')
+  @SkipPermissionCheck()
   @Audit({ entity: 'User', action: 'UPDATE_PROFILE' })
   async updateProfile(
     @RequestContext() ctx: RequestContextDto,
@@ -217,6 +220,7 @@ export class UserController {
   }
 
   @Patch('/profile/password')
+  @SkipPermissionCheck()
   @Audit({ entity: 'User', action: 'UPDATE_PROFILE_PASSWORD' })
   async updateProfilePassword(
     @RequestContext() ctx: RequestContextDto,

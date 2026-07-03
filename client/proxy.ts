@@ -1,6 +1,7 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { UserRole } from "./lib/enums/user-role.enum";
+import { isStaffRole } from "./lib/permissions";
 
 export default withAuth(
   function middleware(req) {
@@ -26,19 +27,8 @@ export default withAuth(
       req.method
     );
 
-    // Admin pages - require admin role
-    const staffRoles = [
-      UserRole.ADMIN,
-      UserRole.STORE_MANAGER,
-      UserRole.OPERATOR,
-      UserRole.SUPPORT,
-      UserRole.MARKETING,
-      UserRole.SUPER_ADMIN,
-      UserRole.EMPLOYEE,
-    ];
-    console.log("Middleware: Checking admin route:", isAdminRoute, "Token role:", token?.role, "Token exists:", !!token);
-    if (isAdminRoute && !staffRoles.includes(token?.role as UserRole)) {
-      console.warn("Middleware redirecting to login. Role not allowed:", token?.role);
+    // Admin pages — any authenticated staff (RBAC manifest gates individual routes in UI)
+    if (isAdminRoute && !isStaffRole(token?.role as string | undefined)) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 

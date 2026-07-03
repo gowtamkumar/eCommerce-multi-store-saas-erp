@@ -10,6 +10,8 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { CustomerRoute } from '@/common/decorators/customer-route.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { Public } from '@/common/decorators/public.decorator'
 
 @Controller('payment')
@@ -22,6 +24,8 @@ export class PaymentActionController {
   @Post('init')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
   @RequireFeature('orders')
+  @CustomerRoute()
+  @SkipPermissionCheck()
   @Audit({ entity: 'Payment', action: 'INIT' })
   async init(
     @RequestContext() ctx: RequestContextDto,

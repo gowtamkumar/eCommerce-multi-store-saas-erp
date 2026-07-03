@@ -1,3 +1,4 @@
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { Controller, Get, Patch, Param, Body, UseGuards, ForbiddenException } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
@@ -8,6 +9,7 @@ import { SupplierService } from './supplier.service'
 import { PurchaseOrderService } from '../purchase/services/purchase-order.service'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 
+@SkipPermissionCheck()
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
 @Controller('supplier-portal')
 export class SupplierPortalController {
