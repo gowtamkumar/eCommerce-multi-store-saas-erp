@@ -162,12 +162,12 @@ export class AuthService {
     let features: string[] = []
     let permissionManifest = null
 
-    if (user.role === UserRole.SUPER_ADMIN) {
-      features = ['*']
-    } else if (storeId) {
+    if (storeId) {
       const ctx = await this.resolveStaffPermissionContext(user, storeId)
       permissionManifest = ctx.permissionManifest
-      features = ctx.features
+      features = user.role === UserRole.SUPER_ADMIN ? (ctx.features.length ? ctx.features : ['*']) : ctx.features
+    } else if (user.role === UserRole.SUPER_ADMIN) {
+      features = ['*']
     }
 
     const tokens = await this.getTokens(user, features, ipAddress, userAgent)
@@ -207,12 +207,13 @@ export class AuthService {
     let permissionManifest = null
     let features: string[] = []
 
-    if (liveUser.role === UserRole.SUPER_ADMIN) {
-      features = ['*']
-    } else if (liveUser.storeId) {
-      const ctx = await this.resolveStaffPermissionContext(liveUser, liveUser.storeId)
+    const targetStoreId = liveUser.storeId || (user as any).storeId
+    if (targetStoreId) {
+      const ctx = await this.resolveStaffPermissionContext(liveUser, targetStoreId)
       permissionManifest = ctx.permissionManifest
-      features = ctx.features
+      features = liveUser.role === UserRole.SUPER_ADMIN ? (ctx.features.length ? ctx.features : ['*']) : ctx.features
+    } else if (liveUser.role === UserRole.SUPER_ADMIN) {
+      features = ['*']
     }
 
     return {

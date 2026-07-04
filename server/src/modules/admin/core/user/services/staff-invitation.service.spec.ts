@@ -7,6 +7,7 @@ import { UserRepository } from '../repositories/user.repository'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { UserRoleAssignmentEntity } from '../entities/user-role-assignment.entity'
 import { StaffInvitationService } from './staff-invitation.service'
+import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
 
 describe('StaffInvitationService', () => {
   let service: StaffInvitationService
@@ -61,6 +62,10 @@ describe('StaffInvitationService', () => {
               getOne: jest.fn().mockResolvedValue(null),
             })),
           },
+        },
+        {
+          provide: RoleManagementService,
+          useValue: {},
         },
       ],
     }).compile()

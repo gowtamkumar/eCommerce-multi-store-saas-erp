@@ -240,7 +240,10 @@ export class PermissionResolutionService {
         },
       },
     })
-    const planFeatures: string[] = store?.subscriptionPlan?.features ?? []
+    const planFeatures: string[] =
+      store?.activeSubscription?.subscriptionPlan?.features ??
+      store?.subscriptionPlan?.features ??
+      []
 
     // Merge with store-specific overrides
     const overrides = await this.storeFeatureRepo.find({ where: { storeId } })
@@ -248,15 +251,9 @@ export class PermissionResolutionService {
 
     const featuresEnabledSet = new Set<string>()
 
-    // Start with plan features, apply overrides
+    // Features come strictly from plan features, respecting explicit store disable overrides
     for (const f of planFeatures) {
       if (overridesMap.get(f) !== false) {
-        featuresEnabledSet.add(f)
-      }
-    }
-    // Add any explicitly enabled overrides not in the plan (admin bonus features)
-    for (const [f, isEnabled] of overridesMap.entries()) {
-      if (isEnabled) {
         featuresEnabledSet.add(f)
       }
     }
@@ -267,8 +264,6 @@ export class PermissionResolutionService {
         featuresEnabledSet.add(coreFeature)
       }
     }
-
-    const featuresEnabled = Array.from(featuresEnabledSet)
 
     // ── Build permissions list ────────────────────────────────────────
     const effectivePermissions = await this.getEffectivePermissions(userId, storeId, scope)
@@ -293,22 +288,17 @@ export class PermissionResolutionService {
       }
     }
 
-    // RBAC role permissions enable store features (for SubscriptionGuard + manifest).
-    // Fixes staff with e.g. "hrm manager" when the base plan omits `hrm`.
-    await this.ensureStoreFeaturesForPermissionSlugs(storeId, permSet, overridesMap)
-    this.mergeRoleGrantedFeatures(permSet, featuresEnabledSet, overridesMap)
-
-    // Include role permissions unless the feature is explicitly disabled for the store
+    // Include permissions ONLY if the feature is enabled for this store's subscription plan / overrides
     const permissions = Array.from(permSet).filter((p) => {
       const feat = p.split(':')[0]
       const planFeat = getPlanFeature(feat)
+      if (isCoreFeature(feat) || isCoreFeature(planFeat)) return true
       if (overridesMap.get(feat) === false) return false
       if (overridesMap.get(planFeat) === false) return false
-      return true
+      return featuresEnabledSet.has(feat) || featuresEnabledSet.has(planFeat)
     })
 
-    // User-effective features: store plan features the user can access via role permissions.
-    // Used by login/me, JWT, and UI sidebar (same source as backend PermissionsGuard).
+    // User-effective features: store plan features the user can access via granted permissions.
     const userFeaturesEnabled = this.deriveUserFeaturesEnabled(
       permissions,
       featuresEnabledSet,

@@ -172,13 +172,6 @@ export class RoleManagementService implements OnApplicationBootstrap {
 
     const saved = await this.roleRepo.save(role)
 
-    if (saved.permissions?.length) {
-      await this.permissionResolutionService.ensureStoreFeaturesForPermissionSlugs(
-        storeId,
-        saved.permissions.map((p) => p.code),
-      )
-    }
-
     await this.auditLogService.logRoleCreated(
       storeId,
       actorId,
@@ -220,13 +213,6 @@ export class RoleManagementService implements OnApplicationBootstrap {
     }
 
     const saved = await this.roleRepo.save(role)
-
-    if (saved.permissions?.length) {
-      await this.permissionResolutionService.ensureStoreFeaturesForPermissionSlugs(
-        storeId,
-        saved.permissions.map((p) => p.code),
-      )
-    }
 
     const after = {
       name: saved.name,

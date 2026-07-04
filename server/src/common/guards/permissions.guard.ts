@@ -7,6 +7,8 @@ import { UserRole } from '../enums/user/user-role.enum'
 import { PermissionResolutionService } from '../services/permission-resolution.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 
+import { isCoreFeature, getPlanFeature } from '../constants/feature-mapping'
+
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   constructor(
@@ -47,26 +49,50 @@ export class PermissionsGuard implements CanActivate {
     const userRole = (user.role || '').toLowerCase()
     const isGlobalAdmin = userRole === UserRole.SUPER_ADMIN
 
-    if (isGlobalAdmin) return true
+    const storeId = user.storeId || (request.headers['x-store-id'] as string)
+    if (isGlobalAdmin && !storeId) return true
 
     const hasRequired =
       (requiredPermissions && requiredPermissions.length > 0) ||
       (anyPermissions && anyPermissions.length > 0)
 
     if (!hasRequired) {
+      if (isGlobalAdmin) return true
       throw new ForbiddenException(
         'Access denied. This route requires explicit permission configuration.',
       )
     }
 
-    const storeId = user.storeId
     if (!storeId) {
+      if (isGlobalAdmin) return true
       throw new ForbiddenException('User is not associated with a store.')
     }
 
     const branchId = (request.headers['x-branch-id'] as string) || user.branchId || undefined
     const warehouseId = request.headers['x-warehouse-id'] as string | undefined
     const scope = { branchId, warehouseId }
+
+    if (isGlobalAdmin) {
+      // Super Admin bypasses RBAC roles, but MUST NOT bypass store subscription plan features!
+      const checkPerm = (requiredPermissions && requiredPermissions[0]) || (anyPermissions && anyPermissions[0])
+      if (checkPerm) {
+        const { manifest } = await this.resolutionService.resolvePermissionsFromManifest(
+          user.id,
+          storeId,
+          [checkPerm],
+          scope,
+        )
+        const feat = checkPerm.split(':')[0]
+        const planFeat = getPlanFeature(feat)
+        if (!isCoreFeature(feat) && !isCoreFeature(planFeat)) {
+          const isEnabled = manifest.featuresEnabled.includes(feat) || manifest.featuresEnabled.includes(planFeat)
+          if (!isEnabled) {
+            throw new ForbiddenException(`Feature "${feat}" is not included in this store's subscription plan.`)
+          }
+        }
+      }
+      return true
+    }
 
     if (requiredPermissions?.length) {
       const { denied } = await this.resolutionService.resolvePermissionsFromManifest(

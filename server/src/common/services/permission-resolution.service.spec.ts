@@ -138,12 +138,14 @@ describe('PermissionResolutionService', () => {
   })
 
   describe('resolvePermissionsManifest', () => {
-    it('includes hrm role permissions when plan lacks hrm (RBAC enables store feature)', async () => {
+    it('filters out hrm role permissions when plan lacks hrm and no override exists', async () => {
       cacheService.getCache.mockResolvedValue(null)
 
       storeRepo.findOne.mockResolvedValue({
-        subscriptionPlan: {
-          features: ['catalog', 'orders'],
+        activeSubscription: {
+          subscriptionPlan: {
+            features: ['catalog', 'orders'],
+          },
         },
       })
 
@@ -166,18 +168,19 @@ describe('PermissionResolutionService', () => {
 
       const manifest = await service.resolvePermissionsManifest('user-1', 'store-1')
 
-      expect(manifest.permissions).toContain('hrm:manage-employees')
-      expect(manifest.permissions).toContain('hrm:view-attendance-report')
-      expect(manifest.featuresEnabled).toContain('hrm')
-      expect(storeFeatureRepo.save).toHaveBeenCalled()
+      expect(manifest.permissions).not.toContain('hrm:manage-employees')
+      expect(manifest.permissions).not.toContain('hrm:view-attendance-report')
+      expect(manifest.featuresEnabled).not.toContain('hrm')
     })
 
-    it('filters hrm permissions when store plan lacks hrm, and exposes hrm in featuresEnabled when enabled', async () => {
+    it('includes hrm permissions when store plan has hrm enabled', async () => {
       cacheService.getCache.mockResolvedValue(null)
 
       storeRepo.findOne.mockResolvedValue({
-        subscriptionPlan: {
-          features: ['hrm'],
+        activeSubscription: {
+          subscriptionPlan: {
+            features: ['hrm'],
+          },
         },
       })
 
@@ -205,12 +208,14 @@ describe('PermissionResolutionService', () => {
       expect(manifest.featuresEnabled).not.toContain('catalog')
     })
 
-    it('includes accounting permissions when finance is on plan; role-granted hrm when in role', async () => {
+    it('includes accounting permissions when finance is on plan, but strips hrm when hrm is not on plan', async () => {
       cacheService.getCache.mockResolvedValue(null)
 
       storeRepo.findOne.mockResolvedValue({
-        subscriptionPlan: {
-          features: ['finance'],
+        activeSubscription: {
+          subscriptionPlan: {
+            features: ['finance'],
+          },
         },
       })
 
@@ -231,9 +236,9 @@ describe('PermissionResolutionService', () => {
       const manifest = await service.resolvePermissionsManifest('user-1', 'store-1')
 
       expect(manifest.permissions).toContain('accounting:read')
-      expect(manifest.permissions).toContain('hrm:view-attendance-report')
+      expect(manifest.permissions).not.toContain('hrm:view-attendance-report')
       expect(manifest.featuresEnabled).toContain('finance')
-      expect(manifest.featuresEnabled).toContain('hrm')
+      expect(manifest.featuresEnabled).not.toContain('hrm')
     })
   })
 })

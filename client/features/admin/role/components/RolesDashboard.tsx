@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { Shield, Plus, Key, Edit, Trash2, Check, Loader2 } from 'lucide-react';
+import { Check, Edit, Key, Loader2, Plus, Shield, Trash2 } from 'lucide-react';
 import { useRolesDashboard } from '../hooks/useRolesDashboard';
 import RoleFormModal from './RoleFormModal';
 
@@ -18,6 +17,9 @@ export default function RolesDashboard() {
         handleOpenEdit,
         handleDelete,
     } = useRolesDashboard();
+
+    console.log("roles", roles);
+    console.log("groupedPermissions", groupedPermissions);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">

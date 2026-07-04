@@ -15,7 +15,7 @@ export class SubscriptionGuard implements CanActivate {
     private readonly reflector: Reflector,
     @InjectRepository(StoreFeatureEntity)
     private readonly storeFeatureRepo: Repository<StoreFeatureEntity>,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // 0. Bypass subscription check for public endpoints
@@ -70,12 +70,7 @@ export class SubscriptionGuard implements CanActivate {
         })
       }
 
-      // If explicitly enabled in DB, allow access
-      if (featureDb && featureDb.isEnabled) {
-        return true
-      }
-
-      // 4. Fallback check: verify if plan has the feature
+      // Fallback check: verify if plan has the feature
       const store = await this.storeService.findOneStores(storeId)
       if (!store) {
         throw new ForbiddenException('Store not found')
@@ -83,7 +78,7 @@ export class SubscriptionGuard implements CanActivate {
 
       const planFeatures = store.subscriptionPlan?.features || []
 
-      // Check if plan features contains featureSlug or requiredFeature (fallback)
+      // Check if plan features contains featureSlug or requiredFeature
       const hasPlanAccess =
         planFeatures.includes(featureSlug) || planFeatures.includes(requiredFeature)
 

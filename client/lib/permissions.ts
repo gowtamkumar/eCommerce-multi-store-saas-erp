@@ -54,6 +54,19 @@ export function getEffectiveFeatures(
   return []
 }
 
+/** Granted RBAC slugs from login `permissionManifest`. */
+export function getGrantedPermissions(
+  manifest: PermissionManifest | null | undefined,
+): string[] {
+  return manifest?.permissions ?? []
+}
+
+export function getGrantedFeatures(
+  manifest: PermissionManifest | null | undefined,
+): string[] {
+  return manifest?.featuresEnabled ?? []
+}
+
 export function resolveNavItemPermission(item: AdminNavItem): string | string[] | null {
   if (item.permissions?.length) return item.permissions
   if (item.permission) return item.permission
@@ -83,17 +96,20 @@ export function canAccessNavItem(
   item: AdminNavItem,
   options: { isSuperAdmin: boolean; isFullAccess: boolean },
 ): boolean {
-  if (options.isSuperAdmin || options.isFullAccess) return true
+  const itemFeature = resolveNavItemFeature(item)
+  if (!hasFeatureInManifest(manifest, itemFeature)) return false
 
   const required = resolveNavItemPermission(item)
   if (!required) return true
 
   const slugs = Array.isArray(required) ? required : [required]
   const featureOk = slugs.some((slug) => {
-    const itemFeature = resolveNavItemFeature({ ...item, permission: slug })
-    return hasFeatureInManifest(manifest, itemFeature)
+    const feature = resolveNavItemFeature({ ...item, permission: slug })
+    return hasFeatureInManifest(manifest, feature)
   })
   if (!featureOk) return false
+
+  if (options.isSuperAdmin || options.isFullAccess) return true
 
   if (Array.isArray(required)) return hasAnyPermission(manifest, required)
   return hasPermission(manifest, required)
@@ -131,29 +147,11 @@ export function getAllNavRoutePermissions(): Array<{
   return items
 }
 
-export function getRouteRequiredPermission(pathname: string): string | null {
-  if (pathname === '/admin' || pathname === '/admin/notifications') return null
-
-  const routes = getAllNavRoutePermissions().sort((a, b) => b.href.length - a.href.length)
-
-  for (const route of routes) {
-    if (pathname === route.href || pathname.startsWith(`${route.href}/`)) {
-      const required = resolveNavItemPermission(route)
-      if (!required) return null
-      if (Array.isArray(required)) return required[0]
-      return required
-    }
-  }
-  return null
-}
-
 export function canAccessRoute(
   pathname: string,
   manifest: PermissionManifest | null | undefined,
   options: { isSuperAdmin: boolean; isFullAccess: boolean },
 ): boolean {
-  if (options.isSuperAdmin || options.isFullAccess) return true
-
   const routes = getAllNavRoutePermissions().sort((a, b) => b.href.length - a.href.length)
 
   for (const route of routes) {
@@ -170,7 +168,7 @@ export function getFirstAccessibleAdminRoute(
   manifest: PermissionManifest | null | undefined,
   options: { isSuperAdmin: boolean; isFullAccess: boolean },
 ): string {
-  if (options.isSuperAdmin || options.isFullAccess) return '/admin'
+  if (options.isSuperAdmin) return '/admin'
 
   const routes = getAllNavRoutePermissions()
 
@@ -195,10 +193,3 @@ export function getFirstAccessibleAdminRoute(
 
   return '/admin'
 }
-
-export {
-  getGrantedFeatures,
-  getGrantedPermissions,
-  hasAnyGrantedPermission,
-  hasGrantedPermission,
-} from '@/lib/system-permissions'

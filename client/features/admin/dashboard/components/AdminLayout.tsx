@@ -13,7 +13,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Search, Shield, Star, X } from 
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ComponentType, useCallback, useEffect, useMemo, useState } from 'react';
+import { ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdminBreadcrumbs from './AdminBreadcrumbs';
 import AdminTopBar from './AdminTopBar';
 import CommandPalette, { recordRecentPage } from './CommandPalette';
@@ -90,26 +90,32 @@ export default function AdminLayout({
         return sessionStorage.getItem('admin:subscriptionAlertDismissed') === 'true';
     });
 
+    const hasFetchedMe = useRef(false);
+
     useEffect(() => {
-        if (status !== 'authenticated' || isSuperAdmin) return;
-        const needsManifest =
-            !manifest?.permissions?.length && !manifest?.featuresEnabled?.length;
-        if (!needsManifest) return;
+        if (status !== 'authenticated' || hasFetchedMe.current) return;
+        hasFetchedMe.current = true;
+
         fetchAPI('/auth/me')
             .then((res) => {
                 if (res?.success && res?.data?.permissionManifest) {
-                    void update({
-                        permissionManifest: res.data.permissionManifest,
-                        features:
-                            res.data.user?.features ??
-                            res.data.permissionManifest?.featuresEnabled,
-                    });
+                    const newManifest = res.data.permissionManifest;
+                    const currentStr = JSON.stringify(manifest || null);
+                    const newStr = JSON.stringify(newManifest);
+                    if (currentStr !== newStr) {
+                        void update({
+                            permissionManifest: newManifest,
+                            features:
+                                res.data.user?.features ??
+                                newManifest?.featuresEnabled,
+                        });
+                    }
                 }
             })
             .catch(() => {
                 /* manifest refresh is best-effort */
             });
-    }, [status, manifest, isSuperAdmin, update]);
+    }, [status, manifest, update]);
 
     useEffect(() => {
         if (status !== 'authenticated' || isSuperAdmin || !manifest?.permissions?.length) return;
@@ -202,6 +208,9 @@ export default function AdminLayout({
         }
     }, [status, session, router]);
 
+    console.log("session", session);
+
+
     // Nav groups filtered by RBAC permissions + plan features (search-independent).
     const permissionFilteredNavGroups = useMemo(() => {
         const tokenFeatures = decodeJwtPayload<{ features?: string[] }>(
@@ -217,7 +226,6 @@ export default function AdminLayout({
                 feature = resolveNavItemFeature(item);
             }
             if (!feature) return true;
-            if (isSuperAdmin) return true;
             if (manifest?.featuresEnabled?.length) {
                 return manifest.featuresEnabled.includes(feature);
             }

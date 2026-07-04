@@ -104,17 +104,6 @@ export class UserRoleAssignmentService {
 
     const saved = await this.assignmentRepo.save(assignment)
 
-    const roleWithPerms = await this.roleRepo.findOne({
-      where: { id: dto.roleId },
-      relations: { permissions: true },
-    })
-    if (roleWithPerms?.permissions?.length) {
-      await this.permissionResolutionService.ensureStoreFeaturesForPermissionSlugs(
-        storeId,
-        roleWithPerms.permissions.map((p) => p.code),
-      )
-    }
-
     // 4. Audit & Cache Invalidation
     await this.auditLogService.logUserRoleAssigned(
       storeId,

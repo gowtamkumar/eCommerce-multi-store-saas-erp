@@ -60,6 +60,7 @@ export class SubscriptionPlanService {
     await this.cacheService.delCacheByPattern('store:subdomain:*')
     await this.cacheService.delCacheByPattern('store:customdomain:*')
     await this.cacheService.delCacheByPattern('store:all')
+    await this.cacheService.delCacheByPattern('rbac:manifest:*')
     return updated
   }
 
@@ -76,6 +77,7 @@ export class SubscriptionPlanService {
     await this.cacheService.delCacheByPattern('store:subdomain:*')
     await this.cacheService.delCacheByPattern('store:customdomain:*')
     await this.cacheService.delCacheByPattern('store:all')
+    await this.cacheService.delCacheByPattern('rbac:manifest:*')
     return { success: true, message: 'Subscription plan deleted successfully' }
   }
 

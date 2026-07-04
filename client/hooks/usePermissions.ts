@@ -12,6 +12,8 @@ import {
   hasFullStoreAccess,
   hasPermission,
   hasAnyPermission,
+  hasFeatureInManifest,
+  resolveNavItemFeature,
   isStaffRole,
   type PermissionManifest,
 } from "@/lib/permissions";
@@ -41,12 +43,19 @@ export function usePermissions() {
       isSuperAdmin,
       isFullAccess,
       isStaff: isStaffRole(role),
-      hasPermission: (permission: string) =>
-        isFullAccess || isSuperAdmin || hasPermission(manifest, permission),
-      hasAnyPermission: (permissions: string[]) =>
-        isFullAccess ||
-        isSuperAdmin ||
-        hasAnyPermission(manifest, permissions),
+      hasPermission: (permission: string) => {
+        const feature = resolveNavItemFeature({ permission });
+        if (!hasFeatureInManifest(manifest, feature)) return false;
+        return isSuperAdmin || isFullAccess || hasPermission(manifest, permission);
+      },
+      hasAnyPermission: (permissions: string[]) => {
+        const validPermissions = permissions.filter((p) => {
+          const feature = resolveNavItemFeature({ permission: p });
+          return hasFeatureInManifest(manifest, feature);
+        });
+        if (validPermissions.length === 0) return false;
+        return isSuperAdmin || isFullAccess || hasAnyPermission(manifest, validPermissions);
+      },
       canAccessNavItem: (item: {
         permission?: string;
         permissions?: string[];
