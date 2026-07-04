@@ -15,6 +15,8 @@ import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
+import { CustomDomainStatus } from '@/common/enums/store/custom-domain-status'
+import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { InitPaymentDto } from '../dto/payment.dto'
 import { PaymentEntity } from '../entities/payment.entity'
 import { PaymentRepository } from '../repositories/payment.repository'
@@ -412,8 +414,34 @@ export class PaymentService {
     gatewayResponse: any,
     defaultAppUrl: string,
   ): Promise<string> {
-    const { strategy } = await this.getStrategyByTransactionId(tran_id)
-    return strategy.getRedirectUrl(gatewayResponse, defaultAppUrl)
+    const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
+    let storeAppUrl = defaultAppUrl
+
+    try {
+      const storeRepo = this.dataSource.getRepository(StoreEntity)
+      const store = await storeRepo.findOne({
+        where: { id: order.storeId },
+        relations: { domains: true },
+      })
+
+      if (store) {
+        const primaryDomain =
+          store.domains?.find((d) => d.isPrimary && d.status === CustomDomainStatus.ACTIVE)?.hostname ||
+          store.domains?.find((d) => d.status === CustomDomainStatus.ACTIVE)?.hostname
+
+        if (primaryDomain) {
+          storeAppUrl = `https://${primaryDomain}`
+        } else if (store.subdomain) {
+          const mainDomain = process.env.MAIN_DOMAIN || 'localhost:3000'
+          const protocol = mainDomain.includes('localhost') ? 'http' : 'https'
+          storeAppUrl = `${protocol}://${store.subdomain}.${mainDomain}`
+        }
+      }
+    } catch (e: any) {
+      this.logger.error(`Failed to resolve store origin for redirect: ${e.message}`)
+    }
+
+    return strategy.getRedirectUrl(gatewayResponse, storeAppUrl)
   }
 
   async findAllPayments(

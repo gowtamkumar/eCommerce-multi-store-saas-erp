@@ -218,11 +218,20 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
   }
 
   getRedirectUrl(response: any, appUrl: string): string {
-    const baseUrl = response.value_a?.replace('/api/payment', '') || appUrl
-    const tran_id = response.tran_id
+    let baseUrl = appUrl
+    if (response?.value_a) {
+      try {
+        const parsed = new URL(response.value_a)
+        baseUrl = parsed.origin
+      } catch {
+        baseUrl = String(response.value_a).replace(/\/api\/payment.*$/, '')
+      }
+    }
+    const tran_id = response?.tran_id || response?.tran_Id
     let status = 'success'
-    if (response.status === 'FAILED') status = 'fail'
-    if (response.status === 'CANCELLED') status = 'cancel'
+    const resStatus = String(response?.status || '').toUpperCase()
+    if (resStatus === 'FAILED') status = 'fail'
+    if (resStatus === 'CANCELLED') status = 'cancel'
 
     return `${baseUrl}/payment/${status}?tran_id=${tran_id}`
   }

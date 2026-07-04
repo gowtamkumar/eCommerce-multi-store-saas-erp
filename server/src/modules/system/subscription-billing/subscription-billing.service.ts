@@ -6,6 +6,7 @@ import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { SslCommerzPaymentStrategy } from '@/common/strategies/payment/sslcommerz-payment.strategy'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { CustomDomainStatus } from '@/common/enums/store/custom-domain-status'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { StoreRepository } from '@/modules/system/store/store.repository'
@@ -41,7 +42,7 @@ export class SubscriptionBillingService {
     @InjectRepository(StoreSubscriptionEntity)
     private readonly subscriptionRepo: Repository<StoreSubscriptionEntity>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async getCurrentSubscription(storeId: string): Promise<CurrentSubscriptionResponseDto> {
     this.logger.log(`${this.getCurrentSubscription.name} Called for store: ${storeId}`)
@@ -454,10 +455,44 @@ export class SubscriptionBillingService {
   }
 
   async getRedirectUrl(transactionId: string, gatewayResponse: any, defaultAppUrl: string) {
-    const baseUrl = gatewayResponse?.value_a || defaultAppUrl
+    let baseUrl = defaultAppUrl
+
+    if (gatewayResponse?.value_a) {
+      try {
+        baseUrl = new URL(gatewayResponse.value_a).origin
+      } catch {
+        baseUrl = String(gatewayResponse.value_a).replace(/\/billing.*$/, '')
+      }
+    }
+
+    if (transactionId) {
+      try {
+        const record = await this.planRecordRepository.findByTransactionId(transactionId)
+        if (record?.storeId) {
+          const store = await this.storeRepository.findByIdWithRelations(record.storeId)
+          if (store) {
+            const primaryDomain =
+              store.domains?.find((d) => d.isPrimary && d.status === CustomDomainStatus.ACTIVE)?.hostname ||
+              store.domains?.find((d) => d.status === CustomDomainStatus.ACTIVE)?.hostname
+
+            const mainDomain = process.env.MAIN_DOMAIN || 'localhost:3000'
+            const protocol = mainDomain.includes('localhost') ? 'http' : 'https'
+            if (primaryDomain) {
+              baseUrl = `${protocol}://${primaryDomain}`
+            } else if (store.subdomain) {
+              baseUrl = `${protocol}://${store.subdomain}.${mainDomain}`
+            }
+          }
+        }
+      } catch (e: any) {
+        this.logger.error(`Failed to resolve store origin for subscription redirect: ${e.message}`)
+      }
+    }
+
     let status = 'success'
-    if (gatewayResponse.status === 'FAILED') status = 'fail'
-    if (gatewayResponse.status === 'CANCELLED') status = 'cancel'
+    const resStatus = String(gatewayResponse?.status || '').toUpperCase()
+    if (resStatus === 'FAILED') status = 'fail'
+    if (resStatus === 'CANCELLED') status = 'cancel'
 
     return `${baseUrl}/billing/${status}?tran_id=${transactionId}`
   }

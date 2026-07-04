@@ -232,12 +232,21 @@ export class SubscriptionBillingController {
 
   @Public()
   @Get('complete')
-  async completePaymentGet(@Query('tran_id') transactionId: string, @Res() res: Response) {
+  async completePaymentGet(
+    @Query('tran_id') transactionId: string,
+    @Query() query: any,
+    @Res() res: Response,
+  ) {
+    const defaultAppUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000'
     if (!transactionId) {
-      return res.redirect(`${this.configService.get('FRONTEND_URL')}/billing?error=invalid_txn`)
+      return res.redirect(`${defaultAppUrl}/billing?error=invalid_txn`)
     }
-    const defaultAppUrl = this.configService.get('FRONTEND_URL')
-    return res.redirect(`${defaultAppUrl}/billing/success?tran_id=${transactionId}`)
+    const redirectUrl = await this.billingService.getRedirectUrl(
+      transactionId,
+      query,
+      defaultAppUrl,
+    )
+    return res.redirect(redirectUrl)
   }
 
   @UseGuards(JwtAuthGuard)

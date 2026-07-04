@@ -208,9 +208,6 @@ export default function AdminLayout({
         }
     }, [status, session, router]);
 
-    console.log("session", session);
-
-
     // Nav groups filtered by RBAC permissions + plan features (search-independent).
     const permissionFilteredNavGroups = useMemo(() => {
         const tokenFeatures = decodeJwtPayload<{ features?: string[] }>(

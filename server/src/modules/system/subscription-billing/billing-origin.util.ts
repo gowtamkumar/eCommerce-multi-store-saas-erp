@@ -37,9 +37,19 @@ export function buildAllowedBillingOrigins(
 
   add(env.frontendUrl)
 
-  if (store?.subdomain && env.platformHost) {
-    add(`https://${store.subdomain}.${env.platformHost}`)
-    add(`http://${store.subdomain}.${env.platformHost}`)
+  const frontendHost = env.frontendUrl ? (() => {
+    try { return new URL(env.frontendUrl).host } catch { return null }
+  })() : null
+
+  if (store?.subdomain) {
+    if (env.platformHost) {
+      add(`https://${store.subdomain}.${env.platformHost}`)
+      add(`http://${store.subdomain}.${env.platformHost}`)
+    }
+    if (frontendHost) {
+      add(`https://${store.subdomain}.${frontendHost}`)
+      add(`http://${store.subdomain}.${frontendHost}`)
+    }
   }
 
   if (store?.domains) {
@@ -52,6 +62,11 @@ export function buildAllowedBillingOrigins(
   }
 
   if ((env.nodeEnv ?? 'development') !== 'production') {
+    if (store?.subdomain) {
+      add(`http://${store.subdomain}.localhost:3000`)
+      add(`http://${store.subdomain}.localhost:3001`)
+      add(`http://${store.subdomain}.127.0.0.1:3000`)
+    }
     add('http://localhost:3000')
     add('http://localhost:3001')
     add('http://127.0.0.1:3000')
