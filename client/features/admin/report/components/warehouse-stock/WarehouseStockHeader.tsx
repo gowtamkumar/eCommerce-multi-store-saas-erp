@@ -9,6 +9,8 @@ export default function WarehouseStockHeader({
     selectedBranchId,
     selectedWarehouseId,
     isExportDisabled,
+    currencyCode,
+    currencySymbol,
     onBranchChange,
     onWarehouseChange,
     onExport,
@@ -22,6 +24,11 @@ export default function WarehouseStockHeader({
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-1">
                     Track stock levels, valuations, and availability grouped by branch location and warehouse.
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
                 </p>
             </div>
 

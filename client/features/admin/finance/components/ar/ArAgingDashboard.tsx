@@ -4,6 +4,7 @@ import DataTable from '@/components/shared/DataTable';
 import type { ArAgingRow } from '@/features/admin/customer/type';
 import { FileText, Search } from 'lucide-react';
 import { useMemo } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import ArSummaryCards from './ArSummaryCards';
 import { buildAgingColumns } from './agingColumns';
 
@@ -32,7 +33,11 @@ export default function ArAgingDashboard({
     onPay,
     onCollect,
 }: ArAgingDashboardProps) {
-    const columns = useMemo(() => buildAgingColumns(onPay, onCollect), [onPay, onCollect]);
+    const { formatPrice } = useSettings();
+    const columns = useMemo(
+        () => buildAgingColumns(formatPrice, onPay, onCollect),
+        [formatPrice, onPay, onCollect],
+    );
 
     return (
         <>

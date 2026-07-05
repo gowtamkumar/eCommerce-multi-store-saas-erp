@@ -8,11 +8,11 @@ import {
     getApOverdueAmount,
     getOldestApAgingBucket,
 } from '../lib/buildApPaymentReminderContext';
-import ApHeader from './ap/ApHeader';
-import ApTabs from './ap/ApTabs';
 import ApAgingDashboard from './ap/ApAgingDashboard';
 import ApBatchPaymentView from './ap/ApBatchPaymentView';
+import ApHeader from './ap/ApHeader';
 import ApPaymentReminderModal from './ap/ApPaymentReminderModal';
+import ApTabs from './ap/ApTabs';
 
 export default function ApAgingReport() {
     const ap = useApDashboard();

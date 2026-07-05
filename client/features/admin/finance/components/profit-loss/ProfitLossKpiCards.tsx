@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 import {
     ArrowDownRight,
     ArrowUpRight,
-    DollarSign,
     Package,
     TrendingDown,
     TrendingUp,
+    Wallet,
     type LucideIcon,
 } from 'lucide-react';
 import type { PLData } from '../../types';
@@ -41,7 +41,7 @@ export default function ProfitLossKpiCards({
     const costRatio = ((cogs / (revenue || 1)) * 100).toFixed(1);
 
     const cards: KpiCard[] = [
-        { label: 'Gross Revenues', value: formatPrice(revenue), icon: DollarSign, color: 'indigo', up: true, sub: 'Total transactional sales' },
+        { label: 'Gross Revenues', value: formatPrice(revenue), icon: Wallet, color: 'indigo', up: true, sub: 'Total transactional sales' },
         { label: 'Cost of Sales (COGS)', value: formatPrice(cogs), icon: Package, color: 'amber', up: false, sub: `${costRatio}% sales cost ratio` },
         { label: 'Gross Profit', value: formatPrice(data?.grossProfit || 0), icon: TrendingUp, color: 'emerald', up: (data?.grossProfit || 0) >= 0, sub: `${grossMargin}% gross margin` },
         { label: 'Net Earnings', value: formatPrice(data?.netProfit || 0), icon: isProfitable ? TrendingUp : TrendingDown, color: isProfitable ? 'violet' : 'rose', up: isProfitable, sub: `${netMargin}% bottom-line margin` },

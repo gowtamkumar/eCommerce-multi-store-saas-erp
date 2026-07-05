@@ -1,5 +1,5 @@
 import {
-  DollarSign,
+  Scale,
   TrendingDown,
   TrendingUp,
   type LucideIcon,
@@ -36,7 +36,7 @@ export const BALANCE_SHEET_SECTIONS: BalanceSheetSection[] = [
     key: "equity",
     totalKey: "totalEquity",
     title: "Equity",
-    icon: DollarSign,
+    icon: Scale,
     color: "violet",
     desc: "Owner's stake in the business",
   },

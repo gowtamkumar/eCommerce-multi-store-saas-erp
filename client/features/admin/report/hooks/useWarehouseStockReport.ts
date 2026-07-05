@@ -136,7 +136,7 @@ export function useWarehouseStockReport() {
         { key: 'outOfStock' as const, label: 'Out of Stock', count: products.filter((p) => p.outOfStock).length },
     ]), [products]);
 
-    const exportCsv = useCallback(() => {
+    const exportCsv = useCallback((currencyCode?: string) => {
         try {
             const branchName = selectedBranchId
                 ? (branches.find((b) => b.id === selectedBranchId)?.name || 'Branch')
@@ -145,7 +145,7 @@ export function useWarehouseStockReport() {
                 ? 'All-Warehouses'
                 : (warehouses.find((w) => w.id === selectedWarehouseId)?.name || 'Warehouse');
 
-            const csv = buildStockReportCsv(filteredProducts);
+            const csv = buildStockReportCsv(filteredProducts, currencyCode);
             downloadCsv(csv, buildStockReportFilename(branchName, warehouseName));
             toast.success('Report exported successfully');
         } catch (error) {

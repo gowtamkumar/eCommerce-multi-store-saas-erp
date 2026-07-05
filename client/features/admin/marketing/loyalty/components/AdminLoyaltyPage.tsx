@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { useLoyaltyAdjustments } from '../hooks/useLoyaltyAdjustments';
 import { useLoyaltyConfig } from '../hooks/useLoyaltyConfig';
 import { useLoyaltyRules } from '../hooks/useLoyaltyRules';
@@ -13,6 +14,7 @@ import PointsAdjustmentTab from './PointsAdjustmentTab';
 import ProgramRulesTab from './ProgramRulesTab';
 
 export default function AdminLoyaltyPage() {
+    const { formatPrice, selectedCurrency } = useSettings();
     const [activeSubTab, setActiveSubTab] = useState<LoyaltySubTab>('rules');
     const configManager = useLoyaltyConfig();
     const adjustmentManager = useLoyaltyAdjustments();
@@ -26,7 +28,12 @@ export default function AdminLoyaltyPage() {
 
     return (
         <div className="space-y-8">
-            <LoyaltyHeader activeTab={activeSubTab} onTabChange={setActiveSubTab} />
+            <LoyaltyHeader
+                activeTab={activeSubTab}
+                onTabChange={setActiveSubTab}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
+            />
 
             {configManager.loading && activeSubTab === 'rules' ? (
                 <LoyaltyLoadingState label="Loading engine configurations..." />
@@ -38,6 +45,9 @@ export default function AdminLoyaltyPage() {
                             liability={configManager.liability}
                             saving={configManager.saving}
                             message={configManager.message}
+                            formatPrice={formatPrice}
+                            currencyCode={selectedCurrency.code}
+                            currencySymbol={selectedCurrency.symbol}
                             onConfigChange={configManager.updateConfig}
                             onSubmit={configManager.saveConfig}
                         />
@@ -63,6 +73,7 @@ export default function AdminLoyaltyPage() {
                         <DynamicRulesTab
                             rules={rulesManager.rules}
                             loadingRules={rulesManager.loadingRules}
+                            formatPrice={formatPrice}
                             onAddRule={() => rulesManager.openRuleModal(null)}
                             onEditRule={rulesManager.openRuleModal}
                             onDeleteRule={rulesManager.deleteRule}
@@ -76,6 +87,9 @@ export default function AdminLoyaltyPage() {
                     editingRule={rulesManager.editingRule}
                     formData={rulesManager.formData}
                     submitting={rulesManager.submittingRule}
+                    currencyCode={selectedCurrency.code}
+                    currencySymbol={selectedCurrency.symbol}
+                    formatPrice={formatPrice}
                     onFieldChange={rulesManager.setField}
                     onClose={rulesManager.closeRuleModal}
                     onSubmit={rulesManager.saveRule}

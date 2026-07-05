@@ -3,6 +3,7 @@
 import { AiInlineBar } from "@/features/admin/ai/components/AiInlineBar";
 import { useAiGenerate } from "@/features/admin/ai/hooks/useAiGenerate";
 import type { ArAgingRow } from "@/features/admin/customer/type";
+import { useSettings } from "@/hooks/SettingsContext";
 import { Check, Copy, Loader2, Mail, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -23,6 +24,7 @@ export interface ArCollectionDraftModalProps {
 }
 
 export default function ArCollectionDraftModal({ customer, onClose }: ArCollectionDraftModalProps) {
+  const { formatPrice } = useSettings();
   const { configured, loading, generateArCollectionDraft } = useAiGenerate();
   const [contextLoading, setContextLoading] = useState(true);
   const [context, setContext] = useState<{ customerSummary: string; overdueInvoicesSummary: string } | null>(
@@ -101,7 +103,7 @@ export default function ArCollectionDraftModal({ customer, onClose }: ArCollecti
             <div className="min-w-0">
               <h3 className="font-bold text-slate-900 dark:text-white truncate">Collection email draft</h3>
               <p className="text-xs text-slate-500 truncate">
-                {customer.customerName} · Overdue ${overdueAmount.toLocaleString()} · {getOldestAgingBucket(customer)}
+                {customer.customerName} · Overdue {formatPrice(overdueAmount)} · {getOldestAgingBucket(customer)}
               </p>
             </div>
           </div>

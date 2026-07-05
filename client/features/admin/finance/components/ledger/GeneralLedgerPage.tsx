@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { useGeneralLedger } from '../../hooks/useGeneralLedger';
 import FinancialJournalsView from './FinancialJournalsView';
 import InventoryMovementsView from './InventoryMovementsView';
@@ -9,6 +10,7 @@ import LedgerTabs from './LedgerTabs';
 import PostJournalModal from './PostJournalModal';
 
 export function GeneralLedgerPage() {
+    const { selectedCurrency } = useSettings();
     const gl = useGeneralLedger();
 
     const isDoubleEntry = gl.activeTab === 'double-entry';
@@ -35,6 +37,8 @@ export function GeneralLedgerPage() {
                 refreshing={gl.glLoading || gl.invLoading}
                 onPost={() => gl.setPostOpen(true)}
                 onRefresh={handleRefresh}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
             />
 
             <LedgerTabs activeTab={gl.activeTab} onTabChange={gl.setActiveTab} />

@@ -7,6 +7,8 @@ export interface MarketingReportHeaderProps {
     canExport: boolean;
     onRefresh: () => void;
     onExport: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
 export default function MarketingReportHeader({
@@ -14,6 +16,8 @@ export default function MarketingReportHeader({
     canExport,
     onRefresh,
     onExport,
+    currencyCode,
+    currencySymbol,
 }: MarketingReportHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
@@ -24,6 +28,11 @@ export default function MarketingReportHeader({
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-1">
                     Unified marketing overview including campaign dispatch rates, coupon conversions, promotion discounts, and customer loyalty.
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
                 </p>
             </div>
             <div className="flex items-center gap-2">

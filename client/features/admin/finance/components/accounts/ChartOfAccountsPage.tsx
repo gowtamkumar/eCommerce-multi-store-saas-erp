@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
 import DataTable from '@/components/shared/DataTable';
 import { useSettings } from '@/hooks/SettingsContext';
+import { useMemo } from 'react';
 import { useChartOfAccounts } from '../../hooks/useChartOfAccounts';
 import AccountFormModal from './AccountFormModal';
-import { buildAccountColumns } from './accountColumns';
 import ChartOfAccountsHeader from './ChartOfAccountsHeader';
+import { buildAccountColumns } from './accountColumns';
 
 export default function ChartOfAccountsPage() {
     const { formatPrice } = useSettings();

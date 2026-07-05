@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, DollarSign, Package, XCircle } from 'lucide-react';
+import { AlertTriangle, Package, Wallet, XCircle } from 'lucide-react';
 import { memo } from 'react';
 import type { WarehouseStockSummaryCardProps, WarehouseStockSummaryCardsProps } from '../../types';
 
@@ -17,7 +17,7 @@ const SummaryCard = memo(({ title, value, icon: Icon, colorClass, borderClass }:
 ));
 SummaryCard.displayName = 'SummaryCard';
 
-export default function WarehouseStockSummaryCards({ stats, formatPrice }: WarehouseStockSummaryCardsProps) {
+export default function WarehouseStockSummaryCards({ stats, formatPrice, currencyCode }: WarehouseStockSummaryCardsProps) {
     return (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <SummaryCard
@@ -27,9 +27,9 @@ export default function WarehouseStockSummaryCards({ stats, formatPrice }: Wareh
                 colorClass="bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400"
             />
             <SummaryCard
-                title="Asset Valuation"
+                title={currencyCode ? `Asset Valuation (${currencyCode})` : 'Asset Valuation'}
                 value={formatPrice(stats.totalValue)}
-                icon={DollarSign}
+                icon={Wallet}
                 colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
             />
             <SummaryCard

@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
 import DataTable from '@/components/shared/DataTable';
+import { useMemo } from 'react';
 import type { DunningLog } from '../../types';
 import { buildDunningLogColumns } from './dunningLogColumns';
 

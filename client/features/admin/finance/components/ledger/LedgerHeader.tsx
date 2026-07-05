@@ -7,9 +7,18 @@ export interface LedgerHeaderProps {
     refreshing: boolean;
     onPost: () => void;
     onRefresh: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
-export default function LedgerHeader({ showPostButton, refreshing, onPost, onRefresh }: LedgerHeaderProps) {
+export default function LedgerHeader({
+    showPostButton,
+    refreshing,
+    onPost,
+    onRefresh,
+    currencyCode,
+    currencySymbol,
+}: LedgerHeaderProps) {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -18,6 +27,11 @@ export default function LedgerHeader({ showPostButton, refreshing, onPost, onRef
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-semibold">
                     Dual inventory movements ledger and immutable double-entry financial journals
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
                 </p>
             </div>
             <div className="flex items-center gap-2">

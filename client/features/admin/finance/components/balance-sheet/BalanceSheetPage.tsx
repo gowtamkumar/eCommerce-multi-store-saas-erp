@@ -9,7 +9,7 @@ import BalanceSheetHeader from './BalanceSheetHeader';
 import BalanceSheetSectionCard from './BalanceSheetSectionCard';
 
 export function BalanceSheetPage() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const { data, loading, load, isBalanced } = useBalanceSheet();
 
     if (loading) {
@@ -22,7 +22,13 @@ export function BalanceSheetPage() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <BalanceSheetHeader showStatus={!!data} isBalanced={isBalanced} onRefresh={load} />
+            <BalanceSheetHeader
+                showStatus={!!data}
+                isBalanced={isBalanced}
+                onRefresh={load}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
+            />
 
             <AccountingEquationBanner
                 totalAssets={data?.totalAssets || 0}

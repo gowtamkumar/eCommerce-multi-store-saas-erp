@@ -25,6 +25,8 @@ export interface LoyaltyRuleFormData {
 export interface LoyaltyHeaderProps {
     activeTab: LoyaltySubTab;
     onTabChange: (tab: LoyaltySubTab) => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
 export interface ProgramRulesTabProps {
@@ -32,6 +34,9 @@ export interface ProgramRulesTabProps {
     liability: LoyaltyLiability | null;
     saving: boolean;
     message: LoyaltyAlert;
+    formatPrice: (amount: number) => string;
+    currencyCode: string;
+    currencySymbol: string;
     onConfigChange: (patch: Partial<LoyaltyConfig>) => void;
     onSubmit: (event: FormEvent) => void;
 }
@@ -53,6 +58,7 @@ export interface PointsAdjustmentTabProps {
 export interface DynamicRulesTabProps {
     rules: LoyaltyRule[];
     loadingRules: boolean;
+    formatPrice: (amount: number) => string;
     onAddRule: () => void;
     onEditRule: (rule: LoyaltyRule) => void;
     onDeleteRule: (id: string) => void;
@@ -60,6 +66,7 @@ export interface DynamicRulesTabProps {
 
 export interface LoyaltyRuleCardProps {
     rule: LoyaltyRule;
+    formatPrice: (amount: number) => string;
     onEdit: (rule: LoyaltyRule) => void;
     onDelete: (id: string) => void;
 }
@@ -68,6 +75,9 @@ export interface LoyaltyRuleModalProps {
     editingRule: Partial<LoyaltyRule> | null;
     formData: LoyaltyRuleFormData;
     submitting: boolean;
+    currencyCode: string;
+    currencySymbol: string;
+    formatPrice: (amount: number) => string;
     onFieldChange: <K extends keyof LoyaltyRuleFormData>(field: K, value: LoyaltyRuleFormData[K]) => void;
     onClose: () => void;
     onSubmit: (event: FormEvent) => void;

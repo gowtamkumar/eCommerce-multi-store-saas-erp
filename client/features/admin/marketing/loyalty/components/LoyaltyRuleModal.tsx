@@ -11,6 +11,9 @@ export default function LoyaltyRuleModal({
     editingRule,
     formData,
     submitting,
+    currencyCode,
+    currencySymbol,
+    formatPrice,
     onFieldChange,
     onClose,
     onSubmit,
@@ -45,6 +48,7 @@ export default function LoyaltyRuleModal({
                         value={formData.value}
                         categoryId={formData.categoryId}
                         minSpend={formData.minSpend}
+                        formatPrice={formatPrice}
                         onApply={(name) => onFieldChange('name', name)}
                     />
 
@@ -104,15 +108,18 @@ export default function LoyaltyRuleModal({
 
                     {formData.type === 'MIN_SPEND_BONUS' && (
                         <div className="space-y-1.5">
-                            <label className={labelClass}>Min Spend Threshold ($)</label>
-                            <input
-                                required
-                                type="number"
-                                min="1"
-                                value={formData.minSpend}
-                                onChange={(event) => onFieldChange('minSpend', Number(event.target.value))}
-                                className={`${inputClass} font-mono`}
-                            />
+                            <label className={labelClass}>Min Spend Threshold ({currencyCode})</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 select-none">{currencySymbol}</span>
+                                <input
+                                    required
+                                    type="number"
+                                    min="1"
+                                    value={formData.minSpend}
+                                    onChange={(event) => onFieldChange('minSpend', Number(event.target.value))}
+                                    className={`${inputClass} font-mono pl-10`}
+                                />
+                            </div>
                         </div>
                     )}
 

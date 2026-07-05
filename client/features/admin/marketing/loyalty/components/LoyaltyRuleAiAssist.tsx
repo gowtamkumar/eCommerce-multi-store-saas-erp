@@ -16,6 +16,7 @@ interface LoyaltyRuleAiAssistProps {
   value: number;
   categoryId?: string;
   minSpend?: number;
+  formatPrice: (amount: number) => string;
   onApply: (name: string) => void;
 }
 
@@ -24,11 +25,12 @@ function buildRuleSummary({
   value,
   categoryId,
   minSpend,
+  formatPrice,
 }: Omit<LoyaltyRuleAiAssistProps, "onApply">): string {
   const parts = [`Type: ${RULE_TYPE_LABELS[ruleType]}`];
 
   if (ruleType === "MIN_SPEND_BONUS") {
-    parts.push(`Bonus: ${value} points`, `Min spend: $${minSpend ?? 0}`);
+    parts.push(`Bonus: ${value} points`, `Min spend: ${formatPrice(minSpend ?? 0)}`);
   } else {
     parts.push(`Multiplier: ${value}x`);
   }
@@ -45,6 +47,7 @@ export function LoyaltyRuleAiAssist({
   value,
   categoryId,
   minSpend,
+  formatPrice,
   onApply,
 }: LoyaltyRuleAiAssistProps) {
   const { configured, loading, generateLoyaltyCopy } = useAiGenerate();
@@ -53,7 +56,7 @@ export function LoyaltyRuleAiAssist({
     const result = await generateLoyaltyCopy({
       context: "rule",
       ruleType: RULE_TYPE_LABELS[ruleType],
-      offerSummary: buildRuleSummary({ ruleType, value, categoryId, minSpend }),
+      offerSummary: buildRuleSummary({ ruleType, value, categoryId, minSpend, formatPrice }),
     });
 
     if (!result || !("name" in result) || !result.name.trim()) return;

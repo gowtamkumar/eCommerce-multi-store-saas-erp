@@ -2,15 +2,15 @@
 
 import { useCallback } from 'react';
 import { useArDashboard } from '../hooks/useArDashboard';
+import ArAgingDashboard from './ar/ArAgingDashboard';
+import ArCollectionDraftModal from './ar/ArCollectionDraftModal';
 import ArHeader from './ar/ArHeader';
 import ArTabs from './ar/ArTabs';
-import ArAgingDashboard from './ar/ArAgingDashboard';
-import DunningRulesView from './ar/DunningRulesView';
-import DunningLogsView from './ar/DunningLogsView';
 import DunningLogDetailsModal from './ar/DunningLogDetailsModal';
-import PaymentModal from './ar/PaymentModal';
-import ArCollectionDraftModal from './ar/ArCollectionDraftModal';
+import DunningLogsView from './ar/DunningLogsView';
 import DunningRuleModal from './ar/DunningRuleModal';
+import DunningRulesView from './ar/DunningRulesView';
+import PaymentModal from './ar/PaymentModal';
 
 export default function ArAgingReport() {
     const ar = useArDashboard();

@@ -184,11 +184,15 @@ export interface SalesAnalysisHeaderProps {
     isExporting: boolean;
     onPeriodChange: (period: SalesReportPeriod) => void;
     onExport: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
 export interface SalesTrendChartProps {
     salesData: SalesTrendPoint[];
     isLoading: boolean;
+    formatPrice: (price: number) => string;
+    currencySymbol: string;
 }
 
 export interface RecentProductsTableProps {
@@ -250,6 +254,8 @@ export interface FinanceKpiGridProps {
 export interface FinanceSummaryHeaderProps {
     onRefresh: () => void;
     isLoading: boolean;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
 export interface FinanceKpiCardConfig {
@@ -287,10 +293,17 @@ export interface ReportExportPartyOption {
     email?: string;
 }
 
+export interface ReportExportHeaderProps {
+    currencyCode?: string;
+    currencySymbol?: string;
+}
+
 export interface ReportExportSettingsProps {
     reportType: string;
     startDate: string;
     endDate: string;
+    currencyCode?: string;
+    currencySymbol?: string;
     onStartDateChange: (date: string) => void;
     onEndDateChange: (date: string) => void;
     suppliers: ReportExportPartyOption[];
@@ -314,6 +327,8 @@ export interface CustomerLedgerHeaderProps {
     selectedCustomerId: string;
     onCustomerChange: (id: string) => void;
     hasLedgerData: boolean;
+    currencyCode?: string;
+    currencySymbol?: string;
     onExportCsv?: () => void;
     isExporting?: boolean;
 }
@@ -346,16 +361,20 @@ export interface CustomerLedgerTableProps {
 export interface ExpenseDistributionProps {
     data?: OperatingExpensesData | null;
     isLoading: boolean;
+    formatPrice: (price: number) => string;
 }
 
 export interface OutflowPieChartProps {
     data: ExpenseBreakdownPoint[];
     isLoading: boolean;
+    formatPrice: (price: number) => string;
 }
 
 export interface RevenuePayoutChartProps {
     chartData: FinanceChartPoint[];
     isLoading: boolean;
+    formatPrice: (price: number) => string;
+    currencySymbol: string;
 }
 
 
@@ -364,6 +383,8 @@ export interface ProfitLossHeaderProps {
     endDate: string;
     onDateChange: (key: 'startDate' | 'endDate', value: string) => void;
     onFilter: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
 export interface LowStockTableProps {
@@ -387,6 +408,8 @@ export interface SupplierLedgerHeaderProps {
     selectedSupplierId: string;
     onSupplierChange: (id: string) => void;
     hasLedgerData: boolean;
+    currencyCode?: string;
+    currencySymbol?: string;
     onExportCsv?: () => void;
     isExporting?: boolean;
 }
@@ -487,6 +510,7 @@ export interface WarehouseStockSummaryCardProps {
 export interface WarehouseStockSummaryCardsProps {
     stats: WarehouseStockStats;
     formatPrice: (price: number) => string;
+    currencyCode?: string;
 }
 
 export interface WarehouseStockHeaderProps {
@@ -495,6 +519,8 @@ export interface WarehouseStockHeaderProps {
     selectedBranchId: string;
     selectedWarehouseId: string;
     isExportDisabled: boolean;
+    currencyCode?: string;
+    currencySymbol?: string;
     onBranchChange: (branchId: string) => void;
     onWarehouseChange: (warehouseId: string) => void;
     onExport: () => void;

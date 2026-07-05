@@ -6,9 +6,17 @@ export interface BalanceSheetHeaderProps {
     showStatus: boolean;
     isBalanced: boolean;
     onRefresh: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
-export default function BalanceSheetHeader({ showStatus, isBalanced, onRefresh }: BalanceSheetHeaderProps) {
+export default function BalanceSheetHeader({
+    showStatus,
+    isBalanced,
+    onRefresh,
+    currencyCode,
+    currencySymbol,
+}: BalanceSheetHeaderProps) {
     return (
         <div className="flex items-center justify-between">
             <div>
@@ -17,6 +25,11 @@ export default function BalanceSheetHeader({ showStatus, isBalanced, onRefresh }
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                     Snapshot of Assets, Liabilities, and Equity at this point in time.
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-violet-600 dark:text-violet-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
                 </p>
             </div>
             <div className="flex items-center gap-3">

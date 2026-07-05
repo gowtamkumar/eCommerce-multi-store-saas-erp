@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 import {
     ArrowDownRight,
     ArrowUpRight,
-    DollarSign,
     Package,
     TrendingDown,
     TrendingUp,
+    Wallet,
     type LucideIcon,
 } from 'lucide-react';
 import type { ProfitLossSummary } from '../../types';
@@ -37,7 +37,7 @@ export interface PLKpiCardsProps {
 export default function PLKpiCards({ plData, grossMargin, netMargin, isProfitable, formatPrice }: PLKpiCardsProps) {
     const revenue = plData?.revenue || 0;
     const cards: KpiCard[] = [
-        { label: 'Total Revenue', value: formatPrice(revenue), icon: DollarSign, color: 'blue', sub: 'From Sales Account', up: true },
+        { label: 'Total Revenue', value: formatPrice(revenue), icon: Wallet, color: 'blue', sub: 'From Sales Account', up: true },
         { label: 'Cost of Goods Sold', value: formatPrice(plData?.costOfGoodsSold || 0), icon: Package, color: 'amber', sub: `${formatPercent(plData?.costOfGoodsSold || 0, revenue || 1)} of revenue`, up: false },
         { label: 'Gross Profit', value: formatPrice(plData?.grossProfit || 0), icon: TrendingUp, color: 'emerald', sub: `${grossMargin.toFixed(1)}% margin`, up: (plData?.grossProfit || 0) >= 0 },
         { label: 'Net Profit', value: formatPrice(plData?.netProfit || 0), icon: isProfitable ? TrendingUp : TrendingDown, color: isProfitable ? 'violet' : 'rose', sub: `${netMargin.toFixed(1)}% net margin`, up: isProfitable },

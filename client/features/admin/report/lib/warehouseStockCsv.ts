@@ -1,7 +1,10 @@
 import type { WarehouseStockProduct } from '../types';
 import { getAvailableStock, getVariantLabel } from './warehouseStock';
 
-const CSV_HEADER = 'Product,Category,Supplier,SKU,Variant,Stock,Reserved,Available,Unit Price,Asset Value,Status\n';
+const CSV_HEADER = (currencyCode?: string) =>
+    currencyCode
+        ? `Product,Category,Supplier,SKU,Variant,Stock,Reserved,Available,Unit Price (${currencyCode}),Asset Value (${currencyCode}),Status\n`
+        : 'Product,Category,Supplier,SKU,Variant,Stock,Reserved,Available,Unit Price,Asset Value,Status\n';
 
 function getStatusLabel(product: WarehouseStockProduct): string {
     if (product.outOfStock) return 'Out of Stock';
@@ -17,8 +20,8 @@ export function buildStockReportFilename(branchName: string, warehouseName: stri
     return `${slug(branchName)}-${slug(warehouseName)}-stock-report.csv`;
 }
 
-export function buildStockReportCsv(products: WarehouseStockProduct[]): string {
-    let csv = CSV_HEADER;
+export function buildStockReportCsv(products: WarehouseStockProduct[], currencyCode?: string): string {
+    let csv = CSV_HEADER(currencyCode);
 
     products.forEach((p) => {
         const statusStr = getStatusLabel(p);
