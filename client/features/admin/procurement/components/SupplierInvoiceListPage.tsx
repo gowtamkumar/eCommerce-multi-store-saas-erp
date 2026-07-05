@@ -9,6 +9,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import type { SupplierInvoice, SupplierInvoiceListPageProps } from '../types';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export default function SupplierInvoiceListPage({
   invoices,
@@ -18,6 +20,9 @@ export default function SupplierInvoiceListPage({
   onSelectInvoice,
   onOpenCreateModal,
 }: SupplierInvoiceListPageProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   const filteredInvoices = useMemo(() => {
     return invoices.filter((i) =>
       i.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,8 +59,8 @@ export default function SupplierInvoiceListPage({
       header: 'Total Amount',
       cell: (inv) => (
         <>
-          <span className="text-xs font-black text-slate-900 dark:text-white font-mono">${inv.totalAmount}</span>
-          <span className="text-[10px] text-slate-400 block font-semibold mt-0.5">Paid: ${inv.paidAmount}</span>
+          <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{formatCurrency(inv.totalAmount, currencySymbol)}</span>
+          <span className="text-[10px] text-slate-400 block font-semibold mt-0.5">Paid: {formatCurrency(inv.paidAmount, currencySymbol)}</span>
         </>
       ),
     },
@@ -98,7 +103,7 @@ export default function SupplierInvoiceListPage({
         <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors inline-block" />
       ),
     },
-  ], []);
+  ], [currencySymbol]);
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">

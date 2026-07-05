@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, X } from 'lucide-react';
 import { useRecordPaymentForm } from '../hooks/useRecordPaymentForm';
 import type { RecordPaymentModalProps } from '../types';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export default function RecordPaymentModal({
   isOpen,
@@ -12,6 +14,8 @@ export default function RecordPaymentModal({
   invoice,
   onSuccess,
 }: RecordPaymentModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const {
     paymentAmount,
     setPaymentAmount,
@@ -52,7 +56,7 @@ export default function RecordPaymentModal({
             <form onSubmit={handlePayment} className="p-8 space-y-5">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                  Payment Amount ($)
+                  Payment Amount ({currencySymbol})
                 </label>
                 <input
                   type="number"
@@ -65,7 +69,7 @@ export default function RecordPaymentModal({
                   placeholder="e.g. 500"
                 />
                 <span className="text-[10px] text-slate-400 block mt-1 font-semibold">
-                  Outstanding: ${Number(invoice.totalAmount) - Number(invoice.paidAmount)}
+                  Outstanding: {formatCurrency(Number(invoice.totalAmount) - Number(invoice.paidAmount), currencySymbol)}
                 </span>
               </div>
 

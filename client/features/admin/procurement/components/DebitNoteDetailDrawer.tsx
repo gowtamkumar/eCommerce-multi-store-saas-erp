@@ -10,12 +10,16 @@ import {
 import type { DebitNoteDetailDrawerProps } from '../types';
 import DebitNoteDisputePanel from './DebitNoteDisputePanel';
 import { buildDebitNoteSummary } from '../lib/buildDebitNoteDisputeContext';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export default function DebitNoteDetailDrawer({
   note,
   onClose,
   onApprove,
 }: DebitNoteDetailDrawerProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const debitNoteSummary = useMemo(
     () => (note ? buildDebitNoteSummary(note) : ''),
     [note],
@@ -61,7 +65,7 @@ export default function DebitNoteDetailDrawer({
               <div className="grid grid-cols-2 gap-4 p-5 bg-slate-50 dark:bg-slate-900 rounded-3xl">
                 <div>
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Adjustment Value</span>
-                  <span className="text-base font-black text-indigo-600 font-mono">${note.amount}</span>
+                  <span className="text-base font-black text-indigo-600 font-mono">{formatCurrency(note.amount, currencySymbol)}</span>
                 </div>
                 <div>
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Issue Date</span>

@@ -1,10 +1,15 @@
 import { Trash2 } from 'lucide-react';
 import { DataTableColumn } from '@/components/shared/DataTable';
 import { TaxBracket } from '../../hooks/useTaxBrackets';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
-export function buildTaxBracketColumns(
+export function useTaxBracketColumns(
   onDelete: (id: string) => void,
 ): DataTableColumn<TaxBracket>[] {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   return [
     {
       key: 'range',
@@ -12,7 +17,7 @@ export function buildTaxBracketColumns(
       cell: (bracket) => (
         <>
           <p className="text-sm font-black text-slate-900 dark:text-white">
-            {Number(bracket.minAmount).toLocaleString()} - {bracket.maxAmount === null ? 'No limit' : Number(bracket.maxAmount).toLocaleString()}
+            {formatCurrency(bracket.minAmount, currencySymbol)} - {bracket.maxAmount === null ? 'No limit' : formatCurrency(bracket.maxAmount, currencySymbol)}
           </p>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Fiscal year {bracket.fiscalYear}</p>
         </>
@@ -31,7 +36,7 @@ export function buildTaxBracketColumns(
       key: 'flatTax',
       header: 'Flat Tax',
       className: 'text-sm font-black text-slate-900 dark:text-white',
-      cell: (bracket) => Number(bracket.flatTax || 0).toLocaleString(),
+      cell: (bracket) => formatCurrency(bracket.flatTax || 0, currencySymbol),
     },
     {
       key: 'order',

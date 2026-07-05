@@ -3,8 +3,10 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Award, Send, X } from "lucide-react";
-import { RfqDetailDrawerProps } from "../types";
+import type { RfqDetailDrawerProps } from "../types";
 import RfqSupplierEmailPanel from "./RfqSupplierEmailPanel";
+import { useSettings } from "@/hooks/SettingsContext";
+import { formatCurrency } from "@/lib/utils";
 
 export default function RfqDetailDrawer({
   rfq,
@@ -12,6 +14,8 @@ export default function RfqDetailDrawer({
   onOpenBidModal,
   onAwardBid,
 }: RfqDetailDrawerProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   return (
     <AnimatePresence>
       {rfq && (
@@ -102,7 +106,7 @@ export default function RfqDetailDrawer({
                         </div>
                         <div className="text-right shrink-0 ml-4">
                           <div className="text-sm font-black font-mono text-indigo-600">
-                            ${q.totalAmount}
+                            {formatCurrency(q.totalAmount, currencySymbol)}
                           </div>
                           {rfq.status === "OPEN" && (
                             <button

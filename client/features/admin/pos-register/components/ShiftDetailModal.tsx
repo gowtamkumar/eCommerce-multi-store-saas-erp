@@ -4,6 +4,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { History, X, AlertCircle } from 'lucide-react';
 import { Shift } from '../types';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 interface ShiftDetailModalProps {
     shift: Shift | null;
@@ -11,6 +13,9 @@ interface ShiftDetailModalProps {
 }
 
 export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalProps) {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol || '$';
+
     if (!shift) return null;
 
     const variance = shift.difference !== null ? Number(shift.difference) : 0;
@@ -73,33 +78,33 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
                             <div className="space-y-2">
                                 <div className="flex justify-between text-xs text-slate-500 font-semibold">
                                     <span>Opening Base Cash</span>
-                                    <span>${Number(shift.openingBalance).toFixed(2)}</span>
+                                    <span>{formatCurrency(shift.openingBalance, currencySymbol)}</span>
                                 </div>
                                 <div className="flex justify-between text-xs text-slate-500 font-semibold">
                                     <span>Cash Sales Collected</span>
-                                    <span className="text-emerald-600 dark:text-emerald-455">+${Number(shift.cashSales).toFixed(2)}</span>
+                                    <span className="text-emerald-600 dark:text-emerald-455">+{formatCurrency(shift.cashSales, currencySymbol)}</span>
                                 </div>
                                 {Number(shift.cashIn || 0) > 0 && (
                                     <div className="flex justify-between text-xs text-slate-500 font-semibold">
                                         <span>Cash In (Adjustments)</span>
-                                        <span className="text-emerald-600 dark:text-emerald-455">+${Number(shift.cashIn).toFixed(2)}</span>
+                                        <span className="text-emerald-600 dark:text-emerald-455">+{formatCurrency(shift.cashIn || 0, currencySymbol)}</span>
                                     </div>
                                 )}
                                 {Number(shift.cashOut || 0) > 0 && (
                                     <div className="flex justify-between text-xs text-slate-500 font-semibold">
                                         <span>Cash Out (Adjustments)</span>
-                                        <span className="text-rose-600 dark:text-rose-450">-${Number(shift.cashOut).toFixed(2)}</span>
+                                        <span className="text-rose-600 dark:text-rose-450">-{formatCurrency(shift.cashOut || 0, currencySymbol)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between text-xs font-black text-slate-800 dark:text-slate-200 border-t border-slate-100 dark:border-slate-800 pt-2">
                                     <span>Expected Drawer Cash</span>
-                                    <span>${Number(shift.expectedClosingBalance).toFixed(2)}</span>
+                                    <span>{formatCurrency(shift.expectedClosingBalance, currencySymbol)}</span>
                                 </div>
                                 {shift.status === 'CLOSED' && (
                                     <>
                                         <div className="flex justify-between text-xs font-black text-slate-800 dark:text-slate-200">
                                             <span>Actual Audited Cash Count</span>
-                                            <span>${Number(shift.closingBalance).toFixed(2)}</span>
+                                            <span>{formatCurrency(shift.closingBalance || 0, currencySymbol)}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs font-black border-t border-slate-100 dark:border-slate-800 pt-2">
                                             <span className="flex items-center gap-1">
@@ -108,10 +113,10 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
                                             </span>
                                             <span className={variance === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
                                                 {variance === 0 
-                                                    ? '$0.00' 
+                                                    ? formatCurrency(0, currencySymbol) 
                                                     : variance > 0 
-                                                        ? `+$${variance.toFixed(2)} (Overage)` 
-                                                        : `-$${Math.abs(variance).toFixed(2)} (Shortage)`
+                                                        ? `+${formatCurrency(variance, currencySymbol)} (Overage)` 
+                                                        : `-${formatCurrency(Math.abs(variance), currencySymbol)} (Shortage)`
                                                 }
                                             </span>
                                         </div>
@@ -127,15 +132,15 @@ export default function ShiftDetailModal({ shift, onClose }: ShiftDetailModalPro
                             <div className="grid grid-cols-3 gap-2">
                                 <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl text-center">
                                     <span className="block text-[10px] font-bold text-slate-400 uppercase">Cash</span>
-                                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">${Number(shift.cashSales).toFixed(2)}</span>
+                                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">{formatCurrency(shift.cashSales, currencySymbol)}</span>
                                 </div>
                                 <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl text-center">
                                     <span className="block text-[10px] font-bold text-slate-400 uppercase">Card</span>
-                                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">${Number(shift.cardSales || 0).toFixed(2)}</span>
+                                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">{formatCurrency(shift.cardSales || 0, currencySymbol)}</span>
                                 </div>
                                 <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl text-center">
                                     <span className="block text-[10px] font-bold text-slate-400 uppercase">Mobile</span>
-                                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">${Number(shift.mobileSales || 0).toFixed(2)}</span>
+                                    <span className="text-sm font-extrabold text-slate-900 dark:text-white">{formatCurrency(shift.mobileSales || 0, currencySymbol)}</span>
                                 </div>
                             </div>
                         </div>

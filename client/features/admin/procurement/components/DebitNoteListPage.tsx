@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import { DebitNote, DebitNoteListPageProps } from '../types';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export function DebitNoteListPage({
   debitNotes,
@@ -20,6 +22,8 @@ export function DebitNoteListPage({
   onPageChange,
   onOpenCreateModal
 }: DebitNoteListPageProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   
   const filteredDebitNotes = useMemo(() => {
     return debitNotes.filter((n) =>
@@ -57,7 +61,7 @@ export function DebitNoteListPage({
       header: 'Adjustment Amount',
       cell: (note) => (
         <span className="font-mono text-xs font-black text-indigo-600">
-          ${note.amount}
+          {formatCurrency(note.amount, currencySymbol)}
         </span>
       ),
     },
@@ -92,7 +96,7 @@ export function DebitNoteListPage({
         <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors inline-block" />
       ),
     },
-  ], []);
+  ], [currencySymbol]);
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">

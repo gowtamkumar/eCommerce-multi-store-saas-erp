@@ -11,6 +11,8 @@ import {
   buildPayslipExplanationSummary,
   type PayrollSlipDetails,
 } from "../../lib/buildPayslipExplanationContext";
+import { useSettings } from "@/hooks/SettingsContext";
+import { formatCurrency } from "@/lib/utils";
 
 const labelClass = "text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400";
 const inputClass =
@@ -28,6 +30,8 @@ export default function PayslipExplanationModal({
   onClose,
 }: PayslipExplanationModalProps) {
   const { configured, loading, generatePayslipExplanation } = useAiGenerate();
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const [emailSubject, setEmailSubject] = useState("");
   const [employeeMessage, setEmployeeMessage] = useState("");
   const [breakdownBullets, setBreakdownBullets] = useState<string[]>([]);
@@ -99,7 +103,7 @@ export default function PayslipExplanationModal({
             <div className="min-w-0">
               <h3 className="font-bold text-slate-900 dark:text-white truncate">Payslip explanation</h3>
               <p className="text-xs text-slate-500 truncate">
-                {employeeName} · {batch.period} · Net {Number(slip.netSalary).toLocaleString()}
+                {employeeName} · {batch.period} · Net {formatCurrency(slip.netSalary, currencySymbol)}
               </p>
             </div>
           </div>

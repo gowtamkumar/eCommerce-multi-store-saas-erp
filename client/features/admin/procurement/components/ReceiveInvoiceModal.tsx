@@ -6,12 +6,16 @@ import { FileText, X } from 'lucide-react';
 import { useReceiveInvoiceForm } from '../hooks/useReceiveInvoiceForm';
 import type { ReceiveInvoiceModalProps } from '../types';
 import { InvoiceOcrAssist } from './InvoiceOcrAssist';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export default function ReceiveInvoiceModal({
   isOpen,
   onClose,
   onSuccess,
 }: ReceiveInvoiceModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const {
     invoiceNumber,
     setInvoiceNumber,
@@ -187,7 +191,7 @@ export default function ReceiveInvoiceModal({
                       type="number"
                       min={0}
                       step="0.01"
-                      placeholder="Unit Price ($)"
+                      placeholder={`Unit Price (${currencySymbol})`}
                       value={unitPrice}
                       onChange={(e) => setUnitPrice(e.target.value)}
                       className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-mono font-bold text-xs"
@@ -210,7 +214,7 @@ export default function ReceiveInvoiceModal({
                         className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700"
                       >
                         <div className="text-xs font-bold">
-                          {item.name} <span className="text-indigo-600 font-mono">(${item.unitPrice}/unit)</span>
+                          {item.name} <span className="text-indigo-600 font-mono">({formatCurrency(item.unitPrice, currencySymbol)}/unit)</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-black font-mono bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded text-indigo-600">

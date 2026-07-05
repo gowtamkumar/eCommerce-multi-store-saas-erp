@@ -3,6 +3,8 @@
 import { Banknote, Calendar, ChevronRight, Loader2, ShieldCheck } from 'lucide-react';
 import { PayrollBatch } from '../../hooks/usePayrollManager';
 import { formatPayrollStatus, getPayrollStatusClassName } from './payrollUi';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 interface PayrollHistoryProps {
   loading: boolean;
@@ -53,6 +55,9 @@ interface PayrollHistoryRowProps {
 }
 
 function PayrollHistoryRow({ batch, onViewSlips, onApprove }: PayrollHistoryRowProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   return (
     <div
       className="group p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-all cursor-pointer"
@@ -70,7 +75,7 @@ function PayrollHistoryRow({ batch, onViewSlips, onApprove }: PayrollHistoryRowP
       <div className="flex items-center gap-12 ml-auto">
         <div className="text-right">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Disbursement</p>
-          <p className="text-lg font-black text-slate-900 dark:text-white">${Number(batch.totalAmount).toLocaleString()}</p>
+          <p className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(batch.totalAmount, currencySymbol)}</p>
         </div>
         <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${getPayrollStatusClassName(batch.status)}`}>
           {formatPayrollStatus(batch.status)}

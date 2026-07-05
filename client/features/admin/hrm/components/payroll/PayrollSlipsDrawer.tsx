@@ -10,6 +10,8 @@ import {
   getPaymentActionLabel,
   getPayrollStatusClassName,
 } from './payrollUi';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 interface PayrollSlipsDrawerProps {
   selectedBatch: PayrollBatch | null;
@@ -125,6 +127,9 @@ function PayrollSlipCard({
   slip: PayrollSlip;
   onExplain: () => void;
 }) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   return (
     <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-700 flex items-center justify-between group">
       <div className="flex items-center gap-6">
@@ -139,7 +144,7 @@ function PayrollSlipCard({
       <div className="flex items-center gap-4">
         <div className="text-right">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Net Pay</p>
-          <p className="text-base font-black text-indigo-600 dark:text-indigo-400">${slip.netSalary.toLocaleString()}</p>
+          <p className="text-base font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(slip.netSalary, currencySymbol)}</p>
         </div>
         <button
           type="button"

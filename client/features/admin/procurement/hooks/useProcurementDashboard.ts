@@ -5,8 +5,12 @@ import { fetchAPI } from "@/services/api";
 import { Users, FileText, Truck, DollarSign } from "lucide-react";
 import { PurchaseOrder } from "@/features/admin/purchase/types";
 import { StatItem, ChartItem, ProductWithStock } from "../types";
+import { useSettings } from "@/hooks/SettingsContext";
+import { formatCurrency } from "@/lib/utils";
 
 export function useProcurementDashboard() {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StatItem[]>([
     { label: "Active Suppliers", value: "0", subValue: "Registered SRM Vendors", icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
@@ -93,7 +97,7 @@ export function useProcurementDashboard() {
           {
             label: "Open POs",
             value: openPOsCount.toString(),
-            subValue: `$${ytdSpend.toLocaleString()} committed`,
+            subValue: `${formatCurrency(ytdSpend, currencySymbol)} committed`,
             icon: Truck,
             color: "text-purple-600",
             bg: "bg-purple-50",
@@ -101,7 +105,7 @@ export function useProcurementDashboard() {
           },
           {
             label: "YTD Spend",
-            value: `$${ytdSpend.toLocaleString()}`,
+            value: formatCurrency(ytdSpend, currencySymbol),
             subValue: "Total committed spend",
             icon: DollarSign,
             color: "text-emerald-600",

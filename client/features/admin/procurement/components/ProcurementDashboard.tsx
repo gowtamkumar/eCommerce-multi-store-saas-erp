@@ -11,8 +11,12 @@ import Link from 'next/link';
 import React from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useProcurementDashboard } from '../hooks/useProcurementDashboard';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export default function ProcurementDashboard() {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const {
     loading,
     stats,
@@ -121,11 +125,11 @@ export default function ProcurementDashboard() {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
-                  tickFormatter={(val) => `$${val / 1000}k`}
+                  tickFormatter={(val) => `${currencySymbol}${val / 1000}k`}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '16px', color: '#fff' }}
-                  formatter={(value: unknown) => [`$${Number(value || 0).toLocaleString()}`, 'Spend']}
+                  formatter={(value: unknown) => [formatCurrency(Number(value || 0), currencySymbol), 'Spend']}
                 />
                 <Area
                   type="monotone"
