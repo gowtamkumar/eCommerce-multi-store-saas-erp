@@ -13,7 +13,7 @@ import CustomerLedgerSummary from './CustomerLedgerSummary';
 import CustomerLedgerTable from './CustomerLedgerTable';
 
 const CustomerLedgerDashboard: React.FC = () => {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const {
         customers,
         selectedCustomerId,
@@ -36,6 +36,8 @@ const CustomerLedgerDashboard: React.FC = () => {
                 selectedCustomerId={selectedCustomerId}
                 onCustomerChange={handleCustomerChange}
                 hasLedgerData={!!ledgerData}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
                 onExportCsv={handleExportCsv}
                 isExporting={isExporting}
             />

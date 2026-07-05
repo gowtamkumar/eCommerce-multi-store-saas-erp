@@ -1,15 +1,15 @@
 'use client';
 
+import { useMemo } from 'react';
 import DataTable from '@/components/shared/DataTable';
 import { useSettings } from '@/hooks/SettingsContext';
-import { useMemo } from 'react';
 import { useChartOfAccounts } from '../../hooks/useChartOfAccounts';
 import AccountFormModal from './AccountFormModal';
-import ChartOfAccountsHeader from './ChartOfAccountsHeader';
 import { buildAccountColumns } from './accountColumns';
+import ChartOfAccountsHeader from './ChartOfAccountsHeader';
 
 export default function ChartOfAccountsPage() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const accounts = useChartOfAccounts();
 
     const columns = useMemo(() => buildAccountColumns(
@@ -26,6 +26,8 @@ export default function ChartOfAccountsPage() {
                 onSearchChange={accounts.setSearchQuery}
                 onInitializeCoa={accounts.initializeCoa}
                 onAddAccount={accounts.openCreateModal}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
             />
 
             <DataTable

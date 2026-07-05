@@ -8,7 +8,7 @@ import SalesTablesSection from './SalesTablesSection';
 import SalesTrendChart from './SalesTrendChart';
 
 export default function SalesAnalysisDashboard() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const {
         data,
         isLoading,
@@ -25,6 +25,8 @@ export default function SalesAnalysisDashboard() {
                 isExporting={isExporting}
                 onPeriodChange={setPeriod}
                 onExport={exportSalesReport}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
             />
             <SalesStatsGrid
                 data={data}
@@ -34,6 +36,8 @@ export default function SalesAnalysisDashboard() {
             <SalesTrendChart
                 salesData={data?.salesData || []}
                 isLoading={isLoading}
+                formatPrice={formatPrice}
+                currencySymbol={selectedCurrency.symbol}
             />
             <SalesTablesSection
                 lowStockProducts={data?.lowStockProducts || []}

@@ -12,7 +12,7 @@ export interface ArSummaryCardsProps {
 
 
 export default function ArSummaryCards({ totalOutstanding, totalOverdue, holdCount, accountCount }: ArSummaryCardsProps) {
-    const { formatPrice, convertPrice, selectedCurrency } = useSettings();
+    const { formatPrice } = useSettings();
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

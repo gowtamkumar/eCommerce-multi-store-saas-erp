@@ -6,12 +6,16 @@ import type { LoyaltyProgramCopyResult } from "@/features/admin/ai/types/ai-stud
 import type { LoyaltyConfig } from "@/services/loyalty";
 import toast from "react-hot-toast";
 
-function buildProgramSummary(config: LoyaltyConfig): string {
+function buildProgramSummary(
+    config: LoyaltyConfig,
+    formatPrice: (amount: number) => string,
+): string {
+    const unitAmount = formatPrice(1);
     const lines = [
-        `Earn ${config.pointsPerCurrencySpent} points per $1 spent.`,
-        `Redeem ${config.pointsRequiredPerCurrencyDiscount} points per $1 discount.`,
-        `Silver tier at $${config.silverTierThreshold} (${config.silverMultiplier}x), Gold at $${config.goldTierThreshold} (${config.goldMultiplier}x), Platinum at $${config.platinumTierThreshold} (${config.platinumMultiplier}x).`,
-        `Referral reward: ${config.referralRewardAmount} ${config.referralRewardType === "POINTS" ? "points" : "wallet credit"} when referee spends $${config.refereeMinPurchase}+.`,
+        `Earn ${config.pointsPerCurrencySpent} points per ${unitAmount} spent.`,
+        `Redeem ${config.pointsRequiredPerCurrencyDiscount} points per ${unitAmount} discount.`,
+        `Silver tier at ${formatPrice(config.silverTierThreshold)} (${config.silverMultiplier}x), Gold at ${formatPrice(config.goldTierThreshold)} (${config.goldMultiplier}x), Platinum at ${formatPrice(config.platinumTierThreshold)} (${config.platinumMultiplier}x).`,
+        `Referral reward: ${config.referralRewardAmount} ${config.referralRewardType === "POINTS" ? "points" : "wallet credit"} when referee spends ${formatPrice(config.refereeMinPurchase)}+.`,
     ];
 
     if (config.pointsExpireAfterDays) {
@@ -25,16 +29,17 @@ function buildProgramSummary(config: LoyaltyConfig): string {
 
 interface LoyaltyProgramAiAssistProps {
     config: LoyaltyConfig;
+    formatPrice: (amount: number) => string;
     onApply: (result: LoyaltyProgramCopyResult) => void;
 }
 
-export function LoyaltyProgramAiAssist({ config, onApply }: LoyaltyProgramAiAssistProps) {
+export function LoyaltyProgramAiAssist({ config, formatPrice, onApply }: LoyaltyProgramAiAssistProps) {
     const { configured, loading, generateLoyaltyCopy } = useAiGenerate();
 
     const handleGenerate = async () => {
         const result = await generateLoyaltyCopy({
             context: "program",
-            offerSummary: buildProgramSummary(config),
+            offerSummary: buildProgramSummary(config, formatPrice),
         });
 
         if (!result || !("programDescription" in result)) return;

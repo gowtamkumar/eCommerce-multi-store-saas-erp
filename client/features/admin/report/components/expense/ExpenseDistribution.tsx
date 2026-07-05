@@ -6,7 +6,7 @@ import type { ExpenseDistributionProps } from '../../types';
 
 
 
-const ExpenseDistribution = memo(({ data, isLoading }: ExpenseDistributionProps) => {
+const ExpenseDistribution = memo(({ data, isLoading, formatPrice }: ExpenseDistributionProps) => {
     if (isLoading && !data) {
         return (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse h-[400px]" />
@@ -28,7 +28,9 @@ const ExpenseDistribution = memo(({ data, isLoading }: ExpenseDistributionProps)
                                 <span className="font-black text-slate-700 dark:text-slate-300 capitalize tracking-tight group-hover:text-brand-600 transition-colors">
                                     {item.category.toLowerCase()}
                                 </span>
-                                <span className="text-slate-500 font-mono text-xs">{percentage.toFixed(1)}%</span>
+                                <span className="text-slate-500 font-mono text-xs">
+                                    {formatPrice(item.amount)} · {percentage.toFixed(1)}%
+                                </span>
                             </div>
                             <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden shadow-inner">
                                 <div

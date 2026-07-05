@@ -8,12 +8,17 @@ import WalletDetailsPanel from './wallet/WalletDetailsPanel';
 import WalletHeader from './wallet/WalletHeader';
 
 export default function WalletManagement() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const wallet = useWalletManagement();
 
     return (
         <div className="space-y-6 pb-12">
-            <WalletHeader loading={wallet.loading} onRefresh={wallet.loadCustomers} />
+            <WalletHeader
+                loading={wallet.loading}
+                onRefresh={wallet.loadCustomers}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <WalletCustomerList

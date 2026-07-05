@@ -3,12 +3,24 @@
 import { RefreshCw } from 'lucide-react';
 import type { FinanceSummaryHeaderProps } from '../../types';
 
-export default function FinanceSummaryHeader({ onRefresh, isLoading }: FinanceSummaryHeaderProps) {
+export default function FinanceSummaryHeader({
+    onRefresh,
+    isLoading,
+    currencyCode,
+    currencySymbol,
+}: FinanceSummaryHeaderProps) {
     return (
         <div className="flex items-center justify-between">
             <div>
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white font-display">Finance Summary</h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">Real-time health of your business finances</p>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    Real-time health of your business finances
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
+                </p>
             </div>
             <div className="flex items-center gap-3">
                 <button

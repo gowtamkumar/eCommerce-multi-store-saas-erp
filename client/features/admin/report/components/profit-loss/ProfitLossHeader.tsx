@@ -8,7 +8,9 @@ export default function ProfitLossHeader({
     startDate,
     endDate,
     onDateChange,
-    onFilter
+    onFilter,
+    currencyCode,
+    currencySymbol,
 }: ProfitLossHeaderProps) {
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,7 +24,14 @@ export default function ProfitLossHeader({
                     <BarChart3 className="w-6 h-6 text-brand-600" />
                     Profit & Loss Report
                 </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">Summary of revenue, COGS, and expenses</p>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    Summary of revenue, COGS, and expenses
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
+                </p>
             </div>
 
             <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3">
