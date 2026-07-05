@@ -1,6 +1,6 @@
 import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
-import { Repository } from 'typeorm'
+import { FindManyOptions, FindOneOptions, Repository } from 'typeorm'
 import { StoreEntity } from './entities/store.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -14,7 +14,15 @@ export class StoreRepository extends BaseStoreRepository<StoreEntity> {
     repo: Repository<StoreEntity>,
   ) {
     super(StoreEntity, repo)
-}
+  }
+
+  async findOne(options: FindOneOptions<StoreEntity>): Promise<StoreEntity | null> {
+    return await this.repo.findOne(options)
+  }
+
+  async find(options?: FindManyOptions<StoreEntity>): Promise<StoreEntity[]> {
+    return await this.repo.find(options)
+  }
 
   /**
    * Find a store by ID

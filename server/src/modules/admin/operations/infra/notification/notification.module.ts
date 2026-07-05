@@ -8,6 +8,8 @@ import { NotificationController } from './notification.controller'
 import { NotificationGateway } from './notification.gateway'
 import { NotificationService } from './notification.service'
 import { getJwtSecret } from '@/common/utils/jwt-secret.util'
+import { NotificationRepository } from './repositories/notification.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 
 @Module({
   imports: [
@@ -22,7 +24,7 @@ import { getJwtSecret } from '@/common/utils/jwt-secret.util'
     }),
   ],
   controllers: [NotificationController],
-  providers: [NotificationService, NotificationGateway],
+  providers: [NotificationService, NotificationGateway, NotificationRepository, StoreRepository],
   exports: [NotificationService, NotificationGateway],
 })
 export class NotificationModule {}

@@ -12,6 +12,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
 import { AddonCatalogModule } from '@/modules/system/addon-catalog/addon-catalog.module'
 import { SubscriptionPlanModule } from '@/modules/system/subscription-plan/subscription-plan.module'
 import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-subscription.entity'
+import { StoreSubscriptionRepository } from './repositories/store-subscription.repository'
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-s
     SubscriptionPlanModule,
   ],
   controllers: [SubscriptionBillingController],
-  providers: [SubscriptionBillingService, SubscriptionInvoiceRepository],
-  exports: [SubscriptionBillingService, SubscriptionInvoiceRepository],
+  providers: [SubscriptionBillingService, SubscriptionInvoiceRepository, StoreSubscriptionRepository],
+  exports: [SubscriptionBillingService, SubscriptionInvoiceRepository, StoreSubscriptionRepository],
 })
 export class SubscriptionBillingModule {}

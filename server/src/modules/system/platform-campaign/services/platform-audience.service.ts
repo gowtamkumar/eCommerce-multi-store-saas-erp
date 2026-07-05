@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { IsNull, Repository } from 'typeorm'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { SubscriberEntity } from '@/modules/admin/customer/subscriber/entities/subscriber.entity'
+import { IsNull } from 'typeorm'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { SubscriberRepository } from '@/modules/admin/customer/subscriber/subscriber.repository'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CampaignType } from '@/modules/admin/marketing/campaign/enums/campaign-type.enum'
 import { AudienceMember } from '@/modules/admin/marketing/campaign/services/audience.service'
@@ -12,10 +11,8 @@ export class PlatformAudienceService {
   private readonly logger = new Logger(PlatformAudienceService.name)
 
   constructor(
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
-    @InjectRepository(SubscriberEntity)
-    private readonly subscriberRepository: Repository<SubscriberEntity>,
+    private readonly userRepository: UserRepository,
+    private readonly subscriberRepository: SubscriberRepository,
   ) {}
 
   async getAudience(options: {

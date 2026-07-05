@@ -34,6 +34,11 @@ import { PurchaseModule } from '../operations/finance/purchase/purchase.module'
 import { McpController } from './controllers/mcp.controller'
 import { McpService } from './services/mcp.service'
 import { McpAuthGuard } from './guards/mcp-auth.guard'
+import { AiJobRepository } from './repositories/ai-job.repository'
+import { AiUsageLogRepository } from './repositories/ai-usage-log.repository'
+import { CartRepository } from '@/modules/store/cart/cart.repository'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 
 @Module({
   imports: [
@@ -65,6 +70,11 @@ import { McpAuthGuard } from './guards/mcp-auth.guard'
     AiFeatureBootstrapService,
     AiUsageLogService,
     AiJobService,
+    AiJobRepository,
+    AiUsageLogRepository,
+    CartRepository,
+    RoleRepository,
+    StoreRepository,
     AiAutomationScheduler,
     McpService,
     McpAuthGuard,

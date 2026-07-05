@@ -30,6 +30,9 @@ import { ProductEmbeddingService } from './services/product-embedding.service'
 import { ProductQaService } from './services/product-qa.service'
 import { StorefrontAssistantService } from './services/storefront-assistant.service'
 import { StorefrontAiConfigService } from './services/storefront-ai-config.service'
+import { ProductEmbeddingRepository } from './repositories/product-embedding.repository'
+import { StorefrontSearchEventRepository } from './repositories/storefront-search-event.repository'
+import { StorefrontAssistantEventRepository } from './repositories/storefront-assistant-event.repository'
 
 @Module({
   imports: [
@@ -65,6 +68,9 @@ import { StorefrontAiConfigService } from './services/storefront-ai-config.servi
     ProductVariantRepository,
     ProductAttributeRepository,
     SuperAdminCrossStoreRepository,
+    ProductEmbeddingRepository,
+    StorefrontSearchEventRepository,
+    StorefrontAssistantEventRepository,
     ProductEmbeddingService,
     ProductQaService,
     StorefrontAssistantService,

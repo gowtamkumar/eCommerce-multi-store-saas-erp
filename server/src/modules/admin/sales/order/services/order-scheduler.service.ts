@@ -2,8 +2,7 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
-import { InjectRepository } from '@nestjs/typeorm'
-import { In, LessThan, Repository } from 'typeorm'
+import { In, LessThan } from 'typeorm'
 import { OrderEntity } from '../entities/order.entity'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
@@ -12,6 +11,7 @@ import { StockReservationEntity } from '@/modules/admin/operations/logistics/inv
 import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
 import { DataSource } from 'typeorm'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { OrderRepository } from '../repositories/order.repository'
 
 /** Orders in PENDING state for longer than this are automatically cancelled and stock released. */
 const STALE_ORDER_THRESHOLD_HOURS = 24
@@ -21,8 +21,7 @@ export class OrderSchedulerService {
   private readonly logger = new Logger(OrderSchedulerService.name)
 
   constructor(
-    @InjectRepository(OrderEntity)
-    private readonly orderRepo: Repository<OrderEntity>,
+    private readonly orderRepo: OrderRepository,
     private readonly inventoryService: InventoryLedgerService,
     private readonly reservationService: StockReservationService,
     private readonly dataSource: DataSource,

@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { Cron, CronExpression } from '@nestjs/schedule'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { StoreEntity } from '@/modules/system/store/entities/store.entity'
+import { Cron } from '@nestjs/schedule'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
@@ -14,8 +12,7 @@ export class ReportSchedulerService {
   private readonly logger = new Logger(ReportSchedulerService.name)
 
   constructor(
-    @InjectRepository(StoreEntity)
-    private readonly storeRepository: Repository<StoreEntity>,
+    private readonly storeRepository: StoreRepository,
     private readonly reportService: ReportService,
     private readonly mailService: MailService,
     private readonly settingsService: SettingsService,

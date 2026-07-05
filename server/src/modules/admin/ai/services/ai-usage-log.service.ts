@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { AiUsageLogEntity } from '../entities/ai-usage-log.entity'
 import { AiUsageSummaryDto, RecordAiUsageParams } from '../dto/ai-usage.dto'
+import { AiUsageLogRepository } from '../repositories/ai-usage-log.repository'
 
 @Injectable()
 export class AiUsageLogService {
   constructor(
-    @InjectRepository(AiUsageLogEntity)
-    private readonly usageRepo: Repository<AiUsageLogEntity>,
+    private readonly usageRepo: AiUsageLogRepository,
   ) {}
 
   async record(params: RecordAiUsageParams): Promise<void> {
@@ -38,8 +36,7 @@ export class AiUsageLogService {
     since.setUTCDate(since.getUTCDate() - safeDays)
     since.setUTCHours(0, 0, 0, 0)
 
-    const logs = await this.usageRepo
-      .createQueryBuilder('log')
+    const logs = await this.usageRepo.createQueryBuilder('log')
       .where('log.store_id = :storeId', { storeId })
       .andWhere('log.created_at >= :since', { since })
       .orderBy('log.created_at', 'ASC')

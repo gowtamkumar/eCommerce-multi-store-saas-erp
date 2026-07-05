@@ -3,7 +3,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { FilterUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
 
@@ -14,6 +14,10 @@ export class UserRepository extends BaseStoreRepository<UserEntity> {
     repo: Repository<UserEntity>,
   ) {
     super(UserEntity, repo)
+  }
+
+  async find(options?: FindManyOptions<UserEntity>): Promise<UserEntity[]> {
+    return this.repo.find(options)
   }
 
   async findAllWithFilters(

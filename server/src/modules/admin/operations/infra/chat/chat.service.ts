@@ -1,16 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { ConversationEntity } from './entities/conversation.entity'
 import { ChatMessageEntity } from './entities/chat-message.entity'
+import { ConversationRepository } from './repositories/conversation.repository'
+import { ChatMessageRepository } from './repositories/chat-message.repository'
 
 @Injectable()
 export class ChatService {
   constructor(
-    @InjectRepository(ConversationEntity)
-    private readonly conversationRepo: Repository<ConversationEntity>,
-    @InjectRepository(ChatMessageEntity)
-    private readonly messageRepo: Repository<ChatMessageEntity>,
+    private readonly conversationRepo: ConversationRepository,
+    private readonly messageRepo: ChatMessageRepository,
   ) {}
 
   /**
@@ -57,7 +55,7 @@ export class ChatService {
     senderName: string | null,
     message: string,
   ): Promise<ChatMessageEntity> {
-    return await this.messageRepo.manager.transaction(async (em) => {
+    return await this.messageRepo.txRepo().manager.transaction(async (em) => {
       const conversation = await em.findOne(ConversationEntity, {
         where: { id: conversationId },
       })
@@ -127,7 +125,7 @@ export class ChatService {
     storeId?: string | null,
   ): Promise<[ChatMessageEntity[], number]> {
     await this.assertConversation(conversationId, storeId)
-    return await this.messageRepo.findAndCount({
+    return await this.messageRepo.txRepo().findAndCount({
       where: { conversationId },
       order: { createdAt: 'ASC' },
       take: limit,
@@ -149,7 +147,7 @@ export class ChatService {
       where.status = status
     }
 
-    return await this.conversationRepo.findAndCount({
+    return await this.conversationRepo.txRepo().findAndCount({
       where,
       relations: {
         customer: true,
@@ -179,14 +177,14 @@ export class ChatService {
     if (readerType === 'AGENT') {
       conversation.unreadCountAdmin = 0
       await this.conversationRepo.save(conversation)
-      await this.messageRepo.update(
+      await this.messageRepo.txRepo().update(
         { conversationId, senderType: 'VISITOR', isRead: false },
         { isRead: true },
       )
     } else {
       conversation.unreadCountVisitor = 0
       await this.conversationRepo.save(conversation)
-      await this.messageRepo.update(
+      await this.messageRepo.txRepo().update(
         { conversationId, senderType: 'AGENT', isRead: false },
         { isRead: true },
       )

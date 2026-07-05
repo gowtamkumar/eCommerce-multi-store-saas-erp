@@ -5,11 +5,10 @@ import {
 import { normalizeStoreAiConfig } from '@/modules/system/store/utils/store-ai.util'
 import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import axios from 'axios'
-import { Repository } from 'typeorm'
 import { AiUsageLogService } from './ai-usage-log.service'
 import { mapAiProviderError } from '../utils/map-ai-provider-error.util'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 
 export interface AiChatMessage {
   role: 'system' | 'user' | 'assistant'
@@ -52,8 +51,7 @@ export class StoreAiClientService {
   private readonly logger = new Logger(StoreAiClientService.name)
 
   constructor(
-    @InjectRepository(StoreEntity)
-    private readonly storeRepo: Repository<StoreEntity>,
+    private readonly storeRepo: StoreRepository,
     private readonly usageLogService: AiUsageLogService,
   ) {}
 

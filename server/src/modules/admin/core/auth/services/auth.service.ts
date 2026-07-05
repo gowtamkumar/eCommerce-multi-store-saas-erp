@@ -16,14 +16,14 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { InjectRepository } from '@nestjs/typeorm'
 import * as crypto from 'crypto'
 import * as bcrypt from 'bcrypt'
-import { Not, Repository } from 'typeorm'
+import { Not } from 'typeorm'
 import { UserEntity } from '../../user/entities/user.entity'
 import { sanitizeUser } from '@/common/utils/sanitize-user.util'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 import { SessionEntity } from '../entities/session.entity'
+import { SessionRepository } from '../repositories/session.repository'
 
 import {
   PermissionManifest,
@@ -49,8 +49,7 @@ export class AuthService {
     private readonly notificationService: NotificationService,
     private readonly referralService: ReferralService,
     private readonly cacheService: CacheService,
-    @InjectRepository(SessionEntity)
-    private readonly sessionRepository: Repository<SessionEntity>,
+    private readonly sessionRepository: SessionRepository,
   ) { }
 
   async register(

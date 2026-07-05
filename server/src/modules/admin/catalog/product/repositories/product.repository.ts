@@ -4,7 +4,7 @@ import { ProductStatus } from '@/common/enums/product-status.enum'
 import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { EntityManager, In, Repository } from 'typeorm'
+import { EntityManager, FindManyOptions, In, Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
 
 @Injectable()
@@ -16,6 +16,14 @@ export class ProductRepository extends BaseStoreRepository<ProductEntity> {
     repo: Repository<ProductEntity>,
   ) {
     super(ProductEntity, repo)
+  }
+
+  async find(options?: FindManyOptions<ProductEntity>): Promise<ProductEntity[]> {
+    return this.repo.find(options)
+  }
+
+  async count(options?: FindManyOptions<ProductEntity>): Promise<number> {
+    return this.repo.count(options)
   }
 
   async findAllWithFilters(filterDto: any, storeId: string): Promise<[ProductEntity[], number]> {

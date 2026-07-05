@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common'
 import * as webPush from 'web-push'
 import { ConfigService } from '@nestjs/config'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { DeviceEntity } from './entities/device.entity'
 import { RegisterDeviceDto, UnregisterDeviceDto } from './dto/device.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { DeviceRepository } from './repositories/device.repository'
 
 @Injectable()
 export class PushService {
@@ -17,8 +16,7 @@ export class PushService {
 
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(DeviceEntity)
-    private readonly deviceRepository: Repository<DeviceEntity>,
+    private readonly deviceRepository: DeviceRepository,
   ) {
     this.vapidSubject =
       this.configService.get<string>('VAPID_SUBJECT') || 'mailto:admin@example.com'

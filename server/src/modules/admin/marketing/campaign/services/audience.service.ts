@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SubscriberEntity } from '@/modules/admin/customer/subscriber/entities/subscriber.entity'
 import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
@@ -29,17 +27,18 @@ export interface AudienceMember {
   source: 'user' | 'subscriber' | 'lead'
 }
 
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { SubscriberRepository } from '@/modules/admin/customer/subscriber/repositories/subscriber.repository'
+import { LeadRepository } from '@/modules/admin/customer/lead/repositories/lead.repository'
+
 @Injectable()
 export class AudienceService {
   private readonly logger = new Logger(AudienceService.name)
 
   constructor(
-    @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
-    @InjectRepository(SubscriberEntity)
-    private subscriberRepository: Repository<SubscriberEntity>,
-    @InjectRepository(LeadEntity)
-    private leadRepository: Repository<LeadEntity>,
+    private userRepository: UserRepository,
+    private subscriberRepository: SubscriberRepository,
+    private leadRepository: LeadRepository,
   ) {}
 
   /**

@@ -18,6 +18,10 @@ import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/enti
 import { InventoryLedgerRepository } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
+import { StockTransferRepository } from './repositories/stock-transfer.repository'
+import { StockTransferItemRepository } from './repositories/stock-transfer-item.repository'
+import { ProductBatchRepository } from './repositories/product-batch.repository'
+import { StockReservationRepository } from './repositories/stock-reservation.repository'
 import { StoreModule } from '@/modules/system/store/store.module'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
@@ -65,17 +69,25 @@ import { InventoryProcessor } from './inventory.processor'
     ProductRepository,
     ProductVariantRepository,
     StockReservationService,
+    StockReservationRepository,
     StockReservationSchedulerService,
     StockTransferService,
+    StockTransferRepository,
+    StockTransferItemRepository,
     ProductBatchService,
+    ProductBatchRepository,
     InventoryProcessor,
   ],
   exports: [
     InventoryLedgerService,
     InventoryLedgerRepository,
     StockReservationService,
+    StockReservationRepository,
     StockTransferService,
+    StockTransferRepository,
+    StockTransferItemRepository,
     ProductBatchService,
+    ProductBatchRepository,
   ],
 })
 export class InventoryLedgerModule {}

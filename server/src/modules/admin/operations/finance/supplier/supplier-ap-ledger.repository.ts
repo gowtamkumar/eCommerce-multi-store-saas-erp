@@ -2,7 +2,7 @@ import { BaseStoreRepository } from '@/common/base-repository'
 import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { EntityManager, Repository } from 'typeorm'
+import { EntityManager, FindManyOptions, Repository } from 'typeorm'
 import { SupplierAPLedgerEntity } from './entities/supplier-ap-ledger.entity'
 import { SupplierAPReferenceType } from './enums/supplier-ap-Refernce-type.enum'
 
@@ -13,6 +13,10 @@ export class SupplierAPLedgerRepository extends BaseStoreRepository<SupplierAPLe
     private readonly repository: Repository<SupplierAPLedgerEntity>,
   ) {
     super(SupplierAPLedgerEntity, repository)
+  }
+
+  async findAndCount(options?: FindManyOptions<SupplierAPLedgerEntity>): Promise<[SupplierAPLedgerEntity[], number]> {
+    return this.repository.findAndCount(options)
   }
 
   async createEntry(

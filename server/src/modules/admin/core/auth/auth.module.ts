@@ -16,6 +16,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
+import { SessionRepository } from './repositories/session.repository'
 
 @Module({
   imports: [
@@ -38,7 +39,7 @@ import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module
     }),
   ],
   controllers: [AuthController, AdminAuthController],
-  providers: [AuthService, JwtAuthStrategy],
-  exports: [AuthService],
+  providers: [AuthService, JwtAuthStrategy, SessionRepository],
+  exports: [AuthService, SessionRepository],
 })
 export class AuthModule {}

@@ -1,9 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { NotificationEntity } from './entities/notification.entity'
-import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { NotificationGateway } from './notification.gateway'
 import { NotificationService } from './notification.service'
+import { NotificationRepository } from './repositories/notification.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 
 describe('NotificationService', () => {
   let service: NotificationService
@@ -13,7 +12,7 @@ describe('NotificationService', () => {
       providers: [
         NotificationService,
         {
-          provide: getRepositoryToken(NotificationEntity),
+          provide: NotificationRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -21,33 +20,26 @@ describe('NotificationService', () => {
             create: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
-            remove: jest.fn(),
-            count: jest.fn(),
-            findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
+            txRepo: jest.fn().mockReturnValue({
+              createQueryBuilder: jest.fn(() => ({
+                update: jest.fn().mockReturnThis(),
+                set: jest.fn().mockReturnThis(),
+                where: jest.fn().mockReturnThis(),
+                andWhere: jest.fn().mockReturnThis(),
+                orderBy: jest.fn().mockReturnThis(),
+                skip: jest.fn().mockReturnThis(),
+                take: jest.fn().mockReturnThis(),
+                execute: jest.fn().mockResolvedValue({}),
+                getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+              })),
+              count: jest.fn().mockResolvedValue(0),
+            }),
           },
         },
         {
-          provide: getRepositoryToken(StoreEntity),
+          provide: StoreRepository,
           useValue: {
-            find: jest.fn(),
-            findOne: jest.fn(),
-            save: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            find: jest.fn().mockResolvedValue([]),
           },
         },
         {

@@ -11,9 +11,9 @@ import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-setti
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { StoreRepository } from '@/modules/system/store/store.repository'
 import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-subscription.entity'
+import { StoreSubscriptionRepository } from './repositories/store-subscription.repository'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import { DataSource } from 'typeorm'
 import { ConfigService } from '@nestjs/config'
 import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
@@ -39,8 +39,7 @@ export class SubscriptionBillingService {
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
     private readonly addonCatalogService: AddonCatalogService,
-    @InjectRepository(StoreSubscriptionEntity)
-    private readonly subscriptionRepo: Repository<StoreSubscriptionEntity>,
+    private readonly subscriptionRepo: StoreSubscriptionRepository,
     private readonly dataSource: DataSource,
   ) { }
 

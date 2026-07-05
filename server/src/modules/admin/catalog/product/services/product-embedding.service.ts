@@ -6,9 +6,8 @@ import {
 import { AiJobService } from '@/modules/admin/ai/services/ai-job.service'
 import { StoreAiClientService } from '@/modules/admin/ai/services/store-ai-client.service'
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { createHash } from 'crypto'
-import { In, Repository } from 'typeorm'
+import { In } from 'typeorm'
 import { FilterProductDto } from '../dto/filter-product.dto'
 import { ProductEmbeddingEntity } from '../entities/product-embedding.entity'
 import { ProductEntity } from '../entities/product.entity'
@@ -20,6 +19,9 @@ import { StorefrontAssistantEventEntity } from '../entities/storefront-assistant
 import { ProductRepository } from '../repositories/product.repository'
 import { StorefrontAiConfigService } from './storefront-ai-config.service'
 import { cosineSimilarity, mergeHybridProductIds } from '../utils/semantic-search.util'
+import { ProductEmbeddingRepository } from '../repositories/product-embedding.repository'
+import { StorefrontSearchEventRepository } from '../repositories/storefront-search-event.repository'
+import { StorefrontAssistantEventRepository } from '../repositories/storefront-assistant-event.repository'
 
 const EMBEDDING_BATCH_SIZE = 20
 const HYBRID_CANDIDATE_LIMIT = 200
@@ -29,14 +31,10 @@ export class ProductEmbeddingService {
   private readonly logger = new Logger(ProductEmbeddingService.name)
 
   constructor(
-    @InjectRepository(ProductEmbeddingEntity)
-    private readonly embeddingRepo: Repository<ProductEmbeddingEntity>,
-    @InjectRepository(ProductEntity)
-    private readonly productRepo: Repository<ProductEntity>,
-    @InjectRepository(StorefrontSearchEventEntity)
-    private readonly searchEventRepo: Repository<StorefrontSearchEventEntity>,
-    @InjectRepository(StorefrontAssistantEventEntity)
-    private readonly assistantEventRepo: Repository<StorefrontAssistantEventEntity>,
+    private readonly embeddingRepo: ProductEmbeddingRepository,
+    private readonly productRepo: ProductRepository,
+    private readonly searchEventRepo: StorefrontSearchEventRepository,
+    private readonly assistantEventRepo: StorefrontAssistantEventRepository,
     private readonly productRepository: ProductRepository,
     private readonly storeAiClient: StoreAiClientService,
     private readonly storefrontAiConfig: StorefrontAiConfigService,

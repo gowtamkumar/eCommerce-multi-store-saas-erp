@@ -1,8 +1,6 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { AccessTokenPayload } from 'src/modules/admin/core/auth/dtos'
 import { UserDto } from 'src/modules/admin/core/user/dtos/user.dto'
@@ -11,6 +9,7 @@ import { SessionEntity } from 'src/modules/admin/core/auth/entities/session.enti
 import { sanitizeUser } from 'src/common/utils/sanitize-user.util'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
+import { SessionRepository } from 'src/modules/admin/core/auth/repositories/session.repository'
 
 /**
  * JWT validation strategy — hot path for every authenticated request.
@@ -41,8 +40,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
-    @InjectRepository(SessionEntity)
-    private readonly sessionRepository: Repository<SessionEntity>,
+    private readonly sessionRepository: SessionRepository,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

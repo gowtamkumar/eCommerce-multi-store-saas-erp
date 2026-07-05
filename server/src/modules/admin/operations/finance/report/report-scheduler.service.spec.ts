@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { StoreStatus } from '@/common/enums/store/store-status.enum'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { ReportSchedulerService } from './report-scheduler.service'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 
 describe('ReportSchedulerService', () => {
   let service: ReportSchedulerService
@@ -63,7 +62,7 @@ describe('ReportSchedulerService', () => {
       providers: [
         ReportSchedulerService,
         {
-          provide: getRepositoryToken(StoreEntity),
+          provide: StoreRepository,
           useValue: storeRepo,
         },
         {

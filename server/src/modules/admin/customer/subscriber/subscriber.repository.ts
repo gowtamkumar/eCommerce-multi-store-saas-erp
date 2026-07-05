@@ -1,7 +1,7 @@
 import { BaseStoreRepository } from '@/common/base-repository'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindManyOptions, Repository } from 'typeorm'
 import { SubscriberEntity } from './entities/subscriber.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -12,7 +12,11 @@ export class SubscriberRepository extends BaseStoreRepository<SubscriberEntity> 
     repo: Repository<SubscriberEntity>,
   ) {
     super(SubscriberEntity, repo)
-}
+  }
+
+  async find(options?: FindManyOptions<SubscriberEntity>): Promise<SubscriberEntity[]> {
+    return this.repo.find(options)
+  }
 
   async findByEmail(email: string, storeId: string): Promise<SubscriberEntity | null> {
     return this.repo.findOne({ where: { email: email.trim().toLowerCase(), storeId } })
