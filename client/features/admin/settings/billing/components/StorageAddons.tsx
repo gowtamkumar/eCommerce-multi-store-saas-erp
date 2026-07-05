@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { HardDrive, CheckCircle2, PlusCircle, Loader2, Package, ShoppingCart, Users, MapPin } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { SubscriptionInfo } from '../../type';
+import { convertAmountToBaseCurrency } from '../lib/formatBillingCurrency';
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
     HardDrive, Package, ShoppingCart, Users, MapPin,
@@ -19,6 +21,7 @@ interface StorageAddonsProps {
 
 
 const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon, addonCatalog = [] }) => {
+    const { formatPrice, settings } = useSettings();
     const [purchasingSlug, setPurchasingSlug] = useState<string | null>(null);
 
     // Split catalog into storage and resource groups from API data
@@ -71,9 +74,11 @@ const StorageAddons: React.FC<StorageAddonsProps> = ({ subInfo, onPurchaseAddon,
                     </p>
                 </div>
 
-                <div className="flex items-baseline gap-1 mb-6 font-display text-left">
+                <div className="flex items-baseline gap-1 mb-6 font-display text-left flex-wrap">
                     <span className="text-4xl font-black text-slate-900 dark:text-white">{addon.boostLabel || addon.size}</span>
-                    <span className="text-slate-500 dark:text-slate-400 font-bold ml-2">/ ${addon.price} one-off</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold ml-2">
+                        / {formatPrice(convertAmountToBaseCurrency(addon.price, addon.currency || 'USD', settings))} one-off
+                    </span>
                 </div>
 
                 <ul className="text-left space-y-3 mb-8 flex-1">

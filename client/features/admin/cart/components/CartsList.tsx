@@ -10,7 +10,7 @@ import { CartSummary } from '../types';
 
 export default function CartsList() {
     const [aiCart, setAiCart] = useState<CartSummary | null>(null);
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const {
         carts,
         loading,
@@ -111,10 +111,18 @@ export default function CartsList() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display mb-8 relative inline-flex items-center gap-3">
-                <ShoppingBag className="w-8 h-8 text-brand-600 dark:text-brand-400" />
-                Active Carts
-            </h1>
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display relative inline-flex items-center gap-3">
+                    <ShoppingBag className="w-8 h-8 text-brand-600 dark:text-brand-400" />
+                    Active Carts
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                    Monitor live and abandoned customer carts across the store.
+                    <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
+                        · {selectedCurrency.code} ({selectedCurrency.symbol})
+                    </span>
+                </p>
+            </div>
 
             {/* Search Bar & Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">

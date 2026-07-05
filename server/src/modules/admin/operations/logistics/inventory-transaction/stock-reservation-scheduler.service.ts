@@ -9,6 +9,16 @@ export class StockReservationSchedulerService implements OnModuleInit {
   constructor(@InjectQueue('inventory') private readonly inventoryQueue: Queue) {}
 
   async onModuleInit() {
+    const isProduction = process.env.NODE_ENV === 'production'
+
+    if (!isProduction) {
+      this.logger.log(
+        'Skipping inventory sweep repeatable jobs in development (set NODE_ENV=production to enable)',
+      )
+      await this.clearRepeatableSweepJobs()
+      return
+    }
+
     this.logger.log('Initializing Stock Reservations Expiry Repeatable Scheduler...')
     try {
       // Setup repeatable cron job to sweep expired reservations every minute
@@ -39,6 +49,21 @@ export class StockReservationSchedulerService implements OnModuleInit {
       this.logger.log('Successfully registered repeatable job "sweep-expired-batches" (0 2 * * *)')
     } catch (err) {
       this.logger.error('Failed to schedule repeatable jobs:', err)
+    }
+  }
+
+  /** Remove stale repeatable sweep jobs left in Redis from a previous boot. */
+  private async clearRepeatableSweepJobs() {
+    try {
+      const jobs = await this.inventoryQueue.getRepeatableJobs()
+      for (const job of jobs) {
+        if (job.name === 'sweep-expired-reservations' || job.name === 'sweep-expired-batches') {
+          await this.inventoryQueue.removeRepeatableByKey(job.key)
+          this.logger.log(`Removed repeatable job "${job.name}" from development queue`)
+        }
+      }
+    } catch (err) {
+      this.logger.warn('Failed to clear development repeatable sweep jobs', err)
     }
   }
 }

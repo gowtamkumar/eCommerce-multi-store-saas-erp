@@ -200,34 +200,48 @@ function getBaseCurrency(settings: SiteSettings | null | undefined): StoreCurren
   return base || { code: settings.currency, symbol: settings.currencySymbol, rate: 1 };
 }
 
+function isAdminPath(pathname?: string | null): boolean {
+  const currentPath =
+    pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
+  return (
+    currentPath.startsWith('/admin') ||
+    currentPath.startsWith('/supplier-portal')
+  );
+}
+
+function readSavedCurrency(
+  settings: SiteSettings | null | undefined,
+  storageKey: string,
+): StoreCurrency | null {
+  if (typeof window === 'undefined' || !settings) return null;
+
+  const savedCurrency = localStorage.getItem(storageKey);
+  if (!savedCurrency) return null;
+
+  try {
+    const parsed = JSON.parse(savedCurrency);
+    const exists = settings.supportedCurrencies?.find((c) => c.code === parsed.code);
+    return exists ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function resolveSelectedCurrency(
   settings: SiteSettings | null | undefined,
   pathname?: string | null,
 ): StoreCurrency {
-  const currentPath =
-    pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
-
-  const isAdminContext =
-    currentPath.startsWith('/admin') ||
-    currentPath.startsWith('/supplier-portal');
-
-  if (isAdminContext) {
-    return getBaseCurrency(settings);
+  if (isAdminPath(pathname)) {
+    return (
+      readSavedCurrency(settings, 'adminSelectedCurrency') ??
+      getBaseCurrency(settings)
+    );
   }
 
-  if (typeof window !== 'undefined' && settings) {
-    const savedCurrency = localStorage.getItem('selectedCurrency');
-    if (savedCurrency) {
-      try {
-        const parsed = JSON.parse(savedCurrency);
-        const exists = settings.supportedCurrencies?.find((c) => c.code === parsed.code);
-        if (exists) return exists;
-      } catch {
-        // fall through to store base currency
-      }
-    }
-  }
-  return getBaseCurrency(settings);
+  return (
+    readSavedCurrency(settings, 'selectedCurrency') ??
+    getBaseCurrency(settings)
+  );
 }
 
 export function SettingsProvider({
@@ -311,7 +325,10 @@ export function SettingsProvider({
     const currency = settings.supportedCurrencies.find(c => c.code === code);
     if (currency) {
       setSelectedCurrency(currency);
-      localStorage.setItem('selectedCurrency', JSON.stringify(currency));
+      const storageKey = isAdminPath(pathname)
+        ? 'adminSelectedCurrency'
+        : 'selectedCurrency';
+      localStorage.setItem(storageKey, JSON.stringify(currency));
     }
   };
 
@@ -331,9 +348,7 @@ export function SettingsProvider({
     const converted = convertPrice(amount);
     const num = typeof converted === 'number' && !isNaN(converted) ? converted : 0;
 
-    const isAdminRoute =
-      pathname.startsWith('/admin') ||
-      pathname.startsWith('/supplier-portal');
+    const isAdminRoute = isAdminPath(pathname);
 
     if (isAdminRoute) {
       return formatCurrency(num, selectedCurrency.symbol);

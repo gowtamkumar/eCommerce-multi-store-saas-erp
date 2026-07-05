@@ -3,8 +3,10 @@
 import * as Icons from 'lucide-react';
 import { motion } from 'framer-motion';
 import React, { useMemo, useState } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { Plan, PlanCardProps, SubscriptionInfo } from '../../type';
 import { getFeatureDisplay } from '@/routes';
+import { convertAmountToBaseCurrency } from '../lib/formatBillingCurrency';
 
 const isUnlimited = (val: number | undefined | null) => val === -1;
 
@@ -30,6 +32,7 @@ const PlanCard: React.FC<PlanGridCardProps> = ({
   initiating,
   idx
 }) => {
+  const { formatPrice, settings } = useSettings();
 
   const priceDisplay = useMemo(() => {
     const p = plan as any;
@@ -85,10 +88,10 @@ const PlanCard: React.FC<PlanGridCardProps> = ({
         }`}>{plan.description || "The essentials to get your store up and running."}</p>
       </div>
 
-      <div className="flex items-baseline gap-1 mb-2 font-display text-left">
+      <div className="flex items-baseline gap-1 mb-2 font-display text-left flex-wrap">
         <span className={`text-5xl font-black tracking-tight ${
           isEnterprise ? 'text-white' : 'text-slate-900 dark:text-white'
-        }`}>${Number(priceDisplay.amount).toFixed(0)}</span>
+        }`}>{formatPrice(convertAmountToBaseCurrency(priceDisplay.amount, p.currency, settings))}</span>
         <span className={`font-bold ${
           isEnterprise ? 'text-slate-500' : 'text-slate-500 dark:text-slate-400'
         }`}>/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
@@ -104,7 +107,7 @@ const PlanCard: React.FC<PlanGridCardProps> = ({
                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
               }`}
             >
-              Save ${savedPerYear.toFixed(0)}/yr
+              Save {formatPrice(convertAmountToBaseCurrency(savedPerYear, p.currency, settings))}/yr
             </motion.span>
           ) : null;
         })()}

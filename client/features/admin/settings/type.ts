@@ -3,6 +3,9 @@ export interface Plan {
     id: string;
     name: string;
     price: number;
+    monthlyPrice?: number;
+    yearlyPrice?: number;
+    currency?: string;
     features: string[];
     description: string;
 }

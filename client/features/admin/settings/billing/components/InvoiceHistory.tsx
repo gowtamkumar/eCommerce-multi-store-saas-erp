@@ -3,11 +3,15 @@
 import dayjs from 'dayjs';
 import { Clock, Download } from 'lucide-react';
 import React from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { InvoiceHistoryProps } from '../../type';
+import { convertAmountToBaseCurrency } from '../lib/formatBillingCurrency';
 
 
 
 const InvoiceHistory: React.FC<InvoiceHistoryProps> = ({ history }) => {
+    const { formatPrice, settings } = useSettings();
+
     return (
         <section className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-200/60 dark:border-slate-700/50 overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/20">
@@ -49,7 +53,7 @@ const InvoiceHistory: React.FC<InvoiceHistoryProps> = ({ history }) => {
                                     </td>
                                     <td className="px-8 py-6">
                                         <p className="font-black text-slate-900 dark:text-white">
-                                            {invoice.amount} {invoice.currency}
+                                            {formatPrice(convertAmountToBaseCurrency(invoice.amount, invoice.currency, settings))}
                                         </p>
                                     </td>
                                     <td className="px-8 py-6">
