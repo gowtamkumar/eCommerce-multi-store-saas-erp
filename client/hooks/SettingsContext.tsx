@@ -1,9 +1,9 @@
 "use client";
 
-import { DEFAULT_SETTINGS } from '../services/defaultSettings';
-import { fetchAPI } from '@/services/api';
 import { setClientStoreId } from '@/lib/store-store-id';
+import { fetchAPI } from '@/services/api';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { DEFAULT_SETTINGS } from '../services/defaultSettings';
 
 interface SiteSettings {
   logo: string;
@@ -221,11 +221,11 @@ export function SettingsProvider({
           labelSettings: { ...DEFAULT_SETTINGS.labelSettings, ...settings?.labelSettings },
           theme: { ...DEFAULT_SETTINGS.theme, ...settings?.theme },
           branding: { ...DEFAULT_SETTINGS.branding, ...settings?.branding },
-          shippingConfig: { 
-            insideCityFee: 60, 
-            outsideCityFee: 120, 
-            freeShippingThreshold: 5000, 
-            ...settings?.shippingConfig 
+          shippingConfig: {
+            insideCityFee: 60,
+            outsideCityFee: 120,
+            freeShippingThreshold: 5000,
+            ...settings?.shippingConfig
           },
         };
         setSettings(mergedSettings);

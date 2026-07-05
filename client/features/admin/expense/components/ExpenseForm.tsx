@@ -4,7 +4,6 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Calendar,
-    DollarSign,
     FileText,
     Hash,
     Link2,
@@ -14,6 +13,7 @@ import {
     Tag,
     X,
 } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { EXPENSE_CATEGORIES, type ExpenseFormProps } from '../types';
 import { useExpenseForm } from '../hooks/useExpenseForm';
 import { ExpenseCategoryAiAssist } from './ExpenseCategoryAiAssist';
@@ -34,6 +34,8 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }: ExpenseFormProps) {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol ?? '$';
     const {
         isSubmitting,
         formData,
@@ -103,7 +105,7 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
                                 <div className="space-y-2">
                                     <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Amount</label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 select-none">{currencySymbol}</span>
                                         <input
                                             required
                                             type="number"

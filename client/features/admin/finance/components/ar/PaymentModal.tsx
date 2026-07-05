@@ -1,8 +1,8 @@
+import type { ArAgingRow } from '@/features/admin/customer/type';
+import { fetchAPI } from '@/services/api';
+import { CheckCircle2, DollarSign, Loader2, X } from 'lucide-react';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { fetchAPI } from '@/services/api';
-import { DollarSign, Loader2, CheckCircle2, X } from 'lucide-react';
-import type { ArAgingRow } from '@/features/admin/customer/type';
 
 export interface PaymentModalProps {
     customer: ArAgingRow;

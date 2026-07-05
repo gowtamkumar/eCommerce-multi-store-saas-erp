@@ -7,6 +7,8 @@ import { AlertTriangle, Building2, CreditCard, Edit2, History, Plus, Search, Spa
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { CustomerListProps, User } from '../type';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export default function CustomerList({
     users,
@@ -20,6 +22,9 @@ export default function CustomerList({
     searchQuery,
     onSearchChange
 }: CustomerListProps) {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol || '$';
+
     const columns = useMemo<DataTableColumn<User>[]>(() => [
         {
             key: 'customer',
@@ -72,7 +77,7 @@ export default function CustomerList({
                 <div className="flex items-center gap-1.5">
                     <CreditCard className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                     <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300 font-mono">
-                        ${Number(user.creditLimit).toLocaleString()}
+                        {formatCurrency(user.creditLimit ?? 0, currencySymbol)}
                     </span>
                 </div>
             ) : (
@@ -140,7 +145,7 @@ export default function CustomerList({
                 </div>
             ),
         },
-    ], [onDelete, onEdit, onOpenAiProfile]);
+    ], [onDelete, onEdit, onOpenAiProfile, currencySymbol]);
 
     return (
         <div className="space-y-6">

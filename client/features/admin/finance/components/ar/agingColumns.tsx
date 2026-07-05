@@ -1,14 +1,14 @@
 'use client';
 
-import { AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import type { DataTableColumn } from '@/components/shared/DataTable';
 import type { ArAgingRow } from '@/features/admin/customer/type';
-import AgingBadge from './AgingBadge';
+import { AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import { getOverdueAmount } from '../../lib/buildArCollectionContext';
+import AgingBadge from './AgingBadge';
 
 export function buildAgingColumns(
-  onPay: (row: ArAgingRow) => void,
-  onCollect: (row: ArAgingRow) => void,
+    onPay: (row: ArAgingRow) => void,
+    onCollect: (row: ArAgingRow) => void,
 ): DataTableColumn<ArAgingRow>[] {
     return [
         {
