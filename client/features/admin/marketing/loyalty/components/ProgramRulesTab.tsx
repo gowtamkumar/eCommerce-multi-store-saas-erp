@@ -1,7 +1,7 @@
 'use client';
 
-import { RefreshCw, Save } from 'lucide-react';
 import type { LoyaltyConfig } from '@/services/loyalty';
+import { RefreshCw, Save } from 'lucide-react';
 import type { ProgramRulesTabProps } from '../types';
 import { LoyaltyProgramAiAssist } from './LoyaltyProgramAiAssist';
 
@@ -11,40 +11,22 @@ interface NumberFieldProps {
     min?: number;
     step?: string;
     placeholder?: string;
-    currencySymbol?: string;
     onChange: (value: string) => void;
 }
 
-function NumberField({ label, value, min = 0, step, placeholder, currencySymbol, onChange }: NumberFieldProps) {
-    const inputClassName = 'w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-950 dark:text-white';
-
+function NumberField({ label, value, min = 0, step, placeholder, onChange }: NumberFieldProps) {
     return (
         <div>
             <label className="text-xs font-black text-slate-500 uppercase tracking-wider">{label}</label>
-            {currencySymbol ? (
-                <div className="relative mt-2">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 select-none">{currencySymbol}</span>
-                    <input
-                        type="number"
-                        value={value}
-                        placeholder={placeholder}
-                        onChange={(event) => onChange(event.target.value)}
-                        className={`${inputClassName} pl-10`}
-                        min={min}
-                        step={step}
-                    />
-                </div>
-            ) : (
-                <input
-                    type="number"
-                    value={value}
-                    placeholder={placeholder}
-                    onChange={(event) => onChange(event.target.value)}
-                    className={`${inputClassName} mt-2`}
-                    min={min}
-                    step={step}
-                />
-            )}
+            <input
+                type="number"
+                value={value}
+                placeholder={placeholder}
+                onChange={(event) => onChange(event.target.value)}
+                className="w-full mt-2 px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-950 dark:text-white"
+                min={min}
+                step={step}
+            />
         </div>
     );
 }
@@ -53,16 +35,12 @@ function TierField({
     label,
     threshold,
     multiplier,
-    currencySymbol,
-    currencyCode,
     onThresholdChange,
     onMultiplierChange,
 }: {
     label: string;
     threshold: number;
     multiplier: number;
-    currencySymbol: string;
-    currencyCode: string;
     onThresholdChange: (value: number) => void;
     onMultiplierChange: (value: number) => void;
 }) {
@@ -70,9 +48,8 @@ function TierField({
         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 space-y-4">
             <h4 className="text-sm font-black text-slate-700 dark:text-slate-300">{label}</h4>
             <NumberField
-                label={`Min 12m Spending (${currencyCode})`}
+                label="Min 12m Spending"
                 value={threshold}
-                currencySymbol={currencySymbol}
                 onChange={(value) => onThresholdChange(Number(value))}
             />
             <NumberField
@@ -91,13 +68,9 @@ export default function ProgramRulesTab({
     liability,
     saving,
     message,
-    formatPrice,
-    currencyCode,
-    currencySymbol,
     onConfigChange,
     onSubmit,
 }: ProgramRulesTabProps) {
-    const unitAmount = formatPrice(1);
     const patch = (patchValue: Partial<LoyaltyConfig>) => onConfigChange(patchValue);
 
     return (
@@ -133,12 +106,12 @@ export default function ProgramRulesTab({
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <NumberField
-                            label={`Points Earned per ${unitAmount} Spent`}
+                            label="Points Earned per $1 Spent"
                             value={config.pointsPerCurrencySpent}
                             onChange={(value) => patch({ pointsPerCurrencySpent: Number(value) })}
                         />
                         <NumberField
-                            label={`Points Required per ${unitAmount} Discount`}
+                            label="Points Required per $1 Discount"
                             value={config.pointsRequiredPerCurrencyDiscount}
                             min={1}
                             onChange={(value) => patch({ pointsRequiredPerCurrencyDiscount: Number(value) })}
@@ -183,15 +156,13 @@ export default function ProgramRulesTab({
                             </select>
                         </div>
                         <NumberField
-                            label={config.referralRewardType === 'WALLET' ? `Reward Value (${currencyCode})` : 'Reward Value (Points)'}
+                            label="Reward Value"
                             value={config.referralRewardAmount}
-                            currencySymbol={config.referralRewardType === 'WALLET' ? currencySymbol : undefined}
                             onChange={(value) => patch({ referralRewardAmount: Number(value) })}
                         />
                         <NumberField
-                            label={`Referee Min Order (${currencyCode})`}
+                            label="Referee Min Order"
                             value={config.refereeMinPurchase}
-                            currencySymbol={currencySymbol}
                             onChange={(value) => patch({ refereeMinPurchase: Number(value) })}
                         />
                     </div>
@@ -203,7 +174,6 @@ export default function ProgramRulesTab({
                     </h3>
                     <LoyaltyProgramAiAssist
                         config={config}
-                        formatPrice={formatPrice}
                         onApply={(result) =>
                             patch({
                                 programDescription: result.programDescription,
@@ -252,8 +222,6 @@ export default function ProgramRulesTab({
                             label="SILVER TIER"
                             threshold={config.silverTierThreshold}
                             multiplier={config.silverMultiplier}
-                            currencySymbol={currencySymbol}
-                            currencyCode={currencyCode}
                             onThresholdChange={(value) => patch({ silverTierThreshold: value })}
                             onMultiplierChange={(value) => patch({ silverMultiplier: value })}
                         />
@@ -261,8 +229,6 @@ export default function ProgramRulesTab({
                             label="GOLD TIER"
                             threshold={config.goldTierThreshold}
                             multiplier={config.goldMultiplier}
-                            currencySymbol={currencySymbol}
-                            currencyCode={currencyCode}
                             onThresholdChange={(value) => patch({ goldTierThreshold: value })}
                             onMultiplierChange={(value) => patch({ goldMultiplier: value })}
                         />
@@ -270,8 +236,6 @@ export default function ProgramRulesTab({
                             label="PLATINUM TIER"
                             threshold={config.platinumTierThreshold}
                             multiplier={config.platinumMultiplier}
-                            currencySymbol={currencySymbol}
-                            currencyCode={currencyCode}
                             onThresholdChange={(value) => patch({ platinumTierThreshold: value })}
                             onMultiplierChange={(value) => patch({ platinumMultiplier: value })}
                         />

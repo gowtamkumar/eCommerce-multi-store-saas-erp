@@ -5,13 +5,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import type { SalesTrendChartProps } from '../../types';
 
 
-const SalesTrendChart = memo(({ salesData, isLoading, formatPrice, currencySymbol }: SalesTrendChartProps) => {
-    const formatAxisValue = (val: number) => {
-        if (val >= 1_000_000) return `${currencySymbol}${(val / 1_000_000).toFixed(val >= 10_000_000 ? 0 : 1)}M`;
-        if (val >= 1_000) return `${currencySymbol}${(val / 1_000).toFixed(val >= 10_000 ? 0 : 1)}k`;
-        return `${currencySymbol}${val}`;
-    };
-
+const SalesTrendChart = memo(({ salesData, isLoading }: SalesTrendChartProps) => {
     if (isLoading && salesData.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -47,7 +41,7 @@ const SalesTrendChart = memo(({ salesData, isLoading, formatPrice, currencySymbo
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: '#94a3b8', fontSize: 12 }}
-                            tickFormatter={formatAxisValue}
+                            tickFormatter={(val) => `${val}`}
                             dx={-10}
                         />
                         <Tooltip
@@ -61,7 +55,6 @@ const SalesTrendChart = memo(({ salesData, isLoading, formatPrice, currencySymbo
                             }}
                             itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
                             cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 5' }}
-                            formatter={(value: unknown) => [formatPrice(Number(value || 0)), 'Sales']}
                         />
                         <Area
                             type="monotone"

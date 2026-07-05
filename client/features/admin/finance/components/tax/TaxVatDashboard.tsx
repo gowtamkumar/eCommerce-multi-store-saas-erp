@@ -1,13 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useSettings } from '@/hooks/SettingsContext';
+import { useMemo } from 'react';
+import { useTaxVatDashboard } from '../../hooks/useTaxVatDashboard';
 import {
     buildRelatedTaxRulesSummary,
     buildTaxRuleFormSummary,
     buildTaxRuleSummary,
 } from '../../lib/buildTaxRuleExplanationContext';
-import { useTaxVatDashboard } from '../../hooks/useTaxVatDashboard';
 import TaxFilingView from './TaxFilingView';
 import TaxRuleExplanationModal from './TaxRuleExplanationModal';
 import TaxRuleFormModal from './TaxRuleFormModal';
@@ -18,7 +18,7 @@ import TaxVatTabs from './TaxVatTabs';
 import { buildTaxFilingColumns, buildTaxRuleColumns } from './taxColumns';
 
 export function TaxVatDashboard() {
-    const { formatPrice, selectedCurrency } = useSettings();
+    const { formatPrice } = useSettings();
     const tax = useTaxVatDashboard();
 
     const filingColumns = useMemo(
@@ -61,8 +61,6 @@ export function TaxVatDashboard() {
                 onSeedDefaults={tax.seedDefaultRules}
                 onCreateRule={tax.openCreateModal}
                 onRefresh={tax.refreshActiveTab}
-                currencyCode={selectedCurrency.code}
-                currencySymbol={selectedCurrency.symbol}
             />
 
             <TaxVatTabs activeTab={tax.activeTab} onTabChange={tax.setActiveTab} />

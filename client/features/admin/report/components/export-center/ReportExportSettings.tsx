@@ -10,8 +10,6 @@ const ReportExportSettings: React.FC<ReportExportSettingsProps> = ({
     reportType,
     startDate,
     endDate,
-    currencyCode,
-    currencySymbol,
     onStartDateChange,
     onEndDateChange,
     suppliers,
@@ -36,17 +34,6 @@ const ReportExportSettings: React.FC<ReportExportSettingsProps> = ({
                 </h3>
 
                 <div className="space-y-6">
-                    {currencyCode && currencySymbol && (
-                        <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-900/10 border border-brand-100 dark:border-brand-900/30">
-                            <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider">
-                                Store currency: {currencyCode} ({currencySymbol})
-                            </p>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                                Monetary values in exported reports use your store base currency.
-                            </p>
-                        </div>
-                    )}
-
                     {/* Date Range Selection */}
                     <div className="space-y-3">
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Date Range</label>

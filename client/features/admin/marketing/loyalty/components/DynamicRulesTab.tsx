@@ -7,7 +7,6 @@ import LoyaltyRuleCard from './LoyaltyRuleCard';
 export default function DynamicRulesTab({
     rules,
     loadingRules,
-    formatPrice,
     onAddRule,
     onEditRule,
     onDeleteRule,
@@ -48,7 +47,6 @@ export default function DynamicRulesTab({
                         <LoyaltyRuleCard
                             key={rule.id}
                             rule={rule}
-                            formatPrice={formatPrice}
                             onEdit={onEditRule}
                             onDelete={onDeleteRule}
                         />

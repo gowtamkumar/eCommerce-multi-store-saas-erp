@@ -8,7 +8,7 @@ const TABS: Array<{ id: LoyaltySubTab; label: string }> = [
     { id: 'dynamic', label: 'Dynamic Rules' },
 ];
 
-export default function LoyaltyHeader({ activeTab, onTabChange, currencyCode, currencySymbol }: LoyaltyHeaderProps) {
+export default function LoyaltyHeader({ activeTab, onTabChange }: LoyaltyHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -17,11 +17,6 @@ export default function LoyaltyHeader({ activeTab, onTabChange, currencyCode, cu
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                     Configure points conversion rates, membership tier thresholds, and award manually managed points adjustments.
-                    {currencyCode && currencySymbol && (
-                        <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
-                            · {currencyCode} ({currencySymbol})
-                        </span>
-                    )}
                 </p>
             </div>
             <div className="flex bg-white dark:bg-slate-800 rounded-2xl p-1.5 border border-slate-200/50 dark:border-slate-700 shadow-sm shrink-0">

@@ -6,13 +6,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import type { RevenuePayoutChartProps } from '../../types';
 
 
-const RevenuePayoutChart = memo(({ chartData, isLoading, formatPrice, currencySymbol }: RevenuePayoutChartProps) => {
-    const formatAxisValue = (val: number) => {
-        if (val >= 1_000_000) return `${currencySymbol}${(val / 1_000_000).toFixed(val >= 10_000_000 ? 0 : 1)}M`;
-        if (val >= 1_000) return `${currencySymbol}${(val / 1_000).toFixed(val >= 10_000 ? 0 : 1)}k`;
-        return `${currencySymbol}${val}`;
-    };
-
+const RevenuePayoutChart = memo(({ chartData, isLoading }: RevenuePayoutChartProps) => {
     if (isLoading && chartData.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse h-[450px]" />
@@ -52,7 +46,6 @@ const RevenuePayoutChart = memo(({ chartData, isLoading, formatPrice, currencySy
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: '#94a3b8', fontSize: 10 }}
-                            tickFormatter={formatAxisValue}
                             dx={-10}
                         />
                         <Tooltip
@@ -64,15 +57,10 @@ const RevenuePayoutChart = memo(({ chartData, isLoading, formatPrice, currencySy
                                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
                             }}
                             cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 5' }}
-                            formatter={(value: unknown, name: string) => [
-                                formatPrice(Number(value || 0)),
-                                name === 'revenue' ? 'Revenue' : 'Payouts',
-                            ]}
                         />
                         <Area
                             type="monotone"
                             dataKey="revenue"
-                            name="revenue"
                             stroke="#3b82f6"
                             strokeWidth={4}
                             fillOpacity={1}
@@ -82,7 +70,6 @@ const RevenuePayoutChart = memo(({ chartData, isLoading, formatPrice, currencySy
                         <Area
                             type="monotone"
                             dataKey="expense"
-                            name="expense"
                             stroke="#f43f5e"
                             strokeWidth={4}
                             fillOpacity={1}

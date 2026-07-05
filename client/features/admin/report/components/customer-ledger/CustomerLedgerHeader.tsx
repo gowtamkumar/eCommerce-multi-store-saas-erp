@@ -11,8 +11,6 @@ const CustomerLedgerHeader: React.FC<CustomerLedgerHeaderProps> = ({
     selectedCustomerId,
     onCustomerChange,
     hasLedgerData,
-    currencyCode,
-    currencySymbol,
     onExportCsv,
     isExporting,
 }) => {
@@ -23,14 +21,7 @@ const CustomerLedgerHeader: React.FC<CustomerLedgerHeaderProps> = ({
                     <Receipt className="w-6 h-6 text-brand-600" />
                     Customer Payment Ledger
                 </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">
-                    Track obligations and settlements for your customers
-                    {currencyCode && currencySymbol && (
-                        <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
-                            · {currencyCode} ({currencySymbol})
-                        </span>
-                    )}
-                </p>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">Track obligations and settlements for your customers</p>
             </div>
 
             <div className="flex items-center gap-3">

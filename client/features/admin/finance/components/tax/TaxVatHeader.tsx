@@ -9,8 +9,6 @@ export interface TaxVatHeaderProps {
     onSeedDefaults: () => void;
     onCreateRule: () => void;
     onRefresh: () => void;
-    currencyCode?: string;
-    currencySymbol?: string;
 }
 
 export default function TaxVatHeader({
@@ -19,8 +17,6 @@ export default function TaxVatHeader({
     onSeedDefaults,
     onCreateRule,
     onRefresh,
-    currencyCode,
-    currencySymbol,
 }: TaxVatHeaderProps) {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -30,11 +26,6 @@ export default function TaxVatHeader({
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-semibold">
                     Multi-jurisdiction automated VAT calculations, Input Tax credits, and output filing returns
-                    {currencyCode && currencySymbol && (
-                        <span className="ml-2 text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                            · {currencyCode} ({currencySymbol})
-                        </span>
-                    )}
                 </p>
             </div>
 

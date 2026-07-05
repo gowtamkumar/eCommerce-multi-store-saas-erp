@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
 import DataTable from '@/components/shared/DataTable';
-import { useSettings } from '@/hooks/SettingsContext';
+import { useMemo } from 'react';
 import { useFiscalPeriods } from '../../hooks/useFiscalPeriods';
 import FiscalPeriodAuditBanner from './FiscalPeriodAuditBanner';
 import FiscalPeriodFormModal from './FiscalPeriodFormModal';
@@ -10,7 +9,6 @@ import FiscalPeriodsHeader from './FiscalPeriodsHeader';
 import { buildFiscalPeriodColumns } from './fiscalPeriodColumns';
 
 export default function FiscalPeriodsPage() {
-    const { selectedCurrency } = useSettings();
     const fiscal = useFiscalPeriods();
 
     const columns = useMemo(
@@ -20,11 +18,7 @@ export default function FiscalPeriodsPage() {
 
     return (
         <div className="p-8 max-w-[1600px] mx-auto space-y-8">
-            <FiscalPeriodsHeader
-                onCreate={fiscal.openCreateModal}
-                currencyCode={selectedCurrency.code}
-                currencySymbol={selectedCurrency.symbol}
-            />
+            <FiscalPeriodsHeader onCreate={fiscal.openCreateModal} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <FiscalPeriodAuditBanner />

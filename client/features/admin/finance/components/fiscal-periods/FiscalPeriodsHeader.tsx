@@ -4,15 +4,9 @@ import { Plus } from 'lucide-react';
 
 export interface FiscalPeriodsHeaderProps {
     onCreate: () => void;
-    currencyCode?: string;
-    currencySymbol?: string;
 }
 
-export default function FiscalPeriodsHeader({
-    onCreate,
-    currencyCode,
-    currencySymbol,
-}: FiscalPeriodsHeaderProps) {
+export default function FiscalPeriodsHeader({ onCreate }: FiscalPeriodsHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -21,11 +15,6 @@ export default function FiscalPeriodsHeader({
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">
                     Lock Postings &amp; Enforce Financial Audit Control
-                    {currencyCode && currencySymbol && (
-                        <span className="ml-2 text-indigo-600 dark:text-indigo-400 normal-case tracking-normal font-black">
-                            · {currencyCode} ({currencySymbol})
-                        </span>
-                    )}
                 </p>
             </div>
             <button

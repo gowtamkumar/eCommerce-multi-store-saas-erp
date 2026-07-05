@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart3, Scale, TrendingUp, Truck, Wallet } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, Truck, Wallet } from 'lucide-react';
 import { memo } from 'react';
 import type { FinanceKpiCardConfig, FinanceKpiCardProps, FinanceKpiGridProps } from '../../types';
 
@@ -22,7 +22,7 @@ const KPI_CARDS: FinanceKpiCardConfig[] = [
     {
         key: 'netProfit',
         label: 'Net Profit',
-        icon: Scale,
+        icon: DollarSign,
         iconWrapperClassName: 'bg-emerald-50 dark:bg-emerald-900/30',
         iconClassName: 'text-emerald-600',
     },

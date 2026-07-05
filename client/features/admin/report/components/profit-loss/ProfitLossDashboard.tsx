@@ -1,17 +1,17 @@
 'use client';
 
-import { useMemo } from 'react';
 import { useSettings } from '@/hooks/SettingsContext';
+import { useMemo } from 'react';
 import { useProfitLossReport } from '../../hooks/useProfitLossReport';
 import { buildProfitLossReportSummary } from '../../lib/buildReportExecutiveSummaryContext';
+import ReportExecutiveSummaryPanel from '../ReportExecutiveSummaryPanel';
 import ExpenseDistribution from '../expense/ExpenseDistribution';
 import FinancialStatement from '../finance/FinancialStatement';
-import ReportExecutiveSummaryPanel from '../ReportExecutiveSummaryPanel';
-import ProfitLossKpiGrid from './ProfitLossKpiGrid';
 import ProfitLossHeader from './ProfitLossHeader';
+import ProfitLossKpiGrid from './ProfitLossKpiGrid';
 
 export default function ProfitLossDashboard() {
-    const { formatPrice, selectedCurrency } = useSettings();
+    const { formatPrice } = useSettings();
     const { data, isLoading, dateRange, handleDateChange, fetchReport } = useProfitLossReport();
     const reportSummary = useMemo(() => buildProfitLossReportSummary(data), [data]);
 
@@ -22,8 +22,6 @@ export default function ProfitLossDashboard() {
                 endDate={dateRange.endDate}
                 onDateChange={handleDateChange}
                 onFilter={fetchReport}
-                currencyCode={selectedCurrency.code}
-                currencySymbol={selectedCurrency.symbol}
             />
 
             <ProfitLossKpiGrid
@@ -50,7 +48,6 @@ export default function ProfitLossDashboard() {
                     <ExpenseDistribution
                         data={data?.operatingExpenses}
                         isLoading={isLoading}
-                        formatPrice={formatPrice}
                     />
                 </div>
             </div>

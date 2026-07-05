@@ -13,7 +13,7 @@ import SupplierLedgerSummary from './SupplierLedgerSummary';
 import SupplierLedgerTable from './SupplierLedgerTable';
 
 const SupplierLedgerDashboard: React.FC = () => {
-    const { formatPrice, selectedCurrency } = useSettings();
+    const { formatPrice } = useSettings();
     const {
         suppliers,
         selectedSupplierId,
@@ -36,8 +36,6 @@ const SupplierLedgerDashboard: React.FC = () => {
                 selectedSupplierId={selectedSupplierId}
                 onSupplierChange={handleSupplierChange}
                 hasLedgerData={!!ledgerData}
-                currencyCode={selectedCurrency.code}
-                currencySymbol={selectedCurrency.symbol}
                 onExportCsv={handleExportCsv}
                 isExporting={isExporting}
             />

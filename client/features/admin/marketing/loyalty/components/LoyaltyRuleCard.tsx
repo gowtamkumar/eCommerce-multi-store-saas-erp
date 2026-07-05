@@ -4,7 +4,7 @@ import { Calendar, Edit2, Trash2 } from 'lucide-react';
 import { getRulePresentation } from '../lib/loyalty';
 import type { LoyaltyRuleCardProps } from '../types';
 
-export default function LoyaltyRuleCard({ rule, formatPrice, onEdit, onDelete }: LoyaltyRuleCardProps) {
+export default function LoyaltyRuleCard({ rule, onEdit, onDelete }: LoyaltyRuleCardProps) {
     const { badgeColor, typeLabel, valueDisplay } = getRulePresentation(rule);
     const isCategory = rule.type === 'CATEGORY_MULTIPLIER';
     const isSpend = rule.type === 'MIN_SPEND_BONUS';
@@ -41,9 +41,7 @@ export default function LoyaltyRuleCard({ rule, formatPrice, onEdit, onDelete }:
                     {isSpend && (
                         <p className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                             <span className="font-bold text-slate-700 dark:text-slate-300">Min Spend Required:</span>
-                            <strong className="text-slate-800 dark:text-white font-mono">
-                                {formatPrice(Number(rule.conditions?.minSpend || rule.conditions?.threshold || 0))}
-                            </strong>
+                            <strong className="text-slate-800 dark:text-white font-mono">${Number(rule.conditions?.minSpend || rule.conditions?.threshold || 0).toLocaleString()}</strong>
                         </p>
                     )}
                     {isWeekend && (

@@ -12,7 +12,7 @@ import WarehouseStockSummaryCards from './WarehouseStockSummaryCards';
 import { buildWarehouseStockColumns } from './warehouseStockColumns';
 
 export default function WarehouseStockDashboard() {
-    const { formatPrice, selectedCurrency } = useSettings();
+    const { formatPrice } = useSettings();
     const {
         branches,
         filteredWarehouses,
@@ -62,18 +62,12 @@ export default function WarehouseStockDashboard() {
                 selectedBranchId={selectedBranchId}
                 selectedWarehouseId={selectedWarehouseId}
                 isExportDisabled={loading || filteredProducts.length === 0}
-                currencyCode={selectedCurrency.code}
-                currencySymbol={selectedCurrency.symbol}
                 onBranchChange={handleBranchChange}
                 onWarehouseChange={setSelectedWarehouseId}
-                onExport={() => exportCsv(selectedCurrency.code)}
+                onExport={exportCsv}
             />
 
-            <WarehouseStockSummaryCards
-                stats={stats}
-                formatPrice={formatPrice}
-                currencyCode={selectedCurrency.code}
-            />
+            <WarehouseStockSummaryCards stats={stats} formatPrice={formatPrice} />
 
             <WarehouseStockFilters
                 filterCounts={filterCounts}

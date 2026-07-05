@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { Calculator, Landmark, Loader2 } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useSettings } from '@/hooks/SettingsContext';
 import type { TaxCalculationFormData, TaxCalculationResult } from '../../types';
 
 type PriceFormatter = (amount: number) => string;
@@ -25,10 +24,6 @@ export default function TaxSandboxView({
     onFieldChange,
     onSubmit,
 }: TaxSandboxViewProps) {
-    const { selectedCurrency } = useSettings();
-    const currencySymbol = selectedCurrency.symbol;
-    const currencyCode = selectedCurrency.code;
-
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 h-fit space-y-6">
@@ -63,21 +58,16 @@ export default function TaxSandboxView({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                            Base Price / Transaction Amount ({currencyCode})
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 select-none">{currencySymbol}</span>
-                            <input
-                                type="number"
-                                required
-                                step="0.01"
-                                min="1"
-                                value={formData.amount}
-                                onChange={(event) => onFieldChange('amount', event.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none font-black text-xs font-mono text-slate-900 dark:text-white"
-                            />
-                        </div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Base Price / Transaction Amount</label>
+                        <input
+                            type="number"
+                            required
+                            step="0.01"
+                            min="1"
+                            value={formData.amount}
+                            onChange={(event) => onFieldChange('amount', event.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl outline-none font-black text-xs font-mono text-slate-900 dark:text-white"
+                        />
                     </div>
 
                     <div className="space-y-1.5">
