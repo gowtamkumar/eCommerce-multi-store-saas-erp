@@ -3,6 +3,7 @@
 import { ChangeEvent, useState } from 'react';
 import Pagination from '@/components/shared/Pagination';
 import { fetchAPI } from '@/services/api';
+import { formatCurrency } from '@/lib/utils';
 import {
   Banknote,
   ChevronDown,
@@ -20,6 +21,7 @@ import {
   X,
   Sparkles
 } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { usePosDashboard } from '../hooks/usePosDashboard';
 
 // Subcomponents
@@ -192,6 +194,9 @@ export default function Pos() {
     changeDue,
   } = usePosDashboard();
 
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   const [isAiAssistOpen, setIsAiAssistOpen] = useState(false);
 
   // loading view
@@ -263,19 +268,19 @@ export default function Pos() {
           <div className="flex flex-wrap gap-4 md:gap-6 w-full md:w-auto">
             <div className="text-center md:text-left min-w-[140px]">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Drawer Base</p>
-              <p className="font-black text-sm">${Number(activeShift.openingBalance).toFixed(2)}</p>
+              <p className="font-black text-sm">{formatCurrency(activeShift.openingBalance, currencySymbol)}</p>
             </div>
             <div className="w-px h-8 bg-slate-800" />
             <div className="text-center md:text-left min-w-[140px]">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash Sales</p>
-              <p className="font-black text-sm text-emerald-400">+${Number(activeShift.cashSales).toFixed(2)}</p>
+              <p className="font-black text-sm text-emerald-400">+{formatCurrency(activeShift.cashSales, currencySymbol)}</p>
             </div>
             {Number(activeShift.cashIn || 0) > 0 && (
               <>
                 <div className="w-px h-8 bg-slate-800" />
                 <div className="text-center md:text-left">
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash In</p>
-                  <p className="font-black text-sm text-emerald-400">+${Number(activeShift.cashIn).toFixed(2)}</p>
+                  <p className="font-black text-sm text-emerald-400">+{formatCurrency(activeShift.cashIn || 0, currencySymbol)}</p>
                 </div>
               </>
             )}
@@ -284,14 +289,14 @@ export default function Pos() {
                 <div className="w-px h-8 bg-slate-800" />
                 <div className="text-center md:text-left">
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash Out</p>
-                  <p className="font-black text-sm text-red-400">-${Number(activeShift.cashOut).toFixed(2)}</p>
+                  <p className="font-black text-sm text-red-400">-{formatCurrency(activeShift.cashOut || 0, currencySymbol)}</p>
                 </div>
               </>
             )}
             <div className="w-px h-8 bg-slate-800" />
             <div className="text-center md:text-left">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Expected Balance</p>
-              <p className="font-black text-sm text-brand-400">${Number(activeShift.expectedClosingBalance).toFixed(2)}</p>
+              <p className="font-black text-sm text-brand-400">{formatCurrency(activeShift.expectedClosingBalance, currencySymbol)}</p>
             </div>
           </div>
 
@@ -398,11 +403,11 @@ export default function Pos() {
                     )}
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <span className="text-xs text-brand-600 dark:text-brand-400 font-black">
-                        ${item.price.toFixed(2)} each
+                        {formatCurrency(item.price, currencySymbol)} each
                       </span>
 
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded-md">
-                        Tax: ${(() => {
+                        Tax: {(() => {
                           const rawTax = item.product.taxRate;
                           const itemTaxRate = rawTax !== undefined && rawTax !== null && !isNaN(Number(rawTax)) ? Number(rawTax) : taxRate;
                           const discAmt = Number(item.product.discountAmount || 0);
@@ -410,12 +415,12 @@ export default function Pos() {
                           const unitPrice = discType === 'percentage' ? item.price * (1 - discAmt / 100) : item.price - discAmt;
                           const itemSubtotal = Math.max(0, unitPrice) * item.quantity;
                           const itemTax = (itemSubtotal * itemTaxRate) / 100;
-                          return itemTax.toFixed(2);
+                          return formatCurrency(itemTax, currencySymbol);
                         })()}
                       </span>
 
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded-md">
-                        Subtotal: ${(item.price * item.quantity).toFixed(2)}
+                        Subtotal: {formatCurrency(item.price * item.quantity, currencySymbol)}
                       </span>
                     </div>
                   </div>
@@ -552,7 +557,7 @@ export default function Pos() {
                   onChange={(e: ChangeEvent<HTMLSelectElement>) => setDiscountType(e.target.value as 'FIXED' | 'PERCENT')}
                   className="px-2 py-1.5 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-850 dark:text-white rounded-xl outline-none font-bold text-xs"
                 >
-                  <option value="FIXED">Flat ($)</option>
+                  <option value="FIXED">Flat ({currencySymbol})</option>
                   <option value="PERCENT">Percent (%)</option>
                 </select>
               </div>
@@ -598,7 +603,7 @@ export default function Pos() {
             {couponApplied && (
               <div className="flex justify-between items-center text-[10px] font-bold text-emerald-500 pt-1.5 pl-5">
                 <span>Code Applied: {couponApplied.code}</span>
-                <span>-${couponDiscount.toFixed(2)} off</span>
+                <span>-{formatCurrency(couponDiscount, currencySymbol)} off</span>
               </div>
             )}
           </div>
@@ -609,31 +614,31 @@ export default function Pos() {
               <div className="flex justify-between text-xs text-slate-500 font-medium">
                 <span>Subtotal</span>
                 <span className="font-bold text-slate-800 dark:text-white">
-                  ${subtotal.toFixed(2)}
+                  {formatCurrency(subtotal, currencySymbol)}
                 </span>
               </div>
               {(catalogDiscount + discountValue + couponDiscount) > 0 && (
                 <div className="flex justify-between text-xs text-emerald-500 font-bold">
                   <span>Discount</span>
-                  <span>-${(catalogDiscount + discountValue + couponDiscount).toFixed(2)}</span>
+                  <span>-{formatCurrency(catalogDiscount + discountValue + couponDiscount, currencySymbol)}</span>
                 </div>
               )}
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-xs text-emerald-500 font-bold">
                   <span>Promo Coupon Discount</span>
-                  <span>-${couponDiscount.toFixed(2)}</span>
+                  <span>-{formatCurrency(couponDiscount, currencySymbol)}</span>
                 </div>
               )}
               <div className="flex justify-between text-xs text-slate-500 font-medium">
                 <span>{taxName} ({taxRate}%)</span>
                 <span className="font-bold text-slate-800 dark:text-white">
-                  ${tax.toFixed(2)}
+                  {formatCurrency(tax, currencySymbol)}
                 </span>
               </div>
               <div className="flex justify-between text-base font-black text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800">
                 <span>Grand Total</span>
                 <span className="text-brand-600 dark:text-brand-400 font-black">
-                  ${grandTotal.toFixed(2)}
+                  {formatCurrency(grandTotal, currencySymbol)}
                 </span>
               </div>
             </div>
@@ -744,7 +749,7 @@ export default function Pos() {
                         </p>
                         <div className="flex justify-between items-center gap-1">
                           <span className="font-black text-xs text-brand-650 dark:text-brand-400">
-                            ${p.price}
+                            {formatCurrency(p.price, currencySymbol)}
                           </span>
                           <span className="text-[8px] font-bold px-1 py-0.5 bg-slate-50 dark:bg-slate-850 rounded text-slate-505">
                             Qty: {p.stock}

@@ -2,7 +2,8 @@
 
 import React, { memo } from 'react';
 import { DiscountType } from '@/lib/enums/discount-type.enum';
-import { calculatePricing } from '@/lib/utils';
+import { calculatePricing, formatCurrency } from '@/lib/utils';
+import { useSettings } from '@/hooks/SettingsContext';
 import DebouncedInput from '@/components/shared/DebouncedInput';
 
 interface ProductPricingProps {
@@ -30,6 +31,9 @@ export const ProductPricing = memo(({
   lowStockThreshold,
   onUpdate
 }: ProductPricingProps) => {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   const pricing = calculatePricing(
     parseFloat(price) || 0,
     parseFloat(discountAmount) || 0,
@@ -64,7 +68,7 @@ export const ProductPricing = memo(({
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Retail Base Price</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <DebouncedInput
                 type="number"
                 required
@@ -96,14 +100,14 @@ export const ProductPricing = memo(({
               className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
             >
               <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
-              <option value={DiscountType.FIXED}>Fixed Amount ($)</option>
+              <option value={DiscountType.FIXED}>Fixed Amount ({currencySymbol})</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Discount Value</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">
-                {discountType === DiscountType.PERCENTAGE ? '%' : '$'}
+                {discountType === DiscountType.PERCENTAGE ? '%' : currencySymbol}
               </span>
               <DebouncedInput
                 type="number"
@@ -122,23 +126,23 @@ export const ProductPricing = memo(({
           <div className="mt-2 text-sm text-slate-600 dark:text-slate-400 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-1 border border-slate-100 dark:border-slate-800">
             <div className="flex justify-between">
               <span>Retail Base Price:</span>
-              <span>${parseFloat(price).toFixed(2)}</span>
+              <span>{formatCurrency(parseFloat(price), currencySymbol)}</span>
             </div>
             {parseFloat(discountAmount) > 0 && (
               <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                <span>Discount ({discountType === DiscountType.PERCENTAGE ? `${discountAmount}%` : `$${discountAmount}`}):</span>
-                <span>-${(parseFloat(price) - pricing.discountedPrice).toFixed(2)}</span>
+                <span>Discount ({discountType === DiscountType.PERCENTAGE ? `${discountAmount}%` : `${currencySymbol}${discountAmount}`}):</span>
+                <span>-{formatCurrency(parseFloat(price) - pricing.discountedPrice, currencySymbol)}</span>
               </div>
             )}
             {parseFloat(taxRate) > 0 && (
               <div className="flex justify-between text-rose-600 dark:text-rose-400">
                 <span>Tax ({taxRate}%):</span>
-                <span>+${pricing.taxAmount.toFixed(2)}</span>
+                <span>+{formatCurrency(pricing.taxAmount, currencySymbol)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-slate-700">
               <span>Final Retail Price:</span>
-              <span>${pricing.finalPrice.toFixed(2)}</span>
+              <span>{formatCurrency(pricing.finalPrice, currencySymbol)}</span>
             </div>
           </div>
         )}
@@ -157,7 +161,7 @@ export const ProductPricing = memo(({
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Wholesale Unit Price</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <DebouncedInput
                 type="number"
                 min="0"
@@ -202,7 +206,7 @@ export const ProductPricing = memo(({
           <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Moving Average Cost</label>
           <div className="px-4 py-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
             <span className="text-sm font-black text-slate-900 dark:text-white font-mono tracking-tighter">
-              ${parsedCost.toFixed(2)}
+              {formatCurrency(parsedCost, currencySymbol)}
             </span>
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Auto Recalc</span>
           </div>

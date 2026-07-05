@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, DollarSign, Loader2, Coins } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
 
 interface DrawerTxModalProps {
   isOpen: boolean;
@@ -26,6 +27,9 @@ export default function DrawerTxModal({
   submittingDrawerTx,
   handleDrawerTxSubmit,
 }: DrawerTxModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -78,7 +82,7 @@ export default function DrawerTxModal({
 
                 <div className="space-y-2">
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Amount ($)
+                    Amount ({currencySymbol})
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-450" />

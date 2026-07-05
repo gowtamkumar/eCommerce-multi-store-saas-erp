@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Sparkles, Copy, Check, ShoppingCart, Coins, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 import { useAiGenerate } from '../../ai/hooks/useAiGenerate';
 import type { PosShift, CartItem, Customer } from '../type';
 
@@ -21,6 +23,9 @@ export default function PosAiAssistModal({
   activeShift,
   selectedCustomer,
 }: PosAiAssistModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   const [activeTab, setActiveTab] = useState<TabType>('upsell');
   const { configured, loading, generatePosCashierAssist } = useAiGenerate();
 
@@ -87,7 +92,7 @@ export default function PosAiAssistModal({
   };
 
   const handleGenerateAudit = async () => {
-    const shiftSummary = `Opening Balance: $${Number(activeShift.openingBalance).toFixed(2)}, Cash Sales: $${Number(activeShift.cashSales).toFixed(2)}, Cash In: $${Number(activeShift.cashIn || 0).toFixed(2)}, Cash Out: $${Number(activeShift.cashOut || 0).toFixed(2)}, Expected closing: $${Number(activeShift.expectedClosingBalance).toFixed(2)}`;
+    const shiftSummary = `Opening Balance: ${formatCurrency(activeShift.openingBalance, currencySymbol)}, Cash Sales: ${formatCurrency(activeShift.cashSales, currencySymbol)}, Cash In: ${formatCurrency(activeShift.cashIn || 0, currencySymbol)}, Cash Out: ${formatCurrency(activeShift.cashOut || 0, currencySymbol)}, Expected closing: ${formatCurrency(activeShift.expectedClosingBalance, currencySymbol)}`;
 
     const res = await generatePosCashierAssist({
       context: 'reconciliation',
@@ -107,7 +112,7 @@ export default function PosAiAssistModal({
       general: 'POS Transaction adjustment note',
     }[remarksType];
 
-    const transactionSummary = `Type: ${typeLabel}. Cashier Input: "${remarksContext}". Shift details: Opening $${activeShift.openingBalance}, Expected closing $${activeShift.expectedClosingBalance}.`;
+    const transactionSummary = `Type: ${typeLabel}. Cashier Input: "${remarksContext}". Shift details: Opening ${formatCurrency(activeShift.openingBalance, currencySymbol)}, Expected closing ${formatCurrency(activeShift.expectedClosingBalance, currencySymbol)}.`;
 
     const res = await generatePosCashierAssist({
       context: 'remarks',
@@ -277,25 +282,25 @@ export default function PosAiAssistModal({
                           <div>
                             <span className="text-slate-450 block text-[9px] font-bold uppercase">Opening Cash</span>
                             <span className="font-extrabold text-slate-800 dark:text-white">
-                              ${Number(activeShift.openingBalance).toFixed(2)}
+                              {formatCurrency(activeShift.openingBalance, currencySymbol)}
                             </span>
                           </div>
                           <div>
                             <span className="text-slate-455 block text-[9px] font-bold uppercase">Cash Sales</span>
                             <span className="font-extrabold text-emerald-500">
-                              +${Number(activeShift.cashSales).toFixed(2)}
+                              +{formatCurrency(activeShift.cashSales, currencySymbol)}
                             </span>
                           </div>
                           <div>
                             <span className="text-slate-450 block text-[9px] font-bold uppercase">Expected Cash</span>
                             <span className="font-extrabold text-brand-500">
-                              ${Number(activeShift.expectedClosingBalance).toFixed(2)}
+                              {formatCurrency(activeShift.expectedClosingBalance, currencySymbol)}
                             </span>
                           </div>
                           <div>
                             <span className="text-slate-455 block text-[9px] font-bold uppercase">Adjustments (In/Out)</span>
                             <span className="font-extrabold text-slate-800 dark:text-white">
-                              +${Number(activeShift.cashIn || 0).toFixed(2)} / -${Number(activeShift.cashOut || 0).toFixed(2)}
+                              +{formatCurrency(activeShift.cashIn || 0, currencySymbol)} / -{formatCurrency(activeShift.cashOut || 0, currencySymbol)}
                             </span>
                           </div>
                         </div>
@@ -384,7 +389,7 @@ export default function PosAiAssistModal({
                           Cashier Context / Short Notes
                         </label>
                         <textarea
-                          placeholder="Provide a quick details note (e.g. 'short of $10 counting error', 'Tea payout for office staff', 'returned damaged shirt')..."
+                          placeholder={`Provide a quick details note (e.g. 'short of ${currencySymbol}10 counting error', 'Tea payout for office staff', 'returned damaged shirt')...`}
                           value={remarksContext}
                           onChange={(e) => setRemarksContext(e.target.value)}
                           className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl outline-none text-xs text-slate-900 dark:text-white h-20 resize-none focus:ring-2 focus:ring-brand-500"

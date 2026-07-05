@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 import type { Product, ProductVariant } from '../type';
 
 interface VariantSelectorModalProps {
@@ -17,6 +19,8 @@ export default function VariantSelectorModal({
   setSelectedVariant,
   executeAddToCart,
 }: VariantSelectorModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   return (
     <AnimatePresence>
       {selectedProductForVariant && (
@@ -59,7 +63,7 @@ export default function VariantSelectorModal({
                     {Object.entries(v.combination || {})
                       .map(([k, val]) => `${k}: ${val}`)
                       .join(' / ')}{' '}
-                    (${v.price || selectedProductForVariant.price})
+                    ({formatCurrency(v.price || selectedProductForVariant.price, currencySymbol)})
                   </button>
                 ))}
               </div>

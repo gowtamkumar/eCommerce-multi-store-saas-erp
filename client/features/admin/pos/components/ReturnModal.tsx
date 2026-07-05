@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Search, Loader2, RefreshCw, Minus, Plus, History } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 import type { ReturnOrder } from '../type';
 
 interface ReturnModalProps {
@@ -33,6 +35,8 @@ export default function ReturnModal({
   handleSearchReturnOrder,
   handleSubmitPOSReturn,
 }: ReturnModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   return (
     <AnimatePresence>
       {isOpen && (
@@ -96,7 +100,7 @@ export default function ReturnModal({
                     </div>
                     <div>
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Order Value & Date</p>
-                      <p className="text-sm font-black text-brand-500">${Number(returnOrder.totalAmount).toFixed(2)}</p>
+                      <p className="text-sm font-black text-brand-500">{formatCurrency(returnOrder.totalAmount, currencySymbol)}</p>
                       <p className="text-xs text-slate-400 font-medium">{new Date(returnOrder.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
@@ -132,7 +136,7 @@ export default function ReturnModal({
                                   Variant: {Object.entries(item.variant.combination).map(([k, v]) => `${k}:${v}`).join(', ')}
                                 </p>
                               )}
-                              <p className="text-xs text-brand-500 font-bold mt-1">${Number(item.unitPrice).toFixed(2)} each</p>
+                              <p className="text-xs text-brand-500 font-bold mt-1">{formatCurrency(item.unitPrice, currencySymbol)} each</p>
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -197,16 +201,16 @@ export default function ReturnModal({
                   <span className="text-xs font-bold text-slate-400">
                     Refund Total:{' '}
                     <span className="text-brand-500 font-black text-sm">
-                      $
-                      {Object.entries(returnQuantities)
-                        .reduce((total, [itemId, qty]) => {
+                      {formatCurrency(
+                        Object.entries(returnQuantities).reduce((total, [itemId, qty]) => {
                           const orderItem = returnOrder.items.find((item) => item.id === itemId);
                           const netUnit = orderItem
                             ? Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0)
                             : 0;
                           return total + netUnit * qty;
-                        }, 0)
-                        .toFixed(2)}
+                        }, 0),
+                        currencySymbol
+                      )}
                     </span>
                   </span>
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-2">

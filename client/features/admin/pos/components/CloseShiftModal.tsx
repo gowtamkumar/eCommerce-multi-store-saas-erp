@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Loader2, History, AlertCircle } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 import type { PosShift } from '../type';
 import { DENOMINATIONS } from '../utils/posHelpers';
 
@@ -34,6 +36,8 @@ export default function CloseShiftModal({
   submittingShift,
   handleCloseShift,
 }: CloseShiftModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   return (
     <AnimatePresence>
       {isOpen && (
@@ -57,24 +61,24 @@ export default function CloseShiftModal({
             <form onSubmit={handleCloseShift}>
               <div className="p-6 space-y-5">
                 {/* Stats list */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl space-y-2">
+                <div className="p-4 bg-slate-50 dark:bg-slate-955 rounded-2xl space-y-2">
                   <div className="flex justify-between text-xs text-slate-500 font-medium">
                     <span>Opening Base Cash</span>
                     <span className="font-bold text-slate-850 dark:text-white">
-                      ${Number(activeShift.openingBalance).toFixed(2)}
+                      {formatCurrency(activeShift.openingBalance, currencySymbol)}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs text-slate-500 font-medium">
                     <span>Cash Sales Collected</span>
                     <span className="font-bold text-emerald-500">
-                      +${Number(activeShift.cashSales).toFixed(2)}
+                      +{formatCurrency(activeShift.cashSales, currencySymbol)}
                     </span>
                   </div>
                   {Number(activeShift.cashIn || 0) > 0 && (
                     <div className="flex justify-between text-xs text-slate-500 font-medium">
                       <span>Cash In (Adjustments)</span>
                       <span className="font-bold text-emerald-500">
-                        +${Number(activeShift.cashIn).toFixed(2)}
+                        +{formatCurrency(activeShift.cashIn || 0, currencySymbol)}
                       </span>
                     </div>
                   )}
@@ -82,14 +86,14 @@ export default function CloseShiftModal({
                     <div className="flex justify-between text-xs text-slate-500 font-medium">
                       <span>Cash Out (Adjustments)</span>
                       <span className="font-bold text-red-500">
-                        -${Number(activeShift.cashOut).toFixed(2)}
+                        -{formatCurrency(activeShift.cashOut || 0, currencySymbol)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between text-xs font-black text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-850">
                     <span>Expected Drawer Cash</span>
                     <span className="text-brand-500 font-black">
-                      ${Number(activeShift.expectedClosingBalance).toFixed(2)}
+                      {formatCurrency(activeShift.expectedClosingBalance, currencySymbol)}
                     </span>
                   </div>
 
@@ -101,13 +105,13 @@ export default function CloseShiftModal({
                     <div className="flex justify-between text-xs text-slate-500 font-medium">
                       <span>Card Sales</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200">
-                        ${Number(activeShift.cardSales || 0).toFixed(2)}
+                        {formatCurrency(activeShift.cardSales || 0, currencySymbol)}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs text-slate-500 font-medium">
                       <span>Mobile Sales</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200">
-                        ${Number(activeShift.mobileSales || 0).toFixed(2)}
+                        {formatCurrency(activeShift.mobileSales || 0, currencySymbol)}
                       </span>
                     </div>
                   </div>
@@ -245,7 +249,7 @@ export default function CloseShiftModal({
                     <span
                       className={`font-black ${Number(closingBalance) - activeShift.expectedClosingBalance === 0 ? 'text-emerald-500' : 'text-red-500'}`}
                     >
-                      ${(Number(closingBalance) - activeShift.expectedClosingBalance).toFixed(2)}
+                      {formatCurrency(Number(closingBalance) - activeShift.expectedClosingBalance, currencySymbol)}
                     </span>
                   </div>
                 )}

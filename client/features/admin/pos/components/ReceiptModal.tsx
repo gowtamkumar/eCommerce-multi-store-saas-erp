@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Receipt, Printer } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 import type { PosShift, TransactionHistory, TransactionItem } from '../type';
 
 interface ReceiptModalProps {
@@ -19,6 +21,8 @@ export default function ReceiptModal({
   taxName,
   taxRate,
 }: ReceiptModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   return (
     <AnimatePresence>
       {isOpen && (
@@ -82,9 +86,9 @@ export default function ReceiptModal({
                             {Object.entries(item.variant.combination || {}).map(([k, v]) => `${k}:${v}`).join('/')}
                           </p>
                         )}
-                        <p className="text-[9px] text-slate-450">{item.quantity} x ${item.price.toFixed(2)}</p>
+                        <p className="text-[9px] text-slate-450">{item.quantity} x {formatCurrency(item.price, currencySymbol)}</p>
                       </div>
-                      <span className="font-black text-slate-900 dark:text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="font-black text-slate-900 dark:text-white">{formatCurrency(item.price * item.quantity, currencySymbol)}</span>
                     </div>
                   ))}
                 </div>
@@ -95,39 +99,39 @@ export default function ReceiptModal({
                 <div className="space-y-1.5 text-[10px]">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${lastTransaction.subtotal.toFixed(2)}</span>
+                    <span>{formatCurrency(lastTransaction.subtotal, currencySymbol)}</span>
                   </div>
                   {(lastTransaction.catalogDiscount + lastTransaction.discount + lastTransaction.couponDiscount) > 0 && (
                     <div className="flex justify-between text-emerald-500 font-bold">
                       <span>Discount</span>
-                      <span>-${(lastTransaction.catalogDiscount + lastTransaction.discount + lastTransaction.couponDiscount).toFixed(2)}</span>
+                      <span>-{formatCurrency(lastTransaction.catalogDiscount + lastTransaction.discount + lastTransaction.couponDiscount, currencySymbol)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span>{taxName} ({taxRate}%)</span>
-                    <span>${lastTransaction.tax.toFixed(2)}</span>
+                    <span>{formatCurrency(lastTransaction.tax, currencySymbol)}</span>
                   </div>
                   {lastTransaction.couponDiscount > 0 && (
                     <div className="flex justify-between text-emerald-500 font-bold">
                       <span>Coupon ({lastTransaction.couponCode})</span>
-                      <span>-${lastTransaction.couponDiscount.toFixed(2)}</span>
+                      <span>-{formatCurrency(lastTransaction.couponDiscount, currencySymbol)}</span>
                     </div>
                   )}
                   {lastTransaction.shippingFee > 0 && (
                     <div className="flex justify-between text-emerald-500 font-bold">
                       <span>Shipping ({lastTransaction.deliveryZone})</span>
-                      <span>+${lastTransaction.shippingFee.toFixed(2)}</span>
+                      <span>+{formatCurrency(lastTransaction.shippingFee, currencySymbol)}</span>
                     </div>
                   )}
                   {lastTransaction.walletDeduction > 0 && (
                     <div className="flex justify-between text-emerald-500 font-bold">
                       <span>Store Credit / Wallet</span>
-                      <span>-${lastTransaction.walletDeduction.toFixed(2)}</span>
+                      <span>-{formatCurrency(lastTransaction.walletDeduction, currencySymbol)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white pt-1.5 border-t border-slate-100 dark:border-slate-800">
                     <span>Grand Total</span>
-                    <span>${lastTransaction.grandTotal.toFixed(2)}</span>
+                    <span>{formatCurrency(lastTransaction.grandTotal, currencySymbol)}</span>
                   </div>
                 </div>
 
@@ -144,19 +148,19 @@ export default function ReceiptModal({
                       {lastTransaction.splitPayments.map((p: { method: string; amount: number }, idx: number) => (
                         <div key={idx} className="flex justify-between text-[8px]">
                           <span>- {p.method}</span>
-                          <span>${Number(p.amount).toFixed(2)}</span>
+                          <span>{formatCurrency(p.amount, currencySymbol)}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="flex justify-between">
                       <span>Amount Collected</span>
-                      <span>${lastTransaction.amountTendered.toFixed(2)}</span>
+                      <span>{formatCurrency(lastTransaction.amountTendered, currencySymbol)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-[10px] font-bold text-slate-700 dark:text-slate-350">
                     <span>Change Given Back</span>
-                    <span>${lastTransaction.changeDue.toFixed(2)}</span>
+                    <span>{formatCurrency(lastTransaction.changeDue, currencySymbol)}</span>
                   </div>
                 </div>
 
