@@ -16,6 +16,8 @@ import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
 import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
 import { PermissionRepository } from '@/modules/admin/core/user/repositories/permission.repository'
 import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/repositories/user-role-assignment.repository'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { UserPermissionOverrideRepository } from '@/modules/admin/core/user/repositories/user-permission-override.repository'
 
 @Module({
   imports: [
@@ -39,6 +41,8 @@ import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/reposito
     RoleRepository,
     PermissionRepository,
     UserRoleAssignmentRepository,
+    UserRepository,
+    UserPermissionOverrideRepository,
   ],
   exports: [
     RoleManagementService,
@@ -48,6 +52,8 @@ import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/reposito
     RoleRepository,
     PermissionRepository,
     UserRoleAssignmentRepository,
+    UserRepository,
+    UserPermissionOverrideRepository,
   ],
 })
 export class RbacModule {}

@@ -40,6 +40,8 @@ export interface UpdateRoleDto {
 @Injectable()
 export class RoleManagementService implements OnApplicationBootstrap {
   private readonly logger = new Logger(RoleManagementService.name)
+  private cachedPermissions: PermissionEntity[] | null = null
+  private cachedPermissionsByFeature: Record<string, PermissionEntity[]> | null = null
 
   constructor(
     private readonly roleRepo: RoleRepository,
@@ -384,15 +386,22 @@ export class RoleManagementService implements OnApplicationBootstrap {
   // ─────────────────────────────────────────────────────────────────
 
   async getAllPermissions(): Promise<PermissionEntity[]> {
+    if (this.cachedPermissions) {
+      return this.cachedPermissions
+    }
     this.logger.log('Fetching all permissions...')
     const permissions = await this.permissionRepo.find({
       order: { module: 'ASC', feature: 'ASC', action: 'ASC' },
     })
     this.logger.log(`Found ${permissions.length} permissions`)
+    this.cachedPermissions = permissions
     return permissions
   }
 
   async getPermissionsByFeature(): Promise<Record<string, PermissionEntity[]>> {
+    if (this.cachedPermissionsByFeature) {
+      return this.cachedPermissionsByFeature
+    }
     this.logger.log('Fetching permissions by feature...')
     const permissions = await this.getAllPermissions()
     const result = permissions.reduce(
@@ -405,6 +414,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
       {} as Record<string, PermissionEntity[]>,
     )
     this.logger.log(`Grouped ${permissions.length} permissions by feature`)
+    this.cachedPermissionsByFeature = result
     return result
   }
 

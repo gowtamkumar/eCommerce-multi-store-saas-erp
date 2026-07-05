@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { UserPermissionOverrideService } from './user-permission-override.service'
+import { UserPermissionOverrideRepository } from '@/modules/admin/core/user/repositories/user-permission-override.repository'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
 
 describe('UserPermissionOverrideService', () => {
   let service: UserPermissionOverrideService
@@ -14,7 +13,7 @@ describe('UserPermissionOverrideService', () => {
       providers: [
         UserPermissionOverrideService,
         {
-          provide: getRepositoryToken(UserPermissionOverrideEntity),
+          provide: UserPermissionOverrideRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -25,26 +24,14 @@ describe('UserPermissionOverrideService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
         {
-          provide: getRepositoryToken(UserEntity),
+          provide: UserRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
+            findByIdAndStore: jest.fn(),
             save: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
@@ -52,19 +39,6 @@ describe('UserPermissionOverrideService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
         {

@@ -1,11 +1,11 @@
 import { OverrideEffect } from '@/common/enums/override-effect.enum'
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { IsNull, MoreThan } from 'typeorm'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { UserPermissionOverrideRepository } from '@/modules/admin/core/user/repositories/user-permission-override.repository'
 
 export interface CreateOverrideDto {
   permissionSlug: string
@@ -22,12 +22,8 @@ export class UserPermissionOverrideService {
   private readonly logger = new Logger(UserPermissionOverrideService.name)
 
   constructor(
-    @InjectRepository(UserPermissionOverrideEntity)
-    private readonly overrideRepo: Repository<UserPermissionOverrideEntity>,
-
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
-
+    private readonly overrideRepo: UserPermissionOverrideRepository,
+    private readonly userRepo: UserRepository,
     private readonly auditLogService: AuditLogService,
     private readonly permissionResolutionService: PermissionResolutionService,
   ) {}
@@ -37,10 +33,12 @@ export class UserPermissionOverrideService {
     storeId: string,
   ): Promise<UserPermissionOverrideEntity[]> {
     const now = new Date()
-    const overrides = await this.overrideRepo.find({
-      where: { userId, storeId },
+    return this.overrideRepo.find({
+      where: [
+        { userId, storeId, expiresAt: IsNull() },
+        { userId, storeId, expiresAt: MoreThan(now) },
+      ],
     })
-    return overrides.filter((o) => !o.expiresAt || new Date(o.expiresAt) > now)
   }
 
   async addOverride(
@@ -57,7 +55,7 @@ export class UserPermissionOverrideService {
       throw new BadRequestException('Overrides must have an expiration date.')
     }
 
-    const user = await this.userRepo.findOne({ where: { id: targetUserId, storeId } })
+    const user = await this.userRepo.findByIdAndStore(targetUserId, storeId)
     if (!user) throw new NotFoundException('User not found in this store')
 
     // Remove any existing active override for this exact permission to avoid conflicts

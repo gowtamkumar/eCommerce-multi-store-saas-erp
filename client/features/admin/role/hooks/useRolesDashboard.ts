@@ -29,8 +29,6 @@ export function useRolesDashboard() {
     }
   }, []);
 
-  console.log("roles", roles);
-  console.log("groupedPermissions", groupedPermissions);
 
   useEffect(() => {
     void fetchData();

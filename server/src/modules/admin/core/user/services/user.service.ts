@@ -10,15 +10,14 @@ import {
   OnApplicationBootstrap,
   UnauthorizedException,
 } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
-import { Repository } from 'typeorm'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
 import { PermissionEntity } from '../entities/permission.entity'
 import { StaffInvitationEntity } from '../entities/staff-invitation.entity'
 import { UserEntity } from '../entities/user.entity'
 import { UserRepository } from '../repositories/user.repository'
 import { StaffInvitationService } from './staff-invitation.service'
+import { PermissionRepository } from '../repositories/permission.repository'
 
 @Injectable()
 export class UserService implements OnApplicationBootstrap {
@@ -28,8 +27,7 @@ export class UserService implements OnApplicationBootstrap {
     private readonly userRepo: UserRepository,
     private readonly cacheService: CacheService,
     private readonly invitationService: StaffInvitationService,
-    @InjectRepository(PermissionEntity)
-    private readonly permissionRepo: Repository<PermissionEntity>,
+    private readonly permissionRepo: PermissionRepository,
   ) {}
 
   async onApplicationBootstrap() {

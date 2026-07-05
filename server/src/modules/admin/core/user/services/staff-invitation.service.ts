@@ -11,13 +11,11 @@ import { UserEntity } from '../entities/user.entity'
 import { StaffInvitationRepository } from '../repositories/staff-invitation.repository'
 import { UserRepository } from '../repositories/user.repository'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
-import { Repository } from 'typeorm'
-import { InjectRepository } from '@nestjs/typeorm'
-import { UserRoleAssignmentEntity } from '../entities/user-role-assignment.entity'
 import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
 import { sanitizeInvitation, sanitizeUser } from '@/common/utils/sanitize-user.util'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
+import { UserRoleAssignmentRepository } from '../repositories/user-role-assignment.repository'
 
 @Injectable()
 export class StaffInvitationService {
@@ -29,8 +27,7 @@ export class StaffInvitationService {
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
-    @InjectRepository(UserRoleAssignmentEntity)
-    private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
+    private readonly assignmentRepo: UserRoleAssignmentRepository,
     private readonly roleManagementService: RoleManagementService,
   ) {}
 
