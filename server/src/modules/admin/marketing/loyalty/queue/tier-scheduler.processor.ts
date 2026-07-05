@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common'
 import { Job } from 'bullmq'
 import { DataSource } from 'typeorm'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { UserRole } from '@/common/enums/user/user-role.enum'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { LoyaltyConfigEntity } from '../entities/loyalty-config.entity'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
@@ -97,7 +98,7 @@ export class TierSchedulerProcessor extends WorkerHost {
 
     // Find all active customer users in this store
     const customers = await em.find(UserEntity, {
-      where: { storeId, role: 'USER' as any }, // Only assess customer accounts
+      where: { storeId, role: UserRole.USER }, // Only assess customer accounts
     })
 
     this.logger.log(

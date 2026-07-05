@@ -57,6 +57,7 @@ export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
       'users:read',
       'users:invite',
       'crm:read',
+      'notifications:read',
       'crm:write',
       'crm:segment',
       'fulfillment:manage',
@@ -87,6 +88,7 @@ export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
       'reports:export',
       'purchasing:read',
       'supplier:view-pricing',
+      'notifications:read',
     ],
   },
   {
@@ -102,6 +104,7 @@ export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
       'crm:read',
       'payments:read',
       'hrm:clock-attendance',
+      'notifications:read',
     ],
   },
   {
@@ -120,6 +123,7 @@ export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
       'hrm:manage-documents',
       'users:read',
       'reports:read',
+      'notifications:read',
     ],
   },
   {
@@ -134,6 +138,7 @@ export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
       'supplier:manage',
       'supplier:view-pricing',
       'reports:read',
+      'notifications:read',
     ],
   },
   {
@@ -151,6 +156,7 @@ export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
       'fulfillment:manage',
       'logistics:manage',
       'shipping:manage',
+      'notifications:read',
     ],
   },
   {
@@ -168,6 +174,7 @@ export const DEFAULT_ROLE_DEFINITIONS: DefaultRoleDefinition[] = [
       'crm:read',
       'reports:read',
       'users:read',
+      'notifications:read',
     ],
   },
 ]

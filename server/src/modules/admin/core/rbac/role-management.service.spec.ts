@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
-import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.entity'
-import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { RoleManagementService } from './role-management.service'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
+import { PermissionRepository } from '@/modules/admin/core/user/repositories/permission.repository'
+import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/repositories/user-role-assignment.repository'
 
 describe('RoleManagementService', () => {
   let service: RoleManagementService
@@ -15,7 +14,7 @@ describe('RoleManagementService', () => {
       providers: [
         RoleManagementService,
         {
-          provide: getRepositoryToken(RoleEntity),
+          provide: RoleRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -42,7 +41,7 @@ describe('RoleManagementService', () => {
           },
         },
         {
-          provide: getRepositoryToken(PermissionEntity),
+          provide: PermissionRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -69,7 +68,7 @@ describe('RoleManagementService', () => {
           },
         },
         {
-          provide: getRepositoryToken(UserRoleAssignmentEntity),
+          provide: UserRoleAssignmentRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),

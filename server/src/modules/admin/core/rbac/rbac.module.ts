@@ -13,6 +13,9 @@ import { UserRoleAssignmentService } from './user-role-assignment.service'
 import { UserPermissionOverrideService } from './user-permission-override.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
+import { PermissionRepository } from '@/modules/admin/core/user/repositories/permission.repository'
+import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/repositories/user-role-assignment.repository'
 
 @Module({
   imports: [
@@ -33,12 +36,18 @@ import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
     UserRoleAssignmentService,
     UserPermissionOverrideService,
     PermissionResolutionService,
+    RoleRepository,
+    PermissionRepository,
+    UserRoleAssignmentRepository,
   ],
   exports: [
     RoleManagementService,
     UserRoleAssignmentService,
     UserPermissionOverrideService,
     PermissionResolutionService,
+    RoleRepository,
+    PermissionRepository,
+    UserRoleAssignmentRepository,
   ],
 })
 export class RbacModule {}

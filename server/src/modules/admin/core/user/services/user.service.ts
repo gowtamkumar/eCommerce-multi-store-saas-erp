@@ -50,6 +50,15 @@ export class UserService implements OnApplicationBootstrap {
         riskLevel: RiskLevel.LOW,
       },
       {
+        code: 'notifications:read',
+        name: 'View Notifications',
+        description: 'Can view system notifications and alerts',
+        module: 'Access Control',
+        feature: 'notifications',
+        action: 'read',
+        riskLevel: RiskLevel.LOW,
+      },
+      {
         code: 'users:write',
         name: 'Manage Users',
         description: 'Can create, edit users',
