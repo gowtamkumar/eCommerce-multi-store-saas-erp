@@ -34,10 +34,19 @@ async function handleCancel(request: NextRequest, data: any = {}) {
 }
 
 export async function POST(request: NextRequest) {
-  const formData = await request.formData().catch(() => null);
   const data: any = {};
-  if (formData) {
-    formData.forEach((value, key) => (data[key] = value));
+  try {
+    const contentType = request.headers.get("content-type") || "";
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      const text = await request.text();
+      const params = new URLSearchParams(text);
+      params.forEach((value, key) => (data[key] = value));
+    } else {
+      const formData = await request.formData();
+      formData.forEach((value, key) => (data[key] = value));
+    }
+  } catch (err) {
+    console.error("Failed to parse POST body in cancel route:", err);
   }
   return handleCancel(request, data);
 }

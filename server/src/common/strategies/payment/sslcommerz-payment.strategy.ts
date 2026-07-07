@@ -195,14 +195,25 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
     }
 
     const gatewayCurrency = String(payload?.currency ?? '').toUpperCase()
-    if (gatewayCurrency && gatewayCurrency !== expectedCurrency.toUpperCase()) {
+    const gatewayCurrencyType = String(payload?.currency_type ?? '').toUpperCase()
+
+    const isCurrencyMatch =
+      gatewayCurrency === expectedCurrency.toUpperCase() ||
+      (gatewayCurrencyType && gatewayCurrencyType === expectedCurrency.toUpperCase())
+
+    if (gatewayCurrency && !isCurrencyMatch) {
       this.logger.warn(
         `SSLCommerz currency mismatch: expected=${expectedCurrency} gateway=${gatewayCurrency}`,
       )
       return { success: false, gatewayResponse: payload, reason: 'currency mismatch' }
     }
 
-    const gatewayAmount = Number(payload?.amount ?? payload?.currency_amount ?? NaN)
+    let gatewayAmount = Number(payload?.amount ?? payload?.currency_amount ?? NaN)
+    // If currency was converted by the gateway, use the original currency_amount if it matches our expected currency.
+    if (gatewayCurrencyType === expectedCurrency.toUpperCase() && payload?.currency_amount) {
+      gatewayAmount = Number(payload.currency_amount)
+    }
+
     if (Number.isFinite(gatewayAmount)) {
       const expectedMinor = Math.round(expectedAmount * 100)
       const gatewayMinor = Math.round(gatewayAmount * 100)

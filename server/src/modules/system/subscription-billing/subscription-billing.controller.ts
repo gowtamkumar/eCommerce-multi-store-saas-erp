@@ -25,7 +25,7 @@ export class SubscriptionBillingController {
     private readonly billingService: SubscriptionBillingService,
     private readonly configService: ConfigService,
     private readonly addonCatalogService: AddonCatalogService,
-  ) {}
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Get('addon-catalog')
@@ -257,16 +257,17 @@ export class SubscriptionBillingController {
   async purchaseAddon(
     @RequestContext() ctx: RequestContextDto,
     @Body('addonSlug') addonSlug: string,
-  ): Promise<BaseApiSuccessResponse<any>> {
+    @Body('frontendUrl') frontendUrl?: string,
+  ): Promise<BaseApiSuccessResponse<{ gatewayUrl: string }>> {
     this.logger.verbose(
       `User "${sanitizeLogInput(ctx.user?.username || 'System')}" purchasing addon "${sanitizeLogInput(addonSlug)}".`,
     )
-    await this.billingService.purchaseAddon(ctx.storeId, addonSlug)
+    const data = await this.billingService.initiateAddonPayment(ctx, addonSlug, frontendUrl)
     return {
       success: true,
       statusCode: 200,
-      message: 'Addon purchased successfully',
-      data: null,
+      message: 'Addon purchase initiated successfully',
+      data,
     }
   }
 }

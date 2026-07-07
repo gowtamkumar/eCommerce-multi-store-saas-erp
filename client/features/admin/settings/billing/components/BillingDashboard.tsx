@@ -95,8 +95,15 @@ export default function BillingDashboard() {
     try {
       const res = await fetchAPI("/billing/purchase-addon", {
         method: "POST",
-        body: JSON.stringify({ addonSlug })
+        body: JSON.stringify({
+          addonSlug,
+          frontendUrl: window.location.origin
+        })
       });
+      if (res.data?.gatewayUrl) {
+        window.location.href = res.data.gatewayUrl;
+        return;
+      }
       if (res.success) {
         toast.success("Storage addon activated successfully!");
         await loadBillingData();

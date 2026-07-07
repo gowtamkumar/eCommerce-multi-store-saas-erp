@@ -1,6 +1,7 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
+import dayjs from 'dayjs';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useRequirePermission } from '@/hooks/useRequirePermission';
 import { UserRole } from '@/lib/enums/user-role.enum';
@@ -84,7 +85,7 @@ export default function AdminLayout({
     const { manifest, isSuperAdmin, isFullAccess, canAccessRoute, firstAccessibleRoute } = usePermissions();
     useRequirePermission();
 
-    const [subInfo, setSubInfo] = useState<{ status: string; isExpired: boolean } | null>(null);
+    const [subInfo, setSubInfo] = useState<{ status: string; isExpired: boolean; endsAt?: string } | null>(null);
     const [isAlertDismissed, setIsAlertDismissed] = useState(() => {
         if (typeof window === 'undefined') return false;
         return sessionStorage.getItem('admin:subscriptionAlertDismissed') === 'true';
@@ -377,7 +378,21 @@ export default function AdminLayout({
         await signOut({ callbackUrl: `${window.location.origin}/login` });
     };
 
+    const isSubscriptionExpiringSoon = useMemo(() => {
+        if (isSubscriptionExpired) return false;
+        if (!subInfo?.endsAt) return false;
+        const diffDays = dayjs(subInfo.endsAt).diff(dayjs(), 'day');
+        return diffDays >= 0 && diffDays <= 7;
+    }, [subInfo, isSubscriptionExpired]);
+
+    const remainingDays = useMemo(() => {
+        if (!subInfo?.endsAt) return 0;
+        const diffDays = dayjs(subInfo.endsAt).diff(dayjs(), 'day');
+        return Math.max(0, diffDays);
+    }, [subInfo]);
+
     const showAlert = isSubscriptionExpired && !isAlertDismissed;
+    const showWarningAlert = isSubscriptionExpiringSoon && !isAlertDismissed;
     const isPosRoute = pathname === '/admin/pos';
 
     return (
@@ -397,6 +412,30 @@ export default function AdminLayout({
                             className="ml-4 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition-all whitespace-nowrap"
                         >
                             Upgrade Plan
+                        </Link>
+                    </div>
+                    <button
+                        onClick={handleDismissAlert}
+                        className="absolute right-4 p-1 hover:bg-white/10 rounded-lg transition-colors text-white/80 hover:text-white"
+                        aria-label="Dismiss alert"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+
+            {showWarningAlert && (
+                <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-600 text-white px-4 py-3 text-center relative flex items-center justify-center gap-3 shadow-md z-[100] animate-in slide-in-from-top duration-300">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold min-w-0">
+                        <Shield className="w-4 h-4 shrink-0 animate-pulse" />
+                        <span className="truncate">
+                            Your subscription will expire in {remainingDays} {remainingDays === 1 ? 'day' : 'days'}. Please renew your plan to avoid service interruption.
+                        </span>
+                        <Link
+                            href="/admin/settings/billing"
+                            className="ml-4 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-[11px] font-black uppercase tracking-wider rounded-lg transition-all whitespace-nowrap"
+                        >
+                            Renew Plan
                         </Link>
                     </div>
                     <button
