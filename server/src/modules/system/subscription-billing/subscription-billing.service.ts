@@ -267,7 +267,7 @@ export class SubscriptionBillingService {
       },
     } as any as SiteSettingsEntity
 
-    const callbackUrl = `${safeFrontendUrl}/billing`
+    const callbackUrl = `${safeFrontendUrl}/api/billing`
 
     const result = await strategy.initiate(mockOrder, mockSettings, {
       callbackUrl,
