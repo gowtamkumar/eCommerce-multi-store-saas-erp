@@ -2,6 +2,7 @@ import {
   AI_PROVIDER_PRESETS,
   DEFAULT_STORE_AI_CONFIG,
   StoreAiConfig,
+  StoreAiFallbackConfig,
   StoreAiSensitiveConfig,
   StoreAiStorefrontConfig,
   StoreAiAutomationConfig,
@@ -25,6 +26,25 @@ export function normalizeSensitiveAiConfig(
   return {
     hrmEnabled: raw.hrmEnabled ?? defaults.hrmEnabled ?? true,
     financeEnabled: raw.financeEnabled ?? defaults.financeEnabled ?? true,
+  }
+}
+
+export function normalizeFallbackConfig(
+  raw: StoreAiFallbackConfig,
+  primaryProvider: string,
+): StoreAiFallbackConfig {
+  const provider = raw.provider || primaryProvider
+  const preset = AI_PROVIDER_PRESETS[provider]
+  return {
+    provider,
+    apiKey: raw.apiKey,
+    baseUrl: raw.baseUrl || preset?.baseUrl,
+    defaultModel: raw.defaultModel || preset?.defaultModel,
+    embeddingModel: raw.embeddingModel || preset?.embeddingModel,
+    apiVersion: raw.apiVersion,
+    siteUrl: raw.siteUrl,
+    siteName: raw.siteName,
+    extraHeaders: raw.extraHeaders,
   }
 }
 
@@ -53,6 +73,9 @@ export function normalizeStoreAiConfig(raw?: StoreAiConfig | null): StoreAiConfi
     storefront: normalizeStorefrontAiConfig(raw.storefront),
     automation: normalizeStoreAiAutomation(raw.automation),
     sensitive: normalizeSensitiveAiConfig(raw.sensitive),
+    fallback: raw.fallback && typeof raw.fallback === 'object'
+      ? normalizeFallbackConfig(raw.fallback, provider)
+      : undefined,
   }
 }
 
@@ -87,6 +110,7 @@ export function toStoreAiConfigResponse(config: StoreAiConfig): {
   storefront: Required<StoreAiStorefrontConfig>
   automation: Required<StoreAiAutomationConfig>
   sensitive: Required<StoreAiSensitiveConfig>
+  fallback?: StoreAiFallbackConfig
 } {
   const normalized = normalizeStoreAiConfig(config)
   const { hasApiKey, apiKeyPreview } = maskApiKey(normalized.apiKey)
@@ -108,6 +132,7 @@ export function toStoreAiConfigResponse(config: StoreAiConfig): {
     storefront: normalizeStorefrontAiConfig(normalized.storefront),
     automation: normalizeStoreAiAutomation(normalized.automation),
     sensitive: normalizeSensitiveAiConfig(normalized.sensitive),
+    fallback: normalized.fallback,
   }
 }
 

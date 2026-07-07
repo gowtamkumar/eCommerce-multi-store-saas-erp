@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import {
   AiChatMessage,
   AiCompletionResult,
+  AiStreamChunk,
   StoreAiClientService,
 } from './store-ai-client.service'
 
@@ -16,6 +17,18 @@ export class AiAssistantBaseService {
     options?: Parameters<StoreAiClientService['chatCompletion']>[2],
   ): Promise<AiCompletionResult> {
     return this.aiClient.chatCompletion(storeId, messages, {
+      ...options,
+      usageContext: { endpoint, jobId: options?.usageContext?.jobId },
+    })
+  }
+
+  completeStream(
+    storeId: string,
+    messages: AiChatMessage[],
+    endpoint: string,
+    options?: Parameters<StoreAiClientService['streamChatCompletion']>[2],
+  ): AsyncGenerator<AiStreamChunk> {
+    return this.aiClient.streamChatCompletion(storeId, messages, {
       ...options,
       usageContext: { endpoint, jobId: options?.usageContext?.jobId },
     })

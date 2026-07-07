@@ -32,7 +32,10 @@ export default function AiStudio() {
     pageSeoLoading,
     storeSeoLoading,
     messages,
+    streamingContent,
     sendChat,
+    sendChatStream,
+    cancelStream,
     clearChat,
     generateProductContent,
     generateCampaignCopy,
@@ -94,7 +97,10 @@ export default function AiStudio() {
           messages={messages}
           loading={chatLoading}
           disabled={disabled}
+          streamingContent={streamingContent}
           onSend={sendChat}
+          onSendStream={sendChatStream}
+          onCancelStream={cancelStream}
           onClear={clearChat}
         />
       ) : null}

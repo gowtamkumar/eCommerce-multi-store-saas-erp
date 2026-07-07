@@ -8,6 +8,7 @@ import {
   AI_PROVIDER_OPTIONS,
   DEFAULT_AI_CONFIG_FORM,
   DEFAULT_AUTOMATION_AI_CONFIG,
+  DEFAULT_FALLBACK_AI_CONFIG,
   DEFAULT_SENSITIVE_AI_CONFIG,
   DEFAULT_STOREFRONT_AI_CONFIG,
   EmbeddingIndexStatus,
@@ -26,7 +27,6 @@ function mapResponseToForm(data: StoreAiConfigResponse): StoreAiConfigForm {
     baseUrl: data.baseUrl || preset?.baseUrl || DEFAULT_AI_CONFIG_FORM.baseUrl,
     defaultModel: data.defaultModel || preset?.defaultModel || "",
     embeddingModel: data.embeddingModel || preset?.embeddingModel || "",
-    apiVersion: data.apiVersion || preset?.apiVersion || "2024-08-01-preview",
     siteUrl: data.siteUrl || "",
     siteName: data.siteName || "",
     maxTokens: data.maxTokens ?? 1024,
@@ -43,6 +43,9 @@ function mapResponseToForm(data: StoreAiConfigResponse): StoreAiConfigForm {
       ...DEFAULT_SENSITIVE_AI_CONFIG,
       ...data.sensitive,
     },
+    fallback: data.fallback
+      ? { ...DEFAULT_FALLBACK_AI_CONFIG, ...data.fallback }
+      : undefined,
   };
 }
 
@@ -115,7 +118,6 @@ export function useAiConfig() {
         baseUrl: form.baseUrl,
         defaultModel: form.defaultModel,
         embeddingModel: form.embeddingModel || undefined,
-        apiVersion: form.apiVersion || undefined,
         siteUrl: form.siteUrl || undefined,
         siteName: form.siteName || undefined,
         maxTokens: form.maxTokens,
@@ -124,6 +126,20 @@ export function useAiConfig() {
         automation: form.automation,
         sensitive: form.sensitive,
       };
+
+      if (form.fallback) {
+        payload.fallback = {
+          provider: form.fallback.provider,
+          baseUrl: form.fallback.baseUrl || undefined,
+          defaultModel: form.fallback.defaultModel || undefined,
+          embeddingModel: form.fallback.embeddingModel || undefined,
+          siteUrl: form.fallback.siteUrl || undefined,
+          siteName: form.fallback.siteName || undefined,
+        };
+        if (form.fallback.apiKey && form.fallback.apiKey !== AI_API_KEY_UNCHANGED) {
+          (payload.fallback as Record<string, unknown>).apiKey = form.fallback.apiKey;
+        }
+      }
 
       if (form.apiKey && form.apiKey !== AI_API_KEY_UNCHANGED) {
         payload.apiKey = form.apiKey;
@@ -163,7 +179,6 @@ export function useAiConfig() {
             baseUrl: form.baseUrl,
             defaultModel: form.defaultModel,
             embeddingModel: form.embeddingModel || undefined,
-            apiVersion: form.apiVersion || undefined,
             siteUrl: form.siteUrl || undefined,
             siteName: form.siteName || undefined,
             maxTokens: form.maxTokens,
@@ -197,7 +212,6 @@ export function useAiConfig() {
       baseUrl: preset.baseUrl,
       defaultModel: preset.defaultModel,
       embeddingModel: preset.showEmbeddingModel === false ? "" : preset.embeddingModel || prev.embeddingModel,
-      apiVersion: preset.apiVersion || prev.apiVersion,
       siteUrl: preset.showOpenRouterHeaders ? prev.siteUrl : "",
       siteName: preset.showOpenRouterHeaders ? prev.siteName : "",
     }));

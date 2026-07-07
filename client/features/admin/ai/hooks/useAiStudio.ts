@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { fetchAPI } from "@/services/api";
+import nestApiUrl from "@/lib/api-url";
+import { getSession } from "next-auth/react";
+import { getClientStoreId } from "@/lib/store-store-id";
 import type {
   AiChatMessage,
   AiStatus,
@@ -23,6 +26,8 @@ export function useAiStudio() {
   const [pageSeoLoading, setPageSeoLoading] = useState(false);
   const [storeSeoLoading, setStoreSeoLoading] = useState(false);
   const [messages, setMessages] = useState<AiChatMessage[]>([]);
+  const [streamingContent, setStreamingContent] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -64,6 +69,117 @@ export function useAiStudio() {
     } finally {
       setChatLoading(false);
     }
+  };
+
+  const sendChatStream = async (message: string) => {
+    if (!message.trim()) return;
+
+    const userMessage: AiChatMessage = { role: "user", content: message.trim() };
+    setMessages((prev) => [...prev, userMessage]);
+    setChatLoading(true);
+    setStreamingContent("");
+
+    const abort = new AbortController();
+    abortRef.current = abort;
+
+    try {
+      const session = await getSession();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      if (session?.user?.accessToken) {
+        headers["Authorization"] = `Bearer ${session.user.accessToken}`;
+      }
+
+      const storeId = getClientStoreId();
+      if (storeId) {
+        headers["x-store-id"] = storeId;
+      }
+
+      const activeBranchId = localStorage.getItem("activeBranchId");
+      if (activeBranchId) {
+        headers["x-branch-id"] = activeBranchId;
+      }
+
+      const response = await fetch(`${nestApiUrl}/ai/chat/stream`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          message: userMessage.content,
+          history: messages,
+        }),
+        signal: abort.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullReply = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload) continue;
+
+          try {
+            const chunk = JSON.parse(payload);
+
+            if (chunk.type === "token") {
+              fullReply += chunk.content;
+              setStreamingContent(fullReply);
+            } else if (chunk.type === "done") {
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: fullReply },
+              ]);
+              setStreamingContent("");
+            } else if (chunk.type === "error") {
+              toast.error(chunk.message || "Stream error");
+              setMessages((prev) => prev.slice(0, -1));
+              setStreamingContent("");
+            }
+          } catch {
+            // skip malformed JSON
+          }
+        }
+      }
+
+      if (fullReply && !messages.some((m) => m.content === fullReply)) {
+        setMessages((prev) => {
+          if (prev.at(-1)?.role === "assistant" && prev.at(-1)?.content === fullReply) {
+            return prev;
+          }
+          return [...prev, { role: "assistant", content: fullReply }];
+        });
+      }
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      toast.error("AI chat failed. Check your AI configuration in Settings.");
+      setMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setChatLoading(false);
+      setStreamingContent("");
+      abortRef.current = null;
+    }
+  };
+
+  const cancelStream = () => {
+    abortRef.current?.abort();
   };
 
   const generateProductContent = async (payload: {
@@ -188,7 +304,10 @@ export function useAiStudio() {
     pageSeoLoading,
     storeSeoLoading,
     messages,
+    streamingContent,
     sendChat,
+    sendChatStream,
+    cancelStream,
     clearChat,
     generateProductContent,
     generateCampaignCopy,

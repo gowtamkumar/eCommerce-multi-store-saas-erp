@@ -17,6 +17,7 @@ import { AiAssistantBaseService } from './services/ai-assistant-base.service'
 import { AiAutomationService } from './services/ai-automation.service'
 import { AiFeatureBootstrapService } from './services/ai-feature-bootstrap.service'
 import { AiJobService } from './services/ai-job.service'
+import { AiRateLimiterService } from './services/ai-rate-limiter.service'
 import { AiUsageLogService } from './services/ai-usage-log.service'
 import { AiCatalogAssistantService } from './services/domains/ai-catalog-assistant.service'
 import { AiContentAssistantService } from './services/domains/ai-content-assistant.service'
@@ -68,6 +69,7 @@ import { StoreRepository } from '@/modules/system/store/store.repository'
     AdminCopilotService,
     AdminCopilotToolService,
     AiFeatureBootstrapService,
+    AiRateLimiterService,
     AiUsageLogService,
     AiJobService,
     AiJobRepository,
