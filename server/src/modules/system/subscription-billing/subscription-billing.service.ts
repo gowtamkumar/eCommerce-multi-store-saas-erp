@@ -634,9 +634,25 @@ export class SubscriptionBillingService {
     if (!store) throw new NotFoundException('Store not found')
 
     const transactionId = `ADDON-${Date.now()}`
-    const amount = Number(addon.price || 0)
+    const isYearly = store.subscriptionBillingCycle === SubscriptionBillingCycle.YEARLY
+    const baseAddonPrice = isYearly ? Number(addon.price || 0) * 12 : Number(addon.price || 0)
+
+    let amount = baseAddonPrice
+
+    if (store.subscriptionEndsAt) {
+      const remainingTime = new Date(store.subscriptionEndsAt).getTime() - new Date().getTime()
+      const remainingDays = Math.ceil(remainingTime / (1000 * 60 * 60 * 24))
+
+      if (remainingDays > 0) {
+        const cycleDays = isYearly ? 365 : 30
+        amount = Math.min(baseAddonPrice, (baseAddonPrice / cycleDays) * remainingDays)
+      }
+    }
+
+    amount = Number(amount.toFixed(2))
+
     if (amount <= 0) {
-      throw new BadRequestException('Addon is free or price not configured')
+      throw new BadRequestException('Addon price calculation resulted in zero or invalid amount')
     }
 
     const currency = 'USD' // Default currency for platform addons
