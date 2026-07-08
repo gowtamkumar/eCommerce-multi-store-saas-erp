@@ -10,24 +10,38 @@ import { WarehouseBinEntity } from '../entities/warehouse-bin.entity'
 import { WarehouseEntity } from '../entities/warehouse.entity'
 import { WarehouseBinRepository } from '../repositories/warehouse-bin.repository'
 import { WarehouseRepository } from '../repositories/warehouse.repository'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Injectable()
 export class WarehouseService {
   constructor(
     private readonly warehouseRepository: WarehouseRepository,
     private readonly binRepository: WarehouseBinRepository,
+    private readonly cacheService: CacheService,
   ) {}
 
   async findAll(ctx: RequestContextDto): Promise<WarehouseEntity[]> {
-    return this.warehouseRepository.findAll(ctx.storeId)
+    return this.cacheService.rememberCache(
+      `warehouses:list`,
+      () => this.warehouseRepository.findAll(ctx.storeId),
+      300,
+      ctx.storeId,
+    )
   }
 
   async findOne(id: string, ctx: RequestContextDto): Promise<WarehouseEntity> {
-    const warehouse = await this.warehouseRepository.findOne(id, ctx.storeId)
-    if (!warehouse) {
-      throw new NotFoundException('Warehouse not found')
-    }
-    return warehouse
+    return this.cacheService.rememberCache(
+      `warehouse:${id}`,
+      async () => {
+        const warehouse = await this.warehouseRepository.findOne(id, ctx.storeId)
+        if (!warehouse) {
+          throw new NotFoundException('Warehouse not found')
+        }
+        return warehouse
+      },
+      300,
+      ctx.storeId,
+    )
   }
 
   async create(
@@ -41,7 +55,9 @@ export class WarehouseService {
     if (existing) {
       throw new ConflictException('Warehouse code already exists')
     }
-    return this.warehouseRepository.create(createWarehouseDto, ctx)
+    const warehouse = await this.warehouseRepository.create(createWarehouseDto, ctx)
+    await this.cacheService.delCache(`warehouses:list`, ctx.storeId)
+    return warehouse
   }
 
   async update(
@@ -59,12 +75,17 @@ export class WarehouseService {
         throw new ConflictException('Warehouse code already exists')
       }
     }
-    return this.warehouseRepository.update(warehouse, updateWarehouseDto)
+    const updated = await this.warehouseRepository.update(warehouse, updateWarehouseDto)
+    await this.cacheService.delCache(`warehouses:list`, ctx.storeId)
+    await this.cacheService.delCache(`warehouse:${id}`, ctx.storeId)
+    return updated
   }
 
   async remove(id: string, ctx: RequestContextDto): Promise<void> {
     const warehouse = await this.findOne(id, ctx)
     await this.warehouseRepository.remove(warehouse)
+    await this.cacheService.delCache(`warehouses:list`, ctx.storeId)
+    await this.cacheService.delCache(`warehouse:${id}`, ctx.storeId)
   }
 
   // Bin Management
@@ -78,7 +99,10 @@ export class WarehouseService {
     if (existing) {
       throw new ConflictException('Bin code already exists in this warehouse')
     }
-    return this.binRepository.create({ ...createBinDto, warehouseId }, ctx)
+    const bin = await this.binRepository.create({ ...createBinDto, warehouseId }, ctx)
+    await this.cacheService.delCache(`warehouses:list`, ctx.storeId)
+    await this.cacheService.delCache(`warehouse:${warehouseId}`, ctx.storeId)
+    return bin
   }
 
   async updateBin(
@@ -98,7 +122,10 @@ export class WarehouseService {
         throw new ConflictException('Bin code already exists in this warehouse')
       }
     }
-    return this.binRepository.update(bin, updateBinDto)
+    const updated = await this.binRepository.update(bin, updateBinDto)
+    await this.cacheService.delCache(`warehouses:list`, ctx.storeId)
+    await this.cacheService.delCache(`warehouse:${bin.warehouseId}`, ctx.storeId)
+    return updated
   }
 
   async removeBin(binId: string, ctx: RequestContextDto): Promise<void> {
@@ -106,5 +133,7 @@ export class WarehouseService {
     if (!bin) throw new NotFoundException('Bin not found')
     await this.findOne(bin.warehouseId, ctx)
     await this.binRepository.remove(bin)
+    await this.cacheService.delCache(`warehouses:list`, ctx.storeId)
+    await this.cacheService.delCache(`warehouse:${bin.warehouseId}`, ctx.storeId)
   }
 }

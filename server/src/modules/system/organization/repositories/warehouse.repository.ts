@@ -19,6 +19,7 @@ export class WarehouseRepository extends BaseStoreRepository<WarehouseEntity> {
       where: { storeId },
       relations: {
         branch: true,
+        bins: true,
       },
     })
   }
