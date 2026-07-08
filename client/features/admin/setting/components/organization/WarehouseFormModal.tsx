@@ -52,7 +52,7 @@ export function WarehouseFormModal({
             placeholder="WH-001"
           />
         </FormField>
-        <FormField label="Type">
+        <FormField label="Location Type">
           <select
             value={formData.locationType}
             onChange={(event) => setFormData({ ...formData, locationType: event.target.value as OrganizationFormData["locationType"] })}
