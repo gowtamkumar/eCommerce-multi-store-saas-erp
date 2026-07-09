@@ -14,9 +14,13 @@ export class PosShiftRepository extends BaseStoreRepository<PosShiftEntity> {
     super(PosShiftEntity, repo)
 }
 
-  async findAll(storeId: string): Promise<PosShiftEntity[]> {
+  async findAll(storeId: string, branchId?: string): Promise<PosShiftEntity[]> {
+    const where: any = { storeId }
+    if (branchId) {
+      where.branchId = branchId
+    }
     return this.repo.find({
-      where: { storeId },
+      where,
       relations: {
         register: true,
         user: true,

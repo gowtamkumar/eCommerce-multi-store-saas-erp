@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { createHash } from 'crypto'
-import { Repository, IsNull, MoreThan, LessThanOrEqual, EntityManager, DataSource } from 'typeorm'
+import { IsNull, MoreThan, LessThanOrEqual, EntityManager, DataSource, Repository } from 'typeorm'
 import { ProductBatchEntity } from './entities/product-batch.entity'
+import { ProductBatchRepository } from './repositories/product-batch.repository'
 import { BatchStatus } from '@/common/enums/batch-status.enum'
 import { CreateProductBatchDto } from './dto/create-product-batch.dto'
 import { UpdateProductBatchDto } from './dto/update-product-batch.dto'
@@ -17,8 +17,7 @@ export class ProductBatchService {
   private readonly logger = new Logger(ProductBatchService.name)
 
   constructor(
-    @InjectRepository(ProductBatchEntity)
-    private readonly repo: Repository<ProductBatchEntity>,
+    private readonly repo: ProductBatchRepository,
     private readonly ledgerService: InventoryLedgerService,
     private readonly dataSource: DataSource,
   ) {}
@@ -85,6 +84,7 @@ export class ProductBatchService {
     const storeId = ctx.storeId
 
     const qb = this.repo
+      .txRepo()
       .createQueryBuilder('b')
       .leftJoinAndSelect('b.product', 'product')
       .leftJoinAndSelect('b.variant', 'variant')

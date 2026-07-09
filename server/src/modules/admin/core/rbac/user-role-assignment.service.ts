@@ -1,12 +1,12 @@
 import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
-import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { IsNull, MoreThan } from 'typeorm'
+import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/repositories/user-role-assignment.repository'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
 
 export interface AssignRoleDto {
   roleId: string
@@ -24,14 +24,9 @@ export class UserRoleAssignmentService {
   private readonly logger = new Logger(UserRoleAssignmentService.name)
 
   constructor(
-    @InjectRepository(UserRoleAssignmentEntity)
-    private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
-
-    @InjectRepository(UserEntity)
-    private readonly userRepo: Repository<UserEntity>,
-
-    @InjectRepository(RoleEntity)
-    private readonly roleRepo: Repository<RoleEntity>,
+    private readonly assignmentRepo: UserRoleAssignmentRepository,
+    private readonly userRepo: UserRepository,
+    private readonly roleRepo: RoleRepository,
 
     private readonly auditLogService: AuditLogService,
     private readonly permissionResolutionService: PermissionResolutionService,
@@ -39,15 +34,15 @@ export class UserRoleAssignmentService {
 
   async getUserRoles(userId: string, storeId: string): Promise<UserRoleAssignmentEntity[]> {
     const now = new Date()
-    const assignments = await this.assignmentRepo.find({
-      where: { userId, storeId },
+    return this.assignmentRepo.find({
+      where: [
+        { userId, storeId, expiresAt: IsNull() },
+        { userId, storeId, expiresAt: MoreThan(now) },
+      ],
       relations: {
         role: true,
       },
     })
-
-    // Filter out expired assignments
-    return assignments.filter((a) => !a.expiresAt || new Date(a.expiresAt) > now)
   }
 
   async assignRoleToUser(
@@ -60,7 +55,7 @@ export class UserRoleAssignmentService {
     this.logger.log(`Assigning role ${dto.roleId} to user ${targetUserId} in store ${storeId}`)
 
     // 1. Validate user and role exist in this store
-    const user = await this.userRepo.findOne({ where: { id: targetUserId, storeId } })
+    const user = await this.userRepo.findByIdAndStore(targetUserId, storeId)
     if (!user) throw new NotFoundException('User not found in this store')
 
     const role = await this.roleRepo.findOne({ where: { id: dto.roleId, storeId: storeId } })

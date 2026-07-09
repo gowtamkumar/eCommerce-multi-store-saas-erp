@@ -10,7 +10,8 @@ import PoCoverLetterPanel from './PoCoverLetterPanel';
 import { buildDraftPoSummary } from '../lib/buildPoCoverLetterContext';
 
 export default function PurchaseOrderForm() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol || '$';
     const {
         loading,
         suppliers,
@@ -70,7 +71,7 @@ export default function PurchaseOrderForm() {
                 const idx = formData.items.findIndex(x => x.productId === item.productId && x.variantId === item.variantId);
                 return (
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">{currencySymbol}</span>
                         <input
                             type="number"
                             min="0"

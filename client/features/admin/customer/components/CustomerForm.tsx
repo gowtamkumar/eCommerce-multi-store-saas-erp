@@ -9,8 +9,12 @@ import {
 } from 'lucide-react';
 import type { CustomerFormProps } from '../type';
 import { useCustomerForm } from '../hooks/useCustomerForm';
+import { useSettings } from '@/hooks/SettingsContext';
 
 export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }: CustomerFormProps) {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol || '$';
+
     const {
         submitting,
         showPassword,
@@ -263,7 +267,7 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
                                     </div>
 
                                     <div className="space-y-1.5 md:col-span-2">
-                                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Credit Limit (USD)</label>
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Credit Limit ({currencySymbol})</label>
                                         <div className="relative">
                                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                             <input

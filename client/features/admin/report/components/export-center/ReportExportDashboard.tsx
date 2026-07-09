@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { useReportExportCenter } from '../../hooks/useReportExportCenter';
 import { REPORT_EXPORT_OPTIONS } from '../../lib/reportExportOptions';
 import ReportExportHeader from './ReportExportHeader';
@@ -8,6 +9,7 @@ import ReportExportSettings from './ReportExportSettings';
 import ReportTypeSelection from './ReportTypeSelection';
 
 const ReportExportDashboard: React.FC = () => {
+    const { selectedCurrency } = useSettings();
     const {
         reportType,
         startDate,
@@ -27,7 +29,10 @@ const ReportExportDashboard: React.FC = () => {
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 p-4">
-            <ReportExportHeader />
+            <ReportExportHeader
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <div className="lg:col-span-7">
@@ -35,6 +40,8 @@ const ReportExportDashboard: React.FC = () => {
                         reportType={reportType}
                         startDate={startDate}
                         endDate={endDate}
+                        currencyCode={selectedCurrency.code}
+                        currencySymbol={selectedCurrency.symbol}
                         onStartDateChange={setStartDate}
                         onEndDateChange={setEndDate}
                         suppliers={suppliers}

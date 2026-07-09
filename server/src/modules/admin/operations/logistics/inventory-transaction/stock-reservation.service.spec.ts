@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { StockReservationService } from './stock-reservation.service'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { StockReservationEntity } from './entities/stock-reservation.entity'
 import { InventoryLedgerService } from './inventory-ledger.service'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
+import { StockReservationRepository } from './repositories/stock-reservation.repository'
 
 describe('StockReservationService', () => {
   let service: StockReservationService
@@ -17,6 +16,7 @@ describe('StockReservationService', () => {
       save: jest.fn().mockImplementation((entity) => Promise.resolve({ id: 'res-id', ...entity })),
       findOne: jest.fn(),
       createQueryBuilder: jest.fn(),
+      txRepo: jest.fn().mockImplementation((manager) => manager ? manager : repoMock),
       manager: {
         connection: {
           transaction: jest.fn().mockImplementation(async (cb) => {
@@ -38,7 +38,7 @@ describe('StockReservationService', () => {
       providers: [
         StockReservationService,
         {
-          provide: getRepositoryToken(StockReservationEntity),
+          provide: StockReservationRepository,
           useValue: repoMock,
         },
         {

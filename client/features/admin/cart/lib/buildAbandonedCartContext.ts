@@ -1,12 +1,15 @@
 import type { AbandonedCartMessageTemplate } from "@/features/admin/ai/types/ai-studio";
 import type { CartSummary } from "../types";
 
-export function buildAbandonedCartSummary(cart: CartSummary): string {
+export function buildAbandonedCartSummary(
+  cart: CartSummary,
+  formatAmount: (amount: number) => string = (amount) => String(amount),
+): string {
   const lines = [
     `Cart ID: ${cart.id}`,
     `Customer: ${cart.customerName}`,
     `Items in cart: ${cart.itemCount}`,
-    `Estimated value: ${cart.totalAmount ?? 0}`,
+    `Estimated value: ${formatAmount(cart.totalAmount ?? 0)}`,
     `Last updated: ${cart.updatedAt ? new Date(cart.updatedAt).toISOString() : "unknown"}`,
   ];
 
@@ -16,7 +19,7 @@ export function buildAbandonedCartSummary(cart: CartSummary): string {
   const itemLines = (cart.items ?? []).map(
     (item) =>
       `- ${item.productName ?? "Item"} x${item.quantity}${
-        item.basePrice != null ? ` @ ${item.basePrice}` : ""
+        item.basePrice != null ? ` @ ${formatAmount(item.basePrice)}` : ""
       }`,
   );
 
@@ -31,9 +34,10 @@ export function buildAbandonedCartMessagePayload(
   cart: CartSummary,
   messageTemplate: AbandonedCartMessageTemplate,
   brandName?: string,
+  formatAmount?: (amount: number) => string,
 ) {
   return {
-    cartSummary: buildAbandonedCartSummary(cart),
+    cartSummary: buildAbandonedCartSummary(cart, formatAmount),
     customerName: cart.customerName || "Customer",
     customerEmail: cart.customerEmail,
     customerPhone: cart.customerPhone,

@@ -1,18 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 import { StaffInvitationService } from '@/modules/admin/core/user/services/staff-invitation.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { StoreService } from '@/modules/system/store/store.service'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { SessionEntity } from '../entities/session.entity'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { AuthService } from './auth.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { SessionRepository } from '../repositories/session.repository'
 
 describe('AuthService', () => {
   let service: AuthService
@@ -79,7 +78,7 @@ describe('AuthService', () => {
           },
         },
         {
-          provide: getRepositoryToken(SessionEntity),
+          provide: SessionRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -90,19 +89,6 @@ describe('AuthService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
       ],

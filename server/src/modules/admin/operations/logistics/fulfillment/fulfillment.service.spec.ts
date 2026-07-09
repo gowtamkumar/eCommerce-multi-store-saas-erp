@@ -4,14 +4,13 @@ import { FulfillmentRepository } from './fulfillment.repository'
 import { InventoryLedgerService } from '../inventory-transaction/inventory-ledger.service'
 import { StockReservationService } from '../inventory-transaction/stock-reservation.service'
 import { ProductBatchService } from '../inventory-transaction/product-batch.service'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { DataSource } from 'typeorm'
 import { FulfillmentStatus } from './enums/fulfillment-status.enum'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { StockReservationEntity } from '../inventory-transaction/entities/stock-reservation.entity'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.repository'
 
 describe('FulfillmentService', () => {
   let service: FulfillmentService
@@ -77,7 +76,7 @@ describe('FulfillmentService', () => {
           useValue: batchServiceMock,
         },
         {
-          provide: getRepositoryToken(OrderEntity),
+          provide: OrderRepository,
           useValue: orderRepoMock,
         },
         {

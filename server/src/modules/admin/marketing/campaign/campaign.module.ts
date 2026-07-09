@@ -21,6 +21,10 @@ import { CampaignService } from './services/campaign.service'
 import { StoreModule } from '@/modules/system/store/store.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { SubscriberRepository } from '@/modules/admin/customer/subscriber/repositories/subscriber.repository'
+import { LeadRepository } from '@/modules/admin/customer/lead/repositories/lead.repository'
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -45,6 +49,9 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     CampaignRepository,
     CampaignMessageRepository,
     CampaignLogRepository,
+    UserRepository,
+    SubscriberRepository,
+    LeadRepository,
   ],
   controllers: [CampaignController],
   exports: [

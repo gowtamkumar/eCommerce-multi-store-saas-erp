@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import DataTable from '@/components/shared/DataTable';
+import { useSettings } from '@/hooks/SettingsContext';
 import type { DunningLog } from '../../types';
 import { buildDunningLogColumns } from './dunningLogColumns';
 
@@ -12,7 +13,11 @@ export interface DunningLogsViewProps {
 }
 
 export default function DunningLogsView({ logs, loading, onViewDetails }: DunningLogsViewProps) {
-    const columns = useMemo(() => buildDunningLogColumns(onViewDetails), [onViewDetails]);
+    const { formatPrice } = useSettings();
+    const columns = useMemo(
+        () => buildDunningLogColumns(formatPrice, onViewDetails),
+        [formatPrice, onViewDetails],
+    );
 
     return (
         <div className="space-y-6">

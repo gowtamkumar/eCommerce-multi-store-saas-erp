@@ -5,8 +5,8 @@ import { FulfillmentStatus } from './enums/fulfillment-status.enum'
 import { FulfillmentItemStatus } from './entities/fulfillment-item.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, EntityManager, DataSource } from 'typeorm'
+import { OrderRepository } from '@/modules/admin/sales/order/repositories/order.repository'
+import { EntityManager, DataSource } from 'typeorm'
 import { InventoryLedgerService } from '../inventory-transaction/inventory-ledger.service'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
@@ -26,8 +26,7 @@ export class FulfillmentService {
     private readonly repository: FulfillmentRepository,
     private readonly inventoryService: InventoryLedgerService,
     private readonly dataSource: DataSource,
-    @InjectRepository(OrderEntity)
-    private readonly orderRepository: Repository<OrderEntity>,
+    private readonly orderRepository: OrderRepository,
     private readonly reservationService: StockReservationService,
     private readonly batchService: ProductBatchService,
     private readonly notificationService: NotificationService,

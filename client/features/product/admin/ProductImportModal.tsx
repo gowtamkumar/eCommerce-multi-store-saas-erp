@@ -10,6 +10,8 @@ import { fetchAPI } from "@/services/api";
 import { Download, Loader2, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useSettings } from "@/hooks/SettingsContext";
+import { formatCurrency } from "@/lib/utils";
 
 interface ProductImportModalProps {
   isOpen: boolean;
@@ -27,6 +29,8 @@ interface ImportResult {
 }
 
 export default function ProductImportModal({ isOpen, onClose, onSuccess }: ProductImportModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const { configured } = useAiGenerate();
   const [fileName, setFileName] = useState<string | null>(null);
   const [rows, setRows] = useState<ProductImportRow[]>([]);
@@ -205,7 +209,7 @@ export default function ProductImportModal({ isOpen, onClose, onSuccess }: Produ
                         {[row.category, row.sku, row.status].filter(Boolean).join(" · ") || "No category"}
                       </p>
                     </div>
-                    <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">${row.price}</p>
+                    <p className="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">{formatCurrency(row.price, currencySymbol)}</p>
                   </div>
                 ))}
               </div>

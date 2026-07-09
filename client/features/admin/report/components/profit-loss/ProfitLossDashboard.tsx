@@ -11,7 +11,7 @@ import ProfitLossKpiGrid from './ProfitLossKpiGrid';
 import ProfitLossHeader from './ProfitLossHeader';
 
 export default function ProfitLossDashboard() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const { data, isLoading, dateRange, handleDateChange, fetchReport } = useProfitLossReport();
     const reportSummary = useMemo(() => buildProfitLossReportSummary(data), [data]);
 
@@ -22,6 +22,8 @@ export default function ProfitLossDashboard() {
                 endDate={dateRange.endDate}
                 onDateChange={handleDateChange}
                 onFilter={fetchReport}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
             />
 
             <ProfitLossKpiGrid
@@ -48,6 +50,7 @@ export default function ProfitLossDashboard() {
                     <ExpenseDistribution
                         data={data?.operatingExpenses}
                         isLoading={isLoading}
+                        formatPrice={formatPrice}
                     />
                 </div>
             </div>

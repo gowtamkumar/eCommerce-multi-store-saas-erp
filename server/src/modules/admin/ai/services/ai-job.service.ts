@@ -2,9 +2,7 @@ import { AiJobStatus } from '@/common/enums/ai-job-status.enum'
 import { AiJobType } from '@/common/enums/ai-job-type.enum'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
-import { InjectRepository } from '@nestjs/typeorm'
 import { Queue } from 'bullmq'
-import { Repository } from 'typeorm'
 import { AiJobEntity } from '../entities/ai-job.entity'
 import {
   AiAutomationDispatchPayload,
@@ -12,6 +10,7 @@ import {
   ProductCreatedEvent,
 } from '@/common/events/ai-domain.events'
 import { GenerateInvoiceOcrDto } from '../dto/generate-invoice-ocr.dto'
+import { AiJobRepository } from '../repositories/ai-job.repository'
 
 export interface AiJobResponseDto {
   id: string
@@ -30,8 +29,7 @@ export interface AiJobResponseDto {
 @Injectable()
 export class AiJobService {
   constructor(
-    @InjectRepository(AiJobEntity)
-    private readonly jobRepo: Repository<AiJobEntity>,
+    private readonly jobRepo: AiJobRepository,
     @InjectQueue('ai') private readonly aiQueue: Queue,
   ) {}
 

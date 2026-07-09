@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Price from "@/components/shared/Price";
 import RecentlyViewedProducts from "@/components/shared/RecentlyViewedProducts";
 import { useCart } from "@/hooks/CartContext";
+import { useSettings } from "@/hooks/SettingsContext";
 import { CartItem as ICartItem } from "@/services/cart";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
@@ -121,6 +122,7 @@ const CartItem = memo(function CartItem({ item, index, onUpdateQuantity, onRemov
 
 export default function Cart() {
     const { cart, items, updateQuantity, removeItem, loading } = useCart();
+    const { selectedCurrency } = useSettings();
     const router = useRouter();
 
     // Stable handlers passed to the memoized CartItem.
@@ -188,9 +190,17 @@ export default function Cart() {
                         <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-700">
                             <ShoppingBag className="w-6 h-6 text-blue-600" />
                         </div>
-                        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight font-display italic uppercase">
-                            Shopping <span className="text-blue-600 font-bold not-italic">Cart</span>
-                        </h1>
+                        <div>
+                            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight font-display italic uppercase">
+                                Shopping <span className="text-blue-600 font-bold not-italic">Cart</span>
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 not-italic font-medium normal-case">
+                                {items.length} item{items.length !== 1 ? 's' : ''} in your cart
+                                <span className="ml-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                                    · {selectedCurrency.code} ({selectedCurrency.symbol})
+                                </span>
+                            </p>
+                        </div>
                     </div>
 
                     <div className="grid lg:grid-cols-3 gap-10">

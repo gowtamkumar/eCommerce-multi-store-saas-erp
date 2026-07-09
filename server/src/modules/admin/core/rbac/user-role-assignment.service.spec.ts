@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
-import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { UserRoleAssignmentService } from './user-role-assignment.service'
+import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/repositories/user-role-assignment.repository'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
 
 describe('UserRoleAssignmentService', () => {
   let service: UserRoleAssignmentService
@@ -15,7 +14,7 @@ describe('UserRoleAssignmentService', () => {
       providers: [
         UserRoleAssignmentService,
         {
-          provide: getRepositoryToken(UserRoleAssignmentEntity),
+          provide: UserRoleAssignmentRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -26,26 +25,14 @@ describe('UserRoleAssignmentService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
         {
-          provide: getRepositoryToken(UserEntity),
+          provide: UserRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
+            findByIdAndStore: jest.fn(),
             save: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
@@ -53,23 +40,10 @@ describe('UserRoleAssignmentService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
         {
-          provide: getRepositoryToken(RoleEntity),
+          provide: RoleRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -80,19 +54,6 @@ describe('UserRoleAssignmentService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
         {

@@ -12,7 +12,8 @@ import {
   SkipNonAiAdminThrottles,
 } from '@/common/throttler/throttler-skip.decorator'
 import { CustomThrottlerGuard } from '@/common/throttler/throttler.guard'
-import { Body, Controller, Get, HttpCode, Param, Post, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Param, Post, Query, Res, UseGuards } from '@nestjs/common'
+import { Response } from 'express'
 import { Throttle } from '@nestjs/throttler'
 import { AdminCopilotDto, AdminCopilotResponseDto } from '../dto/admin-copilot.dto'
 import { AiChatDto } from '../dto/ai-chat.dto'
@@ -128,7 +129,10 @@ import {
 } from '../dto/generate-requisition-justification.dto'
 import { GenerateReturnAssistDto, ReturnAssistResultDto } from '../dto/generate-return-assist.dto'
 import { GenerateReviewAssistDto, ReviewAssistResultDto } from '../dto/generate-review-assist.dto'
-import { GeneratePosCashierAssistDto, PosCashierAssistResultDto } from '../dto/generate-pos-cashier-assist.dto'
+import {
+  GeneratePosCashierAssistDto,
+  PosCashierAssistResultDto,
+} from '../dto/generate-pos-cashier-assist.dto'
 import {
   GenerateApplicantScreeningDto,
   ApplicantScreeningResultDto,
@@ -226,6 +230,37 @@ export class AiController {
       statusCode: 200,
       message: 'AI response generated successfully',
       data,
+    }
+  }
+
+  @Post('chat/stream')
+  @HttpCode(200)
+  @RequirePermissions(SystemPermissions.AI_USE)
+  @SkipNonAiAdminThrottles()
+  @Throttle({ ai: { limit: 40, ttl: 60000 } })
+  async chatStream(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: AiChatDto,
+    @Res() res: Response,
+  ) {
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no')
+
+    const stream = this.coreAssistant.chatStream(ctx.storeId, dto)
+
+    try {
+      for await (const chunk of stream) {
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+        if (chunk.type === 'done' || chunk.type === 'error') {
+          break
+        }
+      }
+    } catch {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'Stream interrupted' })}\n\n`)
+    } finally {
+      res.end()
     }
   }
 

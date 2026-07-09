@@ -11,9 +11,9 @@ import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-setti
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { StoreRepository } from '@/modules/system/store/store.repository'
 import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-subscription.entity'
+import { StoreSubscriptionRepository } from './repositories/store-subscription.repository'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import { DataSource } from 'typeorm'
 import { ConfigService } from '@nestjs/config'
 import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
@@ -39,8 +39,7 @@ export class SubscriptionBillingService {
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
     private readonly addonCatalogService: AddonCatalogService,
-    @InjectRepository(StoreSubscriptionEntity)
-    private readonly subscriptionRepo: Repository<StoreSubscriptionEntity>,
+    private readonly subscriptionRepo: StoreSubscriptionRepository,
     private readonly dataSource: DataSource,
   ) { }
 
@@ -174,14 +173,23 @@ export class SubscriptionBillingService {
 
     if (!store) throw new NotFoundException('Store not found')
 
-    // RENEWAL RESTRICTION: Block if not expired and same plan
+    // RENEWAL RESTRICTION: Block if not expired, same plan, and not within 7 days of expiration
     const isSamePlan = store.subscriptionPlanId === planId
     const isCurrentlyActive =
       store.subscriptionStatus !== SubscriptionStatus.TRIAL && !store.isExpired
 
-    if (isSamePlan && isCurrentlyActive) {
+    let isWithin7Days = false
+    if (store.subscriptionEndsAt) {
+      const diffTime = new Date(store.subscriptionEndsAt).getTime() - new Date().getTime()
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      if (diffDays <= 7) {
+        isWithin7Days = true
+      }
+    }
+
+    if (isSamePlan && isCurrentlyActive && !isWithin7Days) {
       throw new BadRequestException(
-        'Your current subscription is still active. You can only renew after it expires.',
+        'Your current subscription is still active. You can only renew within 7 days of expiration.',
       )
     }
 
@@ -197,6 +205,10 @@ export class SubscriptionBillingService {
     if (isYearly && amount === 0) {
       amount = Number(plan.monthlyPrice || 0) * 12
     }
+
+    // Calculate total addon price for all active addons of the store
+    const addonPrice = await this.getActiveAddonsTotalPrice(storeId, cycle)
+    amount += addonPrice
 
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException('Plan is not priced for the requested billing cycle')
@@ -268,7 +280,7 @@ export class SubscriptionBillingService {
       },
     } as any as SiteSettingsEntity
 
-    const callbackUrl = `${safeFrontendUrl}/billing`
+    const callbackUrl = `${safeFrontendUrl}/api/billing`
 
     const result = await strategy.initiate(mockOrder, mockSettings, {
       callbackUrl,
@@ -316,6 +328,14 @@ export class SubscriptionBillingService {
     const valId =
       gatewayResponse?.val_id ?? gatewayResponse?.value_id ?? gatewayResponse?.['VAL_ID']
 
+    if (!valId) {
+      const currentStatus = record.status as any
+      if (currentStatus === PaymentStatus.COMPLETED || currentStatus === PaymentStatus.FAILED) {
+        return record
+      }
+      throw new BadRequestException('Missing val_id for transaction verification')
+    }
+
     const verification = await strategy.verifyTransaction({
       valId,
       transactionId,
@@ -339,8 +359,68 @@ export class SubscriptionBillingService {
 
     await this.planRecordRepository.updateAndSave(record, {
       status: PaymentStatus.COMPLETED,
-      gatewayResponse: verification.gatewayResponse ?? gatewayResponse,
+      gatewayResponse: {
+        ...(record.gatewayResponse || {}),
+        ...(verification.gatewayResponse ?? gatewayResponse),
+      },
     })
+
+    const isAddonPurchase = record.gatewayResponse?.isAddonPurchase === true
+    const addonSlug = record.gatewayResponse?.addonSlug
+
+    if (isAddonPurchase && addonSlug) {
+      const featureRepo = this.dataSource.getRepository(StoreFeatureEntity)
+      let override = await featureRepo.findOne({ where: { storeId: record.storeId, featureSlug: addonSlug } })
+      if (override && !override.isEnabled) {
+        override.isEnabled = true
+        override.updatedAt = new Date()
+        await featureRepo.save(override)
+      } else if (override && override.isEnabled) {
+        // Find the next available suffix
+        let suffix = 1
+        let newSlug = `${addonSlug}_${suffix}`
+        while (await featureRepo.findOne({ where: { storeId: record.storeId, featureSlug: newSlug } })) {
+          suffix++
+          newSlug = `${addonSlug}_${suffix}`
+        }
+        override = featureRepo.create({
+          storeId: record.storeId,
+          featureSlug: newSlug,
+          isEnabled: true,
+          enabledAt: new Date(),
+        })
+        await featureRepo.save(override)
+      } else {
+        override = featureRepo.create({
+          storeId: record.storeId,
+          featureSlug: addonSlug,
+          isEnabled: true,
+          enabledAt: new Date(),
+        })
+        await featureRepo.save(override)
+      }
+
+      // Invalidate current subscription cache
+      await this.cacheService.delCache(`subscription:${record.storeId}:current`, record.storeId)
+
+      // Trigger local notification
+      try {
+        await this.notificationService.createNotification(
+          {
+            title: 'Storage Addon Activated',
+            message: `Storage addon '${addonSlug.replace('addon_storage_', '').toUpperCase()}' has been successfully purchased and activated.`,
+            type: 'SUCCESS',
+            link: `/admin/settings/billing`,
+            userId: null as any,
+          },
+          record.storeId,
+        )
+      } catch (e: any) {
+        this.logger.error(`Failed to trigger billing notification for addon purchase: ${e.message}`)
+      }
+
+      return record
+    }
 
     const store = await this.storeRepository.findByIdWithRelations(record.storeId)
     const plan = await this.planRepository.findById(record.subscriptionPlanId)
@@ -413,6 +493,14 @@ export class SubscriptionBillingService {
     this.logger.log(`Handling failed subscription payment for transaction: ${transactionId}`)
     const record = await this.planRecordRepository.findByTransactionId(transactionId)
     if (record) {
+      const currentStatus = record.status as any
+      if (currentStatus === PaymentStatus.COMPLETED) {
+        return record
+      }
+      if (currentStatus === PaymentStatus.FAILED && !gatewayResponse?.val_id && !gatewayResponse?.status) {
+        return record
+      }
+
       const updated = await this.planRecordRepository.updateAndSave(record, {
         status: PaymentStatus.FAILED,
         gatewayResponse,
@@ -446,6 +534,10 @@ export class SubscriptionBillingService {
     this.logger.log(`Handling cancelled subscription payment for transaction: ${transactionId}`)
     const record = await this.planRecordRepository.findByTransactionId(transactionId)
     if (record) {
+      const currentStatus = record.status as any
+      if (currentStatus === PaymentStatus.COMPLETED || currentStatus === PaymentStatus.FAILED) {
+        return record
+      }
       return await this.planRecordRepository.updateAndSave(record, {
         status: PaymentStatus.PENDING,
         gatewayResponse,
@@ -495,6 +587,147 @@ export class SubscriptionBillingService {
     if (resStatus === 'CANCELLED') status = 'cancel'
 
     return `${baseUrl}/billing/${status}?tran_id=${transactionId}`
+  }
+
+
+  async getActiveAddonsTotalPrice(storeId: string, billingCycle: SubscriptionBillingCycle): Promise<number> {
+    const activeOverrides = await this.dataSource.getRepository(StoreFeatureEntity).find({
+      where: { storeId, isEnabled: true },
+    })
+
+    const allAddons = await this.addonCatalogService.findActive()
+
+    let totalAddonPrice = 0
+
+    for (const override of activeOverrides) {
+      if (override.featureSlug.startsWith('addon_')) {
+        const match = allAddons.find(
+          addon => override.featureSlug === addon.slug || override.featureSlug.startsWith(addon.slug + '_')
+        )
+        if (match) {
+          const basePrice = Number(match.price || 0)
+          if (billingCycle === SubscriptionBillingCycle.YEARLY) {
+            totalAddonPrice += basePrice * 12
+          } else {
+            totalAddonPrice += basePrice
+          }
+        }
+      }
+    }
+
+    return totalAddonPrice
+  }
+
+  async initiateAddonPayment(
+    ctx: RequestContextDto,
+    addonSlug: string,
+    frontendUrl?: string,
+  ): Promise<{ gatewayUrl: string }> {
+    const { storeId } = ctx
+    this.logger.log(`Initiating addon payment for store ${storeId} and addon ${addonSlug}`)
+
+    const activeAddons = await this.addonCatalogService.findActive()
+    const addon = activeAddons.find((a) => a.slug === addonSlug)
+    if (!addon) throw new NotFoundException('Addon not found or not active')
+
+    const store = await this.storeRepository.findByIdWithUser(storeId)
+    if (!store) throw new NotFoundException('Store not found')
+
+    const transactionId = `ADDON-${Date.now()}`
+    const isYearly = store.subscriptionBillingCycle === SubscriptionBillingCycle.YEARLY
+    const baseAddonPrice = isYearly ? Number(addon.price || 0) * 12 : Number(addon.price || 0)
+
+    let amount = baseAddonPrice
+
+    if (store.subscriptionEndsAt) {
+      const remainingTime = new Date(store.subscriptionEndsAt).getTime() - new Date().getTime()
+      const remainingDays = Math.ceil(remainingTime / (1000 * 60 * 60 * 24))
+
+      if (remainingDays > 0) {
+        const cycleDays = isYearly ? 365 : 30
+        amount = Math.min(baseAddonPrice, (baseAddonPrice / cycleDays) * remainingDays)
+      }
+    }
+
+    amount = Number(amount.toFixed(2))
+
+    if (amount <= 0) {
+      throw new BadRequestException('Addon price calculation resulted in zero or invalid amount')
+    }
+
+    const currency = 'USD' // Default currency for platform addons
+
+    const invoiceNumber = `INV-ADDON-${Date.now()}`
+    const record = await this.planRecordRepository.createAndSave(
+      {
+        invoiceNumber,
+        storeId,
+        subscriptionPlanId: store.subscriptionPlanId,
+        amount,
+        billingCycle: store.subscriptionBillingCycle || SubscriptionBillingCycle.MONTHLY,
+        currency,
+        status: PaymentStatus.PENDING,
+        transactionId,
+        billingDate: new Date(),
+        gatewayResponse: {
+          isAddonPurchase: true,
+          addonSlug: addonSlug,
+        },
+      },
+      ctx,
+    )
+
+    const platformFrontend = this.configService.get<string>('FRONTEND_URL') || ''
+    const allowedOrigins = buildAllowedBillingOrigins(store, {
+      frontendUrl: platformFrontend,
+      platformHost: this.configService.get<string>('PLATFORM_HOST'),
+      nodeEnv: this.configService.get<string>('NODE_ENV'),
+    })
+    const safeFrontendUrl = resolveSafeBillingUrl(frontendUrl, platformFrontend, allowedOrigins)
+
+    const strategy = new SslCommerzPaymentStrategy()
+    const mockOrder = {
+      id: record.id,
+      transactionId: transactionId,
+      totalAmount: amount,
+      currency,
+      customerName: store.user?.name || store.storeName || 'Store Owner',
+      customerEmail: store.user?.email || 'billing@omnicart.com',
+      address: store.user?.address || 'Dhaka, Bangladesh',
+      customerPhone: store.user?.phone || '01700000000',
+      items: [{ product: { name: `Addon: ${addon.name}` } }],
+    } as any as OrderEntity
+
+    const platformStoreId = this.configService.get<string>('SUPER_ADMIN_STORE_ID')
+    const platformStorePass = this.configService.get<string>('SUPER_ADMIN_STORE_PASS')
+    const platformIsSandbox =
+      String(this.configService.get('SSLCOMMERZ_LIVE') ?? 'false').toLowerCase() !== 'true'
+
+    if (!platformStoreId || !platformStorePass) {
+      throw new BadRequestException('Platform billing gateway is not configured')
+    }
+
+    const mockSettings = {
+      payment: {
+        sslCommerzStoreId: platformStoreId,
+        sslCommerzStorePassword: platformStorePass,
+        sslCommerzIsSandbox: platformIsSandbox,
+      },
+    } as any as SiteSettingsEntity
+
+    const callbackUrl = `${safeFrontendUrl}/api/billing`
+
+    const result = await strategy.initiate(mockOrder, mockSettings, {
+      callbackUrl,
+      storeId: store.id,
+      frontendUrl: safeFrontendUrl,
+    })
+
+    if (result.success) {
+      return { gatewayUrl: result.gatewayUrl }
+    } else {
+      throw new BadRequestException(result.error || 'Failed to initiate payment')
+    }
   }
 
   async purchaseAddon(storeId: string, addonSlug: string): Promise<void> {

@@ -111,7 +111,7 @@ describe('SslCommerzPaymentStrategy', () => {
     })
 
     it('rejects currency mismatch', async () => {
-      mockValidator({ status: 'VALID', tran_id: 'T1', amount: '100', currency: 'USD' })
+      mockValidator({ status: 'VALID', tran_id: 'T1', amount: '100', currency: 'EUR' })
       const result = await strategy.verifyTransaction({
         valId: 'v',
         transactionId: 'T1',

@@ -2,9 +2,8 @@ import { AiJobStatus } from '@/common/enums/ai-job-status.enum'
 import { AiJobType } from '@/common/enums/ai-job-type.enum'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getQueueToken } from '@nestjs/bullmq'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { AiJobEntity } from '../entities/ai-job.entity'
 import { AiJobService } from './ai-job.service'
+import { AiJobRepository } from '../repositories/ai-job.repository'
 
 describe('AiJobService', () => {
   let service: AiJobService
@@ -23,7 +22,7 @@ describe('AiJobService', () => {
       providers: [
         AiJobService,
         {
-          provide: getRepositoryToken(AiJobEntity),
+          provide: AiJobRepository,
           useValue: {
             save: saveMock,
             update: updateMock,

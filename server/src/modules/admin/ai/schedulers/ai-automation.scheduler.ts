@@ -7,22 +7,20 @@ import { CartEntity } from '@/modules/store/cart/entities/cart.entity'
 import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { AiJobType } from '@/common/enums/ai-job-type.enum'
 import { AiJobService } from '../services/ai-job.service'
 import { isStoreAiAutomationReady } from '@/common/utils/store-ai-automation.util'
 import { normalizeStoreAiConfig } from '@/modules/system/store/utils/store-ai.util'
+import { CartRepository } from '@/modules/store/cart/cart.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 
 @Injectable()
 export class AiAutomationScheduler {
   private readonly logger = new Logger(AiAutomationScheduler.name)
 
   constructor(
-    @InjectRepository(CartEntity)
-    private readonly cartRepo: Repository<CartEntity>,
-    @InjectRepository(StoreEntity)
-    private readonly storeRepo: Repository<StoreEntity>,
+    private readonly cartRepo: CartRepository,
+    private readonly storeRepo: StoreRepository,
     private readonly aiJobService: AiJobService,
   ) {}
 
@@ -31,7 +29,7 @@ export class AiAutomationScheduler {
     const idleBefore = new Date(Date.now() - ABANDONED_CART_IDLE_HOURS * 60 * 60 * 1000)
     const notTooOld = new Date(Date.now() - ABANDONED_CART_MAX_AGE_DAYS * 24 * 60 * 60 * 1000)
 
-    const carts = await this.cartRepo
+    const carts = await this.cartRepo.txRepo()
       .createQueryBuilder('cart')
       .innerJoinAndSelect('cart.items', 'items')
       .leftJoinAndSelect('items.product', 'product')

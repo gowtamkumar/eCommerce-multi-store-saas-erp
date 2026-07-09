@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { PaymentMethod } from "@/lib/enums/payment-method.enum";
 import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 import type { ShippingAddress } from "@/services/shippingAddress";
+import { useSettings } from "@/hooks/SettingsContext";
+import { formatCurrency } from "@/lib/utils";
 
 interface CheckoutFormProps {
     session: any;
@@ -51,6 +53,8 @@ const CheckoutForm = React.memo(({
     useWalletBalance = false,
     onUseWalletBalanceChange
 }: CheckoutFormProps) => {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol || '$';
     return (
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm p-6 md:p-8">
             <div className="mb-8 pb-6 border-b border-slate-100 dark:border-slate-700">
@@ -267,7 +271,7 @@ const CheckoutForm = React.memo(({
                             </div>
                             <div>
                                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">Pay using Store Credit</h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Available Balance: <span className="font-bold text-emerald-600 font-mono">${walletBalance.toFixed(2)}</span></p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Available Balance: <span className="font-bold text-emerald-600 font-mono">{formatCurrency(walletBalance, currencySymbol)}</span></p>
                             </div>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">

@@ -1,8 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { ConversationEntity } from './entities/conversation.entity'
-import { ChatMessageEntity } from './entities/chat-message.entity'
 import { ChatService } from './chat.service'
+import { ConversationRepository } from './repositories/conversation.repository'
+import { ChatMessageRepository } from './repositories/chat-message.repository'
+
+const mockTxRepo = () => ({
+  findOne: jest.fn(),
+  findAndCount: jest.fn().mockResolvedValue([[], 0]),
+  save: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  manager: {
+    transaction: jest.fn((cb) => cb({
+      findOne: jest.fn(),
+      create: jest.fn().mockReturnValue({}),
+      save: jest.fn().mockResolvedValue({}),
+      createQueryBuilder: jest.fn(() => ({
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({}),
+      })),
+    })),
+  },
+})
 
 describe('ChatService', () => {
   let service: ChatService
@@ -12,57 +32,23 @@ describe('ChatService', () => {
       providers: [
         ChatService,
         {
-          provide: getRepositoryToken(ConversationEntity),
+          provide: ConversationRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
             save: jest.fn(),
             create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            remove: jest.fn(),
-            count: jest.fn(),
-            findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
+            txRepo: jest.fn().mockReturnValue(mockTxRepo()),
           },
         },
         {
-          provide: getRepositoryToken(ChatMessageEntity),
+          provide: ChatMessageRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
             save: jest.fn(),
             create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            remove: jest.fn(),
-            count: jest.fn(),
-            findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
+            txRepo: jest.fn().mockReturnValue(mockTxRepo()),
           },
         },
       ],

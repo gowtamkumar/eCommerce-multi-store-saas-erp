@@ -5,14 +5,28 @@ import { RefreshCw } from 'lucide-react';
 export interface ApHeaderProps {
     loading: boolean;
     onRefresh: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
-export default function ApHeader({ loading, onRefresh }: ApHeaderProps) {
+export default function ApHeader({
+    loading,
+    onRefresh,
+    currencyCode,
+    currencySymbol,
+}: ApHeaderProps) {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Accounts Payable & Payment Runs</h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-semibold">Track vendor liability aging categories and execute batch payment matching sweeps</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-semibold">
+                    Track vendor liability aging categories and execute batch payment matching sweeps
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
+                </p>
             </div>
             <div className="flex items-center gap-2">
                 <button

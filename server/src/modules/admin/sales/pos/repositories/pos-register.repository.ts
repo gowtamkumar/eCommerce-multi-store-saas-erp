@@ -14,9 +14,13 @@ export class PosRegisterRepository extends BaseStoreRepository<PosRegisterEntity
     super(PosRegisterEntity, repo)
 }
 
-  async findAll(storeId: string): Promise<PosRegisterEntity[]> {
+  async findAll(storeId: string, branchId?: string): Promise<PosRegisterEntity[]> {
+    const where: any = { storeId }
+    if (branchId) {
+      where.branchId = branchId
+    }
     return this.repo.find({
-      where: { storeId },
+      where,
       relations: {
         branch: true,
       },

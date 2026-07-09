@@ -28,7 +28,7 @@ import ProductQaWidget from "@/features/product/shop/ProductQaWidget";
 
 
 const ProductDetails = ({ product }: ProductDetailsProps) => {
-  const { settings } = useSettings();
+  const { settings, formatPrice } = useSettings();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [selectedImage, setSelectedImage] = useState(0);
@@ -322,7 +322,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                       </div>
                       <div className="px-3 py-1 bg-brand-600 text-white text-xs font-black uppercase rounded-full">
                         {promo.promotionType === PromotionType.PERCENTAGE && `${promo.value}% OFF`}
-                        {promo.promotionType === PromotionType.FIXED && `${promo.value} OFF`}
+                        {promo.promotionType === PromotionType.FIXED && `${formatPrice(promo.value)} OFF`}
                         {promo.promotionType === PromotionType.FREE_SHIPPING && `FREE SHIP`}
                       </div>
                     </div>

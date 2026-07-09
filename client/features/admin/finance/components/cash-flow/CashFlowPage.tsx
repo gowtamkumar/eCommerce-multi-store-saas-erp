@@ -8,7 +8,7 @@ import CashFlowHeader from './CashFlowHeader';
 import { CASH_FLOW_ACTIVITIES } from './cashFlowActivities';
 
 export default function CashFlowPage() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const { report, loading } = useCashFlow();
 
     if (loading) {
@@ -29,7 +29,10 @@ export default function CashFlowPage() {
 
     return (
         <div className="p-8 max-w-[1600px] mx-auto space-y-8">
-            <CashFlowHeader />
+            <CashFlowHeader
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
+            />
 
             <CashFlowBalanceCards
                 startingBalance={report.startingBalance}

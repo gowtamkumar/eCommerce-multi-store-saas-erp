@@ -9,12 +9,16 @@ import {
   CreditCard
 } from 'lucide-react';
 import type { SupplierInvoiceDetailDrawerProps } from '../types';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 export default function SupplierInvoiceDetailDrawer({
   invoice,
   onClose,
   onOpenPayModal,
 }: SupplierInvoiceDetailDrawerProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   return (
     <AnimatePresence>
       {invoice && (
@@ -84,7 +88,7 @@ export default function SupplierInvoiceDetailDrawer({
               <div className="grid grid-cols-2 gap-4 p-5 bg-slate-50 dark:bg-slate-900 rounded-3xl">
                 <div>
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Bill Amount</span>
-                  <span className="text-base font-black text-slate-900 dark:text-white font-mono">${invoice.totalAmount}</span>
+                  <span className="text-base font-black text-slate-900 dark:text-white font-mono">{formatCurrency(invoice.totalAmount, currencySymbol)}</span>
                 </div>
                 <div>
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Due Date</span>
@@ -107,7 +111,7 @@ export default function SupplierInvoiceDetailDrawer({
                         {item.product?.name || 'Unknown Product'}
                       </div>
                       <div className="text-xs font-black text-slate-700 dark:text-slate-300 font-mono">
-                        {item.quantity} x ${item.unitPrice}
+                        {item.quantity} x {formatCurrency(item.unitPrice, currencySymbol)}
                       </div>
                     </div>
                   ))}

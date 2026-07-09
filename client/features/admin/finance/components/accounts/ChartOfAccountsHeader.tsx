@@ -8,6 +8,8 @@ export interface ChartOfAccountsHeaderProps {
     onSearchChange: (value: string) => void;
     onInitializeCoa: () => void;
     onAddAccount: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
 export default function ChartOfAccountsHeader({
@@ -16,6 +18,8 @@ export default function ChartOfAccountsHeader({
     onSearchChange,
     onInitializeCoa,
     onAddAccount,
+    currencyCode,
+    currencySymbol,
 }: ChartOfAccountsHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -25,6 +29,11 @@ export default function ChartOfAccountsHeader({
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">
                     General Ledger Structure &amp; Account Classifications
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-indigo-600 dark:text-indigo-400 normal-case tracking-normal font-black">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
                 </p>
             </div>
             <div className="flex items-center gap-3">

@@ -1,15 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { StoreRepository } from '@/modules/system/store/store.repository'
-import { StoreSubscriptionEntity } from '@/modules/system/store/entities/store-subscription.entity'
 import { ConfigService } from '@nestjs/config'
 import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { AddonCatalogService } from '@/modules/system/addon-catalog/addon-catalog.service'
 import { SubscriptionBillingService } from './subscription-billing.service'
+import { StoreSubscriptionRepository } from './repositories/store-subscription.repository'
 
 describe('SubscriptionBillingService', () => {
   let service: SubscriptionBillingService
@@ -54,7 +53,7 @@ describe('SubscriptionBillingService', () => {
           useValue: {},
         },
         {
-          provide: getRepositoryToken(StoreSubscriptionEntity),
+          provide: StoreSubscriptionRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -65,19 +64,6 @@ describe('SubscriptionBillingService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
         {

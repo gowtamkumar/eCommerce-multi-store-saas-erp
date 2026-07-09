@@ -1,5 +1,6 @@
 'use client';
 
+import { useSettings } from '@/hooks/SettingsContext';
 import { RefreshCw } from 'lucide-react';
 import type { DashboardPeriod } from '../../types';
 
@@ -18,6 +19,9 @@ export default function DashboardHeader({
     lastUpdated,
     onRefresh,
 }: DashboardHeaderProps) {
+    const { selectedCurrency, settings } = useSettings();
+    const baseCurrency = settings?.currency;
+
     return (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -26,6 +30,14 @@ export default function DashboardHeader({
                 </h1>
                 <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">
                     Real-time performance metrics
+                    <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400 normal-case tracking-normal">
+                        · {selectedCurrency.code} ({selectedCurrency.symbol})
+                    </span>
+                    {baseCurrency && baseCurrency !== selectedCurrency.code && (
+                        <span className="text-slate-400 normal-case tracking-normal font-medium ml-1">
+                            converted from {baseCurrency}
+                        </span>
+                    )}
                     {lastUpdated && (
                         <span className="text-slate-400 normal-case tracking-normal font-medium ml-2">
                             · Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -34,6 +46,7 @@ export default function DashboardHeader({
                 </p>
             </div>
             <div className="flex items-center gap-3">
+
                 <button
                     onClick={onRefresh}
                     disabled={loading}

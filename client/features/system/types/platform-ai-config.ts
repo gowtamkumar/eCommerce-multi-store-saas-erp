@@ -9,12 +9,12 @@ export {
 
 export type PlatformAiConfigForm = Omit<
   import("@/features/admin/setting/types/ai-config").StoreAiConfigForm,
-  "storefront" | "embeddingModel" | "automation" | "sensitive"
+  "storefront" | "embeddingModel" | "automation" | "sensitive" | "apiVersion"
 >;
 
 export type PlatformAiConfigResponse = Omit<
   import("@/features/admin/setting/types/ai-config").StoreAiConfigResponse,
-  "storefront" | "automation" | "sensitive"
+  "storefront" | "automation" | "sensitive" | "apiVersion"
 >;
 
 export const DEFAULT_PLATFORM_AI_CONFIG_FORM: PlatformAiConfigForm = {
@@ -23,7 +23,6 @@ export const DEFAULT_PLATFORM_AI_CONFIG_FORM: PlatformAiConfigForm = {
   apiKey: "",
   baseUrl: "https://api.openai.com/v1",
   defaultModel: "gpt-4o-mini",
-  apiVersion: "2024-08-01-preview",
   siteUrl: "",
   siteName: "",
   maxTokens: 1024,

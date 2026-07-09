@@ -1,9 +1,11 @@
 "use client";
 
-import { DEFAULT_SETTINGS } from '../services/defaultSettings';
-import { fetchAPI } from '@/services/api';
 import { setClientStoreId } from '@/lib/store-store-id';
+import { formatCurrency } from '@/lib/utils';
+import { fetchAPI } from '@/services/api';
+import { usePathname } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { DEFAULT_SETTINGS } from '../services/defaultSettings';
 
 interface SiteSettings {
   logo: string;
@@ -184,6 +186,64 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+type StoreCurrency = { code: string; symbol: string; rate: number };
+
+function getBaseCurrency(settings: SiteSettings | null | undefined): StoreCurrency {
+  if (!settings?.currency) {
+    return {
+      code: DEFAULT_SETTINGS.currency,
+      symbol: DEFAULT_SETTINGS.currencySymbol,
+      rate: 1,
+    };
+  }
+  const base = settings.supportedCurrencies?.find((c) => c.code === settings.currency);
+  return base || { code: settings.currency, symbol: settings.currencySymbol, rate: 1 };
+}
+
+function isAdminPath(pathname?: string | null): boolean {
+  const currentPath =
+    pathname ?? (typeof window !== 'undefined' ? window.location.pathname : '');
+  return (
+    currentPath.startsWith('/admin') ||
+    currentPath.startsWith('/supplier-portal')
+  );
+}
+
+function readSavedCurrency(
+  settings: SiteSettings | null | undefined,
+  storageKey: string,
+): StoreCurrency | null {
+  if (typeof window === 'undefined' || !settings) return null;
+
+  const savedCurrency = localStorage.getItem(storageKey);
+  if (!savedCurrency) return null;
+
+  try {
+    const parsed = JSON.parse(savedCurrency);
+    const exists = settings.supportedCurrencies?.find((c) => c.code === parsed.code);
+    return exists ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveSelectedCurrency(
+  settings: SiteSettings | null | undefined,
+  pathname?: string | null,
+): StoreCurrency {
+  if (isAdminPath(pathname)) {
+    return (
+      readSavedCurrency(settings, 'adminSelectedCurrency') ??
+      getBaseCurrency(settings)
+    );
+  }
+
+  return (
+    readSavedCurrency(settings, 'selectedCurrency') ??
+    getBaseCurrency(settings)
+  );
+}
+
 export function SettingsProvider({
   children,
   initialSettings
@@ -191,13 +251,12 @@ export function SettingsProvider({
   children: React.ReactNode,
   initialSettings?: SiteSettings | null
 }) {
+  const pathname = usePathname();
   const [settings, setSettings] = useState<SiteSettings | null>(initialSettings || null);
   const [loading, setLoading] = useState(!initialSettings);
-  const [selectedCurrency, setSelectedCurrency] = useState<{
-    code: string;
-    symbol: string;
-    rate: number
-  }>({ code: 'USD', symbol: '$', rate: 1 });
+  const [selectedCurrency, setSelectedCurrency] = useState<StoreCurrency>(() =>
+    getBaseCurrency(initialSettings || null),
+  );
 
   const fetchSettings = async () => {
     try {
@@ -221,11 +280,11 @@ export function SettingsProvider({
           labelSettings: { ...DEFAULT_SETTINGS.labelSettings, ...settings?.labelSettings },
           theme: { ...DEFAULT_SETTINGS.theme, ...settings?.theme },
           branding: { ...DEFAULT_SETTINGS.branding, ...settings?.branding },
-          shippingConfig: { 
-            insideCityFee: 60, 
-            outsideCityFee: 120, 
-            freeShippingThreshold: 5000, 
-            ...settings?.shippingConfig 
+          shippingConfig: {
+            insideCityFee: 60,
+            outsideCityFee: 120,
+            freeShippingThreshold: 5000,
+            ...settings?.shippingConfig
           },
         };
         setSettings(mergedSettings);
@@ -233,25 +292,7 @@ export function SettingsProvider({
           setClientStoreId(settings.storeId);
         }
 
-        // Initialize currency from localStorage or default
-        const savedCurrency = localStorage.getItem('selectedCurrency');
-        if (savedCurrency) {
-          try {
-            const parsed = JSON.parse(savedCurrency);
-            const exists = mergedSettings.supportedCurrencies?.find((c: any) => c.code === parsed.code);
-            if (exists) {
-              setSelectedCurrency(exists);
-            } else {
-              const base = mergedSettings.supportedCurrencies?.find((c: any) => c.code === mergedSettings.currency);
-              setSelectedCurrency(base || { code: mergedSettings.currency, symbol: mergedSettings.currencySymbol, rate: 1 });
-            }
-          } catch (e) {
-            console.error('Failed to parse saved currency:', e);
-          }
-        } else {
-          const base = mergedSettings.supportedCurrencies?.find((c: any) => c.code === mergedSettings.currency);
-          setSelectedCurrency(base || { code: mergedSettings.currency, symbol: mergedSettings.currencySymbol, rate: 1 });
-        }
+        setSelectedCurrency(resolveSelectedCurrency(mergedSettings, pathname));
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -267,35 +308,27 @@ export function SettingsProvider({
   }, [initialSettings?.storeId]);
 
   useEffect(() => {
-    let mounted = true;
-
     if (!initialSettings && !settings) {
       fetchSettings();
-    } else if (initialSettings) {
-      // Even if we have initial settings, we should check for local currency preference
-      const savedCurrency = localStorage.getItem('selectedCurrency');
-      if (savedCurrency) {
-        try {
-          const parsed = JSON.parse(savedCurrency);
-          const exists = initialSettings.supportedCurrencies?.find((c: any) => c.code === parsed.code);
-          if (exists && mounted) {
-            setSelectedCurrency(exists);
-          }
-        } catch (e) { }
-      }
     }
+  }, [initialSettings, settings]);
 
-    return () => {
-      mounted = false;
-    };
-  }, [initialSettings]);
+  useEffect(() => {
+    const effectiveSettings = settings ?? initialSettings;
+    if (effectiveSettings) {
+      setSelectedCurrency(resolveSelectedCurrency(effectiveSettings, pathname));
+    }
+  }, [initialSettings, settings, pathname]);
 
   const setCurrency = (code: string) => {
     if (!settings?.supportedCurrencies) return;
     const currency = settings.supportedCurrencies.find(c => c.code === code);
     if (currency) {
       setSelectedCurrency(currency);
-      localStorage.setItem('selectedCurrency', JSON.stringify(currency));
+      const storageKey = isAdminPath(pathname)
+        ? 'adminSelectedCurrency'
+        : 'selectedCurrency';
+      localStorage.setItem(storageKey, JSON.stringify(currency));
     }
   };
 
@@ -313,6 +346,14 @@ export function SettingsProvider({
 
   const formatPrice = (amount: number) => {
     const converted = convertPrice(amount);
+    const num = typeof converted === 'number' && !isNaN(converted) ? converted : 0;
+
+    const isAdminRoute = isAdminPath(pathname);
+
+    if (isAdminRoute) {
+      return formatCurrency(num, selectedCurrency.symbol);
+    }
+
     if (typeof converted !== 'number' || isNaN(converted)) {
       try {
         const locale = settings?.locale || 'en-US';
@@ -320,7 +361,7 @@ export function SettingsProvider({
           style: 'currency',
           currency: selectedCurrency.code,
         }).format(0);
-      } catch (e) {
+      } catch {
         return `${selectedCurrency.symbol}0.00`;
       }
     }
@@ -330,7 +371,7 @@ export function SettingsProvider({
         style: 'currency',
         currency: selectedCurrency.code,
       }).format(converted);
-    } catch (e) {
+    } catch {
       return `${selectedCurrency.symbol}${converted.toFixed(2)}`;
     }
   };

@@ -1,8 +1,11 @@
+'use client';
+
+import type { ArAgingRow } from '@/features/admin/customer/type';
+import { useSettings } from '@/hooks/SettingsContext';
+import { fetchAPI } from '@/services/api';
+import { Banknote, CheckCircle2, Loader2, X } from 'lucide-react';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { fetchAPI } from '@/services/api';
-import { DollarSign, Loader2, CheckCircle2, X } from 'lucide-react';
-import type { ArAgingRow } from '@/features/admin/customer/type';
 
 export interface PaymentModalProps {
     customer: ArAgingRow;
@@ -11,6 +14,10 @@ export interface PaymentModalProps {
 }
 
 export default function PaymentModal({ customer, onClose, onSuccess }: PaymentModalProps) {
+    const { formatPrice, selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency.symbol;
+    const currencyCode = selectedCurrency.code;
+
     const [amount, setAmount] = useState('');
     const [method, setMethod] = useState('CASH');
     const [remarks, setRemarks] = useState('');
@@ -24,7 +31,7 @@ export default function PaymentModal({ customer, onClose, onSuccess }: PaymentMo
             return;
         }
         if (parsedAmount > customer.totalOutstanding) {
-            toast.error(`Cannot pay more than outstanding balance ($${customer.totalOutstanding})`);
+            toast.error(`Cannot pay more than outstanding balance (${formatPrice(customer.totalOutstanding)})`);
             return;
         }
         setSubmitting(true);
@@ -40,7 +47,7 @@ export default function PaymentModal({ customer, onClose, onSuccess }: PaymentMo
                 }),
             });
             if (res.success) {
-                toast.success(`$${parsedAmount} payment recorded for ${customer.customerName}`);
+                toast.success(`${formatPrice(parsedAmount)} payment recorded for ${customer.customerName}`);
                 onSuccess();
                 onClose();
             } else {
@@ -60,11 +67,13 @@ export default function PaymentModal({ customer, onClose, onSuccess }: PaymentMo
                 <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
-                            <DollarSign className="w-5 h-5" />
+                            <Banknote className="w-5 h-5" />
                         </div>
                         <div>
                             <h3 className="font-bold text-slate-900 dark:text-white">Record Payment</h3>
-                            <p className="text-xs text-slate-500">{customer.customerName} - Outstanding: ${Number(customer.totalOutstanding).toLocaleString()}</p>
+                            <p className="text-xs text-slate-500">
+                                {customer.customerName} - Outstanding: {formatPrice(customer.totalOutstanding)}
+                            </p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -74,9 +83,11 @@ export default function PaymentModal({ customer, onClose, onSuccess }: PaymentMo
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Payment Amount (USD)</label>
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                            Payment Amount ({currencyCode})
+                        </label>
                         <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 select-none">{currencySymbol}</span>
                             <input
                                 required
                                 type="number"
@@ -86,7 +97,7 @@ export default function PaymentModal({ customer, onClose, onSuccess }: PaymentMo
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                                placeholder={`Max: $${Number(customer.totalOutstanding).toLocaleString()}`}
+                                placeholder={`Max: ${formatPrice(customer.totalOutstanding)}`}
                                 autoFocus
                             />
                         </div>

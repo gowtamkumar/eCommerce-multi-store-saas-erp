@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { getMyLoyalty, MyLoyaltySummary } from "@/services/loyalty";
 import { Award, Copy, Check, Gift, RefreshCw, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useSettings } from "@/hooks/SettingsContext";
+import { formatCurrency } from "@/lib/utils";
 
 export default function LoyaltyRewards() {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const [data, setData] = useState<MyLoyaltySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -144,7 +148,7 @@ export default function LoyaltyRewards() {
           </div>
           <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
             <span className="text-xs font-bold text-brand-200">Redeemable discount</span>
-            <span className="text-sm font-black bg-white/15 px-3 py-1 rounded-full font-mono">${data.currencyValue.toFixed(2)}</span>
+            <span className="text-sm font-black bg-white/15 px-3 py-1 rounded-full font-mono">{formatCurrency(data.currencyValue, currencySymbol)}</span>
           </div>
         </div>
       </div>

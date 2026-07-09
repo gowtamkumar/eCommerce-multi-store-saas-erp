@@ -148,9 +148,9 @@ export function useMarketingReport() {
             .slice(0, 5);
     }, [customers]);
 
-    const exportCsv = useCallback(() => {
+    const exportCsv = useCallback((formatPrice?: (amount: number) => string) => {
         try {
-            const csv = buildMarketingCsv(campaigns, coupons);
+            const csv = buildMarketingCsv(campaigns, coupons, formatPrice);
             downloadCsv(csv, 'unified-marketing-performance-report.csv');
             toast.success('Unified marketing report exported');
         } catch (error) {

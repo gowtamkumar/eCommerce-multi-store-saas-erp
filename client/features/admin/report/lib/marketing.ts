@@ -12,6 +12,7 @@ function escapeCsv(value: string | number): string {
 export function buildMarketingCsv(
     campaigns: MarketingCampaign[],
     coupons: MarketingCoupon[],
+    formatPrice?: (amount: number) => string,
 ): string {
     let csv = 'TYPE,NAME/CODE,DETAILS,STATUS,REACH/LIMIT,SUCCESS/USED,FAILURES/UNUSED,SUCCESS RATE\n';
 
@@ -31,7 +32,9 @@ export function buildMarketingCsv(
 
     coupons.forEach((c) => {
         const statusStr = c.isActive ? 'Active' : 'Inactive';
-        const discDetails = c.discountType === 'percentage' ? `${c.amount}% off` : `${c.amount} flat off`;
+        const discDetails = c.discountType === 'percentage'
+            ? `${c.amount}% off`
+            : `${formatPrice ? formatPrice(Number(c.amount) || 0) : c.amount} flat off`;
         const unused = c.usageLimit ? c.usageLimit - (c.usedCount || 0) : 'N/A';
         csv += [
             escapeCsv('COUPON'),

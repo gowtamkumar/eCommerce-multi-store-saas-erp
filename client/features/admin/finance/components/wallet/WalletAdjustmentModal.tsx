@@ -2,6 +2,7 @@
 
 import { Loader2, Minus, Plus, X } from 'lucide-react';
 import type { FormEvent } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import type { WalletAdjustmentType } from '../../types';
 
 export interface WalletAdjustmentModalProps {
@@ -27,6 +28,10 @@ export default function WalletAdjustmentModal({
     onClose,
     onSubmit,
 }: WalletAdjustmentModalProps) {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency.symbol;
+    const currencyCode = selectedCurrency.code;
+
     if (!type) return null;
 
     const isCredit = type === 'credit';
@@ -59,18 +64,23 @@ export default function WalletAdjustmentModal({
 
                 <form onSubmit={onSubmit} className="p-6 space-y-5">
                     <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Amount</label>
-                        <input
-                            required
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            value={amount}
-                            onChange={(e) => onAmountChange(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
-                            placeholder="0.00"
-                            autoFocus
-                        />
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                            Amount ({currencyCode})
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400 select-none">{currencySymbol}</span>
+                            <input
+                                required
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                value={amount}
+                                onChange={(e) => onAmountChange(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                                placeholder="0.00"
+                                autoFocus
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">

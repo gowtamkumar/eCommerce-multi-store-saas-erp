@@ -1,7 +1,4 @@
 import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
-import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
-import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
-import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
 import { OverrideEffect } from '@/common/enums/override-effect.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import {
@@ -9,11 +6,16 @@ import {
   isCoreFeature,
   getPlanFeature,
 } from '@/common/constants/feature-mapping'
+import { Injectable, Logger } from '@nestjs/common'
+import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/repositories/user-role-assignment.repository'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
+import { StoreFeatureRepository } from '@/modules/system/store/repositories/store-feature.repository'
+import { UserPermissionOverrideRepository } from '@/modules/admin/core/user/repositories/user-permission-override.repository'
+import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
+import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
 import { StoreFeatureEntity } from '@/modules/system/store/entities/store-feature.entity'
 import { StoreEntity } from '@/modules/system/store/entities/store.entity'
-import { Injectable, Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 
 export interface PermissionManifest {
   featuresEnabled: string[]
@@ -52,21 +54,11 @@ export class PermissionResolutionService {
   private readonly CACHE_TTL_SECONDS = 300 // 5 minutes
 
   constructor(
-    @InjectRepository(UserRoleAssignmentEntity)
-    private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
-
-    @InjectRepository(RoleEntity)
-    private readonly roleRepo: Repository<RoleEntity>,
-
-    @InjectRepository(StoreEntity)
-    private readonly storeRepo: Repository<StoreEntity>,
-
-    @InjectRepository(StoreFeatureEntity)
-    private readonly storeFeatureRepo: Repository<StoreFeatureEntity>,
-
-    @InjectRepository(UserPermissionOverrideEntity)
-    private readonly overrideRepo: Repository<UserPermissionOverrideEntity>,
-
+    private readonly assignmentRepo: UserRoleAssignmentRepository,
+    private readonly roleRepo: RoleRepository,
+    private readonly storeRepo: StoreRepository,
+    private readonly storeFeatureRepo: StoreFeatureRepository,
+    private readonly overrideRepo: UserPermissionOverrideRepository,
     private readonly cacheService: CacheService,
   ) { }
 

@@ -13,13 +13,18 @@ import RevenuePayoutChart from './RevenuePayoutChart';
 import ReportExecutiveSummaryPanel from '../ReportExecutiveSummaryPanel';
 
 export default function FinanceSummaryDashboard() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const { data, isLoading, refresh } = useFinanceSummary();
     const reportSummary = useMemo(() => buildFinanceSummaryReportSummary(data), [data]);
 
     return (
         <div className="space-y-8">
-            <FinanceSummaryHeader onRefresh={refresh} isLoading={isLoading} />
+            <FinanceSummaryHeader
+                onRefresh={refresh}
+                isLoading={isLoading}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
+            />
 
             <FinanceKpiGrid
                 kpis={data?.kpis}
@@ -38,6 +43,8 @@ export default function FinanceSummaryDashboard() {
                     <RevenuePayoutChart
                         chartData={data?.chartData || []}
                         isLoading={isLoading}
+                        formatPrice={formatPrice}
+                        currencySymbol={selectedCurrency.symbol}
                     />
                 </div>
 
@@ -52,6 +59,7 @@ export default function FinanceSummaryDashboard() {
                     <OutflowPieChart
                         data={data?.expenseBreakdown || []}
                         isLoading={isLoading}
+                        formatPrice={formatPrice}
                     />
                 </div>
             </div>

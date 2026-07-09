@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { StockTransferEntity } from './entities/stock-transfer.entity'
-import { StockTransferItemEntity } from './entities/stock-transfer-item.entity'
 import { InventoryLedgerService } from './inventory-ledger.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { StockTransferService } from './stock-transfer.service'
+import { StockTransferRepository } from './repositories/stock-transfer.repository'
+import { StockTransferItemRepository } from './repositories/stock-transfer-item.repository'
 
 describe('StockTransferService', () => {
   let service: StockTransferService
@@ -14,7 +13,7 @@ describe('StockTransferService', () => {
       providers: [
         StockTransferService,
         {
-          provide: getRepositoryToken(StockTransferEntity),
+          provide: StockTransferRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -25,23 +24,15 @@ describe('StockTransferService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
+            txRepo: jest.fn().mockReturnValue({
+              create: jest.fn(),
+              save: jest.fn(),
+              findOne: jest.fn(),
+            }),
           },
         },
         {
-          provide: getRepositoryToken(StockTransferItemEntity),
+          provide: StockTransferItemRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -52,19 +43,11 @@ describe('StockTransferService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
+            txRepo: jest.fn().mockReturnValue({
+              create: jest.fn(),
+              save: jest.fn(),
+              findOne: jest.fn(),
+            }),
           },
         },
         {

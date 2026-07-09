@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { StaffInvitationRepository } from '../repositories/staff-invitation.repository'
 import { UserRepository } from '../repositories/user.repository'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
-import { UserRoleAssignmentEntity } from '../entities/user-role-assignment.entity'
+import { UserRoleAssignmentRepository } from '../repositories/user-role-assignment.repository'
 import { StaffInvitationService } from './staff-invitation.service'
 import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
 
@@ -37,7 +36,7 @@ describe('StaffInvitationService', () => {
           useValue: {},
         },
         {
-          provide: getRepositoryToken(UserRoleAssignmentEntity),
+          provide: UserRoleAssignmentRepository,
           useValue: {
             find: jest.fn(),
             findOne: jest.fn(),
@@ -48,19 +47,6 @@ describe('StaffInvitationService', () => {
             remove: jest.fn(),
             count: jest.fn(),
             findAndCount: jest.fn(),
-            createQueryBuilder: jest.fn(() => ({
-              select: jest.fn().mockReturnThis(),
-              addSelect: jest.fn().mockReturnThis(),
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              leftJoin: jest.fn().mockReturnThis(),
-              leftJoinAndSelect: jest.fn().mockReturnThis(),
-              groupBy: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getRawMany: jest.fn().mockResolvedValue([]),
-              getMany: jest.fn().mockResolvedValue([]),
-              getOne: jest.fn().mockResolvedValue(null),
-            })),
           },
         },
         {

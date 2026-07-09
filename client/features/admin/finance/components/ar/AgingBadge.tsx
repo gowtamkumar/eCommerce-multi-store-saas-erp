@@ -1,5 +1,7 @@
 'use client';
 
+import { useSettings } from '@/hooks/SettingsContext';
+
 const colorMap: Record<string, string> = {
     Current: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     '1-30': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -14,10 +16,12 @@ export interface AgingBadgeProps {
 }
 
 export default function AgingBadge({ days, amount }: AgingBadgeProps) {
+    const { formatPrice } = useSettings();
+
     if (amount === 0) return <span className="text-slate-400 text-sm">-</span>;
     return (
         <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${colorMap[days] || ''}`}>
-            ${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            {formatPrice(amount)}
         </span>
     );
 }

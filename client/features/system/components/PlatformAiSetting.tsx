@@ -141,19 +141,6 @@ export function PlatformAiSetting() {
             />
           </div>
 
-          {selectedProvider?.showApiVersion ? (
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">API version (Azure)</label>
-              <input
-                type="text"
-                value={form.apiVersion}
-                onChange={(e) => setForm({ ...form, apiVersion: e.target.value })}
-                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-mono text-sm"
-                placeholder="2024-08-01-preview"
-              />
-            </div>
-          ) : null}
-
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Default model</label>
             <input

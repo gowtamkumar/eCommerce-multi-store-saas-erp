@@ -7,12 +7,15 @@ import type { CreateDebitNoteModalProps } from '../types';
 import { useCreateDebitNoteForm } from '../hooks/useCreateDebitNoteForm';
 import DebitNoteDisputePanel from './DebitNoteDisputePanel';
 import { buildDraftDebitNoteSummary } from '../lib/buildDebitNoteDisputeContext';
+import { useSettings } from '@/hooks/SettingsContext';
 
 export default function CreateDebitNoteModal({
   isOpen,
   onClose,
   onSuccess
 }: CreateDebitNoteModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const {
     selectedSupplierId,
     setSelectedSupplierId,
@@ -120,7 +123,7 @@ export default function CreateDebitNoteModal({
 
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                  Adjustment Amount ($)
+                  Adjustment Amount ({currencySymbol})
                 </label>
                 <input
                   type="number"

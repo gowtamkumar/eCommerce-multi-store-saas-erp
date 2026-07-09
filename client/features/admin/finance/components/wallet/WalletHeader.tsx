@@ -5,9 +5,16 @@ import { RefreshCw } from 'lucide-react';
 export interface WalletHeaderProps {
     loading: boolean;
     onRefresh: () => void;
+    currencyCode?: string;
+    currencySymbol?: string;
 }
 
-export default function WalletHeader({ loading, onRefresh }: WalletHeaderProps) {
+export default function WalletHeader({
+    loading,
+    onRefresh,
+    currencyCode,
+    currencySymbol,
+}: WalletHeaderProps) {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -16,6 +23,11 @@ export default function WalletHeader({ loading, onRefresh }: WalletHeaderProps) 
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     Manage customer wallets, credit refunds, and track store credit liability ledger.
+                    {currencyCode && currencySymbol && (
+                        <span className="ml-2 text-xs font-bold text-brand-600 dark:text-brand-400">
+                            · {currencyCode} ({currencySymbol})
+                        </span>
+                    )}
                 </p>
             </div>
             <button

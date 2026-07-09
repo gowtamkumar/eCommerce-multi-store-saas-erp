@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import toast from "react-hot-toast";
 import { Plan, SubscriptionInfo, BillingInvoice } from "../../type";
@@ -13,6 +14,7 @@ import StorageAddons from "./StorageAddons";
 import { motion } from "framer-motion";
 
 export default function BillingDashboard() {
+  const { selectedCurrency } = useSettings();
   const [loading, setLoading] = useState(true);
   const [subInfo, setSubInfo] = useState<SubscriptionInfo | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -93,8 +95,15 @@ export default function BillingDashboard() {
     try {
       const res = await fetchAPI("/billing/purchase-addon", {
         method: "POST",
-        body: JSON.stringify({ addonSlug })
+        body: JSON.stringify({
+          addonSlug,
+          frontendUrl: window.location.origin
+        })
       });
+      if (res.data?.gatewayUrl) {
+        window.location.href = res.data.gatewayUrl;
+        return;
+      }
       if (res.success) {
         toast.success("Storage addon activated successfully!");
         await loadBillingData();
@@ -118,6 +127,15 @@ export default function BillingDashboard() {
 
   return (
     <div className="space-y-10 pb-12 animate-in fade-in duration-700">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-1">
+        <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+          Subscription billing for your store
+        </p>
+        <p className="text-xs font-bold text-brand-600 dark:text-brand-400">
+          Prices shown in store currency · {selectedCurrency.code} ({selectedCurrency.symbol})
+        </p>
+      </div>
+
       <SubscriptionOverview 
         subInfo={subInfo}
         plans={plans}

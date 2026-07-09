@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Send, X } from "lucide-react";
 import { SubmitBidModalProps } from "../types";
 import { useSubmitBidModal } from "../hooks/useSubmitBidModal";
+import { useSettings } from "@/hooks/SettingsContext";
 
 export default function SubmitBidModal({
   isOpen,
@@ -12,6 +13,8 @@ export default function SubmitBidModal({
   rfq,
   onSuccess,
 }: SubmitBidModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
   const {
     suppliers,
     selectedSupplierId,
@@ -71,7 +74,7 @@ export default function SubmitBidModal({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Total Bid Amount ($)
+                    Total Bid Amount ({currencySymbol})
                   </label>
                   <input
                     type="number"

@@ -54,7 +54,7 @@ export abstract class BaseStoreRepository<T extends StoreScopedEntity> {
   }
 
   /** Returns transactional repository when manager is provided, otherwise the default repo. */
-  protected txRepo(manager?: EntityManager): Repository<T> {
+  public txRepo(manager?: EntityManager): Repository<T> {
     return getTransactionalRepo(this.entity, this.repo, manager)
   }
 

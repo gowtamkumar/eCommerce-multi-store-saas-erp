@@ -6,6 +6,7 @@ import Modal from '@/components/shared/Modal';
 import FormField, { fieldControlClass } from '@/components/shared/FormField';
 import { JobFormData, RecruitmentDepartment } from '../../hooks/useRecruitmentManager';
 import RecruitmentJobCopyAiAssist from './RecruitmentJobCopyAiAssist';
+import { useSettings } from '@/hooks/SettingsContext';
 
 interface PostJobModalProps {
   open: boolean;
@@ -28,6 +29,9 @@ export default function PostJobModal({
   isValid,
   onSubmit,
 }: PostJobModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   return (
     <Modal
       open={open}
@@ -61,7 +65,7 @@ export default function PostJobModal({
             value={jobFormData.salaryRange}
             onChange={(e) => setJobFormData((prev) => ({ ...prev, salaryRange: e.target.value }))}
             className={fieldControlClass}
-            placeholder="e.g. $80k - $120k"
+            placeholder={`e.g. ${currencySymbol}80k - ${currencySymbol}120k`}
           />
         </FormField>
         <FormField label="Work Setup">

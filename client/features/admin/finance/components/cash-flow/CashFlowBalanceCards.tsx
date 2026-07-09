@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, DollarSign, TrendingUp } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, TrendingUp, Wallet } from 'lucide-react';
 
 export interface CashFlowBalanceCardsProps {
     startingBalance: number;
@@ -30,7 +30,7 @@ export default function CashFlowBalanceCards({
                         {formatPrice(startingBalance)}
                     </span>
                 </div>
-                <DollarSign className="w-8 h-8 text-slate-400" />
+                <Wallet className="w-8 h-8 text-slate-400" />
             </motion.div>
 
             <motion.div

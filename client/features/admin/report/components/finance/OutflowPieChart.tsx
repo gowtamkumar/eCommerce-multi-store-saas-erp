@@ -8,7 +8,7 @@ import type { OutflowPieChartProps } from '../../types';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-const OutflowPieChart = memo(({ data, isLoading }: OutflowPieChartProps) => {
+const OutflowPieChart = memo(({ data, isLoading, formatPrice }: OutflowPieChartProps) => {
     if (isLoading && data.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse h-[220px]" />
@@ -47,6 +47,10 @@ const OutflowPieChart = memo(({ data, isLoading }: OutflowPieChartProps) => {
                                 color: '#fff',
                                 fontSize: '10px'
                             }}
+                            formatter={(value: unknown, name: unknown) => [
+                                formatPrice(Number(value || 0)),
+                                String(name),
+                            ]}
                         />
                     </RechartsPieChart>
                 </ResponsiveContainer>

@@ -1,14 +1,17 @@
 'use client';
 
-import { AlertTriangle, DollarSign, Mail } from 'lucide-react';
 import type { DataTableColumn } from '@/components/shared/DataTable';
 import type { ArAgingRow } from '@/features/admin/customer/type';
-import AgingBadge from './AgingBadge';
+import { AlertTriangle, Banknote, Mail } from 'lucide-react';
 import { getOverdueAmount } from '../../lib/buildArCollectionContext';
+import AgingBadge from './AgingBadge';
+
+type PriceFormatter = (amount: number) => string;
 
 export function buildAgingColumns(
-  onPay: (row: ArAgingRow) => void,
-  onCollect: (row: ArAgingRow) => void,
+    formatPrice: PriceFormatter,
+    onPay: (row: ArAgingRow) => void,
+    onCollect: (row: ArAgingRow) => void,
 ): DataTableColumn<ArAgingRow>[] {
     return [
         {
@@ -36,7 +39,7 @@ export function buildAgingColumns(
                 return (
                     <div>
                         <p className="font-black text-slate-900 dark:text-white text-sm font-mono">
-                            ${Number(row.totalOutstanding).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {formatPrice(row.totalOutstanding)}
                         </p>
                         {row.creditLimit > 0 && (
                             <div className="mt-1">
@@ -46,7 +49,7 @@ export function buildAgingColumns(
                                         style={{ width: `${Math.min(utilization, 100)}%` }}
                                     />
                                 </div>
-                                <p className="text-[10px] text-slate-400 text-right mt-0.5">{utilization.toFixed(0)}% of ${Number(row.creditLimit).toLocaleString()}</p>
+                                <p className="text-[10px] text-slate-400 text-right mt-0.5">{utilization.toFixed(0)}% of {formatPrice(row.creditLimit)}</p>
                             </div>
                         )}
                     </div>
@@ -94,7 +97,7 @@ export function buildAgingColumns(
             headerClassName: 'text-center',
             className: 'text-center',
             cell: (row) => row.creditLimit > 0
-                ? <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 font-mono">${Number(row.creditLimit).toLocaleString()}</span>
+                ? <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 font-mono">{formatPrice(row.creditLimit)}</span>
                 : <span className="text-slate-400 text-sm">-</span>,
         },
         {
@@ -120,7 +123,7 @@ export function buildAgingColumns(
                         onClick={() => onPay(row)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-sm inline-flex"
                     >
-                        <DollarSign className="w-3.5 h-3.5" />
+                        <Banknote className="w-3.5 h-3.5" />
                         Pay
                     </button>
                 </div>

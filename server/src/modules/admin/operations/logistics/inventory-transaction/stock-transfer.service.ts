@@ -4,10 +4,11 @@ import { StockTransferStatus } from '@/common/enums/stock-transfer-status.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
 import { StockTransferEntity } from './entities/stock-transfer.entity'
 import { StockTransferItemEntity } from './entities/stock-transfer-item.entity'
+import { StockTransferRepository } from './repositories/stock-transfer.repository'
+import { StockTransferItemRepository } from './repositories/stock-transfer-item.repository'
 import { InventoryLedgerService } from './inventory-ledger.service'
 import { CreateStockTransferDocDto } from './dto/create-stock-transfer-doc.dto'
 import { UpdateStockTransferDocDto } from './dto/update-stock-transfer-doc.dto'
@@ -20,20 +21,18 @@ export class StockTransferService {
   private readonly logger = new Logger(StockTransferService.name)
 
   constructor(
-    @InjectRepository(StockTransferEntity)
-    private readonly repo: Repository<StockTransferEntity>,
-    @InjectRepository(StockTransferItemEntity)
-    private readonly itemRepo: Repository<StockTransferItemEntity>,
+    private readonly repo: StockTransferRepository,
+    private readonly itemRepo: StockTransferItemRepository,
     private readonly inventoryLedgerService: InventoryLedgerService,
     private readonly notificationService: NotificationService,
   ) {}
 
   private r(manager?: EntityManager): Repository<StockTransferEntity> {
-    return getTransactionalRepo(StockTransferEntity, this.repo, manager)
+    return this.repo.txRepo(manager)
   }
 
   private ri(manager?: EntityManager): Repository<StockTransferItemEntity> {
-    return getTransactionalRepo(StockTransferItemEntity, this.itemRepo, manager)
+    return this.itemRepo.txRepo(manager)
   }
 
   private generateTransferNumber(): string {
@@ -95,6 +94,7 @@ export class StockTransferService {
     const { page = 1, limit = 20, status, q } = paginationDto
 
     const qb = this.repo
+      .txRepo()
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.sourceWarehouse', 'sourceWarehouse')
       .leftJoinAndSelect('t.destinationWarehouse', 'destinationWarehouse')
@@ -259,7 +259,7 @@ export class StockTransferService {
     }
 
     // 2. Perform database updates in transaction
-    const connection = this.repo.manager.connection
+    const connection = this.repo.txRepo().manager.connection
     await connection.transaction(async (manager) => {
       const activeRepo = this.r(manager)
 
@@ -302,7 +302,7 @@ export class StockTransferService {
       throw new BadRequestException(`Cannot receive transfer in status: ${transfer.status}`)
     }
 
-    const connection = this.repo.manager.connection
+    const connection = this.repo.txRepo().manager.connection
     await connection.transaction(async (manager) => {
       const activeRepo = this.r(manager)
       const activeItemRepo = this.ri(manager)
@@ -351,7 +351,7 @@ export class StockTransferService {
       throw new BadRequestException(`Cannot cancel transfer in status: ${transfer.status}`)
     }
 
-    const connection = this.repo.manager.connection
+    const connection = this.repo.txRepo().manager.connection
     await connection.transaction(async (manager) => {
       const activeRepo = this.r(manager)
 

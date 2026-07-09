@@ -1,7 +1,6 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable, Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { IsNull, Repository } from 'typeorm'
+import { IsNull } from 'typeorm'
 import { NotificationEntity } from './entities/notification.entity'
 import { NotificationGateway } from './notification.gateway'
 
@@ -13,8 +12,9 @@ export interface CreateNotificationDto {
   link?: string
 }
 
-import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { StoreStatus } from '@/common/enums/store/store-status.enum'
+import { NotificationRepository } from './repositories/notification.repository'
+import { StoreRepository } from '@/modules/system/store/store.repository'
 
 
 @Injectable()
@@ -22,10 +22,8 @@ export class NotificationService {
   private readonly logger = new Logger(NotificationService.name)
 
   constructor(
-    @InjectRepository(NotificationEntity)
-    private readonly notificationRepository: Repository<NotificationEntity>,
-    @InjectRepository(StoreEntity)
-    private readonly storeRepository: Repository<StoreEntity>,
+    private readonly notificationRepository: NotificationRepository,
+    private readonly storeRepository: StoreRepository,
     private readonly notificationGateway: NotificationGateway,
   ) {}
 
@@ -76,7 +74,7 @@ export class NotificationService {
     type?: string,
     search?: string,
   ): Promise<[NotificationEntity[], number]> {
-    const query = this.notificationRepository.createQueryBuilder('notification')
+    const query = this.notificationRepository.txRepo().createQueryBuilder('notification')
 
     // Filter by store and user
     if (ctx.storeId) {
@@ -134,7 +132,7 @@ export class NotificationService {
    * Mark all notifications as read for a user
    */
   async markAllAsRead(ctx: RequestContextDto): Promise<void> {
-    const qb = this.notificationRepository.createQueryBuilder('notification')
+    const qb = this.notificationRepository.txRepo().createQueryBuilder('notification')
       .update(NotificationEntity)
       .set({ isRead: true })
       .where('is_read = :isRead', { isRead: false })
@@ -161,7 +159,7 @@ export class NotificationService {
     const storeId = ctx.storeId || IsNull()
     const userId = ctx.userId || IsNull()
 
-    return await this.notificationRepository.count({
+    return await this.notificationRepository.txRepo().count({
       where: [
         { storeId, userId, isRead: false },
         { storeId, userId: IsNull(), isRead: false },

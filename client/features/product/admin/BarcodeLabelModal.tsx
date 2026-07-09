@@ -6,6 +6,8 @@ import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import { Product, ProductVariant } from '@/types/product';
 import toast from 'react-hot-toast';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 interface BarcodeLabelModalProps {
   isOpen: boolean;
@@ -68,6 +70,9 @@ export default function BarcodeLabelModal({
   products,
   initialProduct,
 }: BarcodeLabelModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -324,7 +329,7 @@ export default function BarcodeLabelModal({
             }
           </div>
 
-          ${showPrice ? `<div class="price">$${label.price.toFixed(2)}</div>` : ''}
+          ${showPrice ? `<div class="price">${formatCurrency(label.price, currencySymbol)}</div>` : ''}
         </div>
       `;
     });
@@ -698,7 +703,7 @@ export default function BarcodeLabelModal({
                       {/* Price Block */}
                       {showPrice && (
                         <div className="text-[9px] font-black text-black mt-0.5">
-                          ${label.price.toFixed(2)}
+                          {formatCurrency(label.price, currencySymbol)}
                         </div>
                       )}
                     </div>

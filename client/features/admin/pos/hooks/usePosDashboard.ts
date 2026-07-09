@@ -4,6 +4,7 @@ import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';
+import { formatCurrency } from '@/lib/utils';
 import type {
   Brand,
   CartItem,
@@ -489,12 +490,12 @@ export function usePosDashboard() {
                   setWalletBalance(Number(walletRes.data.balance || 0));
                   setUseWalletBalance(true);
                   setWalletAmountToUse(refundAmount);
-                  toast.success(`Exchange Mode: Applied $${refundAmount.toFixed(2)} store credit. Now ring up the new items.`);
+                  toast.success(`Exchange Mode: Applied ${formatCurrency(refundAmount)} store credit. Now ring up the new items.`);
                 }
               });
           } else {
             toast.success(
-              `Walk-in exchange: The return of $${refundAmount.toFixed(2)} has been processed. Please issue a CASH or CARD refund and ring up the exchange items as a new sale.`,
+              `Walk-in exchange: The return of ${formatCurrency(refundAmount)} has been processed. Please issue a CASH or CARD refund and ring up the exchange items as a new sale.`,
               { duration: 8000 }
             );
           }
@@ -931,7 +932,7 @@ export function usePosDashboard() {
     if (splitPayment) {
       const sum = getSplitPaymentsSum();
       if (Math.abs(sum - remainingAmount) > 0.01) {
-        toast.error(`Split payments total ($${sum.toFixed(2)}) must equal remaining payable amount ($${remainingAmount.toFixed(2)})`);
+        toast.error(`Split payments total (${formatCurrency(sum)}) must equal remaining payable amount (${formatCurrency(remainingAmount)})`);
         return;
       }
       if (Number(splitPayments.on_account || 0) > 0 && !selectedCustomer) {

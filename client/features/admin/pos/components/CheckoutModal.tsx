@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Banknote, Coins, CreditCard, Loader2, QrCode, Wallet, X } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 import type { CheckoutModalProps } from '../type';
 import { DELIVERY_ZONES } from '../utils/posHelpers';
 
@@ -40,6 +42,9 @@ export default function CheckoutModal({
   tax,
   shippingFee,
 }: CheckoutModalProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   const remainingAmount = getRemainingPayableAmount();
   const splitSum = getSplitPaymentsSum();
 
@@ -152,7 +157,7 @@ export default function CheckoutModal({
                   <div className="space-y-2 p-3 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-850">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-[11px] font-bold text-slate-655 flex items-center gap-1">
-                        <Banknote className="w-3.5 h-3.5 text-slate-400" /> Cash ($)
+                        <Banknote className="w-3.5 h-3.5 text-slate-400" /> Cash ({currencySymbol})
                       </span>
                       <input
                         type="number"
@@ -171,7 +176,7 @@ export default function CheckoutModal({
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-[11px] font-bold text-slate-655 flex items-center gap-1">
-                        <CreditCard className="w-3.5 h-3.5 text-slate-400" /> Card ($)
+                        <CreditCard className="w-3.5 h-3.5 text-slate-400" /> Card ({currencySymbol})
                       </span>
                       <input
                         type="number"
@@ -190,7 +195,7 @@ export default function CheckoutModal({
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-[11px] font-bold text-slate-655 flex items-center gap-1">
-                        <QrCode className="w-3.5 h-3.5 text-slate-400" /> Mobile ($)
+                        <QrCode className="w-3.5 h-3.5 text-slate-400" /> Mobile ({currencySymbol})
                       </span>
                       <input
                         type="number"
@@ -209,7 +214,7 @@ export default function CheckoutModal({
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-[11px] font-bold text-slate-655 flex items-center gap-1">
-                        <Coins className="w-3.5 h-3.5 text-slate-400" /> Account ($)
+                        <Coins className="w-3.5 h-3.5 text-slate-400" /> Account ({currencySymbol})
                       </span>
                       <input
                         type="number"
@@ -237,7 +242,7 @@ export default function CheckoutModal({
                             : 'text-red-500'
                         }
                       >
-                        ${splitSum.toFixed(2)} / ${remainingAmount.toFixed(2)}
+                        {formatCurrency(splitSum, currencySymbol)} / {formatCurrency(remainingAmount, currencySymbol)}
                       </span>
                     </div>
                   </div>
@@ -258,7 +263,7 @@ export default function CheckoutModal({
                   <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800 text-[10px]">
                     <p className="text-slate-400 font-bold uppercase tracking-wider">Credit Limit / Debt</p>
                     <p className="text-sm font-black text-slate-800 dark:text-white">
-                      ${Number(selectedCustomer.creditLimit || 0).toFixed(2)} / ${outstandingBalance.toFixed(2)}
+                      {formatCurrency(selectedCustomer.creditLimit || 0, currencySymbol)} / {formatCurrency(outstandingBalance, currencySymbol)}
                     </p>
                   </div>
                 </div>
@@ -275,13 +280,13 @@ export default function CheckoutModal({
                       {walletBalance === 0 ? (
                         <span className="text-slate-400 text-[10px] font-bold">Loading…</span>
                       ) : (
-                        `$${walletBalance.toFixed(2)}`
+                        formatCurrency(walletBalance, currencySymbol)
                       )}
                     </span>
                   </div>
                   {walletBalance > 0 ? (
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-violet-655 dark:text-violet-400 font-bold">Apply Amount ($)</span>
+                      <span className="text-[10px] text-violet-655 dark:text-violet-400 font-bold">Apply Amount ({currencySymbol})</span>
                       <input
                         type="number"
                         min="0.01"
@@ -314,7 +319,7 @@ export default function CheckoutModal({
                   >
                     {DELIVERY_ZONES.map((zone) => (
                       <option key={zone.name} value={zone.name}>
-                        {zone.name} {zone.fee > 0 ? `(+$${zone.fee})` : '(Free Counter Pickup)'}
+                        {zone.name} {zone.fee > 0 ? `(+${formatCurrency(zone.fee, currencySymbol)})` : '(Free Counter Pickup)'}
                       </option>
                     ))}
                   </select>
@@ -341,19 +346,19 @@ export default function CheckoutModal({
                 <div className="flex justify-between text-xs text-slate-500">
                   <span>Cart Total (Incl. Tax)</span>
                   <span className="font-bold text-slate-800 dark:text-white">
-                    ${(taxableAmount + tax).toFixed(2)}
+                    {formatCurrency(taxableAmount + tax, currencySymbol)}
                   </span>
                 </div>
                 {shippingFee > 0 && (
                   <div className="flex justify-between text-xs text-emerald-500 font-bold">
                     <span>Delivery Shipping Fee</span>
-                    <span>+${shippingFee.toFixed(2)}</span>
+                    <span>+{formatCurrency(shippingFee, currencySymbol)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-xs font-black text-slate-905 dark:text-white pt-2 border-t border-slate-105 dark:border-slate-850">
                   <span>Grand Payable Total</span>
                   <span className="text-brand-600 dark:text-brand-400 font-black">
-                    ${grandTotal.toFixed(2)}
+                    {formatCurrency(grandTotal, currencySymbol)}
                   </span>
                 </div>
 
@@ -390,7 +395,7 @@ export default function CheckoutModal({
                             onClick={() => setAmountTendered(val)}
                             className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-855 dark:hover:bg-slate-800 text-[10px] font-black rounded-lg text-slate-700 dark:text-white transition-all text-center"
                           >
-                            ${val}
+                            {formatCurrency(val, currencySymbol)}
                           </button>
                         ))}
                       </div>
@@ -401,7 +406,7 @@ export default function CheckoutModal({
                       <span
                         className={`font-black text-sm ${changeDue >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
                       >
-                        ${changeDue.toFixed(2)}
+                        {formatCurrency(changeDue, currencySymbol)}
                       </span>
                     </div>
                   </div>

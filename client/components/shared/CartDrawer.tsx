@@ -1,6 +1,7 @@
 "use client";
 
 import { useCart } from "@/hooks/CartContext";
+import { useSettings } from "@/hooks/SettingsContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import Link from "next/link";
@@ -8,6 +9,7 @@ import Price from "./Price";
 
 const CartDrawer = () => {
   const { isCartOpen, closeCart, cart, items, updateQuantity, removeItem } = useCart();
+  const { selectedCurrency } = useSettings();
 
   const summary = cart?.summary || { subtotal: 0, offer_discount: 0, coupon_discount: 0, payable: 0 };
 
@@ -139,6 +141,9 @@ const CartDrawer = () => {
                 </div>
                 <p className="text-xs text-slate-500 text-center">
                   Shipping and taxes calculated at checkout.
+                  <span className="ml-1 font-bold text-slate-600 dark:text-slate-400">
+                    · {selectedCurrency.code} ({selectedCurrency.symbol})
+                  </span>
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <Link

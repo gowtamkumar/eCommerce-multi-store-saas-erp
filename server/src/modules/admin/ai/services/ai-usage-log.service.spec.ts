@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { AiUsageLogEntity } from '../entities/ai-usage-log.entity'
 import { AiUsageLogService } from './ai-usage-log.service'
+import { AiUsageLogRepository } from '../repositories/ai-usage-log.repository'
 
 describe('AiUsageLogService', () => {
   let service: AiUsageLogService
-  let repo: jest.Mocked<Pick<Repository<AiUsageLogEntity>, 'insert' | 'createQueryBuilder'>>
+  let repo: any
 
   beforeEach(async () => {
     repo = {
@@ -18,7 +16,7 @@ describe('AiUsageLogService', () => {
       providers: [
         AiUsageLogService,
         {
-          provide: getRepositoryToken(AiUsageLogEntity),
+          provide: AiUsageLogRepository,
           useValue: repo,
         },
       ],

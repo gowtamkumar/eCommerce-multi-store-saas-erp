@@ -2,9 +2,9 @@ import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
 import { StockReservationEntity } from './entities/stock-reservation.entity'
+import { StockReservationRepository } from './repositories/stock-reservation.repository'
 import { InventoryLedgerService } from './inventory-ledger.service'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
@@ -24,14 +24,13 @@ export class StockReservationService {
   private readonly logger = new Logger(StockReservationService.name)
 
   constructor(
-    @InjectRepository(StockReservationEntity)
-    private readonly repo: Repository<StockReservationEntity>,
+    private readonly repo: StockReservationRepository,
     private readonly inventoryLedgerService: InventoryLedgerService,
   ) {}
 
   // ── Private helper to pick the right repo (supports EntityManager transactions) ──
   private r(manager?: EntityManager): Repository<StockReservationEntity> {
-    return getTransactionalRepo(StockReservationEntity, this.repo, manager)
+    return this.repo.txRepo(manager)
   }
 
   // ============================================================================
@@ -178,6 +177,7 @@ export class StockReservationService {
    */
   async expireStale(storeId?: string): Promise<number> {
     const qb = this.repo
+      .txRepo()
       .createQueryBuilder('sr')
       .where('sr.status = :status', { status: ReservationStatus.ACTIVE })
       .andWhere('sr.expires_at IS NOT NULL')
@@ -193,7 +193,7 @@ export class StockReservationService {
     }
 
     let count = 0
-    const connection = this.repo.manager.connection
+    const connection = this.repo.txRepo().manager.connection
 
     for (const reservation of expiredReservations) {
       try {
@@ -334,6 +334,7 @@ export class StockReservationService {
     const { productId, status, page = 1, limit = 20 } = opts
 
     const qb = this.repo
+      .txRepo()
       .createQueryBuilder('sr')
       .leftJoinAndSelect('sr.product', 'product')
       .leftJoinAndSelect('sr.variant', 'variant')

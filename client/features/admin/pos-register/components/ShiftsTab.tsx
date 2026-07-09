@@ -5,6 +5,8 @@ import { Loader2, Download, Info, AlertCircle } from 'lucide-react';
 import DataTable, { DataTableColumn, DataTableSortOrder } from '@/components/shared/DataTable';
 import { Shift, ShiftSortKey } from '../types';
 import { cashierLabel } from '../utils/posRegisterHelpers';
+import { useSettings } from '@/hooks/SettingsContext';
+import { formatCurrency } from '@/lib/utils';
 
 const SHIFT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -49,6 +51,9 @@ export default function ShiftsTab({
     totalPages,
     onViewDetails,
 }: ShiftsTabProps) {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol || '$';
+
     const shiftColumns = useMemo<DataTableColumn<Shift>[]>(() => [
         {
             key: 'user',
@@ -84,7 +89,7 @@ export default function ShiftsTab({
             sortKey: 'expected',
             headerClassName: 'text-right',
             className: 'text-right font-semibold text-slate-700 dark:text-slate-355',
-            cell: (shift) => `$${Number(shift.expectedClosingBalance).toFixed(2)}`,
+            cell: (shift) => formatCurrency(shift.expectedClosingBalance, currencySymbol),
         },
         {
             key: 'closingBalance',
@@ -92,7 +97,7 @@ export default function ShiftsTab({
             sortKey: 'actual',
             headerClassName: 'text-right',
             className: 'text-right font-extrabold text-slate-800 dark:text-slate-200',
-            cell: (shift) => shift.closingBalance !== null ? `$${Number(shift.closingBalance).toFixed(2)}` : '-',
+            cell: (shift) => shift.closingBalance !== null ? formatCurrency(shift.closingBalance, currencySymbol) : '-',
         },
         {
             key: 'variance',
@@ -106,12 +111,12 @@ export default function ShiftsTab({
                     return <span className="text-slate-400 font-bold">-</span>;
                 }
                 if (variance === 0) {
-                    return <span className="text-emerald-600 dark:text-emerald-400">$0.00</span>;
+                    return <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(0, currencySymbol)}</span>;
                 }
                 if (variance > 0) {
-                    return <span className="text-emerald-500">+${variance.toFixed(2)}</span>;
+                    return <span className="text-emerald-500">+{formatCurrency(variance, currencySymbol)}</span>;
                 }
-                return <span className="text-red-500">-${Math.abs(variance).toFixed(2)}</span>;
+                return <span className="text-red-500">-{formatCurrency(Math.abs(variance), currencySymbol)}</span>;
             },
         },
         {
@@ -147,7 +152,7 @@ export default function ShiftsTab({
                 </button>
             ),
         },
-    ], [onViewDetails]);
+    ], [onViewDetails, currencySymbol]);
 
     const dataTablePagination = useMemo(() => ({
         page: currentPage,

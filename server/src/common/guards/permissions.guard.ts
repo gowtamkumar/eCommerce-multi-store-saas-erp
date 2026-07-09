@@ -68,8 +68,22 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('User is not associated with a store.')
     }
 
-    const branchId = (request.headers['x-branch-id'] as string) || user.branchId || undefined
-    const warehouseId = request.headers['x-warehouse-id'] as string | undefined
+    const branchId =
+      (request.headers['x-branch-id'] as string) ||
+      request.body?.branchId ||
+      request.query?.branchId ||
+      request.params?.branchId ||
+      user.branchId ||
+      undefined
+
+    const warehouseId =
+      (request.headers['x-warehouse-id'] as string) ||
+      request.body?.warehouseId ||
+      request.query?.warehouseId ||
+      request.params?.warehouseId ||
+      user.warehouseId ||
+      undefined
+
     const scope = { branchId, warehouseId }
 
     if (isGlobalAdmin) {

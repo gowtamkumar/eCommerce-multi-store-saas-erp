@@ -16,6 +16,8 @@ import { PlatformCampaignProcessor } from './queue/platform-campaign.processor'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
 import { PushModule } from '@/modules/admin/operations/infra/push/push.module'
+import { UserModule } from '@/modules/admin/core/user/user.module'
+import { SubscriberModule } from '@/modules/admin/customer/subscriber/subscriber.module'
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { PushModule } from '@/modules/admin/operations/infra/push/push.module'
     forwardRef(() => MailModule),
     forwardRef(() => SmsModule),
     PushModule,
+    UserModule,
+    SubscriberModule,
   ],
   providers: [
     PlatformCampaignRepository,

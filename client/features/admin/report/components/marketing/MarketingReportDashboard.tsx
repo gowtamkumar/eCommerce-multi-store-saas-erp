@@ -11,7 +11,7 @@ import MarketingKpiGrid from './MarketingKpiGrid';
 import MarketingReportHeader from './MarketingReportHeader';
 
 export default function MarketingReportDashboard() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const marketing = useMarketingReport();
 
     return (
@@ -20,7 +20,9 @@ export default function MarketingReportDashboard() {
                 loading={marketing.loading}
                 canExport={marketing.canExport}
                 onRefresh={marketing.loadMarketingData}
-                onExport={marketing.exportCsv}
+                onExport={() => marketing.exportCsv(formatPrice)}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
             />
 
             <DiscountAnalysisPanel discounts={marketing.financialDiscounts} formatPrice={formatPrice} />

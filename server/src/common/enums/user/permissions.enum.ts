@@ -15,6 +15,7 @@ export const SystemPermissions = {
   USERS_DELETE: 'users:delete',
   USERS_ROLES_ASSIGN: 'users:assign-roles',
   USERS_PERMISSIONS_OVERRIDE: 'users:override-permissions',
+  NOTIFICATIONS_READ: 'notifications:read',
 
   // ─── POS & Retail ────────────────────────────────────────────────────────────
   POS_SALE_CREATE: 'pos:create-sale',

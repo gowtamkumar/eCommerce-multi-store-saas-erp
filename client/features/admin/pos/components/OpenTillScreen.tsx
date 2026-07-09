@@ -1,4 +1,5 @@
-import { Coins, Banknote, Loader2, DollarSign } from 'lucide-react';
+import { Coins, Banknote, Loader2 } from 'lucide-react';
+import { useSettings } from '@/hooks/SettingsContext';
 import type { Register } from '../type';
 
 interface OpenTillScreenProps {
@@ -20,6 +21,9 @@ export default function OpenTillScreen({
   submittingShift,
   handleOpenShift,
 }: OpenTillScreenProps) {
+  const { selectedCurrency } = useSettings();
+  const currencySymbol = selectedCurrency?.symbol || '$';
+
   return (
     <div className="max-w-md mx-auto my-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl p-8">
       <div className="flex flex-col items-center gap-3 text-center mb-8">
@@ -55,7 +59,7 @@ export default function OpenTillScreen({
         <div className="space-y-2">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Opening Till Balance</label>
           <div className="relative">
-            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg text-slate-400">{currencySymbol}</span>
             <input
               type="number"
               min="0"

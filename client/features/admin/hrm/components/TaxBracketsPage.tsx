@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+
 import DataTable from '@/components/shared/DataTable';
 import { Plus, Receipt } from 'lucide-react';
 import { useTaxBrackets } from '../hooks/useTaxBrackets';
 import TaxBracketStats from './tax-brackets/TaxBracketStats';
 import TaxBracketFormModal from './tax-brackets/TaxBracketFormModal';
-import { buildTaxBracketColumns } from './tax-brackets/taxBracketColumns';
+import { useTaxBracketColumns } from './tax-brackets/taxBracketColumns';
 
 export default function TaxBracketsPage() {
   const {
@@ -25,7 +25,7 @@ export default function TaxBracketsPage() {
     handleDelete,
   } = useTaxBrackets();
 
-  const columns = useMemo(() => buildTaxBracketColumns(handleDelete), [handleDelete]);
+  const columns = useTaxBracketColumns(handleDelete);
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto space-y-8">

@@ -7,9 +7,6 @@ import { SupplierRepository } from './supplier.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 import { SupplierAPLedgerRepository } from './supplier-ap-ledger.repository'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { SupplierAPLedgerEntity } from './entities/supplier-ap-ledger.entity'
 
 @Injectable()
 export class SupplierService {
@@ -19,8 +16,6 @@ export class SupplierService {
     private readonly repository: SupplierRepository,
     private readonly cacheService: CacheService,
     private readonly apLedgerRepository: SupplierAPLedgerRepository,
-    @InjectRepository(SupplierAPLedgerEntity)
-    private readonly apLedgerBaseRepo: Repository<SupplierAPLedgerEntity>,
   ) {}
 
   async createSupplier(dto: CreateSupplierDto, ctx: RequestContextDto): Promise<SupplierEntity> {
@@ -134,7 +129,7 @@ export class SupplierService {
 
   async getLedger(supplierId: string, ctx: RequestContextDto, paginationDto: PaginationDto) {
     const { page = 1, limit = 20 } = paginationDto
-    const [items, total] = await this.apLedgerBaseRepo.findAndCount({
+    const [items, total] = await this.apLedgerRepository.findAndCount({
       where: { supplierId, storeId: ctx.storeId },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,

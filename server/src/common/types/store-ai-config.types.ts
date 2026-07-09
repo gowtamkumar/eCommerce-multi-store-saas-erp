@@ -2,9 +2,7 @@ export enum AiProviderType {
   OPENROUTER = 'openrouter',
   OPENAI = 'openai',
   ANTHROPIC = 'anthropic',
-  AZURE_OPENAI = 'azure_openai',
   GOOGLE = 'google',
-  CUSTOM = 'custom',
 }
 
 export interface StoreAiStorefrontConfig {
@@ -34,6 +32,18 @@ export interface StoreAiSensitiveConfig {
   financeEnabled?: boolean
 }
 
+export interface StoreAiFallbackConfig {
+  provider: AiProviderType | string
+  apiKey?: string
+  baseUrl?: string
+  defaultModel?: string
+  embeddingModel?: string
+  apiVersion?: string
+  siteUrl?: string
+  siteName?: string
+  extraHeaders?: Record<string, string>
+}
+
 export interface StoreAiConfig {
   enabled: boolean
   provider: AiProviderType | string
@@ -52,6 +62,8 @@ export interface StoreAiConfig {
   automation?: StoreAiAutomationConfig
   /** Per-module AI opt-out toggles for sensitive data modules */
   sensitive?: StoreAiSensitiveConfig
+  /** Fallback provider used when primary is unreachable or returns an error */
+  fallback?: StoreAiFallbackConfig
 }
 
 export const DEFAULT_STORE_AI_AUTOMATION: Required<StoreAiAutomationConfig> = {
@@ -82,21 +94,11 @@ export const AI_PROVIDER_PRESETS: Record<
     baseUrl: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-3-5-haiku-20241022',
   },
-  [AiProviderType.AZURE_OPENAI]: {
-    label: 'Azure OpenAI',
-    baseUrl: 'https://YOUR_RESOURCE.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT',
-    defaultModel: 'gpt-4o-mini',
-  },
   [AiProviderType.GOOGLE]: {
     label: 'Google Gemini',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     defaultModel: 'gemini-2.0-flash',
     embeddingModel: 'text-embedding-004',
-  },
-  [AiProviderType.CUSTOM]: {
-    label: 'Custom / Other',
-    baseUrl: '',
-    defaultModel: '',
   },
 }
 

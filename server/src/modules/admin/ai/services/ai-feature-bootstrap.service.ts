@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
 
 /**
  * Ensures existing stores can use AI after the feature was introduced.
@@ -12,8 +11,7 @@ export class AiFeatureBootstrapService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AiFeatureBootstrapService.name)
 
   constructor(
-    @InjectRepository(RoleEntity)
-    private readonly roleRepo: Repository<RoleEntity>,
+    private readonly roleRepo: RoleRepository,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -22,7 +20,7 @@ export class AiFeatureBootstrapService implements OnApplicationBootstrap {
   }
 
   private async ensurePlanFeature(): Promise<void> {
-    await this.roleRepo.manager.query(`
+    await this.roleRepo.txRepo().manager.query(`
       UPDATE "subscription_plans"
       SET "features" = "features" || '["ai"]'::jsonb
       WHERE NOT ("features" @> '["ai"]'::jsonb)
@@ -30,7 +28,7 @@ export class AiFeatureBootstrapService implements OnApplicationBootstrap {
   }
 
   private async backfillRolePermissions(): Promise<void> {
-    const result = await this.roleRepo.manager.query(`
+    const result = await this.roleRepo.txRepo().manager.query(`
       INSERT INTO "role_permissions" ("role_id", "permission_id")
       SELECT r.id, p.id
       FROM "roles" r

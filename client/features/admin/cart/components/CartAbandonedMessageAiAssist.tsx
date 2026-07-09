@@ -21,7 +21,7 @@ export function CartAbandonedMessageAiAssist({
   messageTemplate,
   onApply,
 }: CartAbandonedMessageAiAssistProps) {
-  const { settings } = useSettings();
+  const { settings, formatPrice } = useSettings();
   const { configured, loading, generateAbandonedCartMessage } = useAiGenerate();
 
   const handleGenerate = async () => {
@@ -30,6 +30,7 @@ export function CartAbandonedMessageAiAssist({
         cart,
         messageTemplate,
         settings?.brandName,
+        formatPrice,
       ),
     );
 

@@ -1,10 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { PriceBookEntity } from './entities/price-book.entity'
-import { ProductPriceEntity } from './entities/product-price.entity'
 import { PricingService } from './pricing.service'
 import { PriceBookType } from './enums/price-book-type.enum'
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
+import { PriceBookRepository } from './repositories/price-book.repository'
+import { ProductPriceRepository } from './repositories/product-price.repository'
 
 describe('PricingService', () => {
   let service: PricingService
@@ -23,31 +21,37 @@ describe('PricingService', () => {
       }),
     }
 
+    const mockPriceBookRepo = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      txRepo: jest.fn().mockReturnValue({
+        manager: {
+          getRepository: jest.fn().mockReturnValue(siteSettingsRepo),
+        },
+      }),
+    }
+
+    const mockProductPriceRepo = {
+      find: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PricingService,
         {
-          provide: getRepositoryToken(PriceBookEntity),
-          useValue: {
-            findOne: jest.fn(),
-            find: jest.fn(),
-            manager: {
-              getRepository: jest.fn().mockReturnValue(siteSettingsRepo),
-            },
-          },
+          provide: PriceBookRepository,
+          useValue: mockPriceBookRepo,
         },
         {
-          provide: getRepositoryToken(ProductPriceEntity),
-          useValue: {
-            find: jest.fn(),
-          },
+          provide: ProductPriceRepository,
+          useValue: mockProductPriceRepo,
         },
       ],
     }).compile()
 
     service = module.get<PricingService>(PricingService)
-    priceBookRepo = module.get(getRepositoryToken(PriceBookEntity))
-    productPriceRepo = module.get(getRepositoryToken(ProductPriceEntity))
+    priceBookRepo = module.get(PriceBookRepository)
+    productPriceRepo = module.get(ProductPriceRepository)
   })
 
   it('should be defined', () => {

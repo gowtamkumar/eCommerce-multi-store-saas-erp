@@ -33,10 +33,7 @@ export class McpController {
    */
   @Public()
   @Post('messages')
-  async handleMessages(
-    @Req() req: Request,
-    @Res() res: Response,
-  ): Promise<void> {
+  async handleMessages(@Req() req: Request, @Res() res: Response): Promise<void> {
     await this.mcpService.handleIncomingMessage(req, res)
   }
 }

@@ -65,7 +65,9 @@ export default function PostJournalModal({
     posting,
     onSubmit,
 }: PostJournalModalProps) {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency.symbol;
+    const currencyCode = selectedCurrency.code;
 
     return (
         <AnimatePresence>
@@ -167,6 +169,9 @@ export default function PostJournalModal({
                                 </div>
 
                                 <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                                        Line amounts ({currencyCode})
+                                    </p>
                                     {lines.map((line, idx) => (
                                         <div key={idx} className="flex gap-3 items-center">
                                             <select
@@ -192,16 +197,19 @@ export default function PostJournalModal({
                                                 <option value="CREDIT">Credit</option>
                                             </select>
 
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                required
-                                                min="0.01"
-                                                placeholder="Amount"
-                                                value={line.amount}
-                                                onChange={(e) => onLineChange(idx, 'amount', e.target.value)}
-                                                className="flex-2 px-4 py-3 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-brand-500 outline-none font-black text-xs font-mono text-slate-900 dark:text-white"
-                                            />
+                                            <div className="relative flex-2">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 select-none">{currencySymbol}</span>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    required
+                                                    min="0.01"
+                                                    placeholder="Amount"
+                                                    value={line.amount}
+                                                    onChange={(e) => onLineChange(idx, 'amount', e.target.value)}
+                                                    className="w-full pl-8 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-brand-500 outline-none font-black text-xs font-mono text-slate-900 dark:text-white"
+                                                />
+                                            </div>
 
                                             <button
                                                 type="button"

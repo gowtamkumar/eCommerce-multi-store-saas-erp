@@ -1,5 +1,6 @@
 'use client';
 
+import { useSettings } from '@/hooks/SettingsContext';
 import { BarChart3 } from 'lucide-react';
 import { memo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -13,6 +14,7 @@ const RevenueExpenseChart = memo(({
     stats: DashboardStats | null;
     loading: boolean;
 }) => {
+    const { formatPrice } = useSettings();
     const totalExpenses = (stats?.financeSnapshot?.cogs || 0) + (stats?.financeSnapshot?.operatingExpenses || 0);
     const data = [
         { name: 'Revenue', amount: stats?.financeSnapshot?.revenue || 0 },
@@ -33,7 +35,12 @@ const RevenueExpenseChart = memo(({
                         <BarChart data={data}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                            <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                                tickFormatter={(value) => formatPrice(Number(value))}
+                            />
                             <Tooltip
                                 contentStyle={{
                                     backgroundColor: '#0f172a',
@@ -42,6 +49,7 @@ const RevenueExpenseChart = memo(({
                                     color: '#fff',
                                     padding: '14px',
                                 }}
+                                formatter={(value: number) => [formatPrice(value), 'Amount']}
                             />
                             <Bar dataKey="amount" fill="#3b82f6" radius={[12, 12, 0, 0]} />
                         </BarChart>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { useArDashboard } from '../hooks/useArDashboard';
 import ArHeader from './ar/ArHeader';
 import ArTabs from './ar/ArTabs';
@@ -13,6 +14,7 @@ import ArCollectionDraftModal from './ar/ArCollectionDraftModal';
 import DunningRuleModal from './ar/DunningRuleModal';
 
 export default function ArAgingReport() {
+    const { selectedCurrency } = useSettings();
     const ar = useArDashboard();
 
     const handleRefresh = useCallback(() => {
@@ -28,6 +30,8 @@ export default function ArAgingReport() {
                 loading={ar.loading}
                 onRunAudit={ar.handleRunAudit}
                 onRefresh={handleRefresh}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
             />
 
             <ArTabs activeTab={ar.activeTab} onTabChange={ar.setActiveTab} />

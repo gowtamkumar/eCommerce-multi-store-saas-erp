@@ -10,7 +10,7 @@ import {
   buildDashboardKpiSnapshot,
 } from '../../utils/dashboard-kpi-context.util'
 import { AiAssistantBaseService } from '../ai-assistant-base.service'
-import { AiChatMessage, StoreAiClientService } from '../store-ai-client.service'
+import { AiChatMessage, AiStreamChunk, StoreAiClientService } from '../store-ai-client.service'
 
 const ASSISTANT_SYSTEM_PROMPT = `You are a helpful e-commerce and ERP assistant for store administrators.
 Help with product ideas, marketing copy, operations questions, and business decisions.
@@ -53,6 +53,18 @@ export class AiCoreAssistantService {
       model: result.model,
       totalTokens: result.totalTokens,
     }
+  }
+
+  async *chatStream(storeId: string, dto: AiChatDto): AsyncGenerator<AiStreamChunk> {
+    const messages: AiChatMessage[] = [{ role: 'system', content: ASSISTANT_SYSTEM_PROMPT }]
+
+    for (const item of dto.history || []) {
+      messages.push({ role: item.role, content: item.content })
+    }
+
+    messages.push({ role: 'user', content: dto.message })
+
+    yield* this.base.completeStream(storeId, messages, 'ai/chat/stream')
   }
 
   async askDashboardCopilot(ctx: RequestContextDto, dto: DashboardCopilotDto) {

@@ -11,9 +11,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currencySymbol?: string): string {
+export function formatCurrency(amount: number | string, currencySymbol?: string): string {
+  const num = Number(amount) || 0;
   const symbol = currencySymbol || '$';
-  return `${symbol}${amount.toLocaleString()}`;
+  return `${symbol}${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function calculatePricing(price: number, discountAmount: number, discountType: DiscountType | string, taxRate: number) {

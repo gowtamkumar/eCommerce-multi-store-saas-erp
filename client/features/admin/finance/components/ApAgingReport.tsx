@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 import { useApDashboard } from '../hooks/useApDashboard';
 import {
     buildBatchApReminderContext,
@@ -15,6 +16,7 @@ import ApBatchPaymentView from './ap/ApBatchPaymentView';
 import ApPaymentReminderModal from './ap/ApPaymentReminderModal';
 
 export default function ApAgingReport() {
+    const { formatPrice, selectedCurrency } = useSettings();
     const ap = useApDashboard();
 
     const reminderModalProps = useMemo(() => {
@@ -42,16 +44,21 @@ export default function ApAgingReport() {
 
         return {
             title: 'Batch payment approval reminder',
-            subtitle: `${invoices.length} invoice${invoices.length === 1 ? '' : 's'} · ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })} outstanding`,
+            subtitle: `${invoices.length} invoice${invoices.length === 1 ? '' : 's'} · ${formatPrice(totalOutstanding)} outstanding`,
             apSummary: payload.apSummary,
             invoicesSummary: payload.invoicesSummary,
             hasActionableBalance: invoices.length > 0,
         };
-    }, [ap.reminderTarget]);
+    }, [ap.reminderTarget, formatPrice]);
 
     return (
         <div className="space-y-6 pb-12">
-            <ApHeader loading={ap.loading} onRefresh={ap.refresh} />
+            <ApHeader
+                loading={ap.loading}
+                onRefresh={ap.refresh}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
+            />
 
             <ApTabs activeTab={ap.activeTab} unpaidCount={ap.unpaidCount} onTabChange={ap.setActiveTab} />
 

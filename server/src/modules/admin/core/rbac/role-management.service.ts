@@ -1,4 +1,3 @@
-import { getTransactionalRepo } from '@/common/utils/repository.util'
 import { RiskLevel } from '@/common/enums/risk-level.enum'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.entity'
@@ -17,8 +16,10 @@ import {
   NotFoundException,
   OnApplicationBootstrap,
 } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { EntityManager, In, Repository } from 'typeorm'
+import { EntityManager, In } from 'typeorm'
+import { RoleRepository } from '@/modules/admin/core/user/repositories/role.repository'
+import { PermissionRepository } from '@/modules/admin/core/user/repositories/permission.repository'
+import { UserRoleAssignmentRepository } from '@/modules/admin/core/user/repositories/user-role-assignment.repository'
 
 export interface CreateRoleDto {
   name: string
@@ -39,20 +40,16 @@ export interface UpdateRoleDto {
 @Injectable()
 export class RoleManagementService implements OnApplicationBootstrap {
   private readonly logger = new Logger(RoleManagementService.name)
+  private cachedPermissions: PermissionEntity[] | null = null
+  private cachedPermissionsByFeature: Record<string, PermissionEntity[]> | null = null
 
   constructor(
-    @InjectRepository(RoleEntity)
-    private readonly roleRepo: Repository<RoleEntity>,
-
-    @InjectRepository(PermissionEntity)
-    private readonly permissionRepo: Repository<PermissionEntity>,
-
-    @InjectRepository(UserRoleAssignmentEntity)
-    private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
-
+    private readonly roleRepo: RoleRepository,
+    private readonly permissionRepo: PermissionRepository,
+    private readonly assignmentRepo: UserRoleAssignmentRepository,
     private readonly auditLogService: AuditLogService,
     private readonly permissionResolutionService: PermissionResolutionService,
-  ) {}
+  ) { }
 
   async onApplicationBootstrap(): Promise<void> {
     const systemInserted = await this.syncSystemRolePermissions()
@@ -67,19 +64,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
    * permissions. Keep them in sync when new platform permissions are introduced.
    */
   async syncSystemRolePermissions(): Promise<number> {
-    const result = await this.roleRepo.manager.query(`
-      INSERT INTO "role_permissions" ("role_id", "permission_id")
-      SELECT r.id, p.id
-      FROM "roles" r
-      CROSS JOIN "permissions" p
-      WHERE r."is_system_role" = true
-        AND NOT EXISTS (
-          SELECT 1 FROM "role_permissions" rp
-          WHERE rp."role_id" = r.id AND rp."permission_id" = p.id
-        )
-    `)
-
-    const inserted = typeof result?.[1] === 'number' ? result[1] : 0
+    const inserted = await this.roleRepo.syncSystemRolePermissions()
     if (inserted > 0) {
       this.logger.log(`Synced ${inserted} permission link(s) onto system roles`)
     }
@@ -90,30 +75,7 @@ export class RoleManagementService implements OnApplicationBootstrap {
    * Ensure seeded default roles retain their expected permission sets.
    */
   async syncDefaultRolePermissions(): Promise<number> {
-    let inserted = 0
-
-    for (const def of DEFAULT_ROLE_DEFINITIONS) {
-      const result = await this.roleRepo.manager.query(
-        `
-        INSERT INTO "role_permissions" ("role_id", "permission_id")
-        SELECT r.id, p.id
-        FROM "roles" r
-        INNER JOIN "permissions" p ON p.code = ANY($1::text[])
-        WHERE r.name = $2
-          AND r."is_system_role" = false
-          AND NOT EXISTS (
-            SELECT 1 FROM "role_permissions" rp
-            WHERE rp."role_id" = r.id AND rp."permission_id" = p.id
-          )
-      `,
-        [def.permCodes, def.name],
-      )
-
-      if (typeof result?.[1] === 'number') {
-        inserted += result[1]
-      }
-    }
-
+    const inserted = await this.roleRepo.syncDefaultRolePermissions(DEFAULT_ROLE_DEFINITIONS)
     if (inserted > 0) {
       this.logger.log(`Synced ${inserted} permission link(s) onto default roles`)
     }
@@ -341,8 +303,8 @@ export class RoleManagementService implements OnApplicationBootstrap {
    * isSystemRole = true — immutable and non-deletable.
    */
   async seedSuperAdminRole(storeId: string, manager?: EntityManager): Promise<RoleEntity> {
-    const repo = getTransactionalRepo(RoleEntity, this.roleRepo, manager)
-    const permRepo = getTransactionalRepo(PermissionEntity, this.permissionRepo, manager)
+    const repo = this.roleRepo.txRepo(manager)
+    const permRepo = this.permissionRepo.txRepo(manager)
 
     const allPermissions = await permRepo.find()
 
@@ -363,8 +325,8 @@ export class RoleManagementService implements OnApplicationBootstrap {
    * These are deletable/modifiable by the store admin (isSystemRole = false).
    */
   async seedDefaultRoles(storeId: string, manager?: EntityManager): Promise<RoleEntity[]> {
-    const repo = getTransactionalRepo(RoleEntity, this.roleRepo, manager)
-    const permRepo = getTransactionalRepo(PermissionEntity, this.permissionRepo, manager)
+    const repo = this.roleRepo.txRepo(manager)
+    const permRepo = this.permissionRepo.txRepo(manager)
 
     const defaultRoleDefs = DEFAULT_ROLE_DEFINITIONS
 
@@ -424,14 +386,25 @@ export class RoleManagementService implements OnApplicationBootstrap {
   // ─────────────────────────────────────────────────────────────────
 
   async getAllPermissions(): Promise<PermissionEntity[]> {
-    return this.permissionRepo.find({
+    if (this.cachedPermissions) {
+      return this.cachedPermissions
+    }
+    this.logger.log('Fetching all permissions...')
+    const permissions = await this.permissionRepo.find({
       order: { module: 'ASC', feature: 'ASC', action: 'ASC' },
     })
+    this.logger.log(`Found ${permissions.length} permissions`)
+    this.cachedPermissions = permissions
+    return permissions
   }
 
   async getPermissionsByFeature(): Promise<Record<string, PermissionEntity[]>> {
+    if (this.cachedPermissionsByFeature) {
+      return this.cachedPermissionsByFeature
+    }
+    this.logger.log('Fetching permissions by feature...')
     const permissions = await this.getAllPermissions()
-    return permissions.reduce(
+    const result = permissions.reduce(
       (acc, p) => {
         const key = p.feature || p.module
         if (!acc[key]) acc[key] = []
@@ -440,6 +413,9 @@ export class RoleManagementService implements OnApplicationBootstrap {
       },
       {} as Record<string, PermissionEntity[]>,
     )
+    this.logger.log(`Grouped ${permissions.length} permissions by feature`)
+    this.cachedPermissionsByFeature = result
+    return result
   }
 
   /**

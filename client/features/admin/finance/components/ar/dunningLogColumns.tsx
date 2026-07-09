@@ -9,7 +9,12 @@ const actionColors: Record<DunningLog['actionTaken'], string> = {
     EMAIL_AND_HOLD: 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400',
 };
 
-export function buildDunningLogColumns(onViewDetails: (log: DunningLog) => void): DataTableColumn<DunningLog>[] {
+type PriceFormatter = (amount: number) => string;
+
+export function buildDunningLogColumns(
+    formatPrice: PriceFormatter,
+    onViewDetails: (log: DunningLog) => void,
+): DataTableColumn<DunningLog>[] {
     return [
         {
             key: 'triggeredDate',
@@ -79,7 +84,7 @@ export function buildDunningLogColumns(onViewDetails: (log: DunningLog) => void)
             className: 'text-right',
             cell: (log) => (
                 <span className="font-black font-mono text-indigo-600 dark:text-indigo-400">
-                    ${Number(log.triggeredAmountOverdue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {formatPrice(log.triggeredAmountOverdue)}
                 </span>
             ),
         },

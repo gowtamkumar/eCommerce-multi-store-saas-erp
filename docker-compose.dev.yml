@@ -128,7 +128,7 @@ services:
       context: ./client
       dockerfile: Dockerfile.dev
     container_name: multi_store_client_dev
-    restart: "no"
+    restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
@@ -136,7 +136,10 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
-      - /app/.next
+    # Keep Next.js dev cache in memory — avoids slow bind-mount I/O warnings.
+    # 512M was too small; Next.js dev cache + trace logs can exceed it (ENOSPC).
+    tmpfs:
+      - /app/.next:size=1536M,mode=1777
     networks:
       - multi_store_main_network
     deploy:

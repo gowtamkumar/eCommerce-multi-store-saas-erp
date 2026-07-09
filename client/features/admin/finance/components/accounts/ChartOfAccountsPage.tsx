@@ -9,7 +9,7 @@ import { buildAccountColumns } from './accountColumns';
 import ChartOfAccountsHeader from './ChartOfAccountsHeader';
 
 export default function ChartOfAccountsPage() {
-    const { formatPrice } = useSettings();
+    const { formatPrice, selectedCurrency } = useSettings();
     const accounts = useChartOfAccounts();
 
     const columns = useMemo(() => buildAccountColumns(
@@ -26,6 +26,8 @@ export default function ChartOfAccountsPage() {
                 onSearchChange={accounts.setSearchQuery}
                 onInitializeCoa={accounts.initializeCoa}
                 onAddAccount={accounts.openCreateModal}
+                currencyCode={selectedCurrency.code}
+                currencySymbol={selectedCurrency.symbol}
             />
 
             <DataTable

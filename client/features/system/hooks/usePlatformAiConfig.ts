@@ -20,7 +20,6 @@ function mapResponseToForm(data: PlatformAiConfigResponse): PlatformAiConfigForm
     apiKey: data.hasApiKey ? AI_API_KEY_UNCHANGED : "",
     baseUrl: data.baseUrl || preset?.baseUrl || DEFAULT_PLATFORM_AI_CONFIG_FORM.baseUrl,
     defaultModel: data.defaultModel || preset?.defaultModel || "",
-    apiVersion: data.apiVersion || preset?.apiVersion || "2024-08-01-preview",
     siteUrl: data.siteUrl || "",
     siteName: data.siteName || "",
     maxTokens: data.maxTokens ?? 1024,
@@ -60,17 +59,16 @@ export function usePlatformAiConfig() {
   const saveConfig = async () => {
     setSaving(true);
     try {
-      const payload: Record<string, unknown> = {
-        enabled: form.enabled,
-        provider: form.provider,
-        baseUrl: form.baseUrl,
-        defaultModel: form.defaultModel,
-        apiVersion: form.apiVersion || undefined,
-        siteUrl: form.siteUrl || undefined,
-        siteName: form.siteName || undefined,
-        maxTokens: form.maxTokens,
-        temperature: form.temperature,
-      };
+const payload: Record<string, unknown> = {
+      enabled: form.enabled,
+      provider: form.provider,
+      baseUrl: form.baseUrl,
+      defaultModel: form.defaultModel,
+      siteUrl: form.siteUrl || undefined,
+      siteName: form.siteName || undefined,
+      maxTokens: form.maxTokens,
+      temperature: form.temperature,
+    };
 
       if (form.apiKey && form.apiKey !== AI_API_KEY_UNCHANGED) {
         payload.apiKey = form.apiKey;
@@ -108,7 +106,6 @@ export function usePlatformAiConfig() {
             apiKey: form.apiKey,
             baseUrl: form.baseUrl,
             defaultModel: form.defaultModel,
-            apiVersion: form.apiVersion || undefined,
             siteUrl: form.siteUrl || undefined,
             siteName: form.siteName || undefined,
             maxTokens: form.maxTokens,
@@ -140,7 +137,6 @@ export function usePlatformAiConfig() {
       provider: providerId,
       baseUrl: preset.baseUrl,
       defaultModel: preset.defaultModel,
-      apiVersion: preset.apiVersion || prev.apiVersion,
       siteUrl: preset.showOpenRouterHeaders ? prev.siteUrl : "",
       siteName: preset.showOpenRouterHeaders ? prev.siteName : "",
     }));

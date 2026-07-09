@@ -5,6 +5,7 @@ import { OnboardController } from './public-store.controller'
 import { StoreController } from './store.controller'
 import { StoreService } from './store.service'
 import { StoreRepository } from './store.repository'
+import { StoreFeatureRepository } from './repositories/store-feature.repository'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { StoreEntity } from './entities/store.entity'
 import { StoreFeatureEntity } from './entities/store-feature.entity'
@@ -26,7 +27,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     NotificationModule,
   ],
   controllers: [StoreController, OnboardController],
-  providers: [StoreService, StoreRepository],
-  exports: [StoreService, StoreRepository, TypeOrmModule],
+  providers: [StoreService, StoreRepository, StoreFeatureRepository],
+  exports: [StoreService, StoreRepository, StoreFeatureRepository, TypeOrmModule],
 })
 export class StoreModule {}

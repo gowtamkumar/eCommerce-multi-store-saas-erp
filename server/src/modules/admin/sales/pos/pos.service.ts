@@ -65,7 +65,7 @@ export class PosService {
 
   async findAllRegisters(ctx: RequestContextDto): Promise<PosRegisterEntity[]> {
     this.logger.log(`${this.findAllRegisters.name} Service Called`)
-    return this.registerRepository.findAll(ctx.storeId)
+    return this.registerRepository.findAll(ctx.storeId, ctx.branchId)
   }
 
   async findOneRegister(id: string, ctx: RequestContextDto): Promise<PosRegisterEntity> {
@@ -103,7 +103,7 @@ export class PosService {
     }
 
     // 1. Verify Register exists
-    await this.findOneRegister(dto.registerId, ctx)
+    const register = await this.findOneRegister(dto.registerId, ctx)
 
     // 2. Check if cashier already has an active open shift
     const activeShift = await this.shiftRepository.findActiveShiftForUser(userId, storeId)
@@ -117,6 +117,7 @@ export class PosService {
     return this.shiftRepository.create(
       {
         registerId: dto.registerId,
+        branchId: register.branchId,
         userId,
         status: PosShiftStatus.OPEN,
         openingBalance: Number(dto.openingBalance),
@@ -600,7 +601,7 @@ export class PosService {
 
   async getShifts(ctx: RequestContextDto): Promise<PosShiftEntity[]> {
     this.logger.log(`${this.getShifts.name} Service Called`)
-    return this.shiftRepository.findAll(ctx.storeId)
+    return this.shiftRepository.findAll(ctx.storeId, ctx.branchId)
   }
 
   // =========================================================================

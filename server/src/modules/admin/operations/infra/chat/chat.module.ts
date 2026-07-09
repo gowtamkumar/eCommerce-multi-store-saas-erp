@@ -8,6 +8,8 @@ import { ChatService } from './chat.service'
 import { ChatGateway } from './chat.gateway'
 import { ChatController } from './chat.controller'
 import { getJwtSecret } from '@/common/utils/jwt-secret.util'
+import { ConversationRepository } from './repositories/conversation.repository'
+import { ChatMessageRepository } from './repositories/chat-message.repository'
 
 @Module({
   imports: [
@@ -22,7 +24,7 @@ import { getJwtSecret } from '@/common/utils/jwt-secret.util'
     }),
   ],
   controllers: [ChatController],
-  providers: [ChatService, ChatGateway],
+  providers: [ChatService, ChatGateway, ConversationRepository, ChatMessageRepository],
   exports: [ChatService, ChatGateway],
 })
 export class ChatModule {}

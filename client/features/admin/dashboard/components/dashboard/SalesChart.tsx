@@ -1,5 +1,6 @@
 'use client';
 
+import { useSettings } from '@/hooks/SettingsContext';
 import { TrendingUp } from 'lucide-react';
 import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -14,7 +15,10 @@ const SalesChart = memo(({
     data: DashboardStats['salesData'];
     loading: boolean;
     period: DashboardPeriod;
-}) => (
+}) => {
+    const { formatPrice } = useSettings();
+
+    return (
     <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
         <div className="flex items-center justify-between mb-8">
             <div>
@@ -40,7 +44,12 @@ const SalesChart = memo(({
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} dy={15} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }} />
+                        <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                            tickFormatter={(value) => formatPrice(Number(value))}
+                        />
                         <Tooltip
                             contentStyle={{
                                 backgroundColor: '#0f172a',
@@ -52,6 +61,7 @@ const SalesChart = memo(({
                             }}
                             itemStyle={{ color: '#3b82f6', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}
                             labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase' }}
+                            formatter={(value: number) => [formatPrice(value), 'Sales']}
                         />
                         <Area type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={6} fillOpacity={1} fill="url(#colorSales)" animationDuration={1500} />
                     </AreaChart>
@@ -59,7 +69,8 @@ const SalesChart = memo(({
             )}
         </div>
     </div>
-));
+    );
+});
 
 SalesChart.displayName = 'SalesChart';
 

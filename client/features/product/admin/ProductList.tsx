@@ -164,7 +164,7 @@ export default function ProductList({
           </div>
           {(product.discountAmount ?? 0) > 0 && (
             <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-              -{product.discountAmount}{product.discountType === 'percentage' ? '%' : ''} off
+              -{product.discountType === 'percentage' ? `${product.discountAmount}%` : formatPrice(product.discountAmount ?? 0)} off
             </div>
           )}
         </>

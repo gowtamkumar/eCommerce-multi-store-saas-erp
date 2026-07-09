@@ -1,19 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, IsNull, LessThanOrEqual, MoreThanOrEqual, Or, Not, In } from 'typeorm'
+import { IsNull, LessThanOrEqual, MoreThanOrEqual, Not, In } from 'typeorm'
 import { PriceBookEntity } from './entities/price-book.entity'
 import { ProductPriceEntity } from './entities/product-price.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PriceBookType } from './enums/price-book-type.enum'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
+import { PriceBookRepository } from './repositories/price-book.repository'
+import { ProductPriceRepository } from './repositories/product-price.repository'
 
 @Injectable()
 export class PricingService {
   constructor(
-    @InjectRepository(PriceBookEntity)
-    private readonly priceBookRepo: Repository<PriceBookEntity>,
-    @InjectRepository(ProductPriceEntity)
-    private readonly productPriceRepo: Repository<ProductPriceEntity>,
+    private readonly priceBookRepo: PriceBookRepository,
+    private readonly productPriceRepo: ProductPriceRepository,
   ) {}
 
   private async validatePriceBook(data: any, storeId: string, excludeId?: string) {
@@ -221,7 +220,7 @@ export class PricingService {
 
     let baseCurrency = 'BDT'
     try {
-      const settings = await this.priceBookRepo.manager
+      const settings = await this.priceBookRepo.txRepo().manager
         .getRepository(SiteSettingsEntity)
         .findOne({ where: { storeId } })
       baseCurrency = settings?.currency?.toUpperCase() || 'BDT'
@@ -281,7 +280,7 @@ export class PricingService {
     storeId: string,
   ): Promise<number> {
     try {
-      const settings = await this.priceBookRepo.manager
+      const settings = await this.priceBookRepo.txRepo().manager
         .getRepository(SiteSettingsEntity)
         .findOne({ where: { storeId } })
 

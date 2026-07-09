@@ -3,12 +3,15 @@
 import { CheckCircle, XCircle } from 'lucide-react';
 import React, { useState } from 'react';
 import type { RecordPaymentModalProps } from '../types';
+import { useSettings } from '@/hooks/SettingsContext';
 
 export default function RecordPaymentModal({
     balance,
     onClose,
     onConfirm,
 }: RecordPaymentModalProps) {
+    const { selectedCurrency } = useSettings();
+    const currencySymbol = selectedCurrency?.symbol || '$';
     const [form, setForm] = useState({
         amount: '',
         paymentMethod: 'Bank Transfer',
@@ -51,7 +54,7 @@ export default function RecordPaymentModal({
                             Payment Amount
                         </label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-lg">৳</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-lg">{currencySymbol}</span>
                             <input
                                 type="number"
                                 required

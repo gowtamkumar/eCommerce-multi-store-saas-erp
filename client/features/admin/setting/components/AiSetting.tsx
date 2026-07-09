@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Eye, EyeOff, Loader2, MessageCircle, Search, ShieldAlert, Sparkles, Zap, AlertTriangle } from "lucide-react";
+import { Bot, Cable, Eye, EyeOff, Loader2, MessageCircle, Search, ShieldAlert, Sparkles, Zap, AlertTriangle, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useAiConfig } from "../hooks/useAiConfig";
 import { useAiUsage } from "../hooks/useAiUsage";
-import { AI_API_KEY_UNCHANGED, AI_PROVIDER_OPTIONS, getEmbeddingFormWarning } from "../types/ai-config";
+import { AI_API_KEY_UNCHANGED, AI_PROVIDER_OPTIONS, DEFAULT_FALLBACK_AI_CONFIG, getEmbeddingFormWarning } from "../types/ai-config";
+import type { StoreAiConfigForm } from "../types/ai-config";
 import { AiUsageDashboard } from "./AiUsageDashboard";
 
 function SecretInput({
@@ -117,6 +118,8 @@ export function AiSetting() {
     applyProviderPreset,
   } = useAiConfig();
 
+  const [showFallback, setShowFallback] = useState(!!form.fallback);
+
   const {
     days: usageDays,
     setDays: setUsageDays,
@@ -129,6 +132,26 @@ export function AiSetting() {
   const embeddingFormWarning = getEmbeddingFormWarning(form);
   const embeddingStatusWarning = embeddingStatus?.embeddingWarning ?? null;
   const embeddingWarning = embeddingFormWarning || embeddingStatusWarning;
+
+  const fallbackPreset = AI_PROVIDER_OPTIONS.find((p) => p.id === form.fallback?.provider);
+
+  const applyFallbackProviderPreset = (providerId: StoreAiConfigForm["provider"]) => {
+    const preset = AI_PROVIDER_OPTIONS.find((p) => p.id === providerId);
+    if (!preset || !form.fallback) return;
+
+    setForm((prev) => ({
+      ...prev,
+      fallback: {
+        ...prev.fallback!,
+        provider: providerId,
+        baseUrl: preset.baseUrl,
+        defaultModel: preset.defaultModel,
+        embeddingModel: preset.showEmbeddingModel === false ? "" : preset.embeddingModel || prev.fallback!.embeddingModel,
+        siteUrl: preset.showOpenRouterHeaders ? prev.fallback!.siteUrl : "",
+        siteName: preset.showOpenRouterHeaders ? prev.fallback!.siteName : "",
+      },
+    }));
+  };
 
   if (loading) {
     return (
@@ -208,29 +231,14 @@ export function AiSetting() {
             className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
             placeholder={selectedProvider?.baseUrl || "https://api.example.com/v1"}
           />
-          <p className="text-xs text-slate-500">
-            {form.provider === "azure_openai"
-              ? "Azure deployment URL, e.g. https://RESOURCE.openai.azure.com/openai/deployments/DEPLOYMENT"
-              : form.provider === "google"
-                ? "Google Gemini API base (usually leave as default)."
-                : form.provider === "anthropic"
-                  ? "Anthropic API base (usually leave as default)."
-                  : "API base URL for the selected provider."}
+<p className="text-xs text-slate-500">
+            {form.provider === "google"
+              ? "Google Gemini API base (usually leave as default)."
+              : form.provider === "anthropic"
+                ? "Anthropic API base (usually leave as default)."
+                : "API base URL for the selected provider."}
           </p>
         </div>
-
-        {selectedProvider?.showApiVersion ? (
-          <div className="space-y-1.5 md:col-span-2">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">API version (Azure)</label>
-            <input
-              type="text"
-              value={form.apiVersion}
-              onChange={(e) => setForm({ ...form, apiVersion: e.target.value })}
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
-              placeholder="2024-08-01-preview"
-            />
-          </div>
-        ) : null}
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Default model</label>
@@ -317,6 +325,169 @@ export function AiSetting() {
             className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
           />
         </div>
+      </div>
+
+      {/* ─── Fallback Provider ─── */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40 p-5 space-y-4">
+        <button
+          type="button"
+          onClick={() => {
+            if (!showFallback) {
+              setForm((prev) => ({
+                ...prev,
+                fallback: { ...DEFAULT_FALLBACK_AI_CONFIG },
+              }));
+            } else if (!form.fallback) {
+              setForm((prev) => ({
+                ...prev,
+                fallback: { ...DEFAULT_FALLBACK_AI_CONFIG },
+              }));
+            }
+            setShowFallback(!showFallback);
+          }}
+          className="flex items-center gap-3 w-full text-left"
+        >
+          <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+            <Cable className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-slate-900 dark:text-white">Fallback provider</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {showFallback
+                ? `Fallback: ${fallbackPreset?.label || form.fallback?.provider || "Not configured"}`
+                : "Configure a secondary AI provider for automatic failover"}
+            </p>
+          </div>
+          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${showFallback ? "" : "-rotate-90"}`} />
+        </button>
+
+        {showFallback ? (
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Fallback provider</label>
+                <select
+                  value={form.fallback?.provider || "openai"}
+                  onChange={(e) => applyFallbackProviderPreset(e.target.value as StoreAiConfigForm["provider"])}
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                >
+                  {AI_PROVIDER_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">API Key</label>
+                <input
+                  type="password"
+                  value={form.fallback?.apiKey || ""}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      fallback: { ...prev.fallback!, apiKey: e.target.value },
+                    }))
+                  }
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none mt-1.5"
+                  placeholder={fallbackPreset?.apiKeyPlaceholder || "API key"}
+                />
+              </div>
+
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Base URL</label>
+                <input
+                  type="text"
+                  value={form.fallback?.baseUrl || ""}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      fallback: { ...prev.fallback!, baseUrl: e.target.value },
+                    }))
+                  }
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
+                  placeholder={fallbackPreset?.baseUrl || "https://api.example.com/v1"}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Default model</label>
+                <input
+                  type="text"
+                  value={form.fallback?.defaultModel || ""}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      fallback: { ...prev.fallback!, defaultModel: e.target.value },
+                    }))
+                  }
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
+                  placeholder={fallbackPreset?.defaultModel || "model-name"}
+                />
+              </div>
+
+              {fallbackPreset?.showEmbeddingModel !== false ? (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Embedding model</label>
+                  <input
+                    type="text"
+                    value={form.fallback?.embeddingModel || ""}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        fallback: { ...prev.fallback!, embeddingModel: e.target.value },
+                      }))
+                    }
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-mono text-sm"
+                    placeholder={fallbackPreset?.embeddingModel || "embedding-model"}
+                  />
+                </div>
+              ) : null}
+
+              {fallbackPreset?.showOpenRouterHeaders ? (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site URL (OpenRouter)</label>
+                    <input
+                      type="url"
+                      value={form.fallback?.siteUrl || ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          fallback: { ...prev.fallback!, siteUrl: e.target.value },
+                        }))
+                      }
+                      className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                      placeholder="https://your-store.com"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Site name (OpenRouter)</label>
+                    <input
+                      type="text"
+                      value={form.fallback?.siteName || ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          fallback: { ...prev.fallback!, siteName: e.target.value },
+                        }))
+                      }
+                      className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+                      placeholder="My Store"
+                    />
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <p className="text-xs text-slate-500">
+              When the primary provider is unreachable or returns an error, the system automatically
+              retries with the fallback provider. Rate-limit retries (429) are attempted on the
+              primary first before falling back.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <AiUsageDashboard

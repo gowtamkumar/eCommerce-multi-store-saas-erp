@@ -2,7 +2,7 @@ import { BaseStoreRepository } from '@/common/base-repository'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Brackets, EntityManager, Repository } from 'typeorm'
+import { Brackets, EntityManager, FindManyOptions, FindOneOptions, DeepPartial, Repository } from 'typeorm'
 import { OrderEntity } from '../entities/order.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -13,6 +13,18 @@ export class OrderRepository extends BaseStoreRepository<OrderEntity> {
     repo: Repository<OrderEntity>,
   ) {
     super(OrderEntity, repo)
+  }
+
+  async find(options?: FindManyOptions<OrderEntity>): Promise<OrderEntity[]> {
+    return await this.repo.find(options)
+  }
+
+  async findOne(options: FindOneOptions<OrderEntity>): Promise<OrderEntity | null> {
+    return await this.repo.findOne(options)
+  }
+
+  async update(criteria: any, partialEntity: DeepPartial<OrderEntity>): Promise<void> {
+    await this.repo.update(criteria, partialEntity)
   }
 
   async createAndSave(
