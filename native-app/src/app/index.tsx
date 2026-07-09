@@ -7,6 +7,8 @@ import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WebBadge } from '@/components/web-badge';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 
 function getDevMenuHint() {
@@ -35,8 +37,17 @@ export default function HomeScreen() {
         <ThemedView style={styles.heroSection}>
           <AnimatedIcon />
           <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
+            Welcome to&nbsp; Multistore
           </ThemedText>
+        </ThemedView>
+
+        <ThemedView style={{ flexDirection: 'row', gap: 12, marginVertical: 12 }}>
+          <Button variant="default">
+            <Text>Primary Button</Text>
+          </Button>
+          <Button variant="outline">
+            <Text>Outline Button</Text>
+          </Button>
         </ThemedView>
 
         <ThemedText type="code" style={styles.code}>
