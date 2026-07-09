@@ -7,11 +7,12 @@ This document serves as the **A to Z Guide** for building a companion React Nati
 
 ## 1. Executive Strategy: Who is the Mobile App For?
 
-An ERP system serves various roles. Creating a single app for both the end-consumer and internal staff can result in bloating. We recommend a **two-app strategy** or a **Unified Staff Companion App** with strict Role-Based Access Control (RBAC).
+An ERP system contains broad business logic. Creating a single monolithic mobile application can result in high maintenance overhead and a cluttered user experience. We define a **two-app strategy** or a **Unified App with Strict Persona Gating** to separate public consumer functions from internal operations.
 
 ```
                   ┌─────────────────────────────────────────┐
                   │          Multi-Store SaaS ERP           │
+                  │              (NestJS API)               │
                   └────────────────────┬────────────────────┘
                                        │
             ┌──────────────────────────┴──────────────────────────┐
@@ -26,129 +27,270 @@ An ERP system serves various roles. Creating a single app for both the end-consu
   - Support & Order History
 ```
 
-### Core Targets: Staff & Operations Companion App & Consumer eCommerce Storefront App
-This guide covers both the **Staff & Operations Companion App** (for internal business workflows like POS, WMS, and HRM) and the **Consumer eCommerce Storefront App** (for customer shopping, cart management, and online checkout), showing how to implement their respective screens and features using React Native.
+### 1.1 Persona Matrices & Scopes
+
+The mobile architecture targets four distinct user roles, each with specific interface scopes, security permissions, and offline needs:
+
+| User Persona | Application Domain | Core Scopes Required | Hardware Access | Offline Requirement |
+| :--- | :--- | :--- | :--- | :--- |
+| **Retail Cashier** | Staff & Operations | `branchId` (Session locked) | Camera, ESC/POS Printer, Haptics | **High** (Must support complete checkout, offline cart, and sync) |
+| **WMS Clerk** | Staff & Operations | `warehouseId` (Session locked) | Camera (Continuous Scanning) | **Medium** (Count sheets, transfers pre-fetched; uploads online) |
+| **Company Employee** | Staff & Operations | `employeeId` (Auth resolved) | GPS Location, Front Camera (Selfie) | **Low** (Must be online to punch timecard) |
+| **Consumer (Customer)** | Consumer Storefront | `storeId` (Global lock) | Push Notifications, Apple/Google Pay | **Low** (Requires active network connection for checkout) |
+
+### 1.2 Multi-Tenant Strategy
+*   **Staff App**: A single application published to the stores. Staff input their company workspace domain (tenant resolved via `/system/store/resolve`) to direct API calls to their store's partitioned database context.
+*   **Consumer App**: A white-labeled template compiled and built per tenant using distinct bundling IDs (e.g. `com.storename.app`), hardcoding the `STORE_ID` inside the build environmental config.
 
 ---
 
-## 2. Technical Stack Recommendation
+## 2. Detailed Technical Stack & Mobile Architecture
 
-To match the existing ecosystem and ensure high performance, the following mobile stack is recommended:
+The mobile app must utilize Expo's modern prebuild system to ensure rapid prototyping while supporting native hardware modules.
 
-| Tech Component | Recommended Technology | Purpose / Rationale |
-| :--- | :--- | :--- |
-| **Framework** | **Expo (React Native)** | Simplifies updates, builds (EAS), and native library integrations. |
-| **Navigation** | **Expo Router** | File-based routing that matches Next.js app routing. |
-| **Styling** | **NativeWind (Tailwind CSS v4)** | Direct parity with the web client (`client` uses Tailwind CSS v4). |
-| **State Management**| **Zustand** + **TanStack Query** | Zustand for local app state; Query for server caching, offline prefetching. |
-| **API Client** | **Axios** | Standardized request interception for multi-tenant headers. |
-| **Local Storage** | **react-native-mmkv** | High-performance key-value storage for tokens, settings, and cache. |
-| **Offline DB** | **expo-sqlite** | Relational local storage required for offline POS queue processing. |
-| **Icons** | **lucide-react-native** | Matches Lucide icons used in the Next.js web client. |
+### 2.1 Dependency Matrix & Rationale
+
+| Dependency Category | Library | Version Group | Implementation Rationale |
+| :--- | :--- | :--- | :--- |
+| **Runtime & Core** | `expo` | `~51.0.0` or higher | Managed native project configuration, OTA updates, and native wrappers. |
+| **Routing** | `expo-router` | matching Expo | File-system-based navigation matching Next.js. Supports multi-group layouts. |
+| **Styling** | `nativewind` + `tailwindcss` | `^4.0.0` | Utilizes Tailwind styling tokens directly, sharing colors with the web UI. |
+| **Local DB Engine** | `expo-sqlite` | matching Expo | Local SQLite database for offline products, carts, and transaction queues. |
+| **Key-Value Store** | `react-native-mmkv` | `^3.0.0` | Ultra-fast synchronous storage for access tokens and user settings. |
+| **Secure Keyring** | `expo-secure-store` | matching Expo | Hardware-backed keychain storage for JWT credentials and biometrics. |
+| **Server State** | `@tanstack/react-query`| `^5.0.0` | Declarative data fetching, stale-while-revalidate caching, and mutations. |
+| **API Client** | `axios` | `^1.7.0` | Interceptor chain to inject headers (`x-store-id`, `x-branch-id`, JWT). |
+| **Scanning** | `expo-camera` | matching Expo | Custom barcode overlay rendering with fast haptic callback triggers. |
+| **Location** | `expo-location` | matching Expo | Background/foreground high-accuracy GPS coordinates for HR punching. |
+| **Print Output** | `expo-print` / ESC-POS | matching Expo | Bluetooth, Wi-Fi, and USB thermal printer raw ESC/POS command parser. |
+
+### 2.2 Global App Architecture Directory Layout
+
+```
+native-app/
+├── app.json                         # Expo configuration (plugins, bundle IDs)
+├── tailwind.config.js               # Tailwind variables matching web client
+└── src/
+    ├── app/                         # Expo Router Folder
+    │   ├── _layout.tsx              # Root Layout, Providers, Theme setups
+    │   ├── onboarding/              # Workspace/Tenant lookup routes
+    │   ├── auth/                    # Auth, Login, Scope selection
+    │   ├── (pos)/                   # POS Route Group (Drawer, Terminal, Cart)
+    │   ├── (wms)/                   # WMS Route Group (GRN, Transfer, Count)
+    │   ├── (hrm)/                   # HRM Route Group (Punch, Leaves, Pay)
+    │   └── (storefront)/            # Consumer Shopping Layout Group
+    ├── components/                  # UI Components (NativeWind styled)
+    │   ├── ui/                      # Button, Input, Card primitives
+    │   └── camera-scanner.tsx       # Shared Camera Scanner modal
+    ├── constants/                   # Theme tokens, geofence values
+    ├── hooks/                       # useAuth, useOfflineCart, useScanner
+    └── lib/
+        ├── api-client.ts            # Axios configuration
+        ├── local-db.ts              # SQLite database controllers
+        └── store.ts                 # Zustand client stores
+```
 
 ---
 
 ## 3. Architecture Alignment: Multi-Store & Security
 
-The mobile app connects to the main backend NestJS web server located at [server/](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server) and must adhere to the core design foundations of this backend modular monolith (see [ARCHITECTURE.md](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/doc/ARCHITECTURE.md)).
+The mobile app operates as a client of the NestJS server located at [server/](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server). It must respect the strict database isolation and guard rules defined in the backend architecture.
 
-### 3.1 Tenant & Domain Resolution
-The backend uses a `StoreContextMiddleware` to resolve the current store from the subdomain or custom domain. On mobile, this must be handled dynamically:
-1. **Tenant Discovery Screen**: Upon first load, users enter their store's workspace name (e.g., `my-shop`).
-2. **Domain Mapping**: The app hits a platform-level API `https://api.domain.com/system/store/resolve?tenant=my-shop` to get the base API URL (custom domain or subdomain) and store status.
-3. **Subdomain Header**: The resolved URL becomes the base endpoint, and the header `x-store-id` (or subdomain host) is attached to all API requests.
+### 3.1 Tenant & Domain Resolution Sequence
 
-### 3.2 Secure API Authentication Flow
+To prevent cross-tenant data leakage, the mobile app resolves tenant endpoints dynamically before executing any login requests.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Staff Member
+    participant App as Mobile App (Zustand/MMKV)
+    participant Platform as Platform Discovery API (api.domain.com)
+    participant Tenant as Tenant NestJS API (tenant.domain.com)
+
+    User->>App: Input Workspace Subdomain (e.g., "fast-mart")
+    App->>Platform: GET /system/store/resolve?subdomain=fast-mart
+    Platform-->>App: Return Store metadata & status (Store ID, Active Plan, Base API URL)
+    App->>App: Save Base API URL & Store ID to MMKV Storage
+    App->>App: Re-initialize Axios Client with resolved Base API URL
+    User->>App: Input Email & Password (Login)
+    App->>Tenant: POST /admin/core/auth/login with Header (x-store-id: Store_UUID)
+    Tenant-->>App: Return JWT Token & User Authorization Scope
 ```
-Mobile Login (Email/Password)
-     │
-     ▼
-API: /admin/core/auth/login ──> Returns Access Token & Refresh Token
-     │
-     ▼
-Save to SecureStore (react-native-mmkv / expo-secure-store)
-     │
-     ▼
-API: /admin/core/user/me ──> Get User Profile, User Roles & Permissions
-     │
-     ▼
-Resolve User Scopes (Branch ID & Warehouse ID constraints)
+
+### 3.2 Secure API Authentication Flow & RBAC Guards
+
+The mobile app must parse the user roles and scopes received from the `/admin/core/user/me` endpoint. The client handles authorization locally by implementing permission gates.
+
+```typescript
+// src/hooks/usePermission.ts
+import { useAuthStore } from '@/lib/store';
+
+export function usePermission() {
+  const { user } = useAuthStore();
+  
+  const hasPermission = (code: string): boolean => {
+    if (!user) return false;
+    
+    // Store Owner has absolute access
+    if (user.roles.some(r => r.name === 'Store Owner')) return true;
+    
+    // Resolve overrides first (explicit denials)
+    const override = user.permissionOverrides?.find(o => o.permissionCode === code);
+    if (override) return override.isGranted;
+    
+    // Resolve standard role permissions
+    return user.roles.some(role => 
+      role.permissions.some(p => p.code === code)
+    );
+  };
+
+  return { hasPermission };
+}
 ```
 
-> [!IMPORTANT]
-> Since users can belong to multiple branches (e.g., a cashier scopes to Branch A; a warehouse manager to Warehouse B), the login flow **MUST** present a **Scope Selection Screen** immediately after login if the user has multiple scopes assigned.
+*   **UI Enforcement**: Wrap dashboard blocks, scanner modules, and POS cash buttons in a `<PermissionGate code="pos:checkout">` component. If permission checks fail, the user is navigated away or visual overlays are displayed.
+*   **Branch/Warehouse Scope Gating**: Session storage must keep `activeBranchId` or `activeWarehouseId` variables. All operations (fetching catalog items, adjusting inventory, making sales) must append these scoped IDs into request payloads or headers (`x-branch-id`, `x-warehouse-id`).
+
+### 3.3 Offline Synchronization & Idempotency Controls
+
+Retail stores cannot halt operations when connection drops. The React Native app must feature offline robustness matching the web browser's IndexedDB pattern, utilizing an idempotent sync API.
+
+1.  **Local SQLite Cache**: The app downloads and syncs product pricing books and inventory lists whenever connection is active.
+2.  **Offline Transaction Storage**: When the app detects it is offline (`NetInfo.isConnected === false`), or when a network request fails with a timeout:
+    *   Generate a client-side transaction UUID: `clientSaleId` (stored in the database table as `offlineSaleId`).
+    *   Write the payload structure directly to the local SQLite transaction queue.
+    *   Show a banner: `"Running in Offline Mode - Transaction Saved Locally"`.
+3.  **Idempotent Background Synchronization**:
+    *   A background job listens for network reconnection.
+    *   When reconnected, the app sends a batch POST to `server/src/modules/admin/sales/pos` at the `/sync` endpoint, including the `offlineSaleId` in the body.
+    *   **Idempotency Check**: The NestJS server evaluates the `offlineSaleId`. If the ID exists in the database, the server returns a `201 Success` immediately without duplicate processing. If it is new, it processes the sale, updates the general ledger, and releases the inventory transaction, guaranteeing zero duplicate entries.
+
+```mermaid
+flowchart TD
+    Online{Network Online?}
+    Online -->|Yes| POST[/sync API/]
+    Online -->|No| Cache[Store in Local SQLite with UUID: offlineSaleId]
+    POST --> Server{Server checks DB for offlineSaleId}
+    Server -->|ID Exists| Return200[Ignore - Return Success]
+    Server -->|ID Is New| Process[Write to Ledger & Deduct Stock]
+```
+
+### 3.4 Ledger & Stock Security Constraints
+*   **Negative Stock Gating**: The local SQLite database checks the store's settings. If `allowNegativeStock === false` and the local item count is `0`, the checkout buttons are disabled to prevent out-of-sync inventory logs.
+*   **Ledger Rules**: Transactions are logged as draft journal ledger adjustments locally, and are strictly marked as unverified until the NestJS server returns verification IDs during the background sync.
 
 ---
 
 ## 4. Screen-by-Screen Implementation Guide (A to Z)
 
-Here are the specific modules and UI scopes to build in the mobile app, mapped directly to their backend counterparts.
+Here is the exact screen-by-screen roadmap for the mobile application layout, outlining UI structures, required state schemas, endpoints mapped to the backend server in `/server`, and detailed offline-first behavior patterns.
 
 ### A. Authentication & Onboarding
 *   **Target Backend Module:** [AuthModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/admin/core/auth) / [RBACModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/admin/core/rbac)
 *   **Screens to Build:**
-    *   `app/onboarding/tenant.tsx`: Enter tenant name (resolves base API endpoint).
-    *   `app/auth/login.tsx`: Username/password with Biometric toggle (FaceID / Fingerprint).
-    *   `app/auth/scope-select.tsx`: If the user has multiple branches or warehouses, choose the active branch/warehouse for the session.
+    1.  `app/onboarding/tenant.tsx` (Tenant Domain Lookup)
+        *   **UI Layout**: Standard card layout with input for workspace subdomains (e.g. `fast-mart`), dynamic validation alerts, and a loading spinner button.
+        *   **API Mapping**: `GET /system/store/resolve?subdomain=:subdomain`
+        *   **State & Storage**: If successful, saves `{ storeId, apiBaseUrl, storeName }` into local MMKV storage and redirects to the Login screen.
+    2.  `app/auth/login.tsx` (Secure Login & Biometrics)
+        *   **UI Layout**: Input fields for Email and Password (with toggle hide/show), biometric login button icon, submit button, and forgot password triggers.
+        *   **API Mapping**: `POST /admin/core/auth/login` (request body: `{ email, password }`)
+        *   **State & Storage**: On success, the response JWT credentials `{ accessToken, refreshToken }` are committed to the secure keyring (`expo-secure-store`). User details are saved in the Zustand `useAuthStore`.
+    3.  `app/auth/scope-select.tsx` (Branch & Warehouse Selection Gate)
+        *   **UI Layout**: Dropdown selectors loaded with active Branch assignments and Warehouse scopes. Display warnings if no active scopes are found. A button to finalize selection and initialize the dashboard router.
+        *   **API Mapping**: Resolves from profile data at `GET /admin/core/user/me`
+        *   **State & Storage**: Saves selected `activeBranchId` and `activeWarehouseId` to session state inside Zustand. All subsequent Axios requests inject these parameters into headers.
 
 ### B. Mobile Point of Sale (POS) Terminal
-Cashiers need to sell on the go or at small counters.
 *   **Target Backend Module:** [POSModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/admin/sales/pos)
 *   **Screens to Build:**
-    *   `app/(pos)/register.tsx`: Open/close shift, enter drawer starting cash.
-    *   `app/(pos)/terminal.tsx`: The checkout interface.
-        *   *Barcode Scanner Integration:* Icon to launch camera scanner to instantly add SKUs.
-        *   *Product Grid:* Fast-tap categories and product cards.
-    *   `app/(pos)/cart.tsx`: Adjust quantities, apply promotions, select/add customers (loyalty lookup).
-    *   `app/(pos)/checkout.tsx`: Payment selection (Cash, Card, Mobile Wallet, Split Payment, Store Credit).
-*   **Offline-First POS Engine (Critical):**
-    *   Maintain a local SQLite database of products, pricing books, and active promotions.
-    *   When offline: save order transactions locally.
-    *   When online: sync transactions via BullMQ-backed `/admin/sales/pos/sync` endpoint in the background.
-
-```mermaid
-flowchart TD
-    ScanCode["Scan Barcode / Tap Item"] --> AddCart["Add to Local Cart"]
-    AddCart --> ChoosePayment["Choose Payment Mode"]
-    ChoosePayment --> HasInternet{Is Online?}
-    HasInternet -->|Yes| PostAPI["Post to Server /admin/sales/order"]
-    HasInternet -->|No| SaveSQLite["Save Order to Local expo-sqlite Queue"]
-    SaveSQLite -.-> SyncService["Background Sync Service (when connection returns)"]
-    SyncService --> PostAPI
-```
+    1.  `app/(pos)/register.tsx` (Shift Register Controls)
+        *   **UI Layout**: If register is closed: Input for opening cash balance float, notes field, and "Open Register" action. If register is open: Expected cash calculation cards, input for actual closing drawer cash balance, discrepancy metrics, and a "Close Register & Print Z-Report" button.
+        *   **API Mapping**:
+            *   Open Shift: `POST /admin/sales/pos/shift/open` (body: `{ openingBalance, notes }`)
+            *   Close Shift: `POST /admin/sales/pos/shift/close` (body: `{ closingBalance, notes, actualBalance }`)
+        *   **State & Storage**: Registers active shift state `activeShiftId` in the local Zustand store.
+    2.  `app/(pos)/terminal.tsx` (POS Grid & Barcode Scanning)
+        *   **UI Layout**: Grid system displaying product item cards (thumbnail, name, SKU, price, stock quantity). Category tabs at the top for quick filters. A floating barcode scanner button to pop open a camera overlay sheet for rapid continuous product additions.
+        *   **API Mapping**: `GET /admin/catalog/products?branchId=:branchId`
+        *   **State & Storage**: Syncs catalog locally to SQLite database `cached_products` schema for complete offline search and grid load speeds.
+    3.  `app/(pos)/cart.tsx` (Cart & Promotion Builder)
+        *   **UI Layout**: List of items in the cart showing variant selections, quantity increment controllers, and swipe-to-delete actions. Customer search and link button (allows tracking loyalty accounts). Discount coupon input field.
+        *   **API Mapping**:
+            *   Validate Coupon: `POST /admin/sales/coupon/validate` (body: `{ code, cartTotal }`)
+            *   Find Customer: `GET /admin/customer/search?query=:query`
+        *   **State & Storage**: Cart state managed via a fast Zustand store: `items: Array<{ variantId, qty, unitPrice, discount }>`, `appliedCoupon`, `customerId`.
+    4.  `app/(pos)/checkout.tsx` (Tender & Receipt Printer Layout)
+        *   **UI Layout**: Checkout summary displaying items total, applied discounts, tax details, and final due amount. Quick-cash buttons, Card terminal indicators, Split Payment sliders, and a "Finalize Transaction" action button.
+        *   **API Mapping**: `POST /admin/sales/pos/order`
+        *   **Offline Synchronization Logic**: If network request fails, saves payload locally into SQLite table `offline_orders` with a generated transaction UUID `clientSaleId` (mapping to backend field `offlineSaleId`). Upon connection recovery, syncs batch data to `/admin/sales/pos/sync` which evaluates idempotency rules to prevent duplicate accounting ledgers.
 
 ### C. Warehouse Management System (WMS) & Inventory
-Warehouse personnel require a mobile layout optimized for rapid physical scanning.
 *   **Target Backend Module:** [LogisticsModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/admin/operations/logistics)
 *   **Screens to Build:**
-    *   `app/(wms)/grn-list.tsx`: List of pending Goods Received Notes from suppliers.
-    *   `app/(wms)/grn-detail.tsx`: Scan items as they are unboxed. Verify quantities against PO (3-way matching support).
-    *   `app/(wms)/stock-count.tsx`: Cycle counting. Staff select a warehouse bin, scan items, and report variances.
-    *   `app/(wms)/stock-transfer.tsx`: Inter-warehouse stock transfers. Scan items out of Transit Warehouse, scan them in at destination.
+    1.  `app/(wms)/grn-list.tsx` (Goods Received Note List)
+        *   **UI Layout**: Searchable lists grouped by status (Pending, Partially Received, Verified). Displaying Supplier names, PO References, and delivery dates.
+        *   **API Mapping**: `GET /admin/logistics/grn?warehouseId=:warehouseId`
+        *   **State & Storage**: Pre-fetches GRN items using TanStack Query, enabling instant loading of the details list.
+    2.  `app/(wms)/grn-detail.tsx` (GRN Scan & Verify Receiver)
+        *   **UI Layout**: Displays expected item quantities vs received quantities. Triggers the barcode scanner camera continuously. Scanning an item increments the `qtyReceived` indicator. Displays color warnings for variances. Fields for lot number and expiry entries (FEFO tracking support).
+        *   **API Mapping**: `POST /admin/logistics/grn/:id/verify` (body: `{ items: Array<{ variantId, qtyReceived, lotNumber, expiryDate }> }`)
+        *   **State & Storage**: Saves intermediate scan counts locally to SQLite.
+    3.  `app/(wms)/stock-count.tsx` (Cycle Counting)
+        *   **UI Layout**: Warehouse Bin selection selector. List of items expected in the bin. Scanner overlay counts items as they are scanned. Shows discrepancies (variance count) immediately on screen.
+        *   **API Mapping**: `POST /admin/logistics/inventory/count-adjust` (body: `{ warehouseId, items: Array<{ variantId, countedQty, systemQty }> }`)
+        *   **State & Storage**: Validates inventory variances and forces double-check counts if discrepancies exceed 10%.
+    4.  `app/(wms)/stock-transfer.tsx` (Warehouse Transfers)
+        *   **UI Layout**: Source and Destination Warehouse dropdown fields. Scan items to transfer. Digital signature input canvas for drivers and receiver verification.
+        *   **API Mapping**: `POST /admin/logistics/inventory/transfer` (body: `{ fromWarehouseId, toWarehouseId, items: Array<{ variantId, qty }> }`)
 
 ### D. HRM & Employee Portal
 *   **Target Backend Module:** [HRMModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/admin/operations/hrm)
 *   **Screens to Build:**
-    *   `app/(hrm)/attendance.tsx`: Clock in/out button.
-        *   *GPS Guard:* Fetch location. Check if coordinate falls within the branch's geofence boundary coordinates.
-        *   *Selfie Verification:* Optional camera capture during punch-in.
-    *   `app/(hrm)/leaves.tsx`: View remaining leave quotas; submit a request (date picker, reason, document attachment).
-    *   `app/(hrm)/payroll.tsx`: View monthly salary slips, history, and tax deductions.
+    1.  `app/(hrm)/attendance.tsx` (Geofenced Punch-Clock)
+        *   **UI Layout**: Current timestamp display. Active location coordinate checker widget. Displays status indicators (e.g. "Inside Branch Boundary" in green or "Outside Geofence" in red). A single large button for "Punch In" / "Punch Out". Camera capture popup for visual identity verification.
+        *   **API Mapping**: `POST /admin/operations/hrm/attendance/punch` (body: `{ type: 'IN' | 'OUT', lat, lng, timestamp, selfieUrl }`)
+        *   **State & Storage**: Requires location permissions. Checks radius limits against branch coordinates retrieved from the user profiles payload.
+    2.  `app/(hrm)/leaves.tsx` (Leave Tracker & Requests)
+        *   **UI Layout**: Grid displaying current balances (Sick, Casual, Annual leaves). List of past request cards showing approval states. A floating "Request Leave" button opening a form with date selection calendars, type dropdowns, reason text fields, and document upload triggers.
+        *   **API Mapping**:
+            *   Get summary: `GET /admin/operations/hrm/leaves/summary`
+            *   Submit request: `POST /admin/operations/hrm/leaves/request` (supports multipart/form-data for PDF attachments)
+    3.  `app/(hrm)/payroll.tsx` (Monthly Payslips)
+        *   **UI Layout**: Simple lists of monthly payroll runs. Tap a record to open an inline PDF viewer showing detailed calculations (Basic pay, overtime bonuses, tax deductions, provident fund entries).
+        *   **API Mapping**: `GET /admin/operations/hrm/payroll/payslips`
 
 ### E. Consumer eCommerce Storefront App
-To build a customer-facing shopping application, we integrate with the customer-scoped storefront endpoints in the backend modular monolith.
 *   **Target Backend Modules:** [StoreCartModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/store/cart), [StoreReturnModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/store/return), [ShippingAddressModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/store/shipping-address), [StoreWalletModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/store/wallet), [WishlistModule](file:///home/gowtamkumar/projects/eCommerce-multi-store-saas-erp/server/src/modules/store/wishlist)
 *   **Screens to Build:**
-    *   `app/(storefront)/home.tsx`: Landing page with promotional carousels, categorized grids, and highlighted campaigns/coupons.
-    *   `app/(storefront)/search.tsx`: Full-catalog search, filtering by brand/price, and sorting options.
-    *   `app/(storefront)/product/[id].tsx`: Product page with image gallery, variant swatches (size, color), description, and stock status.
-    *   `app/(storefront)/cart.tsx`: Add/remove items, update quantity, and apply coupon discount codes.
-    *   `app/(storefront)/checkout.tsx`: Choose shipping address, select delivery courier, and interface with online payment gateways.
-    *   `app/(storefront)/profile.tsx`: Edit shipping addresses, view wallet/loyalty points balance, track orders, and request returns.
-*   **Multi-Tenant White-Labeling Strategy:**
-    *   Unlike the staff app where the user inputs the workspace subdomain, the consumer app is built and branded per store.
-    *   Store variables (e.g. `STORE_ID`) are embedded at build-time using Expo Config Plugins or `.env` files.
-    *   The API client automatically appends the `x-store-id` header to lock all requests to the specific store's dataset.
+    1.  `app/(storefront)/home.tsx` (Home Feed & Marketing)
+        *   **UI Layout**: Auto-scrolling image sliders for campaigns/banners. Horizontal scrolling categories bubbles. Product grids with card layouts showing pricing, discounts, ratings, and a quick-add cart button.
+        *   **API Mapping**: `GET /store/feed`
+        *   **State & Storage**: Prefetches catalog indexes using React Query to achieve zero-latency navigation.
+    2.  `app/(storefront)/search.tsx` (Catalog Browsing & Filters)
+        *   **UI Layout**: Sticky search bar, category chips, and a filter sheet slider (options for Brand, Price Range sliders, and Rating counts).
+        *   **API Mapping**: `GET /store/catalog/products?search=:search&category=:cat&brand=:brand&priceMin=:min&priceMax=:max`
+    3.  `app/(storefront)/product/[id].tsx` (Product Details & Variants)
+        *   **UI Layout**: Large image carousels with zoom. Name, description, and ratings grids. Variant swatches (sizes, color selections). Add-to-cart buttons with quantity counters.
+        *   **API Mapping**: `GET /store/catalog/products/:id`
+        *   **State & Storage**: Keeps a list of recently viewed product IDs locally in MMKV.
+    4.  `app/(storefront)/cart.tsx` (Shopping Cart Manager)
+        *   **UI Layout**: List of items, variant details, subtotal summary cards, coupon code validator inputs, and checkout transition buttons.
+        *   **API Mapping**:
+            *   Add Item: `POST /store/cart/items`
+            *   Modify Quantity: `PATCH /store/cart/items/:itemId` (body: `{ quantity }`)
+            *   Delete: `DELETE /store/cart/items/:itemId`
+        *   **State & Storage**: Syncs cart contents to backend database when authenticated, otherwise falls back to a local cart state in Zustand.
+    5.  `app/(storefront)/checkout.tsx` (Address & Courier Gateway)
+        *   **UI Layout**: Selected shipping address cards, courier option radio buttons, split shipping summaries, online payment gateway modules (e.g. Stripe card fields), and final checkout submission buttons.
+        *   **API Mapping**: `POST /store/orders/checkout` (body: `{ addressId, courierId, paymentMethod, couponCode }`)
+    6.  `app/(storefront)/profile.tsx` (User Account & Ledgers)
+        *   **UI Layout**: Account avatar header. Cards displaying Wallet Balance (with top-up prompts) and Loyalty Points. Scrollable list menus for Order History, Return Request logs, and Address book controls.
+        *   **API Mapping**:
+            *   Wallet status: `GET /store/wallet/balance`
+            *   Order history: `GET /store/orders/history`
+            *   Request returns: `POST /store/returns/request`
 
 ---
 
