@@ -94,14 +94,48 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   }, []);
 
   const handleAiContentApply = useCallback((result: ProductContentResult) => {
-    setFormData((prev) => ({
-      ...prev,
-      shortDescription: result.shortDescription || prev.shortDescription,
-      description: result.description || prev.description,
-      metaTitle: result.seoTitle || prev.metaTitle,
-      metaDescription: result.seoDescription || prev.metaDescription,
-    }));
-  }, []);
+    setFormData((prev) => {
+      let matchedCategoryId = prev.categoryId;
+      if (result.suggestedCategory) {
+        const sug = result.suggestedCategory.toLowerCase();
+        const match = categories.find(
+          (c) => c.name.toLowerCase() === sug || c.name.toLowerCase().includes(sug) || sug.includes(c.name.toLowerCase())
+        );
+        if (match) matchedCategoryId = match.id;
+      }
+
+      let matchedBrandId = prev.brandId;
+      if (result.suggestedBrand) {
+        const sug = result.suggestedBrand.toLowerCase();
+        const match = brands.find(
+          (b) => b.name.toLowerCase() === sug || b.name.toLowerCase().includes(sug) || sug.includes(b.name.toLowerCase())
+        );
+        if (match) matchedBrandId = match.id;
+      }
+
+      const newName = result.title || prev.name;
+
+      return {
+        ...prev,
+        name: newName,
+        slug: result.title ? generateSlug(result.title) : (prev.slug || generateSlug(prev.name)),
+        sku: result.sku || prev.sku,
+        barcode: result.barcode || prev.barcode,
+        price: result.price !== undefined ? result.price.toString() : prev.price,
+        wholesalePrice: result.wholesalePrice !== undefined ? result.wholesalePrice.toString() : prev.wholesalePrice,
+        averageCost: result.averageCost !== undefined ? result.averageCost.toString() : prev.averageCost,
+        lowStockThreshold: result.lowStockThreshold !== undefined ? result.lowStockThreshold.toString() : prev.lowStockThreshold,
+        shortDescription: result.shortDescription || prev.shortDescription,
+        description: result.description || prev.description,
+        metaTitle: result.seoTitle || prev.metaTitle,
+        metaDescription: result.seoDescription || prev.metaDescription,
+        categoryId: matchedCategoryId,
+        brandId: matchedBrandId,
+        faqs: result.faqs || prev.faqs,
+        faqSource: result.faqs && result.faqs.length > 0 ? 'manual' : prev.faqSource,
+      };
+    });
+  }, [categories, brands, generateSlug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

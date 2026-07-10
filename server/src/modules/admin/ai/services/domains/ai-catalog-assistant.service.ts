@@ -40,7 +40,27 @@ Return exactly this JSON shape:
   "description": "string (2-4 paragraphs, HTML allowed with p/ul/li tags only)",
   "seoTitle": "string (max 60 chars)",
   "seoDescription": "string (max 155 chars)",
-  "tags": ["tag1", "tag2", "tag3"]
+  "tags": ["tag1", "tag2", "tag3"],
+  "sku": "string (suggested product SKU in uppercase, e.g. HP-WIRELESS-BLK)",
+  "barcode": "string (suggested 13-digit EAN barcode)",
+  "price": number (suggested realistic retail price, e.g. 99.99),
+  "wholesalePrice": number (suggested wholesale price, e.g. 59.99),
+  "averageCost": number (suggested average cost/COGS, e.g. 45.00),
+  "lowStockThreshold": number (suggested low stock alert threshold, e.g. 5),
+  "suggestedCategory": "string (suggested product category name, e.g. Electronics)",
+  "suggestedBrand": "string (suggested product brand name, e.g. Sony)",
+  "faqs": [
+    {
+      "question": "string (common customer question about this product)",
+      "answer": "string (clear answer)",
+      "order": 1
+    },
+    {
+      "question": "string",
+      "answer": "string",
+      "order": 2
+    }
+  ]
 }`
 
     const result = await this.base.complete(
@@ -64,6 +84,15 @@ Return exactly this JSON shape:
       seoTitle: dto.productName,
       seoDescription: '',
       tags: [],
+      sku: '',
+      barcode: '',
+      price: 0,
+      wholesalePrice: 0,
+      averageCost: 0,
+      lowStockThreshold: 5,
+      suggestedCategory: '',
+      suggestedBrand: '',
+      faqs: [],
     })
   }
 
