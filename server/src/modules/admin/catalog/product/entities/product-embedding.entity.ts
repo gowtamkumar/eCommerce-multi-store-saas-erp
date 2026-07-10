@@ -27,6 +27,7 @@ export const vectorTransformer: ValueTransformer = {
 
 @Entity('product_embeddings')
 @Index(['storeId'])
+@Index(['storeId', 'productId'], { unique: true })
 export class ProductEmbeddingEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
