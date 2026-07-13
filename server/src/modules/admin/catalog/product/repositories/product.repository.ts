@@ -6,6 +6,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, FindManyOptions, In, Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
+import { ProductVariantEntity } from '../entities/variant.entity'
 
 @Injectable()
 export class ProductRepository extends BaseStoreRepository<ProductEntity> {
@@ -128,11 +129,54 @@ export class ProductRepository extends BaseStoreRepository<ProductEntity> {
       }
     }
 
-    return await query
+    const [products, total] = await query
       .orderBy(this.getSortOptions(filterDto.sort))
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount()
+
+    if (filterDto.includeVariants === 'true') {
+      await this.attachVariants(products, storeId)
+    }
+
+    return [products, total]
+  }
+
+  /**
+   * Load variants in a second query so list pagination/count stays correct
+   * (joining variants would duplicate product rows in getManyAndCount).
+   */
+  private async attachVariants(products: ProductEntity[], storeId: string): Promise<void> {
+    if (!products.length) return
+
+    const productIds = products.map((p) => p.id)
+    const variants = await this.repo.manager.getRepository(ProductVariantEntity).find({
+      where: { productId: In(productIds), storeId },
+      select: {
+        id: true,
+        productId: true,
+        sku: true,
+        barcode: true,
+        price: true,
+        averageCost: true,
+        wholesalePrice: true,
+        isDefault: true,
+        images: true,
+        combination: true,
+        lowStockThreshold: true,
+      },
+    })
+
+    const byProduct = new Map<string, ProductVariantEntity[]>()
+    for (const variant of variants) {
+      const list = byProduct.get(variant.productId) || []
+      list.push(variant)
+      byProduct.set(variant.productId, list)
+    }
+
+    for (const product of products) {
+      product.variants = byProduct.get(product.id) || []
+    }
   }
 
   async findByIdsWithFilters(
@@ -230,7 +274,11 @@ export class ProductRepository extends BaseStoreRepository<ProductEntity> {
     query.orderBy('array_position(ARRAY[:...orderedIds]::uuid[], product.id)', 'ASC')
     query.setParameter('orderedIds', ids)
 
-    return query.getMany()
+    const products = await query.getMany()
+    if (filterDto.includeVariants === 'true') {
+      await this.attachVariants(products, storeId)
+    }
+    return products
   }
 
   async getPriceRange(storeId: string, categoryId?: string) {

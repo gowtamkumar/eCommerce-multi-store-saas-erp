@@ -1,33 +1,33 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
+import { DiscountType } from '@/lib/enums/discount-type.enum';
 import { ReviewStatus } from '@/lib/enums/review-status.enum';
+import { calculatePricing } from '@/lib/utils';
 import { fetchAPI } from '@/services/api';
 import { Product, Review } from '@/types/product';
 import {
+    AlertCircle,
     ArrowLeft,
     Calendar,
+    CheckCircle2,
+    ChevronRight,
     Coins,
     Edit,
-    Package,
-    Tag,
-    Star,
-    CheckCircle2,
-    XCircle,
-    AlertCircle,
-    Layers,
     Eye,
     Image as ImageIcon,
-    ChevronRight,
+    Info,
+    Layers,
+    Package,
     ShieldCheck,
+    Star,
+    Tag,
     TrendingDown,
-    Info
+    XCircle
 } from 'lucide-react';
-import { calculatePricing } from '@/lib/utils';
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { DiscountType } from '@/lib/enums/discount-type.enum';
 
 export default function ProductReviewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);

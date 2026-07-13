@@ -14,6 +14,7 @@ export default function PurchaseOrderForm() {
     const currencySymbol = selectedCurrency?.symbol || '$';
     const {
         loading,
+        searchingProducts,
         suppliers,
         searchProduct,
         setSearchProduct,
@@ -153,7 +154,7 @@ export default function PurchaseOrderForm() {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Scan or type products to include in order..."
+                                placeholder="Search by product name, SKU, or variant (size/color)..."
                                 value={searchProduct}
                                 onChange={(e) => setSearchProduct(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-medium text-sm"
@@ -161,7 +162,11 @@ export default function PurchaseOrderForm() {
 
                             {searchProduct && (
                                 <div className="absolute z-50 w-full mt-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[400px] overflow-y-auto p-2 scrollbar-none animate-in slide-in-from-top-2 duration-300">
-                                    {filteredProductList.length === 0 ? (
+                                    {searchingProducts ? (
+                                        <div className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" /> Searching catalog...
+                                        </div>
+                                    ) : filteredProductList.length === 0 ? (
                                         <div className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No matches found</div>
                                     ) : (
                                         filteredProductList.flatMap((p: any) => {
@@ -190,7 +195,7 @@ export default function PurchaseOrderForm() {
                                                                     </span>
                                                                 ))}
                                                             </div>
-                                                            <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {v.sku} | Stock: {v.stock}</div>
+                                                            <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {v.sku} | Stock: {v.stock ?? 0}</div>
                                                         </div>
                                                         <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <Plus className="w-4 h-4 text-brand-500" />
@@ -213,7 +218,7 @@ export default function PurchaseOrderForm() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-slate-900 dark:text-white text-sm">{p.name}</div>
-                                                        <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {p.slug} | Stock: {p.stock}</div>
+                                                        <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {p.sku || p.slug} | Stock: {p.stock ?? 0}</div>
                                                     </div>
                                                     <div className="ml-auto w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <Plus className="w-4 h-4 text-brand-500" />
