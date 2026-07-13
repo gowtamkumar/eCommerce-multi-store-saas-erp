@@ -1,7 +1,8 @@
 'use client';
 
+import { useSettings } from '@/hooks/SettingsContext';
 import { ProductAttribute, ProductVariant } from '@/types/product';
-import { ChevronDown, ChevronUp, DollarSign, Layers, Package, Plus, Star, Tag, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Layers, Package, Plus, Star, Tag, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { fetchAPI } from '@/services/api';
@@ -15,6 +16,7 @@ interface ProductVariantsProps {
 }
 
 export default function ProductVariants({ attributes, variants, basePrice, stock, onChange }: ProductVariantsProps) {
+  const { selectedCurrency } = useSettings();
   const [localAttributes, setLocalAttributes] = useState<ProductAttribute[]>(attributes);
   const [localVariants, setLocalVariants] = useState<ProductVariant[]>(variants);
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true);
@@ -268,7 +270,9 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
                     <div className="w-24">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Retail Price</label>
                       <div className="relative">
-                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                          {selectedCurrency.symbol}
+                        </span>
                         <input
                           type="number"
                           placeholder={basePrice.toString()}
@@ -283,7 +287,9 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
                     <div className="w-24">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">B2B Price</label>
                       <div className="relative">
-                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                          {selectedCurrency.symbol}
+                        </span>
                         <input
                           type="number"
                           placeholder="0"

@@ -36,4 +36,9 @@ export class FilterProductDto extends PaginationDto {
   @IsOptional()
   @IsString()
   lowStock?: string
+
+  /** When "true", attach variants to each product (for PO / procurement pickers). */
+  @IsOptional()
+  @IsString()
+  includeVariants?: string
 }

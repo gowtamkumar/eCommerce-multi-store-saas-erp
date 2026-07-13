@@ -1,19 +1,19 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
-import { DataSource } from 'typeorm'
+import { PaginationDto } from '@/common/dto/pagination.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
-import { InventoryLedgerRepository } from './inventory-ledger.repository'
-import { InventoryLedgerEntity } from './entities/inventory-ledger.entity'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { PaginationDto } from '@/common/dto/pagination.dto'
-import { CacheService } from '../../infra/cache/cache.service'
-import { CogsService } from '@/modules/admin/operations/finance/accounting/services/cogs.service'
 import { AccountingIntegrationService } from '@/modules/admin/operations/finance/accounting/services/accounting-integration.service'
-import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
-import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { CogsService } from '@/modules/admin/operations/finance/accounting/services/cogs.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { DataSource } from 'typeorm'
+import { CacheService } from '../../infra/cache/cache.service'
+import { InventoryLedgerEntity } from './entities/inventory-ledger.entity'
+import { InventoryLedgerRepository } from './inventory-ledger.repository'
 
 @Injectable()
 export class InventoryLedgerService {
@@ -123,12 +123,7 @@ export class InventoryLedgerService {
               const newAvgCost =
                 (currentStock * currentAvgCost + incomingQty * incomingCost) /
                 (currentStock + incomingQty)
-              await this.variantRepository.updateAverageCost(
-                dto.variantId,
-                storeId,
-                newAvgCost,
-                em,
-              )
+              await this.variantRepository.updateAverageCost(dto.variantId, storeId, newAvgCost, em)
             }
           } else {
             const currentAvgCost = Number(product.averageCost || 0)
@@ -203,14 +198,9 @@ export class InventoryLedgerService {
           },
           storeId,
         )
-        this.mailService.sendLowStockAlertEmail(
-          storeId,
-          product.name,
-          skuText,
-          newGlobalStock,
-          threshold,
-          true,
-        ).catch((e) => this.logger.error(`Failed to send out of stock email: ${e.message}`))
+        this.mailService
+          .sendLowStockAlertEmail(storeId, product.name, skuText, newGlobalStock, threshold, true)
+          .catch((e) => this.logger.error(`Failed to send out of stock email: ${e.message}`))
       }
       // Low Stock Transition
       else if (
@@ -228,14 +218,9 @@ export class InventoryLedgerService {
           },
           storeId,
         )
-        this.mailService.sendLowStockAlertEmail(
-          storeId,
-          product.name,
-          skuText,
-          newGlobalStock,
-          threshold,
-          false,
-        ).catch((e) => this.logger.error(`Failed to send low stock email: ${e.message}`))
+        this.mailService
+          .sendLowStockAlertEmail(storeId, product.name, skuText, newGlobalStock, threshold, false)
+          .catch((e) => this.logger.error(`Failed to send low stock email: ${e.message}`))
       }
     } catch (notifError: any) {
       this.logger.error(`Failed to trigger inventory notification: ${notifError.message}`)
@@ -263,13 +248,7 @@ export class InventoryLedgerService {
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.repository.findByStore(
-          storeId,
-          page,
-          limit,
-          search,
-          type,
-        )
+        const [items, total] = await this.repository.findByStore(storeId, page, limit, search, type)
         return {
           items,
           total,
@@ -300,13 +279,13 @@ export class InventoryLedgerService {
     this.logger.log(`${this.getStockSummary.name} Service Called`)
     const storeId = ctx.storeId
 
-    const cacheKey = `inventory:summary:${warehouseId || 'global'}`
+    const cacheKey = `inventory:summary:with-variants:${warehouseId || 'global'}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
         const [products] = await this.productRepository.findAllWithFilters(
-          { limit: 1000 },
+          { limit: 1000, includeVariants: 'true' },
           storeId,
         )
 

@@ -20,6 +20,15 @@ export interface ProductContentResult {
   seoTitle: string;
   seoDescription: string;
   tags: string[];
+  sku?: string;
+  barcode?: string;
+  price?: number;
+  wholesalePrice?: number;
+  averageCost?: number;
+  lowStockThreshold?: number;
+  suggestedCategory?: string;
+  suggestedBrand?: string;
+  faqs?: Array<{ question: string; answer: string; order: number }>;
 }
 
 export interface CampaignCopyResult {

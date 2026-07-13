@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Image from '@tiptap/extension-image';
 import { Table } from '@tiptap/extension-table';
 import { TableCell } from '@tiptap/extension-table-cell';
@@ -40,6 +41,12 @@ export default function RichEditor({ content, onChange, className }: RichEditorP
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
 
   if (!editor) {
     return null;

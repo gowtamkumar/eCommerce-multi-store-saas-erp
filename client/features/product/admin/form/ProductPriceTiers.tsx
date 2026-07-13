@@ -54,8 +54,11 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
     }
   };
 
-  const handleAddTier = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddTier = async () => {
+    if (!selectedPriceBook) {
+      toast.error('Create a Price Book first (Admin → Price Books)');
+      return;
+    }
     if (!price || parseFloat(price) <= 0) {
       toast.error('Price must be greater than 0');
       return;
@@ -82,16 +85,14 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
 
       if (res.success) {
         toast.success('Price tier added');
-        // Reset inputs
         setPrice('');
         setMinQty('1');
-        // Reload list
         const tiersRes = await fetchAPI(`/pricing/product-prices/${productId}`);
         if (tiersRes.success) setTiers(tiersRes.data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to add price tier', error);
-      toast.error('Failed to add price tier');
+      toast.error(error?.message || 'Failed to add price tier');
     } finally {
       setAdding(false);
     }
@@ -148,14 +149,24 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
               Add Pricing Bracket
             </h4>
             
-            <form onSubmit={handleAddTier} className="space-y-4">
+            {/* Must not be a <form>: this component lives inside ProductForm's <form>,
+                and nested forms are invalid HTML — the browser ignores the inner form
+                and the submit button updates the product instead of adding a tier. */}
+            <div
+              className="space-y-4"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleAddTier();
+                }
+              }}
+            >
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Price Book</label>
                 <select
                   value={selectedPriceBook}
                   onChange={(e) => setSelectedPriceBook(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                  required
                 >
                   {priceBooks.map(pb => (
                     <option key={pb.id} value={pb.id}>
@@ -166,6 +177,11 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
                     <option disabled value="">No active Price Books available</option>
                   )}
                 </select>
+                {priceBooks.length === 0 && (
+                  <p className="mt-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                    Create a Price Book under Admin → Price Books first.
+                  </p>
+                )}
               </div>
 
               {variants.length > 0 && (
@@ -195,7 +211,6 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
                     value={minQty}
                     onChange={(e) => setMinQty(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm outline-none transition-all font-mono"
-                    required
                   />
                 </div>
                 <div>
@@ -210,13 +225,13 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm outline-none transition-all font-mono"
-                    required
                   />
                 </div>
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={handleAddTier}
                 disabled={adding || priceBooks.length === 0}
                 className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold transition-all shadow-md text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
@@ -227,7 +242,7 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
                 )}
                 Add Pricing Bracket
               </button>
-            </form>
+            </div>
           </div>
 
           {/* List of Active Price Tiers */}

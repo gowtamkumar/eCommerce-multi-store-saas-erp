@@ -465,22 +465,14 @@ export class ProductService {
   async findOneProduct(id: string, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.findOneProduct.name} Service Called`)
     const storeId = ctx.storeId
-    const cacheKey = `product:${id}`
 
-    // Use rememberCache for consistent error handling and atomic get/set
-    const product = await this.cache.rememberCache(
-      cacheKey,
-      async () => {
-        const p = await this.productRepository.findByIdWithRelations(id, storeId)
-        if (!p) throw new NotFoundException('Product not found')
-        const populated = await this.populateProductsStock([p], storeId)
-        return populated[0]
-      },
-      300, // 5 minutes
-      storeId,
-    )
+    // Do not cache single-product reads: stock is derived from the inventory ledger
+    // and must stay fresh for admin review/edit (GRN/adjustments do not share this key).
+    const product = await this.productRepository.findByIdWithRelations(id, storeId)
+    if (!product) throw new NotFoundException('Product not found')
 
-    return await this.attachPromotions(product, ctx)
+    const populated = await this.populateProductsStock([product], storeId)
+    return await this.attachPromotions(populated[0], ctx)
   }
 
   async createProduct(

@@ -1,18 +1,19 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { Printer, QrCode, Search, Trash2, Settings, Plus, Minus, X, Info } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { Printer, QrCode, Search, Trash2, Settings, Plus, Minus, X, Info, Loader2 } from 'lucide-react';
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import { Product, ProductVariant } from '@/types/product';
 import toast from 'react-hot-toast';
 import { useSettings } from '@/hooks/SettingsContext';
 import { formatCurrency } from '@/lib/utils';
+import { fetchAPI } from '@/services/api';
 
 interface BarcodeLabelModalProps {
   isOpen: boolean;
   onClose: () => void;
-  products: Product[];
+  products?: Product[];
   initialProduct?: Product | null;
 }
 
@@ -24,6 +25,42 @@ interface SelectedItem {
 
 type TemplateSize = '38x25' | '50x30' | 'A4-24';
 type CodeFormat = 'BARCODE' | 'QR' | 'BOTH';
+
+function buildSearchResults(
+  catalog: Product[],
+  query: string,
+): { product: Product; variant?: ProductVariant }[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 1) return [];
+
+  const results: { product: Product; variant?: ProductVariant }[] = [];
+
+  catalog.forEach((p) => {
+    const matchProduct =
+      p.name?.toLowerCase().includes(q) ||
+      (p.sku && p.sku.toLowerCase().includes(q)) ||
+      (p.barcode && p.barcode.toLowerCase().includes(q)) ||
+      (p.slug && p.slug.toLowerCase().includes(q));
+
+    if (p.variants && p.variants.length > 0) {
+      p.variants.forEach((v) => {
+        const matchVariant =
+          (v.sku && v.sku.toLowerCase().includes(q)) ||
+          (v.barcode && v.barcode.toLowerCase().includes(q)) ||
+          Object.values(v.combination || {}).some((val) =>
+            String(val).toLowerCase().includes(q),
+          );
+        if (matchProduct || matchVariant) {
+          results.push({ product: p, variant: v });
+        }
+      });
+    } else if (matchProduct) {
+      results.push({ product: p });
+    }
+  });
+
+  return results.slice(0, 40);
+}
 
 function QRLabelImage({ value }: { value: string }) {
   const [src, setSrc] = useState('');
@@ -67,7 +104,7 @@ function BarcodeImage({ value }: { value: string }) {
 export default function BarcodeLabelModal({
   isOpen,
   onClose,
-  products,
+  products: fallbackProducts = [],
   initialProduct,
 }: BarcodeLabelModalProps) {
   const { selectedCurrency } = useSettings();
@@ -76,6 +113,9 @@ export default function BarcodeLabelModal({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchRequestId = useRef(0);
 
   // Print Config State
   const [templateSize, setTemplateSize] = useState<TemplateSize>('50x30');
@@ -86,56 +126,89 @@ export default function BarcodeLabelModal({
   const [showStoreName, setShowStoreName] = useState(true);
   const [storeName, setStoreName] = useState('My Enterprise ERP');
 
+  const loadCatalog = useCallback(async (query = '') => {
+    const requestId = ++searchRequestId.current;
+    setSearching(true);
+    try {
+      const params = new URLSearchParams({
+        limit: '100',
+        includeVariants: 'true',
+      });
+      if (query.trim()) params.set('q', query.trim());
+
+      const res = await fetchAPI(`/products?${params.toString()}`);
+      if (requestId !== searchRequestId.current) return;
+
+      setCatalogProducts(Array.isArray(res?.data) ? res.data : []);
+    } catch (error) {
+      console.error('Barcode catalog search failed', error);
+      if (requestId === searchRequestId.current) {
+        setCatalogProducts(fallbackProducts);
+      }
+    } finally {
+      if (requestId === searchRequestId.current) {
+        setSearching(false);
+      }
+    }
+  }, [fallbackProducts]);
+
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    const hydrateInitial = async () => {
       if (initialProduct) {
-        // Pre-populate with initial product
+        let product = initialProduct;
+        // Product list payloads omit variants — fetch full product when needed
+        if (!product.variants?.length) {
+          try {
+            const res = await fetchAPI(`/products/${product.id}`);
+            if (res.success && res.data) product = res.data;
+          } catch (error) {
+            console.error('Failed to load product variants for labels', error);
+          }
+        }
+
         const items: SelectedItem[] = [];
-        if (initialProduct.variants && initialProduct.variants.length > 0) {
-          initialProduct.variants.forEach((v) => {
-            items.push({ product: initialProduct, variant: v, quantity: 1 });
+        if (product.variants && product.variants.length > 0) {
+          product.variants.forEach((v) => {
+            items.push({ product, variant: v, quantity: 1 });
           });
         } else {
-          items.push({ product: initialProduct, quantity: 1 });
+          items.push({ product, quantity: 1 });
         }
         setSelectedItems(items);
       } else {
         setSelectedItems([]);
       }
       setSearchQuery('');
-    }
-  }, [isOpen, initialProduct]);
+      setShowDropdown(false);
+      void loadCatalog('');
+    };
+
+    void hydrateInitial();
+  }, [isOpen, initialProduct, loadCatalog]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      void loadCatalog(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, isOpen, loadCatalog]);
+
+  const searchResults = useMemo(
+    () => buildSearchResults(catalogProducts, searchQuery),
+    [catalogProducts, searchQuery],
+  );
 
   if (!isOpen) return null;
 
-  // Search filter
-  const searchResults: { product: Product; variant?: ProductVariant }[] = [];
-  if (searchQuery.trim().length > 1) {
-    const query = searchQuery.toLowerCase();
-    products.forEach((p) => {
-      const matchProduct =
-        p.name.toLowerCase().includes(query) ||
-        (p.sku && p.sku.toLowerCase().includes(query));
-
-      if (p.variants && p.variants.length > 0) {
-        p.variants.forEach((v) => {
-          const matchVariant =
-            v.sku.toLowerCase().includes(query) ||
-            (v.barcode && v.barcode.toLowerCase().includes(query)) ||
-            Object.values(v.combination).some((val) =>
-              val.toLowerCase().includes(query)
-            );
-          if (matchProduct || matchVariant) {
-            searchResults.push({ product: p, variant: v });
-          }
-        });
-      } else if (matchProduct) {
-        searchResults.push({ product: p });
-      }
-    });
-  }
-
   const addItem = (product: Product, variant?: ProductVariant) => {
+    if (product.variants && product.variants.length > 0 && !variant) {
+      toast.error('Select a specific variant for this product');
+      return;
+    }
+
     const existing = selectedItems.find(
       (item) =>
         item.product.id === product.id && item.variant?.id === variant?.id
@@ -187,9 +260,7 @@ export default function BarcodeLabelModal({
     const nameVal = item.product.name;
     const priceVal = Number(item.variant?.price ?? item.product.price ?? 0) || 0;
     const variantVal = item.variant
-      ? Object.entries(item.variant.combination)
-          .map(([k, v]) => `${v}`)
-          .join('/')
+      ? Object.values(item.variant.combination || {}).join('/')
       : undefined;
 
     for (let i = 0; i < item.quantity; i++) {
@@ -434,38 +505,48 @@ export default function BarcodeLabelModal({
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Type product name, barcode or SKU to add..."
+                  placeholder="Type product name, barcode, SKU, or variant..."
                   value={searchQuery}
                   onFocus={() => setShowDropdown(true)}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowDropdown(true);
+                  }}
                   className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-bold text-sm shadow-sm"
                 />
 
-                {showDropdown && searchQuery.trim().length > 1 && (
+                {showDropdown && searchQuery.trim().length > 0 && (
                   <div className="absolute z-10 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl p-2 space-y-1">
                     <div className="flex justify-between items-center px-3 py-1 border-b border-slate-50 dark:border-slate-800">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Search Results</span>
-                      <button onClick={() => setShowDropdown(false)} className="text-[10px] font-black text-brand-500">Dismiss</button>
+                      <button type="button" onClick={() => setShowDropdown(false)} className="text-[10px] font-black text-brand-500">Dismiss</button>
                     </div>
-                    {searchResults.length === 0 ? (
+                    {searching ? (
+                      <div className="flex items-center justify-center gap-2 py-4 text-xs text-slate-400 font-semibold">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Searching catalog...
+                      </div>
+                    ) : searchResults.length === 0 ? (
                       <p className="text-xs text-slate-400 text-center py-4 font-semibold">No items match query</p>
                     ) : (
                       searchResults.map(({ product, variant }, idx) => (
                         <button
                           key={`${product.id}-${variant?.id || 'base'}-${idx}`}
+                          type="button"
                           onClick={() => addItem(product, variant)}
                           className="w-full text-left p-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 rounded-xl flex items-center justify-between gap-4 transition-all"
                         >
                           <div>
                             <p className="text-xs font-black text-slate-800 dark:text-white">{product.name}</p>
-                            {variant && (
+                            {variant ? (
                               <p className="text-[10px] font-mono text-slate-400 mt-0.5">
-                                Variant: {Object.entries(variant.combination).map(([k, v]) => `${k}:${v}`).join(', ')}
+                                Variant: {Object.entries(variant.combination || {}).map(([k, v]) => `${k}:${v}`).join(', ')}
                               </p>
+                            ) : (
+                              <p className="text-[10px] font-mono text-slate-400 mt-0.5">Simple product</p>
                             )}
                           </div>
                           <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded text-[9px] font-mono font-bold">
-                            {variant?.sku || product.sku}
+                            {variant?.sku || product.sku || product.barcode || '—'}
                           </span>
                         </button>
                       ))
@@ -595,7 +676,7 @@ export default function BarcodeLabelModal({
                         <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.product.name}</p>
                         {item.variant ? (
                           <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">
-                            {Object.entries(item.variant.combination).map(([k, v]) => `${k}:${v}`).join(', ')}
+                            {Object.entries(item.variant.combination || {}).map(([k, v]) => `${k}:${v}`).join(', ')}
                           </p>
                         ) : (
                           <p className="text-[10px] text-slate-400 font-mono mt-0.5">Base Product</p>

@@ -22,7 +22,12 @@ export function useInventoryDashboard() {
         try {
             const res = await fetchAPI('/inventory-ledger/stock-summary');
             if (res.success) {
-                setProducts(res.data || []);
+                const list = res.data || [];
+                setProducts(list);
+                // Expand variant products by default so SKUs are visible without an extra click
+                setExpandedIds(new Set(
+                    list.filter((p: ProductStock) => p.hasVariants && p.variants?.length).map((p: ProductStock) => p.id)
+                ));
             }
         } catch (error) {
             console.error('Failed to fetch stock summary', error);

@@ -1,6 +1,7 @@
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { SkipPermissionCheck } from '@/common/decorators/skip-permission-check.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
@@ -46,6 +47,7 @@ export class AdminMediaController {
   }
 
   @Post('presigned-url')
+  @SkipPermissionCheck()
   async getPresignedUrl(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: GetPresignedUrlDto,

@@ -32,6 +32,17 @@ export class GenerateProductContentDto {
   tone?: string
 }
 
+export class ProductFaqResultDto {
+  @ApiProperty()
+  question: string
+
+  @ApiProperty()
+  answer: string
+
+  @ApiProperty()
+  order: number
+}
+
 export class ProductContentResultDto {
   @ApiProperty()
   title: string
@@ -50,4 +61,31 @@ export class ProductContentResultDto {
 
   @ApiProperty({ type: [String] })
   tags: string[]
+
+  @ApiPropertyOptional()
+  sku?: string
+
+  @ApiPropertyOptional()
+  barcode?: string
+
+  @ApiPropertyOptional()
+  price?: number
+
+  @ApiPropertyOptional()
+  wholesalePrice?: number
+
+  @ApiPropertyOptional()
+  averageCost?: number
+
+  @ApiPropertyOptional()
+  lowStockThreshold?: number
+
+  @ApiPropertyOptional()
+  suggestedCategory?: string
+
+  @ApiPropertyOptional()
+  suggestedBrand?: string
+
+  @ApiPropertyOptional({ type: [ProductFaqResultDto] })
+  faqs?: ProductFaqResultDto[]
 }

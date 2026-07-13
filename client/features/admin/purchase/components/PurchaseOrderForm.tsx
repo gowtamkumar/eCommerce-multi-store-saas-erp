@@ -14,17 +14,23 @@ export default function PurchaseOrderForm() {
     const currencySymbol = selectedCurrency?.symbol || '$';
     const {
         loading,
+        searchingProducts,
         suppliers,
         searchProduct,
         setSearchProduct,
         formData,
         setFormData,
+        errors,
+        touched,
+        clearFieldError,
         totalAmount,
         filteredProductList,
+        canSubmit,
         addItem,
         removeItem,
         updateItem,
         handleSubmit,
+        lineKey,
     } = usePurchaseOrderForm();
 
     const poSummary = useMemo(
@@ -49,37 +55,62 @@ export default function PurchaseOrderForm() {
         {
             key: 'quantity',
             header: 'Volume',
-            className: 'w-24',
+            className: 'w-28',
             cell: (item) => {
                 const idx = formData.items.findIndex(x => x.productId === item.productId && x.variantId === item.variantId);
+                const key = lineKey(item);
+                const qtyError = errors.lines?.[key]?.quantity;
                 return (
-                    <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
-                        className="w-20 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-2 text-center focus:ring-2 focus:ring-brand-500 outline-none font-bold text-sm"
-                    />
+                    <div>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={item.quantity}
+                            onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
+                            aria-invalid={!!qtyError}
+                            className={`w-20 bg-slate-50 dark:bg-slate-900/50 border rounded-xl px-2 py-2 text-center focus:ring-2 focus:ring-brand-500 outline-none font-bold text-sm ${
+                                qtyError
+                                    ? 'border-rose-400 dark:border-rose-500 ring-1 ring-rose-200'
+                                    : 'border-slate-200 dark:border-slate-700'
+                            }`}
+                        />
+                        {qtyError && (
+                            <p className="text-[9px] text-rose-500 font-bold mt-1 leading-tight max-w-[6rem]">{qtyError}</p>
+                        )}
+                    </div>
                 );
             },
         },
         {
             key: 'unitPrice',
             header: 'Acquisition Price',
-            className: 'w-32',
+            className: 'w-36',
             cell: (item) => {
                 const idx = formData.items.findIndex(x => x.productId === item.productId && x.variantId === item.variantId);
+                const key = lineKey(item);
+                const priceError = errors.lines?.[key]?.unitPrice;
                 return (
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">{currencySymbol}</span>
-                        <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.unitPrice}
-                            onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)}
-                            className="w-32 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl pl-6 pr-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none font-mono text-sm font-bold"
-                        />
+                    <div>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">{currencySymbol}</span>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={item.unitPrice}
+                                onChange={(e) => updateItem(idx, 'unitPrice', e.target.value)}
+                                aria-invalid={!!priceError}
+                                className={`w-32 bg-slate-50 dark:bg-slate-900/50 border rounded-xl pl-6 pr-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none font-mono text-sm font-bold ${
+                                    priceError
+                                        ? 'border-rose-400 dark:border-rose-500 ring-1 ring-rose-200'
+                                        : 'border-slate-200 dark:border-slate-700'
+                                }`}
+                            />
+                        </div>
+                        {priceError && (
+                            <p className="text-[9px] text-rose-500 font-bold mt-1 leading-tight max-w-[8rem]">{priceError}</p>
+                        )}
                     </div>
                 );
             },
@@ -88,7 +119,12 @@ export default function PurchaseOrderForm() {
             key: 'subtotal',
             header: 'Subtotal',
             className: 'text-right font-black text-slate-900 dark:text-white font-mono',
-            cell: (item) => formatPrice(item.quantity * item.unitPrice),
+            cell: (item) => {
+                const qty = Number(item.quantity);
+                const price = Number(item.unitPrice);
+                if (!Number.isFinite(qty) || !Number.isFinite(price)) return '—';
+                return formatPrice(qty * price);
+            },
         },
         {
             key: 'actions',
@@ -107,10 +143,10 @@ export default function PurchaseOrderForm() {
                 );
             },
         },
-    ], [formData.items, updateItem, removeItem, formatPrice]);
+    ], [formData.items, updateItem, removeItem, formatPrice, currencySymbol, errors.lines, lineKey]);
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-10 pb-32 pt-4 px-4">
+        <form onSubmit={handleSubmit} noValidate className="max-w-6xl mx-auto space-y-10 pb-32 pt-4 px-4">
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
@@ -128,7 +164,7 @@ export default function PurchaseOrderForm() {
                 <div className="flex items-center gap-3">
                     <button
                         type="submit"
-                        disabled={loading || !formData.supplierId || formData.items.length === 0}
+                        disabled={loading || (touched && !canSubmit)}
                         className="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-2xl shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
@@ -140,7 +176,9 @@ export default function PurchaseOrderForm() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Main – Items */}
                 <div className="lg:col-span-3 space-y-8">
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+                    <div className={`bg-white dark:bg-slate-800 rounded-3xl shadow-sm border p-8 ${
+                        errors.items ? 'border-rose-300 dark:border-rose-700' : 'border-slate-100 dark:border-slate-700'
+                    }`}>
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 flex items-center gap-3">
                             <span className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
                                 <Package className="w-4 h-4 text-brand-500" />
@@ -149,11 +187,11 @@ export default function PurchaseOrderForm() {
                         </h3>
 
                         {/* Product Search */}
-                        <div className="relative mb-8 group">
+                        <div className="relative mb-4 group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Scan or type products to include in order..."
+                                placeholder="Search by product name, SKU, or variant (size/color)..."
                                 value={searchProduct}
                                 onChange={(e) => setSearchProduct(e.target.value)}
                                 className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-medium text-sm"
@@ -161,7 +199,11 @@ export default function PurchaseOrderForm() {
 
                             {searchProduct && (
                                 <div className="absolute z-50 w-full mt-3 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 max-h-[400px] overflow-y-auto p-2 scrollbar-none animate-in slide-in-from-top-2 duration-300">
-                                    {filteredProductList.length === 0 ? (
+                                    {searchingProducts ? (
+                                        <div className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" /> Searching catalog...
+                                        </div>
+                                    ) : filteredProductList.length === 0 ? (
                                         <div className="p-8 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">No matches found</div>
                                     ) : (
                                         filteredProductList.flatMap((p: any) => {
@@ -190,7 +232,7 @@ export default function PurchaseOrderForm() {
                                                                     </span>
                                                                 ))}
                                                             </div>
-                                                            <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {v.sku} | Stock: {v.stock}</div>
+                                                            <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {v.sku} | Stock: {v.stock ?? 0}</div>
                                                         </div>
                                                         <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <Plus className="w-4 h-4 text-brand-500" />
@@ -213,7 +255,7 @@ export default function PurchaseOrderForm() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-slate-900 dark:text-white text-sm">{p.name}</div>
-                                                        <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {p.slug} | Stock: {p.stock}</div>
+                                                        <div className="text-[10px] text-slate-500 mt-1 font-mono uppercase">SKU: {p.sku || p.slug} | Stock: {p.stock ?? 0}</div>
                                                     </div>
                                                     <div className="ml-auto w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <Plus className="w-4 h-4 text-brand-500" />
@@ -225,6 +267,10 @@ export default function PurchaseOrderForm() {
                                 </div>
                             )}
                         </div>
+
+                        {errors.items && (
+                            <p className="mb-6 text-xs font-bold text-rose-500">{errors.items}</p>
+                        )}
 
                         {/* Items Table */}
                         <DataTable
@@ -238,6 +284,7 @@ export default function PurchaseOrderForm() {
                                         <ShoppingBag className="w-6 h-6 text-slate-200" strokeWidth={1} />
                                     </div>
                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] italic">No line items added to specification</p>
+                                    <p className="text-xs text-slate-400 mt-2">Search above and add a product or variant to continue</p>
                                 </div>
                             }
                             containerClassName="shadow-none border-none rounded-none"
@@ -264,16 +311,31 @@ export default function PurchaseOrderForm() {
                                 <Truck className="w-3.5 h-3.5 text-brand-500" /> Fulfillment Source
                             </label>
                             <select
-                                required
                                 value={formData.supplierId}
-                                onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
-                                className="w-full px-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-bold text-sm cursor-pointer"
+                                onChange={(e) => {
+                                    setFormData({ ...formData, supplierId: e.target.value });
+                                    clearFieldError('supplierId');
+                                }}
+                                aria-invalid={!!errors.supplierId}
+                                className={`w-full px-4 py-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-bold text-sm cursor-pointer ${
+                                    errors.supplierId
+                                        ? 'border-rose-400 dark:border-rose-500'
+                                        : 'border-slate-200 dark:border-slate-700'
+                                }`}
                             >
                                 <option value="">Select Supplier Entity</option>
                                 {suppliers.map((s: any) => (
                                     <option key={s.id} value={s.id}>{s.name}</option>
                                 ))}
                             </select>
+                            {errors.supplierId && (
+                                <p className="mt-2 text-xs font-bold text-rose-500">{errors.supplierId}</p>
+                            )}
+                            {suppliers.length === 0 && (
+                                <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                                    No suppliers found. Create a supplier before raising a PO.
+                                </p>
+                            )}
                         </div>
 
                         {/* Reference Number */}
@@ -283,11 +345,22 @@ export default function PurchaseOrderForm() {
                             </label>
                             <input
                                 type="text"
-                                required
                                 value={formData.referenceNumber}
-                                onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value })}
-                                className="w-full px-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-mono text-sm font-bold uppercase tracking-wider"
+                                onChange={(e) => {
+                                    setFormData({ ...formData, referenceNumber: e.target.value });
+                                    clearFieldError('referenceNumber');
+                                }}
+                                maxLength={64}
+                                aria-invalid={!!errors.referenceNumber}
+                                className={`w-full px-4 py-4 rounded-2xl border bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-mono text-sm font-bold uppercase tracking-wider ${
+                                    errors.referenceNumber
+                                        ? 'border-rose-400 dark:border-rose-500'
+                                        : 'border-slate-200 dark:border-slate-700'
+                                }`}
                             />
+                            {errors.referenceNumber && (
+                                <p className="mt-2 text-xs font-bold text-rose-500">{errors.referenceNumber}</p>
+                            )}
                         </div>
 
                         {/* Notice */}
