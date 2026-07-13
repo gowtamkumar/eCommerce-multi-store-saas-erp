@@ -49,9 +49,9 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
 
     const fetchProducts = async () => {
         try {
-            const res = await fetchAPI('/products?limit=50');
+            const res = await fetchAPI('/products?limit=50&includeVariants=true');
             if (res.success) {
-                setProducts(res.data.products || []);
+                setProducts(res.data.products || res.data || []);
             }
         } catch (error) {
             console.error('Failed to fetch products', error);

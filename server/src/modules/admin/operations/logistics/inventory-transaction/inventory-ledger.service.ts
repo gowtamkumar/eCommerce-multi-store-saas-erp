@@ -279,12 +279,15 @@ export class InventoryLedgerService {
     this.logger.log(`${this.getStockSummary.name} Service Called`)
     const storeId = ctx.storeId
 
-    const cacheKey = `inventory:summary:${warehouseId || 'global'}`
+    const cacheKey = `inventory:summary:with-variants:${warehouseId || 'global'}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [products] = await this.productRepository.findAllWithFilters({ limit: 1000 }, storeId)
+        const [products] = await this.productRepository.findAllWithFilters(
+          { limit: 1000, includeVariants: 'true' },
+          storeId,
+        )
 
         const sums = await this.repository.getStockSums(storeId, warehouseId)
         const stockMap = new Map<string, number>()
