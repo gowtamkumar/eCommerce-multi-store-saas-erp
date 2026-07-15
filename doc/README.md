@@ -17,6 +17,8 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 | **New Developer** (coding standards) | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
 | **System Architect / reviewer** | [`system-design/erp_master_system_design.md`](system-design/erp_master_system_design.md) |
 | **Engineer tracing a feature end-to-end** | [`system-design/erp_master_dataflow.md`](system-design/erp_master_dataflow.md) |
+| **Mobile app product / feature planning** | [`MOBILE_APP_FEATURE_LIST.md`](MOBILE_APP_FEATURE_LIST.md) |
+| **Mobile app technical blueprint** | [`MOBILE_APP_GUIDE.md`](MOBILE_APP_GUIDE.md) |
 | **Platform Super-Admin** (SaaS Owner) | [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) |
 | **Store Owner / Business CFO** | [`manuals/02_STORE_OWNER_MANUAL.md`](manuals/02_STORE_OWNER_MANUAL.md) |
 | **Store Cashier / POS staff** | [`manuals/03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) |
