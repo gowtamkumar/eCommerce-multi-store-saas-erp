@@ -56,6 +56,7 @@ export class PurchaseRequisitionRepository extends BaseStoreRepository<PurchaseR
       // include items and product relation so list responses contain item details/counts
       .leftJoinAndSelect('pr.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
+      .leftJoinAndSelect('items.variant', 'variant')
       .where('pr.storeId = :storeId', { storeId })
       .orderBy('pr.createdAt', 'DESC')
       .skip((page - 1) * limit)
@@ -89,6 +90,7 @@ export class PurchaseRequisitionRepository extends BaseStoreRepository<PurchaseR
         warehouse: true,
         items: {
           product: true,
+          variant: true,
         },
       },
     })

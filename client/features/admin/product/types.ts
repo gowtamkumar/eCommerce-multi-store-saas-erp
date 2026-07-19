@@ -12,6 +12,7 @@ export interface Product {
     tagline?: string;
     discountAmount?: number;
     slug: string;
+    variants?: any[];
 }
 
 export interface RelatedProductsProps {

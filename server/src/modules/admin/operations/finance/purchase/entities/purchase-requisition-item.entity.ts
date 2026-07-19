@@ -3,6 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import { PurchaseRequisitionEntity } from './purchase-requisition.entity'
 import { StoreEntity } from '@/modules/system/store/entities/store.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 
 @Entity('purchase_requisition_items')
 export class PurchaseRequisitionItemEntity extends BaseEntity {
@@ -19,6 +20,13 @@ export class PurchaseRequisitionItemEntity extends BaseEntity {
   @ManyToOne(() => ProductEntity)
   @JoinColumn({ name: 'product_id' })
   product: ProductEntity
+
+  @Column({ type: 'uuid', name: 'variant_id', nullable: true })
+  variantId: string | null
+
+  @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'variant_id' })
+  variant: ProductVariantEntity | null
 
   @Column({ type: 'int' })
   quantity: number

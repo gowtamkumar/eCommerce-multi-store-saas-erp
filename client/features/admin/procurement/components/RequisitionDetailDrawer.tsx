@@ -119,6 +119,11 @@ export default function RequisitionDetailDrawer({
                       <div>
                         <div className="text-xs font-black text-slate-900 dark:text-white">
                           {item.product?.name || "Unknown Product"}
+                          {(item as any).variant && (
+                            <span className="text-[10px] text-slate-400 font-mono block mt-0.5 uppercase tracking-tight">
+                              {Object.values((item as any).variant.combination || {}).join(" / ") || (item as any).variant.sku}
+                            </span>
+                          )}
                         </div>
                         {item.notes && (
                           <div className="text-[10px] text-slate-400 mt-1 italic">{item.notes}</div>

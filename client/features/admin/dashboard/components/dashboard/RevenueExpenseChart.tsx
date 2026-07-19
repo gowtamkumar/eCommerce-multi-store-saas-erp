@@ -49,7 +49,7 @@ const RevenueExpenseChart = memo(({
                                     color: '#fff',
                                     padding: '14px',
                                 }}
-                                formatter={(value: number) => [formatPrice(value), 'Amount']}
+                                formatter={(value: any) => [formatPrice(Number(value || 0)), 'Amount']}
                             />
                             <Bar dataKey="amount" fill="#3b82f6" radius={[12, 12, 0, 0]} />
                         </BarChart>

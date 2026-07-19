@@ -43,6 +43,7 @@ export class PurchaseRequisitionService {
         warehouseId: dto.warehouseId,
         items: dto.items.map((i) => ({
           productId: i.productId,
+          variantId: i.variantId || null,
           quantity: i.quantity,
           notes: i.notes,
           storeId,
@@ -154,18 +155,30 @@ export class PurchaseRequisitionService {
       }
 
       const itemsDto = pr.items.map((i) => {
-        // Prefer product price if available on the joined relation
-        const productPriceRaw = (i as any).product?.price
+        // If there's a variant, see if we can find its price, otherwise use product price
         let unitPrice = 0
-        if (productPriceRaw !== undefined && productPriceRaw !== null) {
-          const parsed = Number(productPriceRaw)
-          if (!Number.isNaN(parsed)) unitPrice = parsed
+        if (i.variantId && (i as any).variant) {
+          const variantPriceRaw = (i as any).variant.price
+          if (variantPriceRaw !== undefined && variantPriceRaw !== null) {
+            const parsed = Number(variantPriceRaw)
+            if (!Number.isNaN(parsed)) unitPrice = parsed
+          }
         }
+        
+        if (unitPrice === 0) {
+          const productPriceRaw = (i as any).product?.price
+          if (productPriceRaw !== undefined && productPriceRaw !== null) {
+            const parsed = Number(productPriceRaw)
+            if (!Number.isNaN(parsed)) unitPrice = parsed
+          }
+        }
+
         this.logger.log(
-          `PR item product ${i.productId} product.price=${productPriceRaw} -> unitPrice=${unitPrice}`,
+          `PR item product ${i.productId} (variant ${i.variantId}) -> unitPrice=${unitPrice}`,
         )
         return {
           productId: i.productId,
+          variantId: i.variantId || null,
           quantity: i.quantity,
           unitPrice,
         }

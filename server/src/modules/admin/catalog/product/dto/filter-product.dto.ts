@@ -3,11 +3,6 @@ import { PaginationDto } from '@/common/dto/pagination.dto'
 import { ProductStatus } from '@/common/enums/product-status.enum'
 
 export class FilterProductDto extends PaginationDto {
-  /** Full-text search: matches product name, description, SKU, barcode, or variant SKU/barcode */
-  @IsOptional()
-  @IsString()
-  q?: string
-
   @IsEnum(ProductStatus)
   @IsOptional()
   status?: ProductStatus

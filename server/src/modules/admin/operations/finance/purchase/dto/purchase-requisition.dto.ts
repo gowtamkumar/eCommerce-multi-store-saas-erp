@@ -16,6 +16,10 @@ export class CreatePurchaseRequisitionItemDto {
   @IsUUID()
   productId: string
 
+  @IsUUID()
+  @IsOptional()
+  variantId?: string
+
   @IsNumber()
   quantity: number
 
