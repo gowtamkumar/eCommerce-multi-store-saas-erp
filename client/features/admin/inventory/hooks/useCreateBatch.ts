@@ -5,9 +5,26 @@ import toast from 'react-hot-toast';
 import { fetchAPI } from '@/services/api';
 import { Product, ProductVariant } from './useBatchRegistry';
 
+/** Generates a unique batch number like BATCH-PARACE-20260719-A3F2 */
+function generateBatchNumber(product: Product): string {
+  const prefix = product.name
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 6);
+  const now = new Date();
+  const date = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('');
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `BATCH-${prefix}-${date}-${rand}`;
+}
+
 export function useCreateBatch(isOpen: boolean, onSuccess: () => void) {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -18,26 +35,53 @@ export function useCreateBatch(isOpen: boolean, onSuccess: () => void) {
   const [expiryDate, setExpiryDate] = useState('');
   const [initialQuantity, setInitialQuantity] = useState<number>(0);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (query: string) => {
+    setSearchLoading(true);
     try {
-      const res = await fetchAPI('/products?limit=50');
+      const params = new URLSearchParams({ limit: '50', includeVariants: 'true' });
+      if (query.trim()) params.set('q', query.trim());
+      const res = await fetchAPI(`/products?${params.toString()}`);
       if (res.success) {
-        setProducts(res.data.products || []);
+        // API response: { success: true, data: { products: Product[], total: N }, pagination: {...} }
+        // The controller sets `data: products` where `products` is from service's `{ products, total }`
+        const list = res.data?.products ?? (Array.isArray(res.data) ? res.data : []);
+        setProducts(list);
       }
     } catch (error) {
       console.error('Failed to fetch products', error);
+    } finally {
+      setSearchLoading(false);
     }
   }, []);
 
+  // Initial load when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    void fetchProducts('');
+  }, [fetchProducts, isOpen]);
+
+  // Debounced server-side search — re-fetch on query change
   useEffect(() => {
     if (!isOpen) return;
 
     const timer = window.setTimeout(() => {
-      void fetchProducts();
-    }, 0);
+      void fetchProducts(searchQuery);
+    }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [fetchProducts, isOpen]);
+  }, [fetchProducts, isOpen, searchQuery]);
+
+  // Auto-generate batch number when a product is selected
+  useEffect(() => {
+    if (selectedProduct) {
+      setBatchNumber(generateBatchNumber(selectedProduct));
+    }
+  }, [selectedProduct]);
+
+  /** Call this to re-roll a new unique batch number for the selected product */
+  const regenerateBatchNumber = useCallback(() => {
+    if (selectedProduct) setBatchNumber(generateBatchNumber(selectedProduct));
+  }, [selectedProduct]);
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,6 +135,7 @@ export function useCreateBatch(isOpen: boolean, onSuccess: () => void) {
     loading,
     searchQuery,
     setSearchQuery,
+    searchLoading,
     products: filteredProducts,
     rawProducts: products,
     selectedProduct,
@@ -99,6 +144,7 @@ export function useCreateBatch(isOpen: boolean, onSuccess: () => void) {
     setSelectedVariant,
     batchNumber,
     setBatchNumber,
+    regenerateBatchNumber,
     manufactureDate,
     setManufactureDate,
     expiryDate,

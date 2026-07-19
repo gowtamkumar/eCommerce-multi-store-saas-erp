@@ -4,7 +4,7 @@ import DataTable, { DataTableColumn } from '@/components/shared/DataTable';
 import React, { useMemo } from 'react';
 import {
   Package, Search, AlertTriangle, XCircle, CheckCircle, Calendar, Plus, X,
-  Edit2, Loader2, Clock, Save, ClipboardList, ShieldAlert
+  Edit2, Loader2, Clock, Save, ClipboardList, ShieldAlert, RefreshCw
 } from 'lucide-react';
 import { useBatchRegistry, ProductBatch, BatchStatus } from '../hooks/useBatchRegistry';
 import { useCreateBatch } from '../hooks/useCreateBatch';
@@ -346,6 +346,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     loading,
     searchQuery,
     setSearchQuery,
+    searchLoading,
     products,
     selectedProduct,
     setSelectedProduct,
@@ -353,6 +354,7 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     setSelectedVariant,
     batchNumber,
     setBatchNumber,
+    regenerateBatchNumber,
     manufactureDate,
     setManufactureDate,
     expiryDate,
@@ -404,22 +406,34 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
                 />
               </div>
               <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2">
-                {products.map(p => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setSelectedProduct(p)}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-brand-500 hover:bg-brand-50/10 transition-all text-left"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0">
-                      {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-900 dark:text-white truncate">{p.name}</p>
-                      <p className="text-[10px] text-slate-500">Current Stock: {p.stock}</p>
-                    </div>
-                  </button>
-                ))}
+                {searchLoading ? (
+                  <div className="flex items-center justify-center py-6 gap-2 text-slate-400">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-xs font-medium">Searching products...</span>
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="flex flex-col items-center py-6 text-slate-400">
+                    <Package className="w-8 h-8 mb-2 opacity-40" />
+                    <span className="text-xs font-medium">No products found</span>
+                  </div>
+                ) : (
+                  products.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedProduct(p)}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-brand-500 hover:bg-brand-50/10 transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden shrink-0">
+                        {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white truncate">{p.name}</p>
+                        <p className="text-[10px] text-slate-500">Current Stock: {p.stock}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           ) : (
@@ -465,11 +479,22 @@ function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               {/* Batch Inputs */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Batch Number *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Batch Number *</label>
+                    <button
+                      type="button"
+                      onClick={regenerateBatchNumber}
+                      title="Generate new batch number"
+                      className="flex items-center gap-1 text-[10px] font-bold text-brand-500 hover:text-brand-600 transition-colors"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Regenerate
+                    </button>
+                  </div>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. BATCH-2026-A1"
+                    placeholder="Auto-generated..."
                     value={batchNumber}
                     onChange={e => setBatchNumber(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono"
